@@ -20,65 +20,33 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('unit_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('unit_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
-            $table->foreignId('user_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
+            $table->enum('resident_type', ['owner', 'tenant', 'family_member', 'representative']);
 
-            $table->enum('resident_type', [
-                'owner',
-                'tenant',
-                'family_member',
-                'representative'
-            ]);
-
-
-            $table->decimal('ownership_percentage', 5, 2)
-                ->nullable();
-
+            $table->integer('ownership_percentage')->nullable();
 
             $table->date('start_date');
 
-            $table->date('end_date')
-                ->nullable();
+            $table->date('end_date')->nullable();
 
+            $table->boolean('is_primary')->default(false);
 
-            $table->boolean('is_primary')
-                ->default(false);
+            $table->boolean('is_active')->default(true);
 
-
-            $table->boolean('is_active')
-                ->default(true);
-
-
-            $table->text('description')
-                ->nullable();
-
+            $table->text('description')->nullable();
 
             $table->timestamps();
 
             $table->softDeletes();
 
+            $table->index(['unit_id', 'resident_type']);
 
-            $table->index([
-                'unit_id',
-                'resident_type'
-            ]);
-
-            $table->index([
-                'user_id',
-                'is_active'
-            ]);
+            $table->index(['user_id', 'is_active']);
 
         });
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -91,79 +59,29 @@ return new class extends Migration
 
             $table->id();
 
+            $table->foreignId('unit_resident_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
-            $table->foreignId('unit_resident_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('unit_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
+            $table->foreignId('user_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
-            $table->foreignId('unit_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-
-
-            $table->foreignId('user_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-
-
-
-            $table->enum('resident_type', [
-                'owner',
-                'tenant',
-                'family_member',
-                'representative'
-            ]);
-
-
+            $table->enum('resident_type', ['owner', 'tenant', 'family_member', 'representative']);
 
             $table->date('start_date');
 
+            $table->date('end_date')->nullable();
 
-            $table->date('end_date')
-                ->nullable();
+            $table->enum('change_reason', ['new_resident', 'ownership_transfer', 'lease_start', 'lease_end', 'moving_out', 'other'])->nullable();
 
+            $table->text('notes')->nullable();
 
-
-            $table->enum('change_reason', [
-                'new_resident',
-                'ownership_transfer',
-                'lease_start',
-                'lease_end',
-                'moving_out',
-                'other'
-            ])->nullable();
-
-
-
-            $table->text('notes')
-                ->nullable();
-
-
-
-            $table->foreignId('created_by')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
-
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamps();
 
-
-            $table->index([
-                'unit_id',
-                'start_date'
-            ]);
+            $table->index(['unit_id', 'start_date']);
 
         });
-
-
-
-
         /*
         |--------------------------------------------------------------------------
         | Unit Invitations
@@ -175,83 +93,31 @@ return new class extends Migration
 
             $table->id();
 
+            $table->foreignId('unit_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
-            $table->foreignId('unit_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-
-
-
-            $table->foreignId('invited_by')
-                ->constrained('users')
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-
-
+            $table->foreignId('invited_by')->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->string('mobile',20);
 
+            $table->string('email')->nullable();
 
-            $table->string('email')
-                ->nullable();
+            $table->enum('resident_type', ['owner', 'tenant', 'family_member', 'representative']);
 
+            $table->string('token')->unique();
 
-
-            $table->enum('resident_type', [
-                'owner',
-                'tenant',
-                'family_member',
-                'representative'
-            ]);
-
-
-
-            $table->string('token')
-                ->unique();
-
-
-
-            $table->enum('status', [
-                'pending',
-                'accepted',
-                'rejected',
-                'expired'
-            ])
-                ->default('pending');
-
-
+            $table->enum('status', ['pending', 'accepted', 'rejected', 'expired'])->default('pending');
 
             $table->timestamp('expires_at');
 
+            $table->timestamp('accepted_at')->nullable();
 
-            $table->timestamp('accepted_at')
-                ->nullable();
-
-
-
-            $table->foreignId('accepted_user_id')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
-
+            $table->foreignId('accepted_user_id')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamps();
 
-
-
-            $table->index([
-                'mobile',
-                'status'
-            ]);
+            $table->index(['mobile', 'status']);
 
         });
-
-
-
-
-
         /*
         |--------------------------------------------------------------------------
         | Unit Guests
@@ -263,96 +129,41 @@ return new class extends Migration
 
             $table->id();
 
+            $table->foreignId('unit_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
-
-            $table->foreignId('unit_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-
-
-
-            $table->foreignId('registered_by')
-                ->constrained('users')
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-
-
+            $table->foreignId('registered_by')->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->string('first_name');
 
-
             $table->string('last_name');
 
+            $table->string('mobile',20)->nullable();
 
+            $table->string('national_code',20)->nullable();
 
-            $table->string('mobile',20)
-                ->nullable();
+            $table->string('vehicle_number')->nullable();
 
+            $table->dateTime('expected_entry_at')->nullable();
 
+            $table->dateTime('expected_exit_at')->nullable();
 
-            $table->string('national_code',20)
-                ->nullable();
+            $table->dateTime('entry_at')->nullable();
 
+            $table->dateTime('exit_at')->nullable();
 
+            $table->enum('status', ['invited', 'entered', 'exited', 'cancelled'])->default('invited');
 
-            $table->string('vehicle_number')
-                ->nullable();
-
-
-
-            $table->dateTime('expected_entry_at')
-                ->nullable();
-
-
-
-            $table->dateTime('expected_exit_at')
-                ->nullable();
-
-
-
-            $table->dateTime('entry_at')
-                ->nullable();
-
-
-
-            $table->dateTime('exit_at')
-                ->nullable();
-
-
-
-
-            $table->enum('status', [
-                'invited',
-                'entered',
-                'exited',
-                'cancelled'
-            ])
-                ->default('invited');
-
-
-
-            $table->text('description')
-                ->nullable();
-
-
+            $table->text('description')->nullable();
 
             $table->timestamps();
 
-
-
-            $table->index([
-                'unit_id',
-                'status'
-            ]);
+            $table->index(['unit_id', 'status']);
 
             $table->index('mobile');
 
         });
 
     }
-
-
 
     public function down(): void
     {

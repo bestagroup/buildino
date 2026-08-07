@@ -21,32 +21,17 @@ return new class extends Migration
 
             $table->id();
 
-
-            $table->foreignId('building_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-
-
+            $table->foreignId('building_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->string('title');
 
+            $table->integer('balance')->default(0);
 
-            $table->decimal('balance',14,2)
-                ->default(0);
-
-
-
-            $table->boolean('is_active')
-                ->default(true);
-
+            $table->boolean('is_active')->default(true);
 
             $table->timestamps();
 
         });
-
-
-
         /*
         |--------------------------------------------------------------------------
         | Financial Categories
@@ -57,25 +42,13 @@ return new class extends Migration
 
             $table->id();
 
-
             $table->string('title');
 
-
-            $table->enum('type',[
-                'income',
-                'expense',
-                'charge'
-            ]);
-
-
+            $table->enum('type',['income', 'expense', 'charge']);
 
             $table->timestamps();
 
         });
-
-
-
-
         /*
         |--------------------------------------------------------------------------
         | Charge Formulas
@@ -86,32 +59,17 @@ return new class extends Migration
 
             $table->id();
 
-
             $table->string('title');
 
+            $table->enum('calculation_type',['equal', 'area', 'persons', 'custom']);
 
-            $table->enum('calculation_type',[
-                'equal',
-                'area',
-                'persons',
-                'custom'
-            ]);
+            $table->json('configuration')->nullable();
 
-
-            $table->json('configuration')
-                ->nullable();
-
-
-            $table->boolean('is_active')
-                ->default(true);
-
+            $table->boolean('is_active')->default(true);
 
             $table->timestamps();
 
         });
-
-
-
         /*
         |--------------------------------------------------------------------------
         | Charge Items
@@ -122,25 +80,13 @@ return new class extends Migration
 
             $table->id();
 
+            $table->foreignId('charge_formula_id')->constrained()->cascadeOnDelete();
 
-            $table->foreignId('charge_formula_id')
-                ->constrained()
-                ->cascadeOnDelete();
-
-
-
-            $table->foreignId('financial_category_id')
-                ->constrained()
-                ->cascadeOnDelete();
-
-
+            $table->foreignId('financial_category_id')->constrained()->cascadeOnDelete();
 
             $table->string('title');
 
-
-            $table->decimal('amount',12,2);
-
-
+            $table->integer('amount');
 
             $table->timestamps();
 
@@ -148,7 +94,6 @@ return new class extends Migration
 
 
     }
-
 
     public function down(): void
     {

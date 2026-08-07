@@ -29,8 +29,8 @@ return new class extends Migration
 
             $table->text('address')->nullable();
 
-            $table->decimal('latitude', 10, 7)->nullable();
-            $table->decimal('longitude', 10, 7)->nullable();
+            $table->integer('latitude')->nullable();
+            $table->integer('longitude')->nullable();
 
             $table->unsignedInteger('sort_order')->default(0);
 
@@ -54,10 +54,7 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('complex_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('complex_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->string('code')->unique();
 
@@ -92,10 +89,7 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('building_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('building_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->string('title');
 
@@ -119,10 +113,7 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('block_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('block_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->integer('floor_number');
 
@@ -145,30 +136,19 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('floor_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('floor_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->string('unit_number');
 
             $table->string('title')->nullable();
 
-            $table->decimal('area', 8, 2)->nullable();
+            $table->integer('area')->nullable();
 
             $table->unsignedTinyInteger('bedrooms')->nullable();
 
-            $table->enum('usage_type', [
-                'residential',
-                'commercial',
-                'office'
-            ])->default('residential');
+            $table->enum('usage_type', ['residential', 'commercial', 'office'])->default('residential');
 
-            $table->enum('ownership_status', [
-                'owner_occupied',
-                'tenant_occupied',
-                'vacant'
-            ])->default('vacant');
+            $table->enum('ownership_status', ['owner_occupied', 'tenant_occupied', 'vacant'])->default('vacant');
 
             $table->boolean('is_active')->default(true);
 
@@ -191,20 +171,13 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('unit_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
+            $table->foreignId('unit_id')->nullable()->constrained()->nullOnDelete();
 
             $table->string('parking_number');
 
             $table->string('title')->nullable();
 
-            $table->enum('type', [
-                'private',
-                'shared',
-                'guest'
-            ])->default('private');
+            $table->enum('type', ['private', 'shared', 'guest'])->default('private');
 
             $table->boolean('is_active')->default(true);
 
@@ -223,14 +196,11 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('unit_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
+            $table->foreignId('unit_id')->nullable()->constrained()->nullOnDelete();
 
             $table->string('storage_number');
 
-            $table->decimal('area', 8, 2)->nullable();
+            $table->integer('area')->nullable();
 
             $table->boolean('is_active')->default(true);
 
@@ -249,10 +219,7 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('building_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('building_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->string('title');
 
@@ -275,10 +242,7 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('building_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('building_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->string('title');
 
@@ -304,20 +268,11 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('building_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('building_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->string('title');
 
-            $table->enum('type', [
-                'document',
-                'minutes',
-                'contract',
-                'image',
-                'other'
-            ])->default('document');
+            $table->enum('type', ['document', 'minutes', 'contract', 'image', 'other'])->default('document');
 
             $table->string('file_name');
 
@@ -327,10 +282,7 @@ return new class extends Migration
 
             $table->unsignedBigInteger('file_size')->nullable();
 
-            $table->foreignId('uploaded_by')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
+            $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamps();
             $table->softDeletes();
@@ -348,20 +300,11 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('unit_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('unit_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->string('title');
 
-            $table->enum('type', [
-                'ownership',
-                'lease',
-                'insurance',
-                'image',
-                'other'
-            ])->default('other');
+            $table->enum('type', ['ownership', 'lease', 'insurance', 'image', 'other'])->default('other');
 
             $table->string('file_name');
 

@@ -11,113 +11,58 @@ return new class extends Migration
     public function up():void
     {
 
-
         Schema::create('payments',function(Blueprint $table){
 
             $table->id();
 
+            $table->foreignId('unit_invoice_id')->nullable()->constrained()->nullOnDelete();
 
-            $table->foreignId('unit_invoice_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
+            $table->foreignId('invoice_installment_id')->nullable()->constrained()->nullOnDelete();
 
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
 
-            $table->foreignId('invoice_installment_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
+            $table->integer('amount');
 
+            $table->enum('method',['online', 'manual', 'qr', 'cash']);
 
-            $table->foreignId('user_id')
-                ->constrained()
-                ->cascadeOnDelete();
-
-
-            $table->decimal('amount',12,2);
-
-
-            $table->enum('method',[
-                'online',
-                'manual',
-                'qr',
-                'cash'
-            ]);
-
-
-            $table->enum('status',[
-                'pending',
-                'success',
-                'failed',
-                'cancelled'
-            ])->default('pending');
-
+            $table->enum('status',['pending', 'success', 'failed', 'cancelled'])->default('pending');
 
             $table->timestamps();
 
         });
-
-
 
         Schema::create('payment_transactions',function(Blueprint $table){
 
             $table->id();
 
+            $table->foreignId('payment_id')->constrained()->cascadeOnDelete();
 
-            $table->foreignId('payment_id')
-                ->constrained()
-                ->cascadeOnDelete();
+            $table->string('gateway')->nullable();
 
+            $table->string('tracking_code')->nullable()->unique();
 
-            $table->string('gateway')
-                ->nullable();
+            $table->string('reference_number')->nullable();
 
-
-            $table->string('tracking_code')
-                ->nullable()
-                ->unique();
-
-
-            $table->string('reference_number')
-                ->nullable();
-
-
-            $table->json('response')
-                ->nullable();
-
+            $table->json('response')->nullable();
 
             $table->timestamps();
 
         });
-
-
 
         Schema::create('payment_receipts',function(Blueprint $table){
 
             $table->id();
 
+            $table->foreignId('payment_id')->constrained()->cascadeOnDelete();
 
-            $table->foreignId('payment_id')
-                ->constrained()
-                ->cascadeOnDelete();
+            $table->string('file_path')->nullable();
 
-
-            $table->string('file_path')
-                ->nullable();
-
-
-            $table->string('receipt_number')
-                ->unique();
-
+            $table->string('receipt_number')->unique();
 
             $table->timestamps();
 
         });
-
-
-
     }
-
 
     public function down():void
     {

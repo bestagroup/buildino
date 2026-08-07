@@ -8,7 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-
         /*
         |--------------------------------------------------------------------------
         | Building Facilities
@@ -20,66 +19,35 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('building_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('building_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->string('title');
 
-            $table->string('code')
-                ->unique();
+            $table->string('code')->unique();
 
-            $table->text('description')
-                ->nullable();
+            $table->text('description')->nullable();
 
-            $table->string('image')
-                ->nullable();
+            $table->string('image')->nullable();
 
-            $table->enum('type', [
-                'sport',
-                'recreation',
-                'meeting',
-                'parking',
-                'service',
-                'other'
-            ])->default('other');
+            $table->enum('type', ['sport','gym','pool','recreation','meeting','parking','service','roofgarden','other'])->default('other');
 
+            $table->unsignedInteger('capacity')->nullable();
 
-            $table->unsignedInteger('capacity')
-                ->nullable();
+            $table->integer('default_price')->default(0);
 
+            $table->boolean('requires_payment')->default(false);
 
-            $table->decimal('default_price',12,2)
-                ->default(0);
+            $table->boolean('requires_approval')->default(false);
 
-
-            $table->boolean('requires_payment')
-                ->default(false);
-
-
-            $table->boolean('requires_approval')
-                ->default(false);
-
-
-            $table->boolean('is_active')
-                ->default(true);
-
+            $table->boolean('is_active')->default(true);
 
             $table->timestamps();
 
             $table->softDeletes();
 
-
-            $table->index([
-                'building_id',
-                'is_active'
-            ]);
+            $table->index(['building_id', 'is_active']);
 
         });
-
-
-
         /*
         |--------------------------------------------------------------------------
         | Facility Schedules
@@ -90,42 +58,21 @@ return new class extends Migration
 
             $table->id();
 
-
-            $table->foreignId('building_facility_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-
+            $table->foreignId('building_facility_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->unsignedTinyInteger('day_of_week');
 
-
             $table->time('start_time');
-
 
             $table->time('end_time');
 
-
-            $table->boolean('is_active')
-                ->default(true);
-
+            $table->boolean('is_active')->default(true);
 
             $table->timestamps();
 
-            $table->unique(
-                [
-                    'building_facility_id',
-                    'day_of_week',
-                    'start_time'
-                ],
-                'facility_schedule_unique'
-            );
+            $table->unique(['building_facility_id', 'day_of_week', 'start_time'], 'facility_schedule_unique');
 
         });
-
-
-
-
         /*
         |--------------------------------------------------------------------------
         | Facility Time Slots
@@ -136,43 +83,21 @@ return new class extends Migration
 
             $table->id();
 
-
-            $table->foreignId('facility_schedule_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-
-
+            $table->foreignId('facility_schedule_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->time('start_time');
 
-
             $table->time('end_time');
 
+            $table->unsignedInteger('capacity')->nullable();
 
-            $table->unsignedInteger('capacity')
-                ->nullable();
+            $table->integer('price')->default(0);
 
-
-
-            $table->decimal('price',12,2)
-                ->default(0);
-
-
-
-            $table->boolean('is_active')
-                ->default(true);
-
-
+            $table->boolean('is_active')->default(true);
 
             $table->timestamps();
 
-
         });
-
-
-
-
         /*
         |--------------------------------------------------------------------------
         | Facility Reservation Rules
@@ -183,40 +108,19 @@ return new class extends Migration
 
             $table->id();
 
+            $table->foreignId('building_facility_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
-            $table->foreignId('building_facility_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->unsignedInteger('max_reservation_per_unit')->default(1);
 
+            $table->unsignedInteger('max_duration_minutes')->default(60);
 
-            $table->unsignedInteger('max_reservation_per_unit')
-                ->default(1);
+            $table->unsignedInteger('cancel_before_minutes')->default(60);
 
-
-
-            $table->unsignedInteger('max_duration_minutes')
-                ->default(60);
-
-
-
-            $table->unsignedInteger('cancel_before_minutes')
-                ->default(60);
-
-
-
-            $table->boolean('auto_confirm')
-                ->default(false);
-
-
+            $table->boolean('auto_confirm')->default(false);
 
             $table->timestamps();
 
-
         });
-
-
-
         /*
         |--------------------------------------------------------------------------
         | Facility Blackout Dates
@@ -228,47 +132,22 @@ return new class extends Migration
             $table->id();
 
 
-            $table->foreignId('building_facility_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-
-
+            $table->foreignId('building_facility_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->date('date');
 
+            $table->time('start_time')->nullable();
 
-            $table->time('start_time')
-                ->nullable();
+            $table->time('end_time')->nullable();
 
-
-            $table->time('end_time')
-                ->nullable();
-
-
-
-            $table->string('reason')
-                ->nullable();
-
-
+            $table->string('reason')->nullable();
 
             $table->timestamps();
 
-
-
-            $table->unique(
-                [
-                    'building_facility_id',
-                    'date',
-                    'start_time'
-                ],
-                'facility_blackout_unique'
-            );
+            $table->unique(['building_facility_id', 'date', 'start_time'], 'facility_blackout_unique');
 
         });
-
     }
-
 
     public function down(): void
     {

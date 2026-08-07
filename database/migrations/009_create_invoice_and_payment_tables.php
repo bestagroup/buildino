@@ -11,149 +11,86 @@ return new class extends Migration
     public function up(): void
     {
 
-
         Schema::create('unit_invoices',function(Blueprint $table){
 
             $table->id();
 
+            $table->foreignId('unit_id')->constrained()->cascadeOnDelete();
 
-            $table->foreignId('unit_id')
-                ->constrained()
-                ->cascadeOnDelete();
-
-
-            $table->string('invoice_number')
-                ->unique();
-
+            $table->string('invoice_number')->unique();
 
             $table->date('issue_date');
 
-
             $table->date('due_date');
 
+            $table->integer('total_amount');
 
-            $table->decimal('total_amount',12,2);
+            $table->integer('paid_amount')->default(0);
 
-
-            $table->decimal('paid_amount',12,2)
-                ->default(0);
-
-
-            $table->enum('status',[
-                'pending',
-                'partial',
-                'paid',
-                'overdue'
-            ])->default('pending');
-
+            $table->enum('status',['pending', 'partial', 'paid', 'overdue'])->default('pending');
 
             $table->timestamps();
 
         });
-
-
 
         Schema::create('invoice_items',function(Blueprint $table){
 
             $table->id();
 
+            $table->foreignId('unit_invoice_id')->constrained()->cascadeOnDelete();
 
-            $table->foreignId('unit_invoice_id')
-                ->constrained()
-                ->cascadeOnDelete();
+            $table->foreignId('charge_item_id')->constrained()->cascadeOnDelete();
 
-
-            $table->foreignId('charge_item_id')
-                ->constrained()
-                ->cascadeOnDelete();
-
-
-            $table->decimal('amount',12,2);
-
+            $table->integer('amount');
 
             $table->timestamps();
 
         });
-
-
 
         Schema::create('invoice_installments',function(Blueprint $table){
 
             $table->id();
 
-
-            $table->foreignId('unit_invoice_id')
-                ->constrained()
-                ->cascadeOnDelete();
-
+            $table->foreignId('unit_invoice_id')->constrained()->cascadeOnDelete();
 
             $table->date('due_date');
 
+            $table->integer('amount');
 
-            $table->decimal('amount',12,2);
-
-
-            $table->enum('status',[
-                'pending',
-                'paid'
-            ])->default('pending');
-
+            $table->enum('status',['pending', 'paid'])->default('pending');
 
             $table->timestamps();
 
         });
-
-
 
         Schema::create('invoice_penalties',function(Blueprint $table){
 
             $table->id();
 
+            $table->foreignId('unit_invoice_id')->constrained()->cascadeOnDelete();
 
-            $table->foreignId('unit_invoice_id')
-                ->constrained()
-                ->cascadeOnDelete();
+            $table->integer('amount');
 
-
-            $table->decimal('amount',12,2);
-
-
-            $table->string('reason')
-                ->nullable();
-
+            $table->string('reason')->nullable();
 
             $table->timestamps();
 
         });
-
-
 
         Schema::create('invoice_discounts',function(Blueprint $table){
 
             $table->id();
 
+            $table->foreignId('unit_invoice_id')->constrained()->cascadeOnDelete();
 
-            $table->foreignId('unit_invoice_id')
-                ->constrained()
-                ->cascadeOnDelete();
+            $table->integer('amount');
 
-
-            $table->decimal('amount',12,2);
-
-
-            $table->string('reason')
-                ->nullable();
-
+            $table->string('reason')->nullable();
 
             $table->timestamps();
 
         });
-
-
     }
-
-
-
     public function down():void
     {
         Schema::dropIfExists('invoice_discounts');

@@ -37,6 +37,7 @@ return new class extends Migration
 
             $table->timestamp('last_login_at')->nullable();
             $table->ipAddress('last_login_ip')->nullable();
+            $table->boolean('status')->nullable();
 
             $table->rememberToken();
 
@@ -101,15 +102,9 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('role_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('role_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
-            $table->foreignId('user_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->timestamps();
 
@@ -126,15 +121,9 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('permission_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('permission_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
-            $table->foreignId('role_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('role_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->timestamps();
 
@@ -151,18 +140,11 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('user_id')
-                ->unique()
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('user_id')->unique()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->date('birth_date')->nullable();
 
-            $table->enum('gender', [
-                'male',
-                'female'
-            ])->nullable();
+            $table->enum('gender', ['male', 'female'])->nullable();
 
             $table->string('phone', 20)->nullable();
 
@@ -186,10 +168,7 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('user_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
             $table->string('device_id')->unique();
 
@@ -215,10 +194,7 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('user_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
 
             $table->string('mobile', 20);
 
@@ -246,10 +222,7 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('user_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
 
             $table->string('module');
 
@@ -282,10 +255,7 @@ return new class extends Migration
 
             $table->string('id')->primary();
 
-            $table->foreignId('user_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
 
             $table->string('ip_address', 45)->nullable();
 

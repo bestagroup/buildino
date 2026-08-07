@@ -20,62 +20,31 @@ return new class extends Migration
 
             $table->id();
 
+            $table->foreignId('building_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
-            $table->foreignId('building_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('fund_id')->nullable()->constrained()->nullOnDelete();
 
-
-            $table->foreignId('fund_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
-
-
-            $table->foreignId('financial_category_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
-
+            $table->foreignId('financial_category_id')->nullable()->constrained()->nullOnDelete();
 
             $table->string('title');
 
-
-            $table->decimal('amount', 14, 2);
-
+            $table->integer('amount');
 
             $table->date('expense_date');
 
+            $table->string('invoice_number')->nullable();
 
-            $table->string('invoice_number')
-                ->nullable();
+            $table->text('description')->nullable();
 
-
-            $table->text('description')
-                ->nullable();
-
-
-            $table->foreignId('created_by')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamps();
 
             $table->softDeletes();
 
-
-            $table->index([
-                'building_id',
-                'expense_date'
-            ]);
+            $table->index(['building_id', 'expense_date']);
 
         });
-
-
-
         /*
         |--------------------------------------------------------------------------
         | Building Incomes
@@ -87,72 +56,31 @@ return new class extends Migration
 
             $table->id();
 
+            $table->foreignId('building_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
-            $table->foreignId('building_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+            $table->foreignId('fund_id')->nullable()->constrained()->nullOnDelete();
 
-
-            $table->foreignId('fund_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
-
-
-
-            $table->foreignId('financial_category_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
-
-
+            $table->foreignId('financial_category_id')->nullable()->constrained()->nullOnDelete();
 
             $table->string('title');
 
-
-
-            $table->decimal('amount',14,2);
-
-
+            $table->integer('amount');
 
             $table->date('income_date');
 
+            $table->string('reference_number')->nullable();
 
+            $table->text('description')->nullable();
 
-            $table->string('reference_number')
-                ->nullable();
-
-
-
-            $table->text('description')
-                ->nullable();
-
-
-
-            $table->foreignId('created_by')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
-
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamps();
 
             $table->softDeletes();
 
-
-
-            $table->index([
-                'building_id',
-                'income_date'
-            ]);
+            $table->index(['building_id', 'income_date']);
 
         });
-
-
-
-
         /*
         |--------------------------------------------------------------------------
         | Financial Documents
@@ -161,72 +89,29 @@ return new class extends Migration
 
         Schema::create('financial_documents', function (Blueprint $table) {
 
-
             $table->id();
 
+            $table->foreignId('building_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
 
-
-            $table->foreignId('building_id')
-                ->constrained()
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-
-
-
-            $table->enum('type', [
-
-                'expense',
-                'income',
-                'invoice',
-                'receipt',
-                'contract',
-                'other'
-
-            ]);
-
-
+            $table->enum('type', ['expense','income','invoice','receipt','contract','other']);
 
             $table->string('title');
 
-
-
             $table->string('file_name');
-
-
 
             $table->string('file_path');
 
+            $table->string('mime_type')->nullable();
 
+            $table->unsignedBigInteger('file_size')->nullable();
 
-            $table->string('mime_type')
-                ->nullable();
-
-
-
-            $table->unsignedBigInteger('file_size')
-                ->nullable();
-
-
-
-            $table->foreignId('uploaded_by')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
-
+            $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamps();
 
-
             $table->softDeletes();
-
-
         });
-
-
     }
-
-
     public function down(): void
     {
         Schema::dropIfExists('financial_documents');
