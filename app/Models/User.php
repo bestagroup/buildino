@@ -2,23 +2,22 @@
 
 namespace App\Models;
 
+use App\Enums\UserGender;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory;
-    use Notifiable;
-    use SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes , HasApiTokens;
 
-    /**
-     * The attributes that are mass assignable.
-     */
+    protected $table = 'users';
+
     protected $fillable = [
         'first_name',
         'last_name',
@@ -33,437 +32,317 @@ class User extends Authenticatable
         'is_blocked',
         'last_login_at',
         'last_login_ip',
-        'status',
-    ];
-
-    /**
-     * The attributes that should be hidden
-     * for serialization.
-     */
-    protected $hidden = [
-        'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     */
+    protected $hidden = [
+        'remember_token',
+        'password',
+    ];
+
     protected function casts(): array
     {
         return [
             'mobile_verified_at' => 'datetime',
             'email_verified_at' => 'datetime',
-            'last_login_at' => 'datetime',
             'is_active' => 'boolean',
             'is_blocked' => 'boolean',
-            'status' => 'boolean',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'gender' => UserGender::class,
         ];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Accessors
-    |--------------------------------------------------------------------------
-    */
-
-    /**
-     * Full name of user.
-     */
-    public function getFullNameAttribute(): string
+    public function userProfiles(): HasMany
     {
-        return trim(
-            $this->first_name . ' ' . $this->last_name
-        );
+        return $this->hasMany(UserProfile::class, 'user_id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Roles & Permissions
-    |--------------------------------------------------------------------------
-    */
-
-    /**
-     * User roles.
-     */
-    public function roles(): BelongsToMany
+    public function userDevices(): HasMany
     {
-        return $this->belongsToMany(
-            Role::class,
-            'user_roles',
-            'user_id',
-            'role_id'
-        )->withTimestamps();
+        return $this->hasMany(UserDevice::class, 'user_id');
     }
 
-    /**
-     * Check whether user has a role.
-     */
-    public function hasRole(string $role): bool
+    public function otpCodes(): HasMany
     {
-        return $this->roles()
-            ->where('name', $role)
-            ->exists();
+        return $this->hasMany(OtpCode::class, 'user_id');
     }
 
-    /**
-     * Check whether user has any of given roles.
-     */
-    public function hasAnyRole(array $roles): bool
+    public function userSessions(): HasMany
     {
-        return $this->roles()
-            ->whereIn('name', $roles)
-            ->exists();
+        return $this->hasMany(UserSession::class, 'user_id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | User Activity
-    |--------------------------------------------------------------------------
-    */
-    public function activityLogs(): HasMany
+    public function userRoleAssignmentsAsUser(): HasMany
     {
-        return $this->hasMany(
-            UserActivityLog::class
-        );
+        return $this->hasMany(UserRoleAssignment::class, 'user_id');
     }
 
-    public function loginHistories(): HasMany
+    public function userRoleAssignmentsAsAssignedBy(): HasMany
     {
-        return $this->hasMany(
-            UserLoginHistory::class
-        );
+        return $this->hasMany(UserRoleAssignment::class, 'assigned_by');
     }
 
-    public function accessLogs(): HasMany
+    public function unitOwnershipsAsUser(): HasMany
     {
-        return $this->hasMany(
-            UserAccessLog::class
-        );
+        return $this->hasMany(UnitOwnership::class, 'user_id');
     }
 
-    public function preference(): HasOne
+    public function unitOwnershipsAsCreatedBy(): HasMany
     {
-        return $this->hasOne(
-            UserPreference::class
-        );
+        return $this->hasMany(UnitOwnership::class, 'created_by');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Building / Residence
-    |--------------------------------------------------------------------------
-    */
-    public function unitResidents(): HasMany
+    public function unitOwnershipsAsEndedBy(): HasMany
     {
-        return $this->hasMany(
-            UnitResident::class
-        );
-    }
-    public function residentHistories(): HasMany
-    {
-        return $this->hasMany(
-            ResidentHistory::class
-        );
+        return $this->hasMany(UnitOwnership::class, 'ended_by');
     }
 
-    public function unitInvitations(): HasMany
+    public function unitOccupanciesAsUser(): HasMany
     {
-        return $this->hasMany(
-            UnitInvitation::class
-        );
+        return $this->hasMany(UnitOccupancy::class, 'user_id');
     }
 
-    public function guests(): HasMany
+    public function unitOccupanciesAsCreatedBy(): HasMany
     {
-        return $this->hasMany(
-            UnitGuest::class
-        );
+        return $this->hasMany(UnitOccupancy::class, 'created_by');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Facility Reservations
-    |--------------------------------------------------------------------------
-    */
-
-    public function facilityReservations(): HasMany
+    public function unitOccupanciesAsEndedBy(): HasMany
     {
-        return $this->hasMany(
-            FacilityReservation::class
-        );
+        return $this->hasMany(UnitOccupancy::class, 'ended_by');
     }
 
-    public function reservationApprovals(): HasMany
+    public function unitInvitationsAsInvitedBy(): HasMany
     {
-        return $this->hasMany(
-            FacilityReservation::class,
-            'approved_by'
-        );
+        return $this->hasMany(UnitInvitation::class, 'invited_by');
     }
 
-    public function reservationCancellations(): HasMany
+    public function unitInvitationsAsAcceptedUser(): HasMany
     {
-        return $this->hasMany(
-            ReservationCancellation::class,
-            'cancelled_by'
-        );
+        return $this->hasMany(UnitInvitation::class, 'accepted_user_id');
     }
 
-    public function reservationNotifications(): HasMany
+    public function guestVisits(): HasMany
     {
-        return $this->hasMany(
-            ReservationNotification::class
-        );
+        return $this->hasMany(GuestVisit::class, 'registered_by');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Financial
-    |--------------------------------------------------------------------------
-    */
-
-    public function payments(): HasMany
+    public function guestAccessLogs(): HasMany
     {
-        return $this->hasMany(
-            Payment::class
-        );
+        return $this->hasMany(GuestAccessLog::class, 'verified_by');
     }
 
-    public function financialExpenses(): HasMany
+    public function buildingSubscriptions(): HasMany
     {
-        return $this->hasMany(
-            BuildingExpense::class,
-            'created_by'
-        );
+        return $this->hasMany(BuildingSubscription::class, 'created_by');
     }
 
-    public function financialIncomes(): HasMany
+    public function facilityBlackouts(): HasMany
     {
-        return $this->hasMany(
-            BuildingIncome::class,
-            'created_by'
-        );
+        return $this->hasMany(FacilityBlackout::class, 'created_by');
     }
 
-    public function financialAdjustments(): HasMany
+    public function chargePeriods(): HasMany
     {
-        return $this->hasMany(
-            FinancialAdjustment::class,
-            'created_by'
-        );
+        return $this->hasMany(ChargePeriod::class, 'created_by');
+    }
+
+    public function financialTransactions(): HasMany
+    {
+        return $this->hasMany(FinancialTransaction::class, 'created_by');
+    }
+
+    public function unitInvoices(): HasMany
+    {
+        return $this->hasMany(UnitInvoice::class, 'created_by');
+    }
+
+    public function financialAdjustmentsAsCreatedBy(): HasMany
+    {
+        return $this->hasMany(FinancialAdjustment::class, 'created_by');
+    }
+
+    public function financialAdjustmentsAsApprovedBy(): HasMany
+    {
+        return $this->hasMany(FinancialAdjustment::class, 'approved_by');
+    }
+
+    public function paymentsAsPayerUser(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'payer_user_id');
+    }
+
+    public function paymentsAsVerifiedBy(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'verified_by');
+    }
+
+    public function buildingExpensesAsCreatedBy(): HasMany
+    {
+        return $this->hasMany(BuildingExpense::class, 'created_by');
+    }
+
+    public function buildingExpensesAsApprovedBy(): HasMany
+    {
+        return $this->hasMany(BuildingExpense::class, 'approved_by');
+    }
+
+    public function buildingIncomesAsCreatedBy(): HasMany
+    {
+        return $this->hasMany(BuildingIncome::class, 'created_by');
+    }
+
+    public function buildingIncomesAsApprovedBy(): HasMany
+    {
+        return $this->hasMany(BuildingIncome::class, 'approved_by');
     }
 
     public function financialAuditLogs(): HasMany
     {
-        return $this->hasMany(
-            FinancialAuditLog::class
-        );
+        return $this->hasMany(FinancialAuditLog::class, 'user_id');
     }
 
-    public function invoicePaymentHistories(): HasMany
+    public function loyaltyRewardClaimsAsUser(): HasMany
     {
-        return $this->hasMany(
-            InvoicePaymentHistory::class
-        );
+        return $this->hasMany(LoyaltyRewardClaim::class, 'user_id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Loyalty
-    |--------------------------------------------------------------------------
-    */
-
-    public function loyaltyAccount(): HasOne
+    public function loyaltyRewardClaimsAsProcessedBy(): HasMany
     {
-        return $this->hasOne(
-            LoyaltyAccount::class
-        );
+        return $this->hasMany(LoyaltyRewardClaim::class, 'processed_by');
     }
 
-    public function loyaltyRewardClaims(): HasMany
+    public function facilityReservationsAsUser(): HasMany
     {
-        return $this->hasMany(
-            LoyaltyRewardClaim::class
-        );
+        return $this->hasMany(FacilityReservation::class, 'user_id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Support
-    |--------------------------------------------------------------------------
-    */
-
-    public function supportTickets(): HasMany
+    public function facilityReservationsAsApprovedBy(): HasMany
     {
-        return $this->hasMany(
-            SupportTicket::class
-        );
+        return $this->hasMany(FacilityReservation::class, 'approved_by');
+    }
+
+    public function reservationCancellations(): HasMany
+    {
+        return $this->hasMany(ReservationCancellation::class, 'cancelled_by');
+    }
+
+    public function supportTicketsAsUser(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class, 'user_id');
+    }
+
+    public function supportTicketsAsAssignedTo(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class, 'assigned_to');
     }
 
     public function supportMessages(): HasMany
     {
-        return $this->hasMany(
-            SupportMessage::class
-        );
+        return $this->hasMany(SupportMessage::class, 'user_id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Notifications
-    |--------------------------------------------------------------------------
-    */
-
-    public function announcements(): BelongsToMany
+    public function announcements(): HasMany
     {
-        return $this->belongsToMany(
-            Announcement::class,
-            'announcement_receipts',
-            'user_id',
-            'announcement_id'
-        )
-            ->withPivot('read_at')
-            ->withTimestamps();
+        return $this->hasMany(Announcement::class, 'created_by');
     }
 
-    public function notificationLogs(): HasMany
+    public function announcementReceipts(): HasMany
     {
-        return $this->hasMany(
-            NotificationLog::class
-        );
+        return $this->hasMany(AnnouncementReceipt::class, 'user_id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Files
-    |--------------------------------------------------------------------------
-    */
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class, 'user_id');
+    }
+
+    public function userLoginHistories(): HasMany
+    {
+        return $this->hasMany(UserLoginHistory::class, 'user_id');
+    }
+
+    public function userAccessLogs(): HasMany
+    {
+        return $this->hasMany(UserAccessLog::class, 'user_id');
+    }
+
+    public function userPreferences(): HasMany
+    {
+        return $this->hasMany(UserPreference::class, 'user_id');
+    }
+
+    public function userNotificationPreferences(): HasMany
+    {
+        return $this->hasMany(UserNotificationPreference::class, 'user_id');
+    }
 
     public function files(): HasMany
     {
-        return $this->hasMany(
-            File::class,
-            'uploaded_by'
-        );
+        return $this->hasMany(File::class, 'uploaded_by');
     }
 
     public function fileDownloads(): HasMany
     {
-        return $this->hasMany(
-            FileDownload::class
-        );
+        return $this->hasMany(FileDownload::class, 'user_id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Reports
-    |--------------------------------------------------------------------------
-    */
 
     public function generatedReports(): HasMany
     {
-        return $this->hasMany(
-            GeneratedReport::class,
-            'generated_by'
-        );
+        return $this->hasMany(GeneratedReport::class, 'generated_by');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Status Helpers
-    |--------------------------------------------------------------------------
-    */
-
-    public function isActive(): bool
+    public function userDashboardWidgets(): HasMany
     {
-        return $this->is_active === true
-            && $this->is_blocked === false;
+        return $this->hasMany(UserDashboardWidget::class, 'user_id');
     }
 
-    public function isBlocked(): bool
+    public function documentRecords(): HasMany
     {
-        return $this->is_blocked === true;
+        return $this->hasMany(DocumentRecord::class, 'created_by');
     }
 
-    public function isMobileVerified(): bool
+    public function meetingMinutes(): HasMany
     {
-        return $this->mobile_verified_at !== null;
+        return $this->hasMany(MeetingMinute::class, 'created_by');
     }
 
-    public function isEmailVerified(): bool
+    public function serviceRequestsAsRequestedBy(): HasMany
     {
-        return $this->email_verified_at !== null;
+        return $this->hasMany(ServiceRequest::class, 'requested_by');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Role Helpers
-    |--------------------------------------------------------------------------
-    */
-
-    public function isAdmin(): bool
+    public function serviceRequestsAsAssignedTo(): HasMany
     {
-        return $this->hasRole('admin');
+        return $this->hasMany(ServiceRequest::class, 'assigned_to');
     }
 
-    public function isExpert(): bool
+    public function accountingPeriods(): HasMany
     {
-        return $this->hasRole('expert');
+        return $this->hasMany(AccountingPeriod::class, 'closed_by');
     }
 
-    public function isOperator(): bool
+    public function financialReconciliationsAsCreatedBy(): HasMany
     {
-        return $this->hasRole('operator');
+        return $this->hasMany(FinancialReconciliation::class, 'created_by');
     }
 
-    public function isOwner(): bool
+    public function financialReconciliationsAsApprovedBy(): HasMany
     {
-        return $this->hasRole('owner');
+        return $this->hasMany(FinancialReconciliation::class, 'approved_by');
     }
 
-    public function isTenant(): bool
+    public function dashboardWidgets(): BelongsToMany
     {
-        return $this->hasRole('tenant');
+        return $this->belongsToMany(DashboardWidget::class, 'user_dashboard_widgets')
+            ->withPivot(['position', 'configuration'])
+            ->withTimestamps();
     }
 
-    public function isManager(): bool
+    public function userRoleAssignments(): HasMany
     {
-        return $this->hasRole('manager');
+        return $this->hasMany(UserRoleAssignment::class);
     }
 
-    public function isServiceStaff(): bool
-    {
-        return $this->hasRole('service');
-    }
-    public function createdResidentHistories(): HasMany
-    {
-        return $this->hasMany(
-            ResidentHistory::class,
-            'created_by'
-        );
-    }
-
-    public function sentUnitInvitations(): HasMany
-    {
-        return $this->hasMany(
-            UnitInvitation::class,
-            'invited_by'
-        );
-    }
-
-    public function acceptedUnitInvitations(): HasMany
-    {
-        return $this->hasMany(
-            UnitInvitation::class,
-            'accepted_user_id'
-        );
-    }
-
-    public function registeredGuests(): HasMany
-    {
-        return $this->hasMany(
-            UnitGuest::class,
-            'registered_by'
-        );
-    }
 }

@@ -2,101 +2,59 @@
 
 namespace App\Models;
 
+use App\Enums\InvitationStatus;
+use App\Enums\InvitationChannel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class UnitInvitation extends Model
 {
     use HasFactory;
+
+    protected $table = 'unit_invitations';
 
     protected $fillable = [
         'unit_id',
         'invited_by',
         'mobile',
         'email',
-        'resident_type',
+        'relation_type',
+        'channel',
         'token',
         'status',
+        'sent_at',
         'expires_at',
         'accepted_at',
+        'cancelled_at',
         'accepted_user_id',
-    ];
-
-    protected $hidden = [
-        'token',
     ];
 
     protected function casts(): array
     {
         return [
+            'sent_at' => 'datetime',
             'expires_at' => 'datetime',
             'accepted_at' => 'datetime',
+            'cancelled_at' => 'datetime',
+            'channel' => InvitationChannel::class,
+            'status' => InvitationStatus::class,
         ];
     }
 
     public function unit(): BelongsTo
     {
-        return $this->belongsTo(Unit::class);
+        return $this->belongsTo(Unit::class, 'unit_id');
     }
 
-    public function inviter(): BelongsTo
+    public function invitedBy(): BelongsTo
     {
-        return $this->belongsTo(
-            User::class,
-            'invited_by'
-        );
+        return $this->belongsTo(User::class, 'invited_by');
     }
 
     public function acceptedUser(): BelongsTo
     {
-        return $this->belongsTo(
-            User::class,
-            'accepted_user_id'
-        );
-    }
-
-    public function scopePending($query)
-    {
-        return $query->where('status', 'pending');
-    }
-
-    public function scopeAccepted($query)
-    {
-        return $query->where('status', 'accepted');
-    }
-
-    public function scopeExpired($query)
-    {
-        return $query->where('status', 'expired');
-    }
-
-    public function scopeRejected($query)
-    {
-        return $query->where('status', 'rejected');
-    }
-
-    public function isPending(): bool
-    {
-        return $this->status === 'pending';
-    }
-
-    public function isAccepted(): bool
-    {
-        return $this->status === 'accepted';
-    }
-
-    public function isExpired(): bool
-    {
-        return $this->status === 'expired'
-            || (
-                $this->status === 'pending'
-                && $this->expires_at?->isPast()
-            );
-    }
-
-    public function isRejected(): bool
-    {
-        return $this->status === 'rejected';
+        return $this->belongsTo(User::class, 'accepted_user_id');
     }
 }

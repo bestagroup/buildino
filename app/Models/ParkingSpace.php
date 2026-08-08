@@ -2,16 +2,21 @@
 
 namespace App\Models;
 
+use App\Enums\ParkingType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ParkingSpace extends Model
 {
     use HasFactory;
 
+    protected $table = 'parking_spaces';
+
     protected $fillable = [
-        'unit_id',
+        'building_id',
         'parking_number',
         'title',
         'type',
@@ -22,31 +27,24 @@ class ParkingSpace extends Model
     {
         return [
             'is_active' => 'boolean',
+            'type' => ParkingType::class,
         ];
     }
 
-    public function unit(): BelongsTo
+    public function building(): BelongsTo
     {
-        return $this->belongsTo(Unit::class);
+        return $this->belongsTo(Building::class, 'building_id');
     }
 
-    public function scopeActive($query)
+    public function unitParkingAssignments(): HasMany
     {
-        return $query->where('is_active', true);
+        return $this->hasMany(UnitParkingAssignment::class, 'parking_space_id');
     }
 
-    public function scopePrivate($query)
+    public function units(): BelongsToMany
     {
-        return $query->where('type', 'private');
-    }
-
-    public function scopeShared($query)
-    {
-        return $query->where('type', 'shared');
-    }
-
-    public function scopeGuest($query)
-    {
-        return $query->where('type', 'guest');
+        return $this->belongsToMany(Unit::class, 'unit_parking_assignments')
+            ->withPivot(['starts_at', 'ends_at'])
+            ->withTimestamps();
     }
 }

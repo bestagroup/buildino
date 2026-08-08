@@ -2,15 +2,20 @@
 
 namespace App\Models;
 
+use App\Enums\UnitUsageType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Unit extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected $table = 'units';
 
     protected $fillable = [
         'floor_id',
@@ -19,106 +24,95 @@ class Unit extends Model
         'area',
         'bedrooms',
         'usage_type',
-        'ownership_status',
         'is_active',
     ];
 
     protected function casts(): array
     {
         return [
-            'area' => 'integer',
+            'area' => 'decimal:2',
             'bedrooms' => 'integer',
             'is_active' => 'boolean',
+            'usage_type' => UnitUsageType::class,
         ];
     }
 
     public function floor(): BelongsTo
     {
-        return $this->belongsTo(Floor::class);
+        return $this->belongsTo(Floor::class, 'floor_id');
     }
 
-    public function parkingSpaces(): HasMany
+    public function unitParkingAssignments(): HasMany
     {
-        return $this->hasMany(ParkingSpace::class);
+        return $this->hasMany(UnitParkingAssignment::class, 'unit_id');
     }
 
-    public function storageUnits(): HasMany
+    public function unitStorageAssignments(): HasMany
     {
-        return $this->hasMany(StorageUnit::class);
+        return $this->hasMany(UnitStorageAssignment::class, 'unit_id');
     }
 
-    public function documents(): HasMany
+    public function unitOwnerships(): HasMany
     {
-        return $this->hasMany(UnitDocument::class);
+        return $this->hasMany(UnitOwnership::class, 'unit_id');
     }
 
-    public function activeParkingSpaces(): HasMany
+    public function unitOccupancies(): HasMany
     {
-        return $this->hasMany(ParkingSpace::class)
-            ->where('is_active', true);
+        return $this->hasMany(UnitOccupancy::class, 'unit_id');
     }
 
-    public function activeStorageUnits(): HasMany
+    public function unitInvitations(): HasMany
     {
-        return $this->hasMany(StorageUnit::class)
-            ->where('is_active', true);
+        return $this->hasMany(UnitInvitation::class, 'unit_id');
     }
 
-    public function activeDocuments(): HasMany
+    public function guestVisits(): HasMany
     {
-        return $this->hasMany(UnitDocument::class);
+        return $this->hasMany(GuestVisit::class, 'unit_id');
     }
 
-    public function scopeActive($query)
+    public function chargeCalculations(): HasMany
     {
-        return $query->where('is_active', true);
+        return $this->hasMany(ChargeCalculation::class, 'unit_id');
     }
 
-    public function scopeResidential($query)
+    public function unitInvoices(): HasMany
     {
-        return $query->where('usage_type', 'residential');
+        return $this->hasMany(UnitInvoice::class, 'unit_id');
     }
 
-    public function scopeCommercial($query)
+    public function facilityReservations(): HasMany
     {
-        return $query->where('usage_type', 'commercial');
+        return $this->hasMany(FacilityReservation::class, 'unit_id');
     }
 
-    public function scopeOffice($query)
+    public function supportTickets(): HasMany
     {
-        return $query->where('usage_type', 'office');
+        return $this->hasMany(SupportTicket::class, 'unit_id');
     }
 
-    public function scopeVacant($query)
+    public function serviceRequests(): HasMany
     {
-        return $query->where('ownership_status', 'vacant');
+        return $this->hasMany(ServiceRequest::class, 'unit_id');
     }
 
-    public function scopeOwnerOccupied($query)
+    public function parkingSpaces(): BelongsToMany
     {
-        return $query->where('ownership_status', 'owner_occupied');
+        return $this->belongsToMany(ParkingSpace::class, 'unit_parking_assignments')
+            ->withPivot(['starts_at', 'ends_at'])
+            ->withTimestamps();
     }
 
-    public function scopeTenantOccupied($query)
+    public function storageUnits(): BelongsToMany
     {
-        return $query->where('ownership_status', 'tenant_occupied');
-    }
-    public function residents(): HasMany
-    {
-        return $this->hasMany(UnitResident::class);
-    }
-    public function residentHistories(): HasMany
-    {
-        return $this->hasMany(ResidentHistory::class);
+        return $this->belongsToMany(StorageUnit::class, 'unit_storage_assignments')
+            ->withPivot(['starts_at', 'ends_at'])
+            ->withTimestamps();
     }
 
-    public function invitations(): HasMany
+    public function fileRelations(): MorphMany
     {
-        return $this->hasMany(UnitInvitation::class);
-    }
-
-    public function guests(): HasMany
-    {
-        return $this->hasMany(UnitGuest::class);
+        return $this->morphMany(FileRelation::class, 'related');
     }
 }

@@ -5,13 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StorageUnit extends Model
 {
     use HasFactory;
 
+    protected $table = 'storage_units';
+
     protected $fillable = [
-        'unit_id',
+        'building_id',
         'storage_number',
         'area',
         'is_active',
@@ -20,18 +24,25 @@ class StorageUnit extends Model
     protected function casts(): array
     {
         return [
-            'area' => 'integer',
+            'area' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
 
-    public function unit(): BelongsTo
+    public function building(): BelongsTo
     {
-        return $this->belongsTo(Unit::class);
+        return $this->belongsTo(Building::class, 'building_id');
     }
 
-    public function scopeActive($query)
+    public function unitStorageAssignments(): HasMany
     {
-        return $query->where('is_active', true);
+        return $this->hasMany(UnitStorageAssignment::class, 'storage_unit_id');
+    }
+
+    public function units(): BelongsToMany
+    {
+        return $this->belongsToMany(Unit::class, 'unit_storage_assignments')
+            ->withPivot(['starts_at', 'ends_at'])
+            ->withTimestamps();
     }
 }

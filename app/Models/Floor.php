@@ -11,6 +11,8 @@ class Floor extends Model
 {
     use HasFactory;
 
+    protected $table = 'floors';
+
     protected $fillable = [
         'block_id',
         'floor_number',
@@ -28,17 +30,11 @@ class Floor extends Model
 
     public function block(): BelongsTo
     {
-        return $this->belongsTo(Block::class);
+        return $this->belongsTo(Block::class, 'block_id');
     }
 
     public function units(): HasMany
     {
-        return $this->hasMany(Unit::class);
-    }
-
-    public function activeUnits(): HasMany
-    {
-        return $this->hasMany(Unit::class)
-            ->where('is_active', true);
+        return $this->hasMany(Unit::class, 'floor_id');
     }
 }

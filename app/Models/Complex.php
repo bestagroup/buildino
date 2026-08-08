@@ -4,21 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Complex extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'complexes';
+
     protected $fillable = [
         'code',
         'title',
-        'manager_name',
-        'manager_mobile',
         'province',
         'city',
         'address',
+        'postal_code',
         'latitude',
         'longitude',
         'sort_order',
@@ -28,8 +30,8 @@ class Complex extends Model
     protected function casts(): array
     {
         return [
-            'latitude' => 'integer',
-            'longitude' => 'integer',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
         ];
@@ -37,12 +39,6 @@ class Complex extends Model
 
     public function buildings(): HasMany
     {
-        return $this->hasMany(Building::class);
-    }
-
-    public function activeBuildings(): HasMany
-    {
-        return $this->hasMany(Building::class)
-            ->where('is_active', true);
+        return $this->hasMany(Building::class, 'complex_id');
     }
 }

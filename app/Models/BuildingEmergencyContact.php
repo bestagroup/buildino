@@ -5,10 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BuildingEmergencyContact extends Model
 {
     use HasFactory;
+
+    protected $table = 'building_emergency_contacts';
 
     protected $fillable = [
         'building_id',
@@ -27,11 +30,6 @@ class BuildingEmergencyContact extends Model
 
     public function building(): BelongsTo
     {
-        return $this->belongsTo(Building::class);
-    }
-
-    public function scopeOrdered($query)
-    {
-        return $query->orderBy('sort_order');
+        return $this->belongsTo(Building::class, 'building_id');
     }
 }
