@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentStatus;
+use App\Events\PaymentVerified;
 use App\Models\Payment;
 use App\Models\UnitInvoice;
 use App\Models\User;
@@ -22,7 +23,9 @@ class PaymentService
             }
 
             if (! in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Processing], true)) {
-                throw ValidationException::withMessages(['status' => 'Payment cannot be verified in its current status.']);
+                throw ValidationException::withMessages([
+                    'status' => 'Payment cannot be verified in its current status.',
+                ]);
             }
 
             $payment->update([
@@ -38,17 +41,32 @@ class PaymentService
                 }
 
                 $invoice = UnitInvoice::query()->lockForUpdate()->find($allocation->payable_id);
-                if (! $invoice) continue;
 
-                $paid = min($invoice->total_amount, (int) $invoice->paid_amount + (int) $allocation->amount);
+                if (! $invoice) {
+                    continue;
+                }
+
+                $paid = min(
+                    (int) $invoice->total_amount,
+                    (int) $invoice->paid_amount + (int) $allocation->amount,
+                );
+
                 $invoice->update([
                     'paid_amount' => $paid,
                     'outstanding_amount' => max(0, (int) $invoice->total_amount - $paid),
-                    'status' => $paid >= $invoice->total_amount ? InvoiceStatus::Paid : InvoiceStatus::Partial,
+                    'status' => $paid >= $invoice->total_amount
+                        ? InvoiceStatus::Paid
+                        : InvoiceStatus::Partial,
                 ]);
             }
 
-            return $payment->refresh();
-        });
+            $verified = $payment->refresh();
+
+            DB::afterCommit(
+                fn () => PaymentVerified::dispatch($verified)
+            );
+
+            return $verified;
+        }, 3);
     }
 }

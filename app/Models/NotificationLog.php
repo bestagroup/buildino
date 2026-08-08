@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
-use App\Enums\NotificationStatus;
 use App\Enums\NotificationChannel;
+use App\Enums\NotificationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class NotificationLog extends Model
@@ -17,7 +15,9 @@ class NotificationLog extends Model
     protected $table = 'notification_logs';
 
     protected $fillable = [
-        'notifiable',
+        'idempotency_key',
+        'notifiable_type',
+        'notifiable_id',
         'notification_type',
         'channel',
         'provider',
@@ -33,8 +33,6 @@ class NotificationLog extends Model
         'failed_at',
         'failure_reason',
         'response',
-        'notifiable_type',
-        'notifiable_id',
     ];
 
     protected function casts(): array
