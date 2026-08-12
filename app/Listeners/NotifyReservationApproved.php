@@ -1,0 +1,35 @@
+<?php
+
+namespace App\Listeners;
+
+use App\Data\Notifications\NotificationMessage;
+use App\Events\FacilityReservationApproved;
+use App\Listeners\Concerns\QueuesUserNotifications;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Collection;
+
+class NotifyReservationApproved implements ShouldQueue
+{
+    use Queueable, QueuesUserNotifications;
+
+    public function handle(FacilityReservationApproved $event): void
+    {
+        $reservation = $event->reservation->loadMissing('user', 'buildingFacility');
+
+        if (! $reservation->user) {
+            return;
+        }
+
+        $this->queueForUsers(
+            new Collection([$reservation->user]),
+            new NotificationMessage(
+                type: 'reservation.approved',
+                title: 'تأیید رزرو',
+                message: "رزرو {$reservation->buildingFacility?->title} تأیید شد.",
+                data: ['reservation_id' => $reservation->id],
+            ),
+            "reservation-approved:{$reservation->id}",
+        );
+    }
+}
