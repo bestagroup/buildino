@@ -43,6 +43,15 @@
                 0 => '*',
             ),
         ),
+        'darkaonline/l5-swagger' => array(
+            'pretty_version' => '11.1.0',
+            'version' => '11.1.0.0',
+            'reference' => '110b59478c9417c13794cef62a82b019433d642a',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../darkaonline/l5-swagger',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'davedevelopment/hamcrest-php' => array(
             'dev_requirement' => true,
             'replaced' => array(
@@ -761,7 +770,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../phpstan/phpdoc-parser',
             'aliases' => array(),
-            'dev_requirement' => true,
+            'dev_requirement' => false,
         ),
         'phpunit/php-code-coverage' => array(
             'pretty_version' => '11.0.12',
@@ -947,6 +956,15 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+        'radebatz/type-info-extras' => array(
+            'pretty_version' => '1.0.7',
+            'version' => '1.0.7.0',
+            'reference' => '95a524a74a61648b44e355cb33d38db4b17ef5ce',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../radebatz/type-info-extras',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'ralouphie/getallheaders' => array(
             'pretty_version' => '3.0.3',
             'version' => '3.0.3.0',
@@ -1129,6 +1147,15 @@
             'install_path' => __DIR__ . '/../staabm/side-effects-detector',
             'aliases' => array(),
             'dev_requirement' => true,
+        ),
+        'swagger-api/swagger-ui' => array(
+            'pretty_version' => 'v5.32.13',
+            'version' => '5.32.13.0',
+            'reference' => '2a33d7805eb5fff693952cebb9203ee113ab4663',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../swagger-api/swagger-ui',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'symfony/clock' => array(
             'pretty_version' => 'v7.4.8',
@@ -1394,6 +1421,15 @@
                 0 => '2.3|3.0',
             ),
         ),
+        'symfony/type-info' => array(
+            'pretty_version' => 'v7.4.9',
+            'version' => '7.4.9.0',
+            'reference' => 'cafeedbf157b890e94ac5b83eaed85595106d5d6',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/type-info',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'symfony/uid' => array(
             'pretty_version' => 'v7.4.9',
             'version' => '7.4.9.0',
@@ -1419,7 +1455,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/yaml',
             'aliases' => array(),
-            'dev_requirement' => true,
+            'dev_requirement' => false,
         ),
         'ta-tikoma/phpunit-architecture-test' => array(
             'pretty_version' => '0.8.7',
@@ -1474,6 +1510,15 @@
             'install_path' => __DIR__ . '/../webmozart/assert',
             'aliases' => array(),
             'dev_requirement' => true,
+        ),
+        'zircote/swagger-php' => array(
+            'pretty_version' => '6.5.3',
+            'version' => '6.5.3.0',
+            'reference' => 'd0a5edd84dd5e116643c79e53d46814c5a5e4c04',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../zircote/swagger-php',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
     ),
 );

@@ -19,9 +19,9 @@ use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Api\V1\UnitInvoiceController;
 use App\Http\Controllers\Api\V1\UnitOccupancyOperationController;
 use Illuminate\Support\Facades\Route;
-
+require __DIR__.'/auth_v1.php';
 Route::prefix('v1')
-    ->middleware(['auth:sanctum'])
+    ->middleware(['throttle:api-v1', 'auth:sanctum', 'user.active', 'identity.verified'])
     ->group(function (): void {
         Route::apiResources([
             'complexes' => ComplexController::class,
@@ -44,7 +44,7 @@ Route::prefix('v1')
         Route::get('facility-reservations/{facilityReservation}', [FacilityReservationController::class, 'show']);
         Route::post('facility-reservations/{facilityReservation}/approve', [FacilityReservationController::class, 'approve']);
 
-        Route::post('payments/{payment}/verify', [PaymentOperationController::class, 'verify']);
+        Route::post('payments/{payment}/verify', [PaymentOperationController::class, 'verify'])->middleware('throttle:payments');
         Route::post('invoices/{unitInvoice}/issue', [InvoiceOperationController::class, 'issue']);
 
         Route::post('unit-occupancies', [UnitOccupancyOperationController::class, 'store']);

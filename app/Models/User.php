@@ -346,4 +346,65 @@ class User extends Authenticatable
         return $this->hasMany(UserRoleAssignment::class);
     }
 
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Role::class,
+            'user_role_assignments',
+            'user_id',
+            'role_id'
+        )
+            ->withPivot([
+                'scope_type',
+                'scope_id',
+                'starts_at',
+                'ends_at',
+                'is_active',
+                'assigned_by',
+            ])
+            ->withTimestamps();
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return $this->roles()
+            ->where('roles.name', $role)
+            ->wherePivot('is_active', true)
+            ->where(function ($query) {
+                $query->whereNull('user_role_assignments.starts_at')
+                    ->orWhere('user_role_assignments.starts_at', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('user_role_assignments.ends_at')
+                    ->orWhere('user_role_assignments.ends_at', '>=', now());
+            })
+            ->exists();
+    }
+
+    public function hasAnyRole(array $roles): bool
+    {
+        return $this->roles()
+            ->whereIn('roles.name', $roles)
+            ->wherePivot('is_active', true)
+            ->where(function ($query) {
+                $query->whereNull('user_role_assignments.starts_at')
+                    ->orWhere('user_role_assignments.starts_at', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('user_role_assignments.ends_at')
+                    ->orWhere('user_role_assignments.ends_at', '>=', now());
+            })
+            ->exists();
+    }
+
+    public function hasAllRoles(array $roles): bool
+    {
+        $roles = array_values(array_unique($roles));
+
+        return $this->roles()
+                ->whereIn('roles.name', $roles)
+                ->distinct()
+                ->count('roles.id') === count($roles);
+    }
+
 }
