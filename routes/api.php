@@ -612,3 +612,4 @@ Route::prefix('v1')
             [SupportTicketOperationController::class, 'resolve']
         );
     });
+require __DIR__.'/wallet_operations_v1.php';

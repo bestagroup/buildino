@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CancelFacilityReservationRequest;
 use App\Http\Requests\StoreFacilityReservationRequest;
+use App\Http\Requests\PayFacilityReservationRequest;
 use App\Http\Resources\V1\FacilityReservationResource;
 use App\Models\Building;
 use App\Models\BuildingFacility;
 use App\Models\FacilityReservation;
 use App\Models\Unit;
 use App\Services\FacilityReservationService;
+use App\Services\Facility\FacilityWalletPaymentService;
+use App\Enums\FacilityWalletPayerSource;
 use App\Services\Security\FacilityAccessService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -176,6 +179,40 @@ class FacilityReservationController extends Controller
         );
     }
 
+
+    public function pay(
+        PayFacilityReservationRequest $request,
+        FacilityReservation $facilityReservation,
+        FacilityWalletPaymentService $service,
+        FacilityAccessService $access
+    ): FacilityReservationResource {
+        abort_unless(
+            $access->canViewReservation(
+                $request->user(),
+                $facilityReservation
+            ),
+            403
+        );
+
+        $service->pay(
+            $facilityReservation,
+            $request->user(),
+            FacilityWalletPayerSource::from(
+                $request->validated('payer_source')
+            )
+        );
+
+        $facilityReservation->refresh();
+
+        $this->loadReservation(
+            $facilityReservation
+        );
+
+        return new FacilityReservationResource(
+            $facilityReservation
+        );
+    }
+
     public function approve(
         Request $request,
         FacilityReservation $facilityReservation,
@@ -281,6 +318,8 @@ class FacilityReservationController extends Controller
             'user:id,first_name,last_name',
             'approvedBy:id,first_name,last_name',
             'reservationCancellations',
+            'walletPayment.sourceWallet',
+            'walletPayment.buildingWallet',
         ]);
     }
 }

@@ -12,6 +12,8 @@ use App\Models\FacilityReservationRule;
 use App\Models\FacilitySchedule;
 use App\Models\FacilityTimeSlot;
 use App\Models\ReservationCancellation;
+use App\Enums\RefundStatus;
+use App\Services\Facility\FacilityWalletPaymentService;
 use App\Models\Unit;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -20,6 +22,11 @@ use Illuminate\Validation\ValidationException;
 
 class FacilityReservationService
 {
+    public function __construct(
+        private readonly FacilityWalletPaymentService $walletPayments
+    ) {
+    }
+
     public function create(array $data): FacilityReservation
     {
         return DB::transaction(function () use ($data): FacilityReservation {
@@ -93,8 +100,39 @@ class FacilityReservationService
             $discount = 0;
             $finalAmount = max(0, $price - $discount);
 
+            /*
+             * Reservation approval lifecycle and payment lifecycle are
+             * intentionally independent concerns.
+             *
+             * Backward-compatible rule:
+             * - When the facility does NOT require payment, preserve the
+             *   original reservation lifecycle exactly:
+             *     manual approval => pending
+             *     auto confirm     => approved
+             *
+             * Wallet rule:
+             * - Only facilities explicitly configured with
+             *   requires_payment=true and a positive final amount enter
+             *   payment_pending.
+             */
+            $requiresPayment = $facility->requires_payment === true
+                && $finalAmount > 0;
+
             $autoConfirm = (bool) ($rule?->auto_confirm ?? false)
                 && ! $facility->requires_approval;
+
+            if ($requiresPayment) {
+                $reservationStatus = ReservationStatus::PaymentPending;
+                $approvedAt = null;
+            } else {
+                $reservationStatus = $autoConfirm
+                    ? ReservationStatus::Approved
+                    : ReservationStatus::Pending;
+
+                $approvedAt = $autoConfirm
+                    ? now()
+                    : null;
+            }
 
             $reservationData = [
                 'uuid' => $data['uuid'] ?? (string) str()->uuid(),
@@ -109,19 +147,35 @@ class FacilityReservationService
                 'discount_amount' => $discount,
                 'final_amount' => $finalAmount,
                 'rule_snapshot' => $this->ruleSnapshot($rule),
-                'status' => $autoConfirm ? ReservationStatus::Approved : ReservationStatus::Pending,
-                'approval_type' => $autoConfirm ? ReservationApprovalType::Automatic : ReservationApprovalType::Manual,
+                'status' => $reservationStatus,
+                'approval_type' => $autoConfirm
+                    ? ReservationApprovalType::Automatic
+                    : ReservationApprovalType::Manual,
                 'description' => $data['description'] ?? null,
-                'approved_at' => $autoConfirm ? now() : null,
+                'approved_at' => $approvedAt,
             ];
 
-            $reservation = FacilityReservation::query()->create($reservationData);
+            $reservation = FacilityReservation::query()->create(
+                $reservationData
+            );
 
-            DB::afterCommit(function () use ($reservation, $autoConfirm): void {
-                FacilityReservationCreated::dispatch($reservation->fresh());
+            DB::afterCommit(function () use (
+                $reservation,
+                $autoConfirm,
+                $requiresPayment
+            ): void {
+                FacilityReservationCreated::dispatch(
+                    $reservation->fresh()
+                );
 
-                if ($autoConfirm) {
-                    FacilityReservationApproved::dispatch($reservation->fresh());
+                /*
+                 * Preserve the original auto-confirm event semantics for
+                 * non-payment facilities, regardless of their display price.
+                 */
+                if ($autoConfirm && ! $requiresPayment) {
+                    FacilityReservationApproved::dispatch(
+                        $reservation->fresh()
+                    );
                 }
             });
 
@@ -185,14 +239,29 @@ class FacilityReservationService
         ?string $reason = null,
         bool $force = false
     ): FacilityReservation {
-        return DB::transaction(function () use ($reservation, $user, $reason, $force): FacilityReservation {
+        $result = DB::transaction(function () use (
+            $reservation,
+            $user,
+            $reason,
+            $force
+        ): array {
             $reservation = FacilityReservation::query()
-                ->with(['buildingFacility.building', 'buildingFacility.facilityReservationRules'])
+                ->with([
+                    'buildingFacility.building',
+                    'buildingFacility.facilityReservationRules',
+                    'walletPayment',
+                ])
                 ->lockForUpdate()
                 ->findOrFail($reservation->getKey());
 
             if ($reservation->status === ReservationStatus::Cancelled) {
-                return $reservation;
+                return [
+                    'reservation' => $reservation,
+                    'cancellation' => $reservation
+                        ->reservationCancellations()
+                        ->latest('id')
+                        ->first(),
+                ];
             }
 
             if (! in_array($reservation->status, [
@@ -206,18 +275,39 @@ class FacilityReservationService
                 ]);
             }
 
-            $currentRule = $reservation->buildingFacility?->facilityReservationRules?->first();
-            $ruleData = $reservation->rule_snapshot ?: $this->ruleSnapshot($currentRule) ?: [];
-            $cancelBeforeMinutes = (int) ($ruleData['cancel_before_minutes'] ?? 0);
+            $currentRule = $reservation
+                ->buildingFacility
+                ?->facilityReservationRules
+                ?->first();
 
-            $timezone = $reservation->buildingFacility?->building?->timezone ?: config('app.timezone');
+            $ruleData = $reservation->rule_snapshot
+                ?: $this->ruleSnapshot($currentRule)
+                ?: [];
+
+            $cancelBeforeMinutes = (int) (
+                $ruleData['cancel_before_minutes'] ?? 0
+            );
+
+            $timezone = $reservation
+                ->buildingFacility
+                ?->building
+                ?->timezone
+                ?: config('app.timezone');
+
             $startAt = CarbonImmutable::parse(
-                $reservation->reservation_date->toDateString().' '.$reservation->start_time,
+                $reservation->reservation_date->toDateString()
+                    .' '
+                    .$reservation->start_time,
                 $timezone
             );
 
-            if (! $force && $cancelBeforeMinutes > 0
-                && CarbonImmutable::now($timezone)->addMinutes($cancelBeforeMinutes)->gt($startAt)) {
+            if (
+                ! $force
+                && $cancelBeforeMinutes > 0
+                && CarbonImmutable::now($timezone)
+                    ->addMinutes($cancelBeforeMinutes)
+                    ->gt($startAt)
+            ) {
                 throw ValidationException::withMessages([
                     'status' => ['The cancellation deadline for this reservation has passed.'],
                 ]);
@@ -228,25 +318,69 @@ class FacilityReservationService
                 (int) ($ruleData['cancellation_fee'] ?? 0)
             );
 
-            $refundPercentage = min(100, max(0, (int) ($ruleData['refund_percentage'] ?? 100)));
-            $refundableBase = max(0, (int) $reservation->final_amount - $cancellationFee);
-            $refundAmount = (int) floor($refundableBase * ($refundPercentage / 100));
+            $refundPercentage = min(
+                100,
+                max(
+                    0,
+                    (int) ($ruleData['refund_percentage'] ?? 100)
+                )
+            );
 
-            ReservationCancellation::query()->create([
+            $refundableBase = max(
+                0,
+                (int) $reservation->final_amount - $cancellationFee
+            );
+
+            $refundAmount = $reservation->walletPayment
+                ? (int) floor(
+                    $refundableBase * ($refundPercentage / 100)
+                )
+                : 0;
+
+            $cancellation = ReservationCancellation::query()->create([
                 'facility_reservation_id' => $reservation->getKey(),
                 'cancelled_by' => $user->getKey(),
                 'reason' => $reason,
                 'cancellation_fee' => $cancellationFee,
                 'refund_amount' => $refundAmount,
-                'refund_status' => null,
+                'refund_status' => $refundAmount > 0
+                    ? RefundStatus::Pending
+                    : null,
                 'refund_payment_id' => null,
+                'refund_wallet_transfer_id' => null,
                 'cancelled_at' => now(),
             ]);
 
-            $reservation->update(['status' => ReservationStatus::Cancelled]);
+            $reservation->update([
+                'status' => ReservationStatus::Cancelled,
+            ]);
 
-            return $reservation->refresh();
+            return [
+                'reservation' => $reservation->refresh(),
+                'cancellation' => $cancellation,
+            ];
         }, 3);
+
+        /*
+         * Cancellation itself must remain valid even if the building
+         * wallet temporarily cannot fund the refund. In that case the
+         * refund stays pending and can be retried by support.
+         */
+        if (
+            $result['cancellation']
+            && (int) $result['cancellation']->refund_amount > 0
+        ) {
+            try {
+                $this->walletPayments->refund(
+                    $result['cancellation'],
+                    $user
+                );
+            } catch (ValidationException) {
+                // Keep refund_status=pending for later retry.
+            }
+        }
+
+        return $result['reservation']->refresh();
     }
 
     private function resolveTimeSlot(

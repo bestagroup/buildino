@@ -97,6 +97,25 @@ class FacilityReservationResource extends JsonResource
 
             'rule_snapshot' => $this->rule_snapshot,
 
+
+            'wallet_payment' => $this->whenLoaded(
+                'walletPayment',
+                fn (): ?array => $this->walletPayment
+                    ? [
+                        'id' => $this->walletPayment->id,
+                        'payer_source' => is_object($this->walletPayment->payer_source)
+                            ? $this->walletPayment->payer_source->value
+                            : $this->walletPayment->payer_source,
+                        'amount' => (int) $this->walletPayment->amount,
+                        'status' => $this->walletPayment->status,
+                        'source_wallet_id' => $this->walletPayment->source_wallet_id,
+                        'building_wallet_id' => $this->walletPayment->building_wallet_id,
+                        'paid_at' => $this->walletPayment->paid_at?->toISOString(),
+                    ]
+                    : null
+            ),
+
+
             'cancellations' => $this->whenLoaded(
                 'reservationCancellations',
                 fn () => $this->reservationCancellations
