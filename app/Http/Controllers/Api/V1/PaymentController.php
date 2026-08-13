@@ -2,52 +2,97 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Actions\Payment\CreatePayment;
-use App\Actions\Payment\UpdatePayment;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePaymentRequest;
-use App\Http\Requests\UpdatePaymentRequest;
+use App\Http\Resources\V1\PaymentResource;
+use App\Models\Building;
 use App\Models\Payment;
-use Illuminate\Http\JsonResponse;
+use App\Models\UnitInvoice;
+use App\Services\InvoiceAccessService;
+use App\Services\PaymentService;
+use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PaymentController extends Controller
 {
-    public function index(Request $request): JsonResponse
-    {
-        $this->authorize('viewAny', Payment::class);
+    public function index(
+        Request $request,
+        Building $building,
+        PermissionChecker $permissions
+    ): AnonymousResourceCollection {
+        abort_unless(
+            $permissions->allows(
+                $request->user(),
+                'payments.view',
+                $building
+            ),
+            403
+        );
 
-        $items = Payment::query()
-            ->latest('id')
-            ->paginate(min(max((int) $request->integer('per_page', 20), 1), 100));
-
-        return response()->json($items);
+        return PaymentResource::collection(
+            $building->payments()
+                ->with('paymentAllocations')
+                ->latest('id')
+                ->paginate(
+                    min(
+                        max($request->integer('per_page', 20), 1),
+                        100
+                    )
+                )
+                ->withQueryString()
+        );
     }
 
-    public function store(StorePaymentRequest $request, CreatePayment $action): JsonResponse
-    {
-        $this->authorize('create', Payment::class);
-        $model = $action->execute($request->validated());
+    public function store(
+        StorePaymentRequest $request,
+        UnitInvoice $unitInvoice,
+        InvoiceAccessService $access,
+        PaymentService $service
+    ) {
+        abort_unless(
+            $access->canPay(
+                $request->user(),
+                $unitInvoice
+            ),
+            403
+        );
 
-        return response()->json(['data' => $model], 201);
+        $payment = $service->createForInvoice(
+            $unitInvoice,
+            $request->user(),
+            $request->validated()
+        );
+
+        $payment->load('paymentAllocations');
+
+        return (new PaymentResource($payment))
+            ->response()
+            ->setStatusCode(201);
     }
 
-    public function show(Payment $model): JsonResponse
-    {
-        $this->authorize('view', $model);
-        return response()->json(['data' => $model]);
-    }
+    public function show(
+        Request $request,
+        Payment $payment,
+        PermissionChecker $permissions
+    ): PaymentResource {
+        $payment->loadMissing('building');
 
-    public function update(UpdatePaymentRequest $request, Payment $model, UpdatePayment $action): JsonResponse
-    {
-        $this->authorize('update', $model);
-        return response()->json(['data' => $action->execute($model, $request->validated())]);
-    }
+        $allowed = (int) $payment->payer_user_id
+                === (int) $request->user()->getKey()
+            || (
+                $payment->building
+                && $permissions->allows(
+                    $request->user(),
+                    'payments.view',
+                    $payment->building
+                )
+            );
 
-    public function destroy(Payment $model): JsonResponse
-    {
-        $this->authorize('delete', $model);
-        $model->delete();
-        return response()->json(status: 204);
+        abort_unless($allowed, 403);
+
+        $payment->load('paymentAllocations');
+
+        return new PaymentResource($payment);
     }
 }

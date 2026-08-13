@@ -2,19 +2,31 @@
 
 namespace App\Policies;
 
+use App\Models\Payment;
+use App\Models\User;
+
 class PaymentPolicy extends BasePolicy
 {
     protected function permissionPrefix(): string
     {
         return 'payments';
     }
-    public function verify(\App\Models\User $user, \App\Models\Payment $payment): bool
+
+    public function verify(User $user, Payment $payment): bool
     {
-        return $this->permissions->allows($user, 'payments.verify', $this->scope($payment));
+        return $this->permissions->allows(
+            $user,
+            'payments.verify',
+            $this->resolveScope($payment)
+        );
     }
 
-    public function refund(\App\Models\User $user, \App\Models\Payment $payment): bool
+    public function refund(User $user, Payment $payment): bool
     {
-        return $this->permissions->allows($user, 'payments.refund', $this->scope($payment));
+        return $this->permissions->allows(
+            $user,
+            'payments.refund',
+            $this->resolveScope($payment)
+        );
     }
 }

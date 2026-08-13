@@ -2,19 +2,14 @@
 
 namespace App\Models;
 
-use App\Enums\FinancialOperationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BuildingExpense extends Model
 {
     use HasFactory, SoftDeletes;
-
-    protected $table = 'building_expenses';
 
     protected $fillable = [
         'building_id',
@@ -39,37 +34,40 @@ class BuildingExpense extends Model
             'expense_date' => 'date',
             'approved_at' => 'datetime',
             'posted_at' => 'datetime',
-            'status' => FinancialOperationStatus::class,
         ];
     }
 
     public function building(): BelongsTo
     {
-        return $this->belongsTo(Building::class, 'building_id');
+        return $this->belongsTo(Building::class);
     }
 
     public function fund(): BelongsTo
     {
-        return $this->belongsTo(Fund::class, 'fund_id');
+        return $this->belongsTo(Fund::class);
     }
 
-    public function financialCategory(): BelongsTo
+    public function category(): BelongsTo
     {
-        return $this->belongsTo(FinancialCategory::class, 'financial_category_id');
+        return $this->belongsTo(
+            FinancialCategory::class,
+            'financial_category_id'
+        );
     }
 
-    public function createdBy(): BelongsTo
+    public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(
+            User::class,
+            'created_by'
+        );
     }
 
-    public function approvedBy(): BelongsTo
+    public function approver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'approved_by');
-    }
-
-    public function fileRelations(): MorphMany
-    {
-        return $this->morphMany(FileRelation::class, 'related');
+        return $this->belongsTo(
+            User::class,
+            'approved_by'
+        );
     }
 }

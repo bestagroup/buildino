@@ -7,7 +7,11 @@ use App\Http\Controllers\Api\V1\BuildingExpenseController;
 use App\Http\Controllers\Api\V1\BuildingFacilityController;
 use App\Http\Controllers\Api\V1\BuildingIncomeController;
 use App\Http\Controllers\Api\V1\ComplexController;
+use App\Http\Controllers\Api\V1\ChargeFormulaController;
+use App\Http\Controllers\Api\V1\ChargePeriodController;
+use App\Http\Controllers\Api\V1\FinancialTransactionController;
 use App\Http\Controllers\Api\V1\DocumentRecordController;
+use App\Http\Controllers\Api\V1\FacilityConfigurationController;
 use App\Http\Controllers\Api\V1\FacilityReservationController;
 use App\Http\Controllers\Api\V1\FloorController;
 use App\Http\Controllers\Api\V1\GuestVisitController;
@@ -309,18 +313,114 @@ Route::prefix('v1')
             [GuestVisitController::class, 'exit']
         );
 
-        Route::apiResources([
-            'facilities' => BuildingFacilityController::class,
-            'expenses' => BuildingExpenseController::class,
-            'incomes' => BuildingIncomeController::class,
-            'announcements' => AnnouncementController::class,
-            'service-requests' => ServiceRequestController::class,
-            'documents' => DocumentRecordController::class,
-            'meeting-minutes' => MeetingMinuteController::class,
-            'support-tickets' => SupportTicketController::class,
-            'payments' => PaymentController::class,
-            'invoices' => UnitInvoiceController::class,
-        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Building Facilities
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            'buildings/{building}/facilities',
+            [BuildingFacilityController::class, 'index']
+        );
+
+        Route::post(
+            'buildings/{building}/facilities',
+            [BuildingFacilityController::class, 'store']
+        );
+
+        Route::get(
+            'facilities/{buildingFacility}',
+            [BuildingFacilityController::class, 'show']
+        );
+
+        Route::patch(
+            'facilities/{buildingFacility}',
+            [BuildingFacilityController::class, 'update']
+        );
+
+        Route::delete(
+            'facilities/{buildingFacility}',
+            [BuildingFacilityController::class, 'destroy']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Facility Configuration
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            'facilities/{buildingFacility}/schedules',
+            [FacilityConfigurationController::class, 'schedules']
+        );
+
+        Route::post(
+            'facilities/{buildingFacility}/schedules',
+            [FacilityConfigurationController::class, 'storeSchedule']
+        );
+
+        Route::patch(
+            'facilities/{buildingFacility}/schedules/{facilitySchedule}',
+            [FacilityConfigurationController::class, 'updateSchedule']
+        );
+
+        Route::delete(
+            'facilities/{buildingFacility}/schedules/{facilitySchedule}',
+            [FacilityConfigurationController::class, 'destroySchedule']
+        );
+
+        Route::post(
+            'facilities/{buildingFacility}/schedules/{facilitySchedule}/time-slots',
+            [FacilityConfigurationController::class, 'storeTimeSlot']
+        );
+
+        Route::patch(
+            'facilities/{buildingFacility}/schedules/{facilitySchedule}/time-slots/{facilityTimeSlot}',
+            [FacilityConfigurationController::class, 'updateTimeSlot']
+        );
+
+        Route::delete(
+            'facilities/{buildingFacility}/schedules/{facilitySchedule}/time-slots/{facilityTimeSlot}',
+            [FacilityConfigurationController::class, 'destroyTimeSlot']
+        );
+
+        Route::get(
+            'facilities/{buildingFacility}/reservation-rule',
+            [FacilityConfigurationController::class, 'reservationRule']
+        );
+
+        Route::put(
+            'facilities/{buildingFacility}/reservation-rule',
+            [FacilityConfigurationController::class, 'upsertReservationRule']
+        );
+
+        Route::get(
+            'facilities/{buildingFacility}/blackouts',
+            [FacilityConfigurationController::class, 'blackouts']
+        );
+
+        Route::post(
+            'facilities/{buildingFacility}/blackouts',
+            [FacilityConfigurationController::class, 'storeBlackout']
+        );
+
+        Route::delete(
+            'facilities/{buildingFacility}/blackouts/{facilityBlackout}',
+            [FacilityConfigurationController::class, 'destroyBlackout']
+        );
+
+        Route::get(
+            'facilities/{buildingFacility}/availability',
+            [FacilityConfigurationController::class, 'availability']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Facility Reservations
+        |--------------------------------------------------------------------------
+        */
 
         Route::get(
             'facility-reservations',
@@ -328,7 +428,7 @@ Route::prefix('v1')
         );
 
         Route::post(
-            'facility-reservations',
+            'facilities/{buildingFacility}/reservations',
             [FacilityReservationController::class, 'store']
         );
 
@@ -343,14 +443,164 @@ Route::prefix('v1')
         );
 
         Route::post(
-            'payments/{payment}/verify',
-            [PaymentOperationController::class, 'verify']
-        )->middleware('throttle:payments');
+            'facility-reservations/{facilityReservation}/reject',
+            [FacilityReservationController::class, 'reject']
+        );
+
+        Route::post(
+            'facility-reservations/{facilityReservation}/cancel',
+            [FacilityReservationController::class, 'cancel']
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Charge Formulas & Charge Periods
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            'buildings/{building}/charge-formulas',
+            [ChargeFormulaController::class, 'index']
+        );
+
+        Route::post(
+            'buildings/{building}/charge-formulas',
+            [ChargeFormulaController::class, 'store']
+        );
+
+        Route::get(
+            'charge-formulas/{chargeFormula}',
+            [ChargeFormulaController::class, 'show']
+        );
+
+        Route::patch(
+            'charge-formulas/{chargeFormula}',
+            [ChargeFormulaController::class, 'update']
+        );
+
+        Route::get(
+            'buildings/{building}/charge-periods',
+            [ChargePeriodController::class, 'index']
+        );
+
+        Route::post(
+            'buildings/{building}/charge-periods',
+            [ChargePeriodController::class, 'store']
+        );
+
+        Route::get(
+            'charge-periods/{chargePeriod}',
+            [ChargePeriodController::class, 'show']
+        );
+
+        Route::patch(
+            'charge-periods/{chargePeriod}',
+            [ChargePeriodController::class, 'update']
+        );
+
+        Route::post(
+            'charge-periods/{chargePeriod}/calculate',
+            [ChargePeriodController::class, 'calculate']
+        );
+
+        Route::post(
+            'charge-periods/{chargePeriod}/issue',
+            [ChargePeriodController::class, 'issue']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Unit Invoices
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            'buildings/{building}/invoices',
+            [UnitInvoiceController::class, 'buildingIndex']
+        );
+
+        Route::get(
+            'units/{unit}/invoices',
+            [UnitInvoiceController::class, 'unitIndex']
+        );
+
+        Route::post(
+            'units/{unit}/invoices',
+            [UnitInvoiceController::class, 'store']
+        );
+
+        Route::get(
+            'invoices/{unitInvoice}',
+            [UnitInvoiceController::class, 'show']
+        );
+
+        Route::patch(
+            'invoices/{unitInvoice}',
+            [UnitInvoiceController::class, 'update']
+        );
+
+        Route::delete(
+            'invoices/{unitInvoice}',
+            [UnitInvoiceController::class, 'destroy']
+        );
 
         Route::post(
             'invoices/{unitInvoice}/issue',
             [InvoiceOperationController::class, 'issue']
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Payments
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            'buildings/{building}/payments',
+            [PaymentController::class, 'index']
+        );
+
+        Route::post(
+            'invoices/{unitInvoice}/payments',
+            [PaymentController::class, 'store']
+        );
+
+        Route::get(
+            'payments/{payment}',
+            [PaymentController::class, 'show']
+        );
+
+        Route::post(
+            'payments/{payment}/verify',
+            [PaymentOperationController::class, 'verify']
+        )->middleware('throttle:payments');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Immutable Financial Ledger
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            'buildings/{building}/financial-transactions',
+            [FinancialTransactionController::class, 'index']
+        );
+
+        Route::post(
+            'buildings/{building}/financial-transactions',
+            [FinancialTransactionController::class, 'store']
+        );
+
+        Route::apiResources([
+            'expenses' => BuildingExpenseController::class,
+            'incomes' => BuildingIncomeController::class,
+            'announcements' => AnnouncementController::class,
+            'service-requests' => ServiceRequestController::class,
+            'documents' => DocumentRecordController::class,
+            'meeting-minutes' => MeetingMinuteController::class,
+            'support-tickets' => SupportTicketController::class,
+        ]);
 
         Route::post(
             'support-tickets/{supportTicket}/assign',

@@ -2,10 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\ReservationApprovalType;
-use App\Enums\ReservationStatus;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreFacilityReservationRequest extends FormRequest
 {
@@ -17,19 +14,59 @@ class StoreFacilityReservationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'building_facility_id' => 'required|integer|exists:building_facilities,id',
-            'facility_time_slot_id' => 'nullable|integer|exists:facility_time_slots,id',
-            'unit_id' => 'required|integer|exists:units,id',
-            'user_id' => 'required|integer|exists:users,id',
-            'reservation_date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'price' => 'sometimes|integer|min:0',
-            'discount_amount' => 'sometimes|integer|min:0',
-            'final_amount' => 'sometimes|integer|min:0',
-            'status' => ['sometimes', Rule::enum(ReservationStatus::class)],
-            'approval_type' => ['sometimes', Rule::enum(ReservationApprovalType::class)],
-            'description' => 'nullable|string',
+            'facility_time_slot_id' => [
+                'nullable',
+                'integer',
+                'exists:facility_time_slots,id',
+            ],
+            'unit_id' => [
+                'required',
+                'integer',
+                'exists:units,id',
+            ],
+            'reservation_date' => [
+                'required',
+                'date',
+                'after_or_equal:today',
+            ],
+            'start_time' => [
+                'nullable',
+                'required_without:facility_time_slot_id',
+                'date_format:H:i',
+            ],
+            'end_time' => [
+                'nullable',
+                'required_without:facility_time_slot_id',
+                'date_format:H:i',
+            ],
+            'description' => [
+                'nullable',
+                'string',
+                'max:5000',
+            ],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            if (
+                $this->filled('facility_time_slot_id')
+                || ! $this->filled('start_time')
+                || ! $this->filled('end_time')
+            ) {
+                return;
+            }
+
+            if (
+                strtotime((string) $this->input('end_time'))
+                <= strtotime((string) $this->input('start_time'))
+            ) {
+                $validator->errors()->add(
+                    'end_time',
+                    'End time must be after start time.'
+                );
+            }
+        });
     }
 }

@@ -2,52 +2,176 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Actions\UnitInvoice\CreateUnitInvoice;
-use App\Actions\UnitInvoice\UpdateUnitInvoice;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUnitInvoiceRequest;
 use App\Http\Requests\UpdateUnitInvoiceRequest;
+use App\Http\Resources\V1\UnitInvoiceResource;
+use App\Models\Building;
+use App\Models\Unit;
 use App\Models\UnitInvoice;
-use Illuminate\Http\JsonResponse;
+use App\Services\InvoiceAccessService;
+use App\Services\InvoiceService;
+use App\Services\Security\UnitResidentAccessService;
+use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 class UnitInvoiceController extends Controller
 {
-    public function index(Request $request): JsonResponse
-    {
-        $this->authorize('viewAny', UnitInvoice::class);
+    public function buildingIndex(
+        Request $request,
+        Building $building,
+        PermissionChecker $permissions
+    ): AnonymousResourceCollection {
+        abort_unless(
+            $permissions->allows(
+                $request->user(),
+                'invoices.view',
+                $building
+            ),
+            403
+        );
 
-        $items = UnitInvoice::query()
-            ->latest('id')
-            ->paginate(min(max((int) $request->integer('per_page', 20), 1), 100));
+        $query = $building->unitInvoices()
+            ->with('unit:id,floor_id,unit_number,title');
 
-        return response()->json($items);
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+
+        return UnitInvoiceResource::collection(
+            $query->latest('id')
+                ->paginate(
+                    min(
+                        max($request->integer('per_page', 20), 1),
+                        100
+                    )
+                )
+                ->withQueryString()
+        );
     }
 
-    public function store(StoreUnitInvoiceRequest $request, CreateUnitInvoice $action): JsonResponse
-    {
-        $this->authorize('create', UnitInvoice::class);
-        $model = $action->execute($request->validated());
+    public function unitIndex(
+        Request $request,
+        Unit $unit,
+        PermissionChecker $permissions,
+        UnitResidentAccessService $residentAccess
+    ): AnonymousResourceCollection {
+        $unit->loadMissing('floor.block.building');
+        $building = $unit->floor?->block?->building;
 
-        return response()->json(['data' => $model], 201);
+        abort_unless(
+            $building && (
+                $permissions->allows(
+                    $request->user(),
+                    'invoices.view',
+                    $building
+                )
+                || $residentAccess->allows(
+                    $request->user(),
+                    $unit
+                )
+            ),
+            403
+        );
+
+        return UnitInvoiceResource::collection(
+            $unit->unitInvoices()
+                ->latest('id')
+                ->paginate(
+                    min(
+                        max($request->integer('per_page', 20), 1),
+                        100
+                    )
+                )
+                ->withQueryString()
+        );
     }
 
-    public function show(UnitInvoice $model): JsonResponse
-    {
-        $this->authorize('view', $model);
-        return response()->json(['data' => $model]);
+    public function store(
+        StoreUnitInvoiceRequest $request,
+        Unit $unit,
+        InvoiceService $service,
+        PermissionChecker $permissions
+    ) {
+        $unit->loadMissing('floor.block.building');
+        $building = $unit->floor?->block?->building;
+
+        abort_unless(
+            $building && $permissions->allows(
+                $request->user(),
+                'invoices.create',
+                $building
+            ),
+            403
+        );
+
+        $invoice = $service->createManual(
+            $unit,
+            $request->user(),
+            $request->validated()
+        );
+
+        $invoice->load([
+            'unit:id,floor_id,unit_number,title',
+            'invoiceItems',
+        ]);
+
+        return (new UnitInvoiceResource($invoice))
+            ->response()
+            ->setStatusCode(201);
     }
 
-    public function update(UpdateUnitInvoiceRequest $request, UnitInvoice $model, UpdateUnitInvoice $action): JsonResponse
-    {
-        $this->authorize('update', $model);
-        return response()->json(['data' => $action->execute($model, $request->validated())]);
+    public function show(
+        Request $request,
+        UnitInvoice $unitInvoice,
+        InvoiceAccessService $access
+    ): UnitInvoiceResource {
+        abort_unless(
+            $access->canView(
+                $request->user(),
+                $unitInvoice
+            ),
+            403
+        );
+
+        $unitInvoice->load([
+            'unit:id,floor_id,unit_number,title',
+            'invoiceItems',
+        ]);
+
+        return new UnitInvoiceResource($unitInvoice);
     }
 
-    public function destroy(UnitInvoice $model): JsonResponse
-    {
-        $this->authorize('delete', $model);
-        $model->delete();
-        return response()->json(status: 204);
+    public function update(
+        UpdateUnitInvoiceRequest $request,
+        UnitInvoice $unitInvoice,
+        InvoiceService $service
+    ): UnitInvoiceResource {
+        $this->authorize('update', $unitInvoice);
+
+        $unitInvoice = $service->updateDraft(
+            $unitInvoice,
+            $request->validated()
+        );
+
+        $unitInvoice->load([
+            'unit:id,floor_id,unit_number,title',
+            'invoiceItems',
+        ]);
+
+        return new UnitInvoiceResource($unitInvoice);
+    }
+
+    public function destroy(
+        UnitInvoice $unitInvoice,
+        InvoiceService $service
+    ): Response {
+        $this->authorize('delete', $unitInvoice);
+
+        $service->voidDraft($unitInvoice);
+
+        return response()->noContent();
     }
 }
