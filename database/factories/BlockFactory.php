@@ -3,9 +3,12 @@
 namespace Database\Factories;
 
 use App\Models\Block;
+use App\Models\Building;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Carbon;
 
+/**
+ * @extends Factory<Block>
+ */
 class BlockFactory extends Factory
 {
     protected $model = Block::class;
@@ -13,12 +16,20 @@ class BlockFactory extends Factory
     public function definition(): array
     {
         return [
-            'building_id' => $this->faker->randomNumber(),
-            'title' => $this->faker->word(),
-            'sort_order' => $this->faker->randomNumber(),
-            'is_active' => $this->faker->boolean(),
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
+            'building_id' => Building::factory(),
+
+            'title' => fake()->bothify('Block-##'),
+
+            'sort_order' => fake()->numberBetween(0, 100),
+
+            'is_active' => true,
         ];
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (): array => [
+            'is_active' => false,
+        ]);
     }
 }

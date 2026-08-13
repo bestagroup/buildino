@@ -4,8 +4,10 @@ namespace Database\Factories;
 
 use App\Models\Complex;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Carbon;
 
+/**
+ * @extends Factory<Complex>
+ */
 class ComplexFactory extends Factory
 {
     protected $model = Complex::class;
@@ -13,19 +15,27 @@ class ComplexFactory extends Factory
     public function definition(): array
     {
         return [
-            'code' => $this->faker->word(),
-            'title' => $this->faker->word(),
-            'manager_name' => $this->faker->name(),
-            'manager_mobile' => $this->faker->word(),
-            'province' => $this->faker->word(),
-            'city' => $this->faker->city(),
-            'address' => $this->faker->address(),
-            'latitude' => $this->faker->latitude(),
-            'longitude' => $this->faker->longitude(),
-            'sort_order' => $this->faker->randomNumber(),
-            'is_active' => $this->faker->boolean(),
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
+            'code' => fake()->unique()->bothify('CMP-####'),
+            'title' => fake()->company(),
+
+            'province' => fake()->state(),
+            'city' => fake()->city(),
+            'address' => fake()->address(),
+            'postal_code' => fake()->postcode(),
+
+            'latitude' => fake()->latitude(),
+            'longitude' => fake()->longitude(),
+
+            'sort_order' => fake()->numberBetween(0, 100),
+
+            'is_active' => true,
         ];
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (): array => [
+            'is_active' => false,
+        ]);
     }
 }

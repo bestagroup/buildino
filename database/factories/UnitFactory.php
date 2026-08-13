@@ -2,10 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\Floor;
 use App\Models\Unit;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Carbon;
 
+/**
+ * @extends Factory<Unit>
+ */
 class UnitFactory extends Factory
 {
     protected $model = Unit::class;
@@ -13,16 +16,30 @@ class UnitFactory extends Factory
     public function definition(): array
     {
         return [
-            'floor_id' => $this->faker->randomNumber(),
-            'unit_number' => $this->faker->word(),
-            'title' => $this->faker->word(),
-            'area' => $this->faker->randomFloat(),
-            'bedrooms' => $this->faker->randomNumber(),
-            'usage_type' => $this->faker->word(),
-            'ownership_status' => $this->faker->word(),
-            'is_active' => $this->faker->boolean(),
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
+            'floor_id' => Floor::factory(),
+
+            'unit_number' => fake()->unique()->numerify('###'),
+
+            'title' => fake()->optional()->words(2, true),
+
+            'area' => fake()->randomFloat(
+                2,
+                40,
+                300
+            ),
+
+            'bedrooms' => fake()->numberBetween(0, 6),
+
+            'usage_type' => 'residential',
+
+            'is_active' => true,
         ];
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (): array => [
+            'is_active' => false,
+        ]);
     }
 }

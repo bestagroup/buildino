@@ -35,21 +35,33 @@ class GuestVisit extends Model
 
     public function guest(): BelongsTo
     {
-        return $this->belongsTo(Guest::class, 'guest_id');
+        return $this->belongsTo(
+            Guest::class,
+            'guest_id'
+        );
     }
 
     public function unit(): BelongsTo
     {
-        return $this->belongsTo(Unit::class, 'unit_id');
+        return $this->belongsTo(
+            Unit::class,
+            'unit_id'
+        );
     }
 
     public function registeredBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'registered_by');
+        return $this->belongsTo(
+            User::class,
+            'registered_by'
+        );
     }
 
     public function guestAccessLogs(): HasMany
     {
-        return $this->hasMany(GuestAccessLog::class, 'guest_visit_id');
+        return $this->hasMany(
+            GuestAccessLog::class,
+            'guest_visit_id'
+        );
     }
 }

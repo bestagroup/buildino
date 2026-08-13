@@ -2,6 +2,9 @@
 
 namespace App\Policies;
 
+use App\Models\Building;
+use App\Models\Floor;
+use App\Models\Unit;
 use App\Models\User;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Database\Eloquent\Model;
@@ -9,45 +12,43 @@ use Illuminate\Database\Eloquent\Model;
 abstract class BasePolicy
 {
     public function __construct(
-        protected PermissionChecker $permissions,
-    ) {}
+        protected readonly PermissionChecker $permissions
+    ) {
+    }
 
     abstract protected function permissionPrefix(): string;
 
-    protected function scope(Model $model): ?Model
-    {
-        if (method_exists($model, 'building') && $model->getAttribute('building_id')) {
-            return $model->building;
-        }
-
-        return null;
-    }
-
     public function viewAny(User $user): bool
     {
-        return $this->permissions->allows($user, $this->permissionPrefix().'.view');
+        return $this->permissions->allows(
+            $user,
+            $this->permission('view')
+        );
     }
 
     public function view(User $user, Model $model): bool
     {
         return $this->permissions->allows(
             $user,
-            $this->permissionPrefix().'.view',
-            $this->scope($model),
+            $this->permission('view'),
+            $this->resolveScope($model)
         );
     }
 
     public function create(User $user): bool
     {
-        return $this->permissions->allows($user, $this->permissionPrefix().'.create');
+        return $this->permissions->allows(
+            $user,
+            $this->permission('create')
+        );
     }
 
     public function update(User $user, Model $model): bool
     {
         return $this->permissions->allows(
             $user,
-            $this->permissionPrefix().'.update',
-            $this->scope($model),
+            $this->permission('update'),
+            $this->resolveScope($model)
         );
     }
 
@@ -55,26 +56,57 @@ abstract class BasePolicy
     {
         return $this->permissions->allows(
             $user,
-            $this->permissionPrefix().'.delete',
-            $this->scope($model),
+            $this->permission('delete'),
+            $this->resolveScope($model)
         );
     }
 
-    public function restore(User $user, Model $model): bool
+    protected function permission(string $action): string
     {
-        return $this->permissions->allows(
-            $user,
-            $this->permissionPrefix().'.restore',
-            $this->scope($model),
+        return sprintf(
+            '%s.%s',
+            $this->permissionPrefix(),
+            $action
         );
     }
 
-    public function forceDelete(User $user, Model $model): bool
+    protected function resolveScope(Model $model): ?Model
     {
-        return $this->permissions->allows(
-            $user,
-            $this->permissionPrefix().'.force-delete',
-            $this->scope($model),
-        );
+        if ($model instanceof Building) {
+            return $model;
+        }
+
+        $buildingId = $model->getAttribute('building_id');
+
+        if ($buildingId !== null) {
+            return Building::query()->find($buildingId);
+        }
+
+        if ($model instanceof Floor) {
+            $model->loadMissing('block.building');
+
+            return $model->block?->building;
+        }
+
+        if ($model instanceof Unit) {
+            $model->loadMissing('floor.block.building');
+
+            return $model->floor?->block?->building;
+        }
+
+        /*
+         * Unit-scoped resources such as:
+         * UnitOwnership, UnitOccupancy, UnitInvitation, GuestVisit, etc.
+         */
+        if (
+            method_exists($model, 'unit')
+            && $model->getAttribute('unit_id') !== null
+        ) {
+            $model->loadMissing('unit.floor.block.building');
+
+            return $model->unit?->floor?->block?->building;
+        }
+
+        return null;
     }
 }

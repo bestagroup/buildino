@@ -8,10 +8,18 @@ use App\Services\OccupancyService;
 
 class AssignUnitOccupancy
 {
-    public function __construct(private readonly OccupancyService $service) {}
+    public function __construct(
+        private readonly OccupancyService $service
+    ) {
+    }
 
-    public function execute(array $data, ?User $actor = null): UnitOccupancy
-    {
-        return $this->service->assign($data, null);
+    public function execute(
+        array $data,
+        ?User $actor = null
+    ): UnitOccupancy {
+        return $this->service->assign(
+            $data,
+            $actor
+        );
     }
 }

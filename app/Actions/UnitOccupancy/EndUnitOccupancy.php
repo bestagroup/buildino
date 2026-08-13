@@ -8,10 +8,20 @@ use App\Services\OccupancyService;
 
 class EndUnitOccupancy
 {
-    public function __construct(private readonly OccupancyService $service) {}
+    public function __construct(
+        private readonly OccupancyService $service
+    ) {
+    }
 
-    public function execute(UnitOccupancy $occupancy, User $actor, ?string $endsAt = null): UnitOccupancy
-    {
-        return $this->service->end($occupancy, $actor, null);
+    public function execute(
+        UnitOccupancy $occupancy,
+        User $actor,
+        ?string $endsAt = null
+    ): UnitOccupancy {
+        return $this->service->end(
+            $occupancy,
+            $actor,
+            $endsAt
+        );
     }
 }

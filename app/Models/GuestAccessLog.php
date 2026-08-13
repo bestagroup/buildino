@@ -6,7 +6,6 @@ use App\Enums\GuestAccessAction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class GuestAccessLog extends Model
 {
@@ -35,11 +34,17 @@ class GuestAccessLog extends Model
 
     public function guestVisit(): BelongsTo
     {
-        return $this->belongsTo(GuestVisit::class, 'guest_visit_id');
+        return $this->belongsTo(
+            GuestVisit::class,
+            'guest_visit_id'
+        );
     }
 
     public function verifiedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'verified_by');
+        return $this->belongsTo(
+            User::class,
+            'verified_by'
+        );
     }
 }

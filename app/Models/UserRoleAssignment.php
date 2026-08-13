@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class UserRoleAssignment extends Model
@@ -17,13 +17,12 @@ class UserRoleAssignment extends Model
     protected $fillable = [
         'user_id',
         'role_id',
-        'scope',
+        'scope_type',
+        'scope_id',
         'starts_at',
         'ends_at',
         'is_active',
         'assigned_by',
-        'scope_type',
-        'scope_id',
     ];
 
     protected function casts(): array
@@ -35,19 +34,46 @@ class UserRoleAssignment extends Model
         ];
     }
 
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query
+            ->where('is_active', true)
+
+            ->where(function (Builder $query): void {
+                $query
+                    ->whereNull('starts_at')
+                    ->orWhere('starts_at', '<=', now());
+            })
+
+            ->where(function (Builder $query): void {
+                $query
+                    ->whereNull('ends_at')
+                    ->orWhere('ends_at', '>=', now());
+            });
+    }
+
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(
+            User::class,
+            'user_id'
+        );
     }
 
     public function role(): BelongsTo
     {
-        return $this->belongsTo(Role::class, 'role_id');
+        return $this->belongsTo(
+            Role::class,
+            'role_id'
+        );
     }
 
     public function assignedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_by');
+        return $this->belongsTo(
+            User::class,
+            'assigned_by'
+        );
     }
 
     public function scope(): MorphTo
