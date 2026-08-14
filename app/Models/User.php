@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -339,6 +340,30 @@ class User extends Authenticatable
         return $this->belongsToMany(DashboardWidget::class, 'user_dashboard_widgets')
             ->withPivot(['position', 'configuration'])
             ->withTimestamps();
+    }
+
+
+    public function providerBankAccounts(): HasMany
+    {
+        return $this->hasMany(
+            ProviderBankAccount::class
+        );
+    }
+
+    public function providerPayoutRequests(): HasMany
+    {
+        return $this->hasMany(
+            ProviderPayoutRequest::class,
+            'provider_user_id'
+        );
+    }
+
+    public function wallets(): MorphMany
+    {
+        return $this->morphMany(
+            Wallet::class,
+            'owner'
+        );
     }
 
     public function userRoleAssignments(): HasMany

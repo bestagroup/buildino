@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\V1\BuildingBankAccountController;
 use App\Http\Controllers\Api\V1\BuildingBillPaymentController;
 use App\Http\Controllers\Api\V1\FacilityReservationController;
 use App\Http\Controllers\Api\V1\WalletPayoutController;
+use App\Http\Controllers\Api\V1\WalletController;
+use App\Http\Controllers\Api\V1\WalletTopUpController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')
@@ -14,6 +16,38 @@ Route::prefix('v1')
         'identity.verified',
     ])
     ->group(function (): void {
+
+        Route::get(
+            'wallets/me',
+            [WalletController::class, 'me']
+        );
+
+        Route::get(
+            'wallets/{wallet}/entries',
+            [WalletController::class, 'entries']
+        );
+
+        Route::get(
+            'units/{unit}/wallet',
+            [WalletController::class, 'unit']
+        );
+
+        Route::get(
+            'buildings/{building}/wallet',
+            [WalletController::class, 'building']
+        );
+
+
+        Route::post(
+            'buildings/{building}/wallet-topups',
+            [WalletTopUpController::class, 'store']
+        );
+
+        Route::get(
+            'wallet-topups/{walletTopUp}',
+            [WalletTopUpController::class, 'show']
+        );
+
         Route::post(
             'facility-reservations/{facilityReservation}/pay',
             [FacilityReservationController::class, 'pay']

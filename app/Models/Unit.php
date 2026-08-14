@@ -111,6 +111,14 @@ class Unit extends Model
             ->withTimestamps();
     }
 
+    public function wallets(): MorphMany
+    {
+        return $this->morphMany(
+            Wallet::class,
+            'owner'
+        );
+    }
+
     public function fileRelations(): MorphMany
     {
         return $this->morphMany(FileRelation::class, 'related');

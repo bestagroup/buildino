@@ -10,6 +10,10 @@ class WalletOperationsPermissionSeeder extends Seeder
     public function run(): void
     {
         $names = [
+            'wallets.view',
+            'wallets.topup',
+            'building-wallet.view',
+
             'building-bank-accounts.view',
             'building-bank-accounts.create',
             'building-bank-accounts.verify',

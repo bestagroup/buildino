@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -60,6 +61,21 @@ class ServiceRequest extends Model
     public function assignedTo(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(
+            ServiceRequestQuote::class
+        );
+    }
+
+    public function walletPayment(): HasOne
+    {
+        return $this->hasOne(
+            ServiceRequestWalletPayment::class
+        )->latestOfMany();
     }
 
     public function fileRelations(): MorphMany

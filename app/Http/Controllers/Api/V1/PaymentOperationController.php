@@ -20,7 +20,7 @@ class PaymentOperationController extends Controller
             request()->user()
         );
 
-        $payment->load('paymentAllocations');
+        $payment->load(['paymentAllocations', 'walletTopUp']);
 
         return new PaymentResource($payment);
     }

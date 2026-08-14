@@ -183,6 +183,22 @@ class Building extends Model
         return $this->hasMany(FinancialReconciliation::class, 'building_id');
     }
 
+
+    public function serviceFinancialSetting(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(
+            BuildingServiceFinancialSetting::class
+        );
+    }
+
+    public function wallets(): MorphMany
+    {
+        return $this->morphMany(
+            Wallet::class,
+            'owner'
+        );
+    }
+
     public function fileRelations(): MorphMany
     {
         return $this->morphMany(FileRelation::class, 'related');

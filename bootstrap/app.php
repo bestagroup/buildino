@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(
             prepend: [
                 \App\Http\Middleware\AssignRequestId::class,
+                \App\Http\Middleware\ApplyApiSecurityHeaders::class,
             ]
         );
     })
@@ -144,6 +145,20 @@ return Application::configure(basePath: dirname(__DIR__))
 
                 if (! $request->is('api/*')) {
                     return null;
+                }
+
+                /*
+                 * Laravel prepares Eloquent ModelNotFoundException instances
+                 * as Symfony NotFoundHttpException before rendering them.
+                 * Preserve the distinction between a missing resource and a
+                 * genuinely missing route.
+                 */
+                if ($e->getPrevious() instanceof ModelNotFoundException) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'منبع موردنظر یافت نشد.',
+                        'code' => 'RESOURCE_NOT_FOUND',
+                    ], 404);
                 }
 
                 return response()->json([

@@ -11,16 +11,32 @@ class NotificationRecipientResolver
 {
     public function forUnit(int $unitId): Collection
     {
-        $userIds = UnitOccupancy::query()
+        $today = now()->toDateString();
+
+        $occupants = UnitOccupancy::query()
             ->where('unit_id', $unitId)
             ->where('is_active', true)
-            ->pluck('user_id')
-            ->merge(
-                UnitOwnership::query()
-                    ->where('unit_id', $unitId)
-                    ->where('is_active', true)
-                    ->pluck('user_id')
-            )
+            ->whereDate('starts_at', '<=', $today)
+            ->where(function ($query) use ($today): void {
+                $query
+                    ->whereNull('ends_at')
+                    ->orWhereDate('ends_at', '>=', $today);
+            })
+            ->pluck('user_id');
+
+        $owners = UnitOwnership::query()
+            ->where('unit_id', $unitId)
+            ->where('is_active', true)
+            ->whereDate('starts_at', '<=', $today)
+            ->where(function ($query) use ($today): void {
+                $query
+                    ->whereNull('ends_at')
+                    ->orWhereDate('ends_at', '>=', $today);
+            })
+            ->pluck('user_id');
+
+        $userIds = $occupants
+            ->merge($owners)
             ->unique()
             ->values();
 

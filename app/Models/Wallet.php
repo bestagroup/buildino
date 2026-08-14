@@ -56,6 +56,36 @@ class Wallet extends Model
         );
     }
 
+
+
+    public function reconciliations(): HasMany
+    {
+        return $this->hasMany(
+            WalletReconciliation::class
+        );
+    }
+
+    public function topUps(): HasMany
+    {
+        return $this->hasMany(
+            WalletTopUp::class,
+            'wallet_id'
+        );
+    }
+
+    public function ownerKind(): string
+    {
+        $type = $this->owner_type;
+
+        return match ($type) {
+            (new User())->getMorphClass(), User::class => 'user',
+            (new Unit())->getMorphClass(), Unit::class => 'unit',
+            (new Building())->getMorphClass(), Building::class => 'building',
+            (new PlatformWalletAccount())->getMorphClass(), PlatformWalletAccount::class => 'platform',
+            default => 'unknown',
+        };
+    }
+
     public function availableBalance(): int
     {
         return max(

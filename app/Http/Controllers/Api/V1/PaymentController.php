@@ -32,7 +32,7 @@ class PaymentController extends Controller
 
         return PaymentResource::collection(
             $building->payments()
-                ->with('paymentAllocations')
+                ->with(['paymentAllocations', 'walletTopUp'])
                 ->latest('id')
                 ->paginate(
                     min(
@@ -64,7 +64,7 @@ class PaymentController extends Controller
             $request->validated()
         );
 
-        $payment->load('paymentAllocations');
+        $payment->load(['paymentAllocations', 'walletTopUp']);
 
         return (new PaymentResource($payment))
             ->response()
@@ -91,7 +91,7 @@ class PaymentController extends Controller
 
         abort_unless($allowed, 403);
 
-        $payment->load('paymentAllocations');
+        $payment->load(['paymentAllocations', 'walletTopUp']);
 
         return new PaymentResource($payment);
     }

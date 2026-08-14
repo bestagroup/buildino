@@ -39,6 +39,13 @@ class PaymentTransaction extends Model
         ];
     }
 
+    public function gatewayEvents(): HasMany
+    {
+        return $this->hasMany(
+            PaymentGatewayEvent::class
+        );
+    }
+
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class, 'payment_id');

@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V1\MeetingMinuteController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PaymentOperationController;
 use App\Http\Controllers\Api\V1\ServiceRequestController;
+use App\Http\Controllers\Api\V1\ServiceRequestOperationController;
 use App\Http\Controllers\Api\V1\SupportTicketController;
 use App\Http\Controllers\Api\V1\SupportTicketOperationController;
 use App\Http\Controllers\Api\V1\UnitController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\Api\V1\UnitInvitationController;
 use App\Http\Controllers\Api\V1\UnitInvoiceController;
 use App\Http\Controllers\Api\V1\UnitOccupancyController;
 use App\Http\Controllers\Api\V1\UnitOwnershipController;
+use App\Http\Controllers\Api\V1\UserNotificationController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/auth_v1.php';
@@ -612,4 +614,82 @@ Route::prefix('v1')
             [SupportTicketOperationController::class, 'resolve']
         );
     });
-require __DIR__.'/wallet_operations_v1.php';
+
+
+/*
+|--------------------------------------------------------------------------
+| Final critical operational routes
+|--------------------------------------------------------------------------
+|
+| These two routes are registered directly in api.php instead of depending
+| on an additive aggregator. This guarantees that the notification device
+| registration and ServiceRequest provider assignment contracts are present
+| in every runtime/bootstrap path.
+|
+*/
+
+Route::prefix('v1')
+    ->middleware([
+        'throttle:api-v1',
+        'auth:sanctum',
+        'user.active',
+        'identity.verified',
+    ])
+    ->group(function (): void {
+        Route::middleware('throttle:notifications')
+            ->group(function (): void {
+                Route::get(
+                    'notifications',
+                    [UserNotificationController::class, 'index']
+                )->name('api.v1.notifications.index');
+
+                Route::get(
+                    'notifications/unread-count',
+                    [UserNotificationController::class, 'unreadCount']
+                )->name('api.v1.notifications.unread-count');
+
+                Route::post(
+                    'notifications/read-all',
+                    [UserNotificationController::class, 'markAllRead']
+                )->name('api.v1.notifications.read-all');
+
+                Route::post(
+                    'notifications/{notificationLog}/read',
+                    [UserNotificationController::class, 'markRead']
+                )->name('api.v1.notifications.read');
+
+                Route::get(
+                    'notification-devices',
+                    [UserNotificationController::class, 'devices']
+                )->name('api.v1.notification-devices.index');
+
+                Route::post(
+                    'notification-devices',
+                    [UserNotificationController::class, 'registerDevice']
+                )->name('api.v1.notification-devices.store');
+
+                Route::delete(
+                    'notification-devices/{userDevice}',
+                    [UserNotificationController::class, 'deleteDevice']
+                )->name('api.v1.notification-devices.destroy');
+
+                Route::get(
+                    'notification-preferences',
+                    [UserNotificationController::class, 'preferences']
+                )->name('api.v1.notification-preferences.index');
+
+                Route::put(
+                    'notification-preferences',
+                    [UserNotificationController::class, 'updatePreferences']
+                )->name('api.v1.notification-preferences.update');
+            });
+
+        Route::post(
+            'service-requests/{serviceRequest}/assign',
+            [ServiceRequestOperationController::class, 'assign']
+        )
+            ->name('api.v1.service-requests.assign');
+    });
+
+
+require __DIR__.'/buildino_final_v1.php';

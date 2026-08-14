@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class WalletTransfer extends Model
 {
@@ -58,9 +59,24 @@ class WalletTransfer extends Model
         );
     }
 
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(
+            User::class,
+            'created_by'
+        );
+    }
+
     public function reference(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function accountingPosting(): HasOne
+    {
+        return $this->hasOne(
+            WalletAccountingPosting::class
+        );
     }
 
     public function entries(): HasMany

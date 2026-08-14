@@ -7,6 +7,7 @@ enum ServiceRequestStatus: string
     case Open = 'open';
     case Assigned = 'assigned';
     case InProgress = 'in_progress';
+    case AwaitingConfirmation = 'awaiting_confirmation';
     case Completed = 'completed';
     case Cancelled = 'cancelled';
 
@@ -16,6 +17,7 @@ enum ServiceRequestStatus: string
             self::Open => 'Open',
             self::Assigned => 'Assigned',
             self::InProgress => 'In Progress',
+            self::AwaitingConfirmation => 'Awaiting Confirmation',
             self::Completed => 'Completed',
             self::Cancelled => 'Cancelled',
         };

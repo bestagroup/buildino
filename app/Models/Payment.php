@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Payment extends Model
@@ -70,6 +71,15 @@ class Payment extends Model
     public function paymentReceipts(): HasMany
     {
         return $this->hasMany(PaymentReceipt::class, 'payment_id');
+    }
+
+
+    public function walletTopUp(): HasOne
+    {
+        return $this->hasOne(
+            WalletTopUp::class,
+            'payment_id'
+        );
     }
 
     public function reservationCancellations(): HasMany

@@ -32,6 +32,22 @@ class ApiSecurityServiceProvider extends ServiceProvider
             ];
         });
 
+
+        RateLimiter::for('system-health', function (Request $request): Limit {
+            return Limit::perMinute(30)
+                ->by($request->ip());
+        });
+
+        RateLimiter::for('support', function (Request $request): Limit {
+            return Limit::perMinute(60)
+                ->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('notifications', function (Request $request): Limit {
+            return Limit::perMinute(90)
+                ->by($request->user()?->id ?: $request->ip());
+        });
+
         RateLimiter::for('payments', function (Request $request): Limit {
             return Limit::perMinute((int) config('api_security.payment_rate_limit', 30))
                 ->by($request->user()?->id ?: $request->ip());

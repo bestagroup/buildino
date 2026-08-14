@@ -15,7 +15,7 @@ final class FinancialLedgerService
 {
     public function post(
         Building $building,
-        User $actor,
+        ?User $actor,
         array $data
     ): FinancialTransaction {
         $entries = $data['entries'];
@@ -33,8 +33,10 @@ final class FinancialLedgerService
                 'building_id' => $building->getKey(),
                 'transaction_type' => $data['transaction_type'],
                 'occurred_at' => $data['occurred_at'] ?? now(),
+                'reference_type' => $data['reference_type'] ?? null,
+                'reference_id' => $data['reference_id'] ?? null,
                 'description' => $data['description'] ?? null,
-                'created_by' => $actor->getKey(),
+                'created_by' => $actor?->getKey(),
             ]);
 
             foreach ($entries as $entry) {
