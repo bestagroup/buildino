@@ -109,6 +109,56 @@
             <path d="M15 8.5c-.7-.8-1.6-1.2-3-1.2-1.7 0-3 .8-3 2s1 1.8 3 2.2 3 1 3 2.4-1.3 2.5-3 2.5c-1.5 0-2.7-.5-3.5-1.4M12 5.5v13"/>
             @break
 
+
+        @case('search')
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m20 20-4-4"/>
+            @break
+
+        @case('plus')
+            <path d="M12 5v14M5 12h14"/>
+            @break
+
+        @case('chevron')
+            <path d="m9 6 6 6-6 6"/>
+            @break
+
+        @case('chevron-down')
+            <path d="m6 9 6 6 6-6"/>
+            @break
+
+        @case('grid')
+            <rect x="4" y="4" width="6" height="6" rx="1"/>
+            <rect x="14" y="4" width="6" height="6" rx="1"/>
+            <rect x="4" y="14" width="6" height="6" rx="1"/>
+            <rect x="14" y="14" width="6" height="6" rx="1"/>
+            @break
+
+        @case('key')
+            <circle cx="8" cy="15" r="4"/>
+            <path d="m11 12 8-8M15 8l2 2M17 6l2 2"/>
+            @break
+
+        @case('user-plus')
+            <circle cx="9" cy="8" r="3"/>
+            <path d="M3.5 20c.3-4 2.3-6 5.5-6s5.2 2 5.5 6"/>
+            <path d="M18 8v6M15 11h6"/>
+            @break
+
+        @case('user')
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 21c.4-5 3-7 8-7s7.6 2 8 7"/>
+            @break
+
+        @case('lock')
+            <rect x="5" y="10" width="14" height="11" rx="2"/>
+            <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+            @break
+
+        @case('arrow-left')
+            <path d="M19 12H5M10 7l-5 5 5 5"/>
+            @break
+
         @default
             <circle cx="12" cy="12" r="9"/>
     @endswitch

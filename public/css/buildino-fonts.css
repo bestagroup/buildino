@@ -1,0 +1,53 @@
+/*
+|--------------------------------------------------------------------------
+| Buildino Persian Typography
+|--------------------------------------------------------------------------
+|
+| Yekan Bakh is intentionally referenced but NOT distributed with this patch.
+| Put your licensed WOFF2 files in:
+|
+| public/fonts/yekan-bakh/
+|
+| Expected filenames are documented in README_UIUX.md.
+|
+*/
+
+@font-face {
+    font-family: "Yekan Bakh";
+    src: url("../fonts/yekan-bakh/YekanBakhFaNum-Regular.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Yekan Bakh";
+    src: url("../fonts/yekan-bakh/YekanBakhFaNum-Medium.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Yekan Bakh";
+    src: url("../fonts/yekan-bakh/YekanBakhFaNum-SemiBold.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Yekan Bakh";
+    src: url("../fonts/yekan-bakh/YekanBakhFaNum-Bold.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Yekan Bakh";
+    src: url("../fonts/yekan-bakh/YekanBakhFaNum-ExtraBlack.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+}

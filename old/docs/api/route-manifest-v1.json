@@ -1,0 +1,1667 @@
+{
+    "version": "1.0.0",
+    "generated_at": "2026-08-14T15:41:16.539164Z",
+    "route_count": 237,
+    "contract_hash": "073e5337cc22bcb6fc32de3bce7618e5e5f91eb7e8a2d40551a5a0c345d94244",
+    "routes": [
+        {
+            "method": "GET",
+            "uri": "api/v1/admin/payment-gateway-events",
+            "protected": true,
+            "operation_id": "get_api_v1_admin_payment_gateway_events",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/admin/provider-payouts",
+            "protected": true,
+            "operation_id": "get_api_v1_admin_provider_payouts",
+            "tag": "Providers"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/admin/system/health",
+            "protected": true,
+            "operation_id": "get_api_v1_admin_system_health",
+            "tag": "System"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/announcements",
+            "protected": true,
+            "operation_id": "get_api_v1_announcements",
+            "tag": "General"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/announcements",
+            "protected": true,
+            "operation_id": "post_api_v1_announcements",
+            "tag": "General"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/announcements/{announcement}",
+            "protected": true,
+            "operation_id": "delete_api_v1_announcements_announcement",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/announcements/{announcement}",
+            "protected": true,
+            "operation_id": "get_api_v1_announcements_announcement",
+            "tag": "General"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/announcements/{announcement}",
+            "protected": true,
+            "operation_id": "patch_api_v1_announcements_announcement",
+            "tag": "General"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/announcements/{announcement}",
+            "protected": true,
+            "operation_id": "put_api_v1_announcements_announcement",
+            "tag": "General"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/auth/logout",
+            "protected": true,
+            "operation_id": "post_api_v1_auth_logout",
+            "tag": "Authentication"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/auth/logout-all",
+            "protected": true,
+            "operation_id": "post_api_v1_auth_logout_all",
+            "tag": "Authentication"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/auth/me",
+            "protected": true,
+            "operation_id": "get_api_v1_auth_me",
+            "tag": "Authentication"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/auth/otp/login",
+            "protected": false,
+            "operation_id": "post_api_v1_auth_otp_login",
+            "tag": "Authentication"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/auth/otp/request",
+            "protected": false,
+            "operation_id": "post_api_v1_auth_otp_request",
+            "tag": "Authentication"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/auth/password/login",
+            "protected": false,
+            "operation_id": "post_api_v1_auth_password_login",
+            "tag": "Authentication"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/blocks/{block}",
+            "protected": true,
+            "operation_id": "delete_api_v1_blocks_block",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/blocks/{block}",
+            "protected": true,
+            "operation_id": "get_api_v1_blocks_block",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/blocks/{block}",
+            "protected": true,
+            "operation_id": "patch_api_v1_blocks_block",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/blocks/{block}",
+            "protected": true,
+            "operation_id": "put_api_v1_blocks_block",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/blocks/{block}/floors",
+            "protected": true,
+            "operation_id": "get_api_v1_blocks_block_floors",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/blocks/{block}/floors",
+            "protected": true,
+            "operation_id": "post_api_v1_blocks_block_floors",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/building-bank-accounts/{buildingBankAccount}/verify",
+            "protected": true,
+            "operation_id": "post_api_v1_building_bank_accounts_buildingbankaccount_verify",
+            "tag": "Buildings"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/building-bill-payments/{buildingBillPayment}/complete",
+            "protected": true,
+            "operation_id": "post_api_v1_building_bill_payments_buildingbillpayment_complete",
+            "tag": "Buildings"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/building-bill-payments/{buildingBillPayment}/fail",
+            "protected": true,
+            "operation_id": "post_api_v1_building_bill_payments_buildingbillpayment_fail",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings",
+            "tag": "Buildings"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/buildings",
+            "protected": true,
+            "operation_id": "post_api_v1_buildings",
+            "tag": "Buildings"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/buildings/{building}",
+            "protected": true,
+            "operation_id": "delete_api_v1_buildings_building",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building",
+            "tag": "Buildings"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/buildings/{building}",
+            "protected": true,
+            "operation_id": "patch_api_v1_buildings_building",
+            "tag": "Buildings"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/buildings/{building}",
+            "protected": true,
+            "operation_id": "put_api_v1_buildings_building",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/bank-accounts",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_bank_accounts",
+            "tag": "Buildings"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/buildings/{building}/bank-accounts",
+            "protected": true,
+            "operation_id": "post_api_v1_buildings_building_bank_accounts",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/bill-payments",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_bill_payments",
+            "tag": "Buildings"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/buildings/{building}/bill-payments",
+            "protected": true,
+            "operation_id": "post_api_v1_buildings_building_bill_payments",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/blocks",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_blocks",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/buildings/{building}/blocks",
+            "protected": true,
+            "operation_id": "post_api_v1_buildings_building_blocks",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/charge-formulas",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_charge_formulas",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/buildings/{building}/charge-formulas",
+            "protected": true,
+            "operation_id": "post_api_v1_buildings_building_charge_formulas",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/charge-periods",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_charge_periods",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/buildings/{building}/charge-periods",
+            "protected": true,
+            "operation_id": "post_api_v1_buildings_building_charge_periods",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/dashboard/management",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_dashboard_management",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/facilities",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_facilities",
+            "tag": "Buildings"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/buildings/{building}/facilities",
+            "protected": true,
+            "operation_id": "post_api_v1_buildings_building_facilities",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/financial-transactions",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_financial_transactions",
+            "tag": "Accounting"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/buildings/{building}/financial-transactions",
+            "protected": true,
+            "operation_id": "post_api_v1_buildings_building_financial_transactions",
+            "tag": "Accounting"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/invoices",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_invoices",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/payments",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_payments",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/reports/cash-flow",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_reports_cash_flow",
+            "tag": "Reports"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/reports/facilities",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_reports_facilities",
+            "tag": "Reports"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/reports/financial-summary",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_reports_financial_summary",
+            "tag": "Reports"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/reports/receivables",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_reports_receivables",
+            "tag": "Reports"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/reports/services",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_reports_services",
+            "tag": "Reports"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/service-financial-setting",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_service_financial_setting",
+            "tag": "Services"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/buildings/{building}/service-financial-setting",
+            "protected": true,
+            "operation_id": "put_api_v1_buildings_building_service_financial_setting",
+            "tag": "Services"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/wallet",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_wallet",
+            "tag": "Wallets"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/wallet-accounting-profile",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_wallet_accounting_profile",
+            "tag": "Wallets"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/buildings/{building}/wallet-accounting-profile",
+            "protected": true,
+            "operation_id": "put_api_v1_buildings_building_wallet_accounting_profile",
+            "tag": "Wallets"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/wallet-payouts",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_wallet_payouts",
+            "tag": "Wallets"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/buildings/{building}/wallet-payouts",
+            "protected": true,
+            "operation_id": "post_api_v1_buildings_building_wallet_payouts",
+            "tag": "Wallets"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/buildings/{building}/wallet-topups",
+            "protected": true,
+            "operation_id": "post_api_v1_buildings_building_wallet_topups",
+            "tag": "Wallets"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/charge-formulas/{chargeFormula}",
+            "protected": true,
+            "operation_id": "get_api_v1_charge_formulas_chargeformula",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/charge-formulas/{chargeFormula}",
+            "protected": true,
+            "operation_id": "patch_api_v1_charge_formulas_chargeformula",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/charge-periods/{chargePeriod}",
+            "protected": true,
+            "operation_id": "get_api_v1_charge_periods_chargeperiod",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/charge-periods/{chargePeriod}",
+            "protected": true,
+            "operation_id": "patch_api_v1_charge_periods_chargeperiod",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/charge-periods/{chargePeriod}/calculate",
+            "protected": true,
+            "operation_id": "post_api_v1_charge_periods_chargeperiod_calculate",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/charge-periods/{chargePeriod}/issue",
+            "protected": true,
+            "operation_id": "post_api_v1_charge_periods_chargeperiod_issue",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/complexes",
+            "protected": true,
+            "operation_id": "get_api_v1_complexes",
+            "tag": "Buildings"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/complexes",
+            "protected": true,
+            "operation_id": "post_api_v1_complexes",
+            "tag": "Buildings"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/complexes/{complex}",
+            "protected": true,
+            "operation_id": "delete_api_v1_complexes_complex",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/complexes/{complex}",
+            "protected": true,
+            "operation_id": "get_api_v1_complexes_complex",
+            "tag": "Buildings"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/complexes/{complex}",
+            "protected": true,
+            "operation_id": "patch_api_v1_complexes_complex",
+            "tag": "Buildings"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/complexes/{complex}",
+            "protected": true,
+            "operation_id": "put_api_v1_complexes_complex",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/documents",
+            "protected": true,
+            "operation_id": "get_api_v1_documents",
+            "tag": "General"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/documents",
+            "protected": true,
+            "operation_id": "post_api_v1_documents",
+            "tag": "General"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/documents/{document}",
+            "protected": true,
+            "operation_id": "delete_api_v1_documents_document",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/documents/{document}",
+            "protected": true,
+            "operation_id": "get_api_v1_documents_document",
+            "tag": "General"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/documents/{document}",
+            "protected": true,
+            "operation_id": "patch_api_v1_documents_document",
+            "tag": "General"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/documents/{document}",
+            "protected": true,
+            "operation_id": "put_api_v1_documents_document",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/expenses",
+            "protected": true,
+            "operation_id": "get_api_v1_expenses",
+            "tag": "Accounting"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/expenses",
+            "protected": true,
+            "operation_id": "post_api_v1_expenses",
+            "tag": "Accounting"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/expenses/{expense}",
+            "protected": true,
+            "operation_id": "delete_api_v1_expenses_expense",
+            "tag": "Accounting"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/expenses/{expense}",
+            "protected": true,
+            "operation_id": "get_api_v1_expenses_expense",
+            "tag": "Accounting"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/expenses/{expense}",
+            "protected": true,
+            "operation_id": "patch_api_v1_expenses_expense",
+            "tag": "Accounting"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/expenses/{expense}",
+            "protected": true,
+            "operation_id": "put_api_v1_expenses_expense",
+            "tag": "Accounting"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/facilities/{buildingFacility}",
+            "protected": true,
+            "operation_id": "delete_api_v1_facilities_buildingfacility",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/facilities/{buildingFacility}",
+            "protected": true,
+            "operation_id": "get_api_v1_facilities_buildingfacility",
+            "tag": "Buildings"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/facilities/{buildingFacility}",
+            "protected": true,
+            "operation_id": "patch_api_v1_facilities_buildingfacility",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/facilities/{buildingFacility}/availability",
+            "protected": true,
+            "operation_id": "get_api_v1_facilities_buildingfacility_availability",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/facilities/{buildingFacility}/blackouts",
+            "protected": true,
+            "operation_id": "get_api_v1_facilities_buildingfacility_blackouts",
+            "tag": "Buildings"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/facilities/{buildingFacility}/blackouts",
+            "protected": true,
+            "operation_id": "post_api_v1_facilities_buildingfacility_blackouts",
+            "tag": "Buildings"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/facilities/{buildingFacility}/blackouts/{facilityBlackout}",
+            "protected": true,
+            "operation_id": "delete_api_v1_facilities_buildingfacility_blackouts_facilityblackout",
+            "tag": "Facilities"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/facilities/{buildingFacility}/reservation-rule",
+            "protected": true,
+            "operation_id": "get_api_v1_facilities_buildingfacility_reservation_rule",
+            "tag": "Buildings"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/facilities/{buildingFacility}/reservation-rule",
+            "protected": true,
+            "operation_id": "put_api_v1_facilities_buildingfacility_reservation_rule",
+            "tag": "Buildings"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/facilities/{buildingFacility}/reservations",
+            "protected": true,
+            "operation_id": "post_api_v1_facilities_buildingfacility_reservations",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/facilities/{buildingFacility}/schedules",
+            "protected": true,
+            "operation_id": "get_api_v1_facilities_buildingfacility_schedules",
+            "tag": "Buildings"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/facilities/{buildingFacility}/schedules",
+            "protected": true,
+            "operation_id": "post_api_v1_facilities_buildingfacility_schedules",
+            "tag": "Buildings"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/facilities/{buildingFacility}/schedules/{facilitySchedule}",
+            "protected": true,
+            "operation_id": "delete_api_v1_facilities_buildingfacility_schedules_facilityschedule",
+            "tag": "Facilities"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/facilities/{buildingFacility}/schedules/{facilitySchedule}",
+            "protected": true,
+            "operation_id": "patch_api_v1_facilities_buildingfacility_schedules_facilityschedule",
+            "tag": "Facilities"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/facilities/{buildingFacility}/schedules/{facilitySchedule}/time-slots",
+            "protected": true,
+            "operation_id": "post_api_v1_facilities_buildingfacility_schedules_facilityschedule_time_slots",
+            "tag": "Facilities"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/facilities/{buildingFacility}/schedules/{facilitySchedule}/time-slots/{facilityTimeSlot}",
+            "protected": true,
+            "operation_id": "delete_api_v1_facilities_buildingfacility_schedules_facilityschedule_time_slots_facilitytimeslot",
+            "tag": "Facilities"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/facilities/{buildingFacility}/schedules/{facilitySchedule}/time-slots/{facilityTimeSlot}",
+            "protected": true,
+            "operation_id": "patch_api_v1_facilities_buildingfacility_schedules_facilityschedule_time_slots_facilitytimeslot",
+            "tag": "Facilities"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/facility-reservations",
+            "protected": true,
+            "operation_id": "get_api_v1_facility_reservations",
+            "tag": "Facilities"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/facility-reservations/{facilityReservation}",
+            "protected": true,
+            "operation_id": "get_api_v1_facility_reservations_facilityreservation",
+            "tag": "Facilities"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/facility-reservations/{facilityReservation}/approve",
+            "protected": true,
+            "operation_id": "post_api_v1_facility_reservations_facilityreservation_approve",
+            "tag": "Facilities"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/facility-reservations/{facilityReservation}/cancel",
+            "protected": true,
+            "operation_id": "post_api_v1_facility_reservations_facilityreservation_cancel",
+            "tag": "Facilities"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/facility-reservations/{facilityReservation}/pay",
+            "protected": true,
+            "operation_id": "post_api_v1_facility_reservations_facilityreservation_pay",
+            "tag": "Facilities"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/facility-reservations/{facilityReservation}/reject",
+            "protected": true,
+            "operation_id": "post_api_v1_facility_reservations_facilityreservation_reject",
+            "tag": "Facilities"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/floors/{floor}",
+            "protected": true,
+            "operation_id": "delete_api_v1_floors_floor",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/floors/{floor}",
+            "protected": true,
+            "operation_id": "get_api_v1_floors_floor",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/floors/{floor}",
+            "protected": true,
+            "operation_id": "patch_api_v1_floors_floor",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/floors/{floor}",
+            "protected": true,
+            "operation_id": "put_api_v1_floors_floor",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/floors/{floor}/units",
+            "protected": true,
+            "operation_id": "get_api_v1_floors_floor_units",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/floors/{floor}/units",
+            "protected": true,
+            "operation_id": "post_api_v1_floors_floor_units",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/guest-visits/{guestVisit}",
+            "protected": true,
+            "operation_id": "get_api_v1_guest_visits_guestvisit",
+            "tag": "Guests"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/guest-visits/{guestVisit}",
+            "protected": true,
+            "operation_id": "patch_api_v1_guest_visits_guestvisit",
+            "tag": "Guests"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/guest-visits/{guestVisit}/access-logs",
+            "protected": true,
+            "operation_id": "get_api_v1_guest_visits_guestvisit_access_logs",
+            "tag": "Guests"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/guest-visits/{guestVisit}/cancel",
+            "protected": true,
+            "operation_id": "post_api_v1_guest_visits_guestvisit_cancel",
+            "tag": "Guests"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/guest-visits/{guestVisit}/entry",
+            "protected": true,
+            "operation_id": "post_api_v1_guest_visits_guestvisit_entry",
+            "tag": "Guests"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/guest-visits/{guestVisit}/exit",
+            "protected": true,
+            "operation_id": "post_api_v1_guest_visits_guestvisit_exit",
+            "tag": "Guests"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/incomes",
+            "protected": true,
+            "operation_id": "get_api_v1_incomes",
+            "tag": "Accounting"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/incomes",
+            "protected": true,
+            "operation_id": "post_api_v1_incomes",
+            "tag": "Accounting"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/incomes/{income}",
+            "protected": true,
+            "operation_id": "delete_api_v1_incomes_income",
+            "tag": "Accounting"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/incomes/{income}",
+            "protected": true,
+            "operation_id": "get_api_v1_incomes_income",
+            "tag": "Accounting"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/incomes/{income}",
+            "protected": true,
+            "operation_id": "patch_api_v1_incomes_income",
+            "tag": "Accounting"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/incomes/{income}",
+            "protected": true,
+            "operation_id": "put_api_v1_incomes_income",
+            "tag": "Accounting"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/invoices/{unitInvoice}",
+            "protected": true,
+            "operation_id": "delete_api_v1_invoices_unitinvoice",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/invoices/{unitInvoice}",
+            "protected": true,
+            "operation_id": "get_api_v1_invoices_unitinvoice",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/invoices/{unitInvoice}",
+            "protected": true,
+            "operation_id": "patch_api_v1_invoices_unitinvoice",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/invoices/{unitInvoice}/issue",
+            "protected": true,
+            "operation_id": "post_api_v1_invoices_unitinvoice_issue",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/invoices/{unitInvoice}/payments",
+            "protected": true,
+            "operation_id": "post_api_v1_invoices_unitinvoice_payments",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/meeting-minutes",
+            "protected": true,
+            "operation_id": "get_api_v1_meeting_minutes",
+            "tag": "General"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/meeting-minutes",
+            "protected": true,
+            "operation_id": "post_api_v1_meeting_minutes",
+            "tag": "General"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/meeting-minutes/{meeting_minute}",
+            "protected": true,
+            "operation_id": "delete_api_v1_meeting_minutes_meeting_minute",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/meeting-minutes/{meeting_minute}",
+            "protected": true,
+            "operation_id": "get_api_v1_meeting_minutes_meeting_minute",
+            "tag": "General"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/meeting-minutes/{meeting_minute}",
+            "protected": true,
+            "operation_id": "patch_api_v1_meeting_minutes_meeting_minute",
+            "tag": "General"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/meeting-minutes/{meeting_minute}",
+            "protected": true,
+            "operation_id": "put_api_v1_meeting_minutes_meeting_minute",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/notification-devices",
+            "protected": true,
+            "operation_id": "get_api_v1_notification_devices",
+            "tag": "General"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/notification-devices",
+            "protected": true,
+            "operation_id": "post_api_v1_notification_devices",
+            "tag": "General"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/notification-devices/{userDevice}",
+            "protected": true,
+            "operation_id": "delete_api_v1_notification_devices_userdevice",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/notification-preferences",
+            "protected": true,
+            "operation_id": "get_api_v1_notification_preferences",
+            "tag": "General"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/notification-preferences",
+            "protected": true,
+            "operation_id": "put_api_v1_notification_preferences",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/notifications",
+            "protected": true,
+            "operation_id": "get_api_v1_notifications",
+            "tag": "General"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/notifications/read-all",
+            "protected": true,
+            "operation_id": "post_api_v1_notifications_read_all",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/notifications/unread-count",
+            "protected": true,
+            "operation_id": "get_api_v1_notifications_unread_count",
+            "tag": "General"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/notifications/{notificationLog}/read",
+            "protected": true,
+            "operation_id": "post_api_v1_notifications_notificationlog_read",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/payment-gateways/{gateway}/callback",
+            "protected": false,
+            "operation_id": "get_api_v1_payment_gateways_gateway_callback",
+            "tag": "Payments"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/payment-gateways/{gateway}/callback",
+            "protected": false,
+            "operation_id": "post_api_v1_payment_gateways_gateway_callback",
+            "tag": "Payments"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/payment-gateways/{gateway}/webhook",
+            "protected": false,
+            "operation_id": "post_api_v1_payment_gateways_gateway_webhook",
+            "tag": "Payments"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/payments/{payment}",
+            "protected": true,
+            "operation_id": "get_api_v1_payments_payment",
+            "tag": "Payments"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/payments/{payment}/gateway/initiate",
+            "protected": true,
+            "operation_id": "post_api_v1_payments_payment_gateway_initiate",
+            "tag": "Payments"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/payments/{payment}/verify",
+            "protected": true,
+            "operation_id": "post_api_v1_payments_payment_verify",
+            "tag": "Payments"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/platform/reports/summary",
+            "protected": true,
+            "operation_id": "get_api_v1_platform_reports_summary",
+            "tag": "Reports"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/platform/service-marketplace-wallet",
+            "protected": true,
+            "operation_id": "get_api_v1_platform_service_marketplace_wallet",
+            "tag": "Wallets"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/provider-bank-accounts/{providerBankAccount}/verify",
+            "protected": true,
+            "operation_id": "post_api_v1_provider_bank_accounts_providerbankaccount_verify",
+            "tag": "Providers"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/provider-payouts/{providerPayoutRequest}/approve",
+            "protected": true,
+            "operation_id": "post_api_v1_provider_payouts_providerpayoutrequest_approve",
+            "tag": "Providers"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/provider-payouts/{providerPayoutRequest}/paid",
+            "protected": true,
+            "operation_id": "post_api_v1_provider_payouts_providerpayoutrequest_paid",
+            "tag": "Providers"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/provider-payouts/{providerPayoutRequest}/reject",
+            "protected": true,
+            "operation_id": "post_api_v1_provider_payouts_providerpayoutrequest_reject",
+            "tag": "Providers"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/provider/bank-accounts",
+            "protected": true,
+            "operation_id": "get_api_v1_provider_bank_accounts",
+            "tag": "Providers"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/provider/bank-accounts",
+            "protected": true,
+            "operation_id": "post_api_v1_provider_bank_accounts",
+            "tag": "Providers"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/provider/payouts",
+            "protected": true,
+            "operation_id": "get_api_v1_provider_payouts",
+            "tag": "Providers"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/provider/payouts",
+            "protected": true,
+            "operation_id": "post_api_v1_provider_payouts",
+            "tag": "Providers"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/report-definitions/{reportDefinition}/exports",
+            "protected": true,
+            "operation_id": "post_api_v1_report_definitions_reportdefinition_exports",
+            "tag": "Reports"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/report-exports",
+            "protected": true,
+            "operation_id": "get_api_v1_report_exports",
+            "tag": "Reports"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/report-exports/{generatedReport}",
+            "protected": true,
+            "operation_id": "delete_api_v1_report_exports_generatedreport",
+            "tag": "Reports"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/report-exports/{generatedReport}",
+            "protected": true,
+            "operation_id": "get_api_v1_report_exports_generatedreport",
+            "tag": "Reports"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/report-exports/{generatedReport}/download",
+            "protected": true,
+            "operation_id": "get_api_v1_report_exports_generatedreport_download",
+            "tag": "Reports"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/report-exports/{generatedReport}/retry",
+            "protected": true,
+            "operation_id": "post_api_v1_report_exports_generatedreport_retry",
+            "tag": "Reports"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/service-request-quotes/{serviceRequestQuote}/accept",
+            "protected": true,
+            "operation_id": "post_api_v1_service_request_quotes_servicerequestquote_accept",
+            "tag": "Services"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/service-requests",
+            "protected": true,
+            "operation_id": "get_api_v1_service_requests",
+            "tag": "Services"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/service-requests",
+            "protected": true,
+            "operation_id": "post_api_v1_service_requests",
+            "tag": "Services"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/service-requests/{serviceRequest}/assign",
+            "protected": true,
+            "operation_id": "post_api_v1_service_requests_servicerequest_assign",
+            "tag": "Services"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/service-requests/{serviceRequest}/cancel-financial",
+            "protected": true,
+            "operation_id": "post_api_v1_service_requests_servicerequest_cancel_financial",
+            "tag": "Services"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/service-requests/{serviceRequest}/confirm",
+            "protected": true,
+            "operation_id": "post_api_v1_service_requests_servicerequest_confirm",
+            "tag": "Services"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/service-requests/{serviceRequest}/finish",
+            "protected": true,
+            "operation_id": "post_api_v1_service_requests_servicerequest_finish",
+            "tag": "Services"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/service-requests/{serviceRequest}/quotes",
+            "protected": true,
+            "operation_id": "post_api_v1_service_requests_servicerequest_quotes",
+            "tag": "Services"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/service-requests/{serviceRequest}/start",
+            "protected": true,
+            "operation_id": "post_api_v1_service_requests_servicerequest_start",
+            "tag": "Services"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/service-requests/{service_request}",
+            "protected": true,
+            "operation_id": "delete_api_v1_service_requests_service_request",
+            "tag": "Services"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/service-requests/{service_request}",
+            "protected": true,
+            "operation_id": "get_api_v1_service_requests_service_request",
+            "tag": "Services"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/service-requests/{service_request}",
+            "protected": true,
+            "operation_id": "patch_api_v1_service_requests_service_request",
+            "tag": "Services"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/service-requests/{service_request}",
+            "protected": true,
+            "operation_id": "put_api_v1_service_requests_service_request",
+            "tag": "Services"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/support-config/categories",
+            "protected": true,
+            "operation_id": "get_api_v1_support_config_categories",
+            "tag": "Support"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/support-config/categories",
+            "protected": true,
+            "operation_id": "post_api_v1_support_config_categories",
+            "tag": "Support"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/support-config/categories/{supportCategory}",
+            "protected": true,
+            "operation_id": "patch_api_v1_support_config_categories_supportcategory",
+            "tag": "Support"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/support-config/sla-policies",
+            "protected": true,
+            "operation_id": "get_api_v1_support_config_sla_policies",
+            "tag": "Support"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/support-config/sla-policies",
+            "protected": true,
+            "operation_id": "post_api_v1_support_config_sla_policies",
+            "tag": "Support"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/support-config/sla-policies/{supportSlaPolicy}",
+            "protected": true,
+            "operation_id": "patch_api_v1_support_config_sla_policies_supportslapolicy",
+            "tag": "Support"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/support-tickets",
+            "protected": true,
+            "operation_id": "get_api_v1_support_tickets",
+            "tag": "Support"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/support-tickets",
+            "protected": true,
+            "operation_id": "post_api_v1_support_tickets",
+            "tag": "Support"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/support-tickets/{supportTicket}/assign",
+            "protected": true,
+            "operation_id": "post_api_v1_support_tickets_supportticket_assign",
+            "tag": "Support"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/support-tickets/{supportTicket}/close",
+            "protected": true,
+            "operation_id": "post_api_v1_support_tickets_supportticket_close",
+            "tag": "Support"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/support-tickets/{supportTicket}/messages",
+            "protected": true,
+            "operation_id": "get_api_v1_support_tickets_supportticket_messages",
+            "tag": "Support"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/support-tickets/{supportTicket}/messages",
+            "protected": true,
+            "operation_id": "post_api_v1_support_tickets_supportticket_messages",
+            "tag": "Support"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/support-tickets/{supportTicket}/reopen",
+            "protected": true,
+            "operation_id": "post_api_v1_support_tickets_supportticket_reopen",
+            "tag": "Support"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/support-tickets/{supportTicket}/resolve",
+            "protected": true,
+            "operation_id": "post_api_v1_support_tickets_supportticket_resolve",
+            "tag": "Support"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/support-tickets/{supportTicket}/start",
+            "protected": true,
+            "operation_id": "post_api_v1_support_tickets_supportticket_start",
+            "tag": "Support"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/support-tickets/{supportTicket}/wait-user",
+            "protected": true,
+            "operation_id": "post_api_v1_support_tickets_supportticket_wait_user",
+            "tag": "Support"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/support-tickets/{support_ticket}",
+            "protected": true,
+            "operation_id": "delete_api_v1_support_tickets_support_ticket",
+            "tag": "Support"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/support-tickets/{support_ticket}",
+            "protected": true,
+            "operation_id": "get_api_v1_support_tickets_support_ticket",
+            "tag": "Support"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/support-tickets/{support_ticket}",
+            "protected": true,
+            "operation_id": "patch_api_v1_support_tickets_support_ticket",
+            "tag": "Support"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/support-tickets/{support_ticket}",
+            "protected": true,
+            "operation_id": "put_api_v1_support_tickets_support_ticket",
+            "tag": "Support"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/system/readiness",
+            "protected": false,
+            "operation_id": "get_api_v1_system_readiness",
+            "tag": "System"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/unit-invitations/accept",
+            "protected": true,
+            "operation_id": "post_api_v1_unit_invitations_accept",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/unit-invitations/resolve",
+            "protected": true,
+            "operation_id": "post_api_v1_unit_invitations_resolve",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/unit-invitations/{unitInvitation}",
+            "protected": true,
+            "operation_id": "get_api_v1_unit_invitations_unitinvitation",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/unit-invitations/{unitInvitation}/cancel",
+            "protected": true,
+            "operation_id": "post_api_v1_unit_invitations_unitinvitation_cancel",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/unit-invitations/{unitInvitation}/resend",
+            "protected": true,
+            "operation_id": "post_api_v1_unit_invitations_unitinvitation_resend",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/unit-occupancies/{unitOccupancy}",
+            "protected": true,
+            "operation_id": "get_api_v1_unit_occupancies_unitoccupancy",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/unit-occupancies/{unitOccupancy}",
+            "protected": true,
+            "operation_id": "patch_api_v1_unit_occupancies_unitoccupancy",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/unit-occupancies/{unitOccupancy}/end",
+            "protected": true,
+            "operation_id": "post_api_v1_unit_occupancies_unitoccupancy_end",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/unit-ownerships/{unitOwnership}",
+            "protected": true,
+            "operation_id": "get_api_v1_unit_ownerships_unitownership",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/unit-ownerships/{unitOwnership}",
+            "protected": true,
+            "operation_id": "patch_api_v1_unit_ownerships_unitownership",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/unit-ownerships/{unitOwnership}/end",
+            "protected": true,
+            "operation_id": "post_api_v1_unit_ownerships_unitownership_end",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "DELETE",
+            "uri": "api/v1/units/{unit}",
+            "protected": true,
+            "operation_id": "delete_api_v1_units_unit",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/units/{unit}",
+            "protected": true,
+            "operation_id": "get_api_v1_units_unit",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/units/{unit}",
+            "protected": true,
+            "operation_id": "patch_api_v1_units_unit",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/units/{unit}",
+            "protected": true,
+            "operation_id": "put_api_v1_units_unit",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/units/{unit}/guest-visits",
+            "protected": true,
+            "operation_id": "get_api_v1_units_unit_guest_visits",
+            "tag": "Guests"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/units/{unit}/guest-visits",
+            "protected": true,
+            "operation_id": "post_api_v1_units_unit_guest_visits",
+            "tag": "Guests"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/units/{unit}/invitations",
+            "protected": true,
+            "operation_id": "get_api_v1_units_unit_invitations",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/units/{unit}/invitations",
+            "protected": true,
+            "operation_id": "post_api_v1_units_unit_invitations",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/units/{unit}/invoices",
+            "protected": true,
+            "operation_id": "get_api_v1_units_unit_invoices",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/units/{unit}/invoices",
+            "protected": true,
+            "operation_id": "post_api_v1_units_unit_invoices",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/units/{unit}/occupancies",
+            "protected": true,
+            "operation_id": "get_api_v1_units_unit_occupancies",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/units/{unit}/occupancies",
+            "protected": true,
+            "operation_id": "post_api_v1_units_unit_occupancies",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/units/{unit}/ownerships",
+            "protected": true,
+            "operation_id": "get_api_v1_units_unit_ownerships",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/units/{unit}/ownerships",
+            "protected": true,
+            "operation_id": "post_api_v1_units_unit_ownerships",
+            "tag": "Building Structure"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/units/{unit}/wallet",
+            "protected": true,
+            "operation_id": "get_api_v1_units_unit_wallet",
+            "tag": "Wallets"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/wallet-payouts/{walletPayoutRequest}/approve",
+            "protected": true,
+            "operation_id": "post_api_v1_wallet_payouts_walletpayoutrequest_approve",
+            "tag": "Wallets"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/wallet-payouts/{walletPayoutRequest}/paid",
+            "protected": true,
+            "operation_id": "post_api_v1_wallet_payouts_walletpayoutrequest_paid",
+            "tag": "Wallets"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/wallet-payouts/{walletPayoutRequest}/reject",
+            "protected": true,
+            "operation_id": "post_api_v1_wallet_payouts_walletpayoutrequest_reject",
+            "tag": "Wallets"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/wallet-topups/{walletTopUp}",
+            "protected": true,
+            "operation_id": "get_api_v1_wallet_topups_wallettopup",
+            "tag": "Wallets"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/wallet-transfers/{walletTransfer}/accounting-post",
+            "protected": true,
+            "operation_id": "post_api_v1_wallet_transfers_wallettransfer_accounting_post",
+            "tag": "Wallets"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/wallet-transfers/{walletTransfer}/accounting-posting",
+            "protected": true,
+            "operation_id": "get_api_v1_wallet_transfers_wallettransfer_accounting_posting",
+            "tag": "Wallets"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/wallets/me",
+            "protected": true,
+            "operation_id": "get_api_v1_wallets_me",
+            "tag": "Wallets"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/wallets/{wallet}/entries",
+            "protected": true,
+            "operation_id": "get_api_v1_wallets_wallet_entries",
+            "tag": "Wallets"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/wallets/{wallet}/reconcile",
+            "protected": true,
+            "operation_id": "post_api_v1_wallets_wallet_reconcile",
+            "tag": "Wallets"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/wallets/{wallet}/reconciliations",
+            "protected": true,
+            "operation_id": "get_api_v1_wallets_wallet_reconciliations",
+            "tag": "Wallets"
+        }
+    ]
+}

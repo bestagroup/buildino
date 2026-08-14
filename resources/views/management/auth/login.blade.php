@@ -5,119 +5,247 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="robots" content="noindex,nofollow">
+    <meta name="color-scheme" content="light">
+
     <title>ورود به پنل مدیریتی Buildino</title>
-    <link rel="stylesheet" href="{{ asset('css/buildino-management.css') }}">
+
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/buildino-fonts.css') }}"
+    >
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/buildino-management.css') }}"
+    >
 </head>
+
 <body class="login-page">
-    <div class="login-shell">
-        <section class="login-showcase">
-            <div class="login-showcase__content">
-                <div class="showcase-brand">
-                    <span class="brand-mark brand-mark--large">B</span>
-                    <div>
-                        <strong>Buildino</strong>
-                        <span>Smart Building Management</span>
-                    </div>
+<div class="login-shell">
+    <section class="login-visual">
+        <div class="login-visual__mesh"></div>
+
+        <div class="login-visual__content">
+            <div class="showcase-brand">
+                <div class="brand-mark brand-mark--large">
+                    <span>B</span>
                 </div>
 
-                <h1>مرکز مدیریت یکپارچه ساختمان</h1>
-                <p>
-                    مشاهده وضعیت مالی، رزرو امکانات، خدمات، پشتیبانی،
-                    اعلان‌ها و شاخص‌های کلیدی ساختمان از یک داشبورد واحد.
-                </p>
-
-                <div class="showcase-grid">
-                    <div>
-                        <strong>مالی شفاف</strong>
-                        <span>Wallet، Invoice و Ledger در یک جریان قابل کنترل</span>
-                    </div>
-                    <div>
-                        <strong>عملیات یکپارچه</strong>
-                        <span>ساکنین، مهمان، Facility، Service و Support</span>
-                    </div>
-                    <div>
-                        <strong>کنترل دسترسی</strong>
-                        <span>Permission و Scope در سطح پلتفرم و ساختمان</span>
-                    </div>
-                    <div>
-                        <strong>آماده بهره‌برداری</strong>
-                        <span>Health، Audit، Queue و Production Readiness</span>
-                    </div>
+                <div>
+                    <strong>Buildino</strong>
+                    <span>Smart Building Management</span>
                 </div>
             </div>
-        </section>
 
-        <section class="login-card-wrap">
-            <div class="login-card">
-                <div class="login-card__header">
-                    <span class="eyebrow">Management Dashboard</span>
-                    <h2>ورود به پنل مدیریتی</h2>
-                    <p>با شماره موبایل یا ایمیل و رمز عبور وارد شوید.</p>
-                </div>
+            <div class="login-visual__headline">
+                <span class="eyebrow eyebrow--light">
+                    مدیریت هوشمند، تصمیم‌گیری دقیق
+                </span>
 
-                @if ($errors->any())
-                    <div class="alert alert--danger">
-                        <strong>ورود انجام نشد</strong>
-                        <ul>
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
+                <h1>
+                    همه‌چیز برای مدیریت ساختمان،
+                    <em>در یک مرکز واحد.</em>
+                </h1>
+
+                <p>
+                    از ساختار مجتمع و ساکنین تا کیف پول، شارژ،
+                    رزرو امکانات، خدمات، پشتیبانی و گزارش‌های مدیریتی.
+                </p>
+            </div>
+
+            <div class="login-feature-grid">
+                <article>
+                    <div class="login-feature-icon">
+                        @include(
+                            'management.partials.icon',
+                            ['name' => 'building']
+                        )
                     </div>
-                @endif
+                    <strong>ساختار یکپارچه</strong>
+                    <span>مجتمع، ساختمان، واحد و ساکنین</span>
+                </article>
 
-                <form
-                    method="POST"
-                    action="{{ route('management.login.store') }}"
-                    class="login-form"
-                >
-                    @csrf
+                <article>
+                    <div class="login-feature-icon">
+                        @include(
+                            'management.partials.icon',
+                            ['name' => 'wallet']
+                        )
+                    </div>
+                    <strong>شفافیت مالی</strong>
+                    <span>Wallet، Invoice، Payment و Ledger</span>
+                </article>
 
-                    <label class="field">
-                        <span>شماره موبایل یا ایمیل</span>
+                <article>
+                    <div class="login-feature-icon">
+                        @include(
+                            'management.partials.icon',
+                            ['name' => 'shield']
+                        )
+                    </div>
+                    <strong>دسترسی کنترل‌شده</strong>
+                    <span>Role، Permission و Scope واقعی</span>
+                </article>
+            </div>
+        </div>
+
+        <div class="login-visual__footer">
+            <span>Buildino Backend/API v1.0</span>
+            <span>Secure • Scoped • Auditable</span>
+        </div>
+    </section>
+
+    <main class="login-form-area">
+        <div class="login-card">
+            <div class="login-card__mobile-brand">
+                <div class="brand-mark">
+                    <span>B</span>
+                </div>
+                <strong>Buildino</strong>
+            </div>
+
+            <div class="login-card__header">
+                <span class="eyebrow">
+                    پنل مدیریتی
+                </span>
+
+                <h2>خوش آمدید</h2>
+
+                <p>
+                    برای ورود، شماره موبایل یا ایمیل و رمز عبور خود را وارد کنید.
+                </p>
+            </div>
+
+            @if (session('status'))
+                <div class="alert alert--success login-alert">
+                    <strong>انجام شد</strong>
+                    <span>{{ session('status') }}</span>
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <div class="alert alert--danger login-alert">
+                    <strong>ورود انجام نشد</strong>
+
+                    @foreach ($errors->all() as $error)
+                        <span>{{ $error }}</span>
+                    @endforeach
+                </div>
+            @endif
+
+            <form
+                method="POST"
+                action="{{ route('management.login.store') }}"
+                class="login-form"
+            >
+                @csrf
+
+                <label class="auth-field">
+                    <span>شماره موبایل یا ایمیل</span>
+
+                    <div class="auth-input">
+                        @include(
+                            'management.partials.icon',
+                            [
+                                'name' => 'user',
+                                'size' => 18,
+                            ]
+                        )
+
                         <input
                             type="text"
                             name="login"
                             value="{{ old('login') }}"
                             autocomplete="username"
-                            placeholder="0912... یا example@domain.com"
+                            placeholder="0912... یا name@example.com"
+                            dir="ltr"
                             required
                             autofocus
                         >
-                    </label>
+                    </div>
+                </label>
 
-                    <label class="field">
-                        <span>رمز عبور</span>
+                <label class="auth-field">
+                    <span>رمز عبور</span>
+
+                    <div class="auth-input">
+                        @include(
+                            'management.partials.icon',
+                            [
+                                'name' => 'lock',
+                                'size' => 18,
+                            ]
+                        )
+
                         <input
                             type="password"
                             name="password"
                             autocomplete="current-password"
                             placeholder="رمز عبور"
+                            dir="ltr"
                             required
                         >
-                    </label>
+                    </div>
+                </label>
 
+                <div class="login-form__meta">
                     <label class="remember-row">
-                        <input type="hidden" name="remember" value="0">
+                        <input
+                            type="hidden"
+                            name="remember"
+                            value="0"
+                        >
+
                         <input
                             type="checkbox"
                             name="remember"
                             value="1"
                             @checked(old('remember'))
                         >
-                        <span>مرا به خاطر بسپار</span>
+
+                        <span>
+                            مرا در این دستگاه به خاطر بسپار
+                        </span>
                     </label>
 
-                    <button class="primary-button primary-button--wide" type="submit">
-                        ورود به داشبورد
-                    </button>
-                </form>
-
-                <div class="login-card__footer">
-                    دسترسی این پنل بر اساس Role، Permission و Scope واقعی Buildino کنترل می‌شود.
+                    <a
+                        class="forgot-password-link"
+                        href="{{ route('password.request') }}"
+                    >
+                        رمز عبور را فراموش کرده‌اید؟
+                    </a>
                 </div>
+
+                <button
+                    class="login-submit"
+                    type="submit"
+                >
+                    <span>ورود به داشبورد</span>
+
+                    @include(
+                        'management.partials.icon',
+                        [
+                            'name' => 'arrow-left',
+                            'size' => 18,
+                        ]
+                    )
+                </button>
+            </form>
+
+            <div class="login-security-note">
+                @include(
+                    'management.partials.icon',
+                    [
+                        'name' => 'shield',
+                        'size' => 16,
+                    ]
+                )
+
+                <span>
+                    محتوای پنل بر اساس نقش و محدوده دسترسی حساب شما نمایش داده می‌شود.
+                </span>
             </div>
-        </section>
-    </div>
+        </div>
+    </main>
+</div>
 </body>
 </html>

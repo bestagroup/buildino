@@ -3,9 +3,13 @@
 namespace App\Providers;
 
 use App\Observers\ProvisionWalletObserver;
+use App\Services\Web\ManagementUiContextService;
 use App\Models\User;
 use App\Models\Unit;
 use App\Models\Building;
+use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -15,7 +19,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(
+            ManagementUiContextService::class
+        );
     }
 
     /**
@@ -31,5 +37,42 @@ class AppServiceProvider extends ServiceProvider
         User::observe(ProvisionWalletObserver::class);
         Unit::observe(ProvisionWalletObserver::class);
         Building::observe(ProvisionWalletObserver::class);
+
+        ResetPasswordNotification::createUrlUsing(
+            function (
+                User $user,
+                string $token
+            ): string {
+                return route(
+                    'password.reset',
+                    [
+                        'token' => $token,
+                        'email' =>
+                            $user
+                                ->getEmailForPasswordReset(),
+                    ]
+                );
+            }
+        );
+
+        View::composer(
+            'management.*',
+            function ($view): void {
+                $user =
+                    Auth::guard('web')->user()
+                    ?? request()->user();
+
+                if (! $user) {
+                    return;
+                }
+
+                $view->with(
+                    'managementUi',
+                    app(
+                        ManagementUiContextService::class
+                    )->context($user)
+                );
+            }
+        );
     }
 }
