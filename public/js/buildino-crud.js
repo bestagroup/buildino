@@ -611,6 +611,21 @@
         message,
         tone = "success"
     ) => {
+        if (
+            window.BuildinoUI
+            && typeof window.BuildinoUI.toast
+                === "function"
+            && window.Swal
+        ) {
+            window.BuildinoUI
+                .toast(
+                    message,
+                    tone
+                );
+
+            return;
+        }
+
         if (! elements.toastStack) {
             return;
         }
@@ -641,6 +656,65 @@
         window.setTimeout(
             () => item.remove(),
             5000
+        );
+    };
+
+    const confirmAction = async (
+        message,
+        {
+            confirmText =
+                "بله، ادامه بده",
+            cancelText =
+                "انصراف",
+            tone =
+                "warning",
+        } = {}
+    ) => {
+        if (
+            window.Swal
+            && typeof window.Swal.fire
+                === "function"
+        ) {
+            const result =
+                await window.Swal.fire({
+                    title:
+                        "تأیید عملیات",
+                    text:
+                        String(
+                            message
+                            || "آیا مطمئن هستید؟"
+                        ),
+                    icon:
+                        tone === "danger"
+                            ? "warning"
+                            : tone,
+                    showCancelButton:
+                        true,
+                    confirmButtonText:
+                        confirmText,
+                    cancelButtonText:
+                        cancelText,
+                    reverseButtons:
+                        true,
+                    focusCancel:
+                        true,
+                    customClass: {
+                        popup:
+                            "buildino-swal-popup",
+                        confirmButton:
+                            "buildino-swal-confirm",
+                        cancelButton:
+                            "buildino-swal-cancel",
+                    },
+                });
+
+            return Boolean(
+                result.isConfirmed
+            );
+        }
+
+        return window.confirm(
+            message
         );
     };
 
@@ -1973,8 +2047,14 @@
         }
 
         if (
-            ! window.confirm(
-                "رکورد انتخاب‌شده حذف شود؟ این عملیات ممکن است قابل بازگشت نباشد."
+            ! await confirmAction(
+                "رکورد انتخاب‌شده حذف شود؟ این عملیات ممکن است قابل بازگشت نباشد.",
+                {
+                    confirmText:
+                        "حذف رکورد",
+                    tone:
+                        "danger",
+                }
             )
         ) {
             return;
@@ -2019,8 +2099,16 @@
             && ! (action.fields || []).length
         ) {
             if (
-                ! window.confirm(
-                    action.confirm
+                ! await confirmAction(
+                    action.confirm,
+                    {
+                        confirmText:
+                            action.title
+                            || "اجرا",
+                        tone:
+                            action.tone
+                            || "warning",
+                    }
                 )
             ) {
                 return;
@@ -2121,8 +2209,16 @@
         if (
             action.confirm
             && (action.fields || []).length
-            && ! window.confirm(
-                action.confirm
+            && ! await confirmAction(
+                action.confirm,
+                {
+                    confirmText:
+                        action.title
+                        || "اجرا",
+                    tone:
+                        action.tone
+                        || "warning",
+                }
             )
         ) {
             return;

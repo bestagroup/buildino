@@ -1,0 +1,27 @@
+{
+  "baseline": "user-confirmed green role-access + password-reset snapshot",
+  "php_files": 754,
+  "php_lint_failures": 0,
+  "duplicate_fqcns": 0,
+  "missing_app_imports": 0,
+  "js_syntax": {
+    "public/js/buildino-management.js": {
+      "ok": true,
+      "output": ""
+    },
+    "public/js/buildino-crud.js": {
+      "ok": true,
+      "output": ""
+    }
+  },
+  "bootstrap": "5.3.8",
+  "sweetalert2": "11.26.25",
+  "jdate": "1.5.0",
+  "morilog": "^3.5",
+  "header_wallet": true,
+  "header_notification_center": true,
+  "notification_mark_read_existing_api": true,
+  "dashboard_database_unread_semantics": true,
+  "new_migrations": 0,
+  "new_test": "ManagementDashboardHeaderUiTest"
+}

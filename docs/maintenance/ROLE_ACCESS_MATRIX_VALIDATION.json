@@ -1,0 +1,15 @@
+{
+  "baseline": "buildinoview.zip root source; old/ excluded",
+  "php_files": 750,
+  "php_lint_failures": 0,
+  "missing_app_imports": 0,
+  "role_count": 9,
+  "management_role_count": 6,
+  "relationship_role_count": 2,
+  "matrix_permission_references": 121,
+  "missing_matrix_permissions": [],
+  "complex_scope_visibility_query": true,
+  "access_scenario_seeder": true,
+  "access_scenario_test": true,
+  "stale_old_folder_excluded": true
+}

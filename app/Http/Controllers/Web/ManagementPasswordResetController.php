@@ -8,7 +8,7 @@ use App\Http\Requests\Web\ManagementResetPasswordRequest;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -51,9 +51,9 @@ class ManagementPasswordResetController extends Controller
         | Enumeration-safe behavior
         |--------------------------------------------------------------------------
         |
-        | We only issue a reset token for an active, unblocked account whose
-        | email address is verified. The browser receives the same message
-        | whether the account exists or not.
+        | Only an active, unblocked account with a verified email receives
+        | a reset link. The browser response stays identical for existing
+        | and non-existing accounts.
         |
         */
 
@@ -103,7 +103,19 @@ class ManagementPasswordResetController extends Controller
         $data =
             $request->validated();
 
-        $eligible = User::query()
+        /*
+        |--------------------------------------------------------------------------
+        | Resolve the eligible account once
+        |--------------------------------------------------------------------------
+        |
+        | We deliberately resolve the eligible User ourselves and then pass
+        | that exact model to Laravel's token repository. This avoids a second
+        | credential-based user lookup inside PasswordBroker::reset() while
+        | preserving Laravel's standard hashed token and expiration checks.
+        |
+        */
+
+        $user = User::query()
             ->where(
                 'email',
                 $data['email']
@@ -119,80 +131,75 @@ class ManagementPasswordResetController extends Controller
             ->whereNotNull(
                 'email_verified_at'
             )
-            ->exists();
+            ->first();
 
-        if (! $eligible) {
-            return back()
-                ->withInput(
-                    $request->only(
-                        'email'
-                    )
-                )
-                ->withErrors([
-                    'email' =>
-                        'لینک بازنشانی معتبر نیست یا حساب امکان بازنشانی رمز عبور ندارد.',
-                ]);
+        if (! $user) {
+            return $this->invalidResetResponse(
+                'لینک بازنشانی معتبر نیست یا حساب امکان بازنشانی رمز عبور ندارد.'
+            );
         }
 
-        $status =
-            Password::broker()
-                ->reset(
-                    [
-                        'email' =>
-                            $data['email'],
+        $broker =
+            Password::broker();
 
-                        'password' =>
-                            $data['password'],
-
-                        'password_confirmation' =>
-                            $data[
-                                'password_confirmation'
-                            ],
-
-                        'token' =>
-                            $data['token'],
-                    ],
-                    function (
-                        User $user,
-                        string $password
-                    ): void {
-                        $user->forceFill([
-                            'password' =>
-                                Hash::make(
-                                    $password
-                                ),
-
-                            'remember_token' =>
-                                Str::random(
-                                    60
-                                ),
-                        ])->save();
-
-                        event(
-                            new PasswordReset(
-                                $user
-                            )
-                        );
-                    }
-                );
+        /*
+        |--------------------------------------------------------------------------
+        | Standard Laravel token validation
+        |--------------------------------------------------------------------------
+        |
+        | tokenExists() delegates to the configured token repository, so
+        | token hash verification and expiration semantics remain exactly
+        | those configured by auth.passwords.users.
+        |
+        */
 
         if (
-            $status
-            !== Password::PASSWORD_RESET
+            ! $broker->tokenExists(
+                $user,
+                $data['token']
+            )
         ) {
-            return back()
-                ->withInput(
-                    $request->only(
-                        'email'
-                    )
-                )
-                ->withErrors([
-                    'email' =>
-                        $this->statusMessage(
-                            $status
-                        ),
-                ]);
+            return $this->invalidResetResponse(
+                'لینک بازنشانی رمز عبور نامعتبر یا منقضی شده است.'
+            );
         }
+
+        DB::transaction(
+            function () use (
+                $broker,
+                $data,
+                $user
+            ): void {
+                /*
+                 * User.password already has Laravel's "hashed" cast.
+                 * Assigning the plain validated password lets the model
+                 * hash it exactly once.
+                 */
+                $user->forceFill([
+                    'password' =>
+                        $data['password'],
+
+                    'remember_token' =>
+                        Str::random(
+                            60
+                        ),
+                ])->save();
+
+                /*
+                 * Consume the token in the same database transaction so
+                 * a successfully used link cannot be replayed.
+                 */
+                $broker->deleteToken(
+                    $user
+                );
+            }
+        );
+
+        event(
+            new PasswordReset(
+                $user
+            )
+        );
 
         return redirect()
             ->route('login')
@@ -202,18 +209,17 @@ class ManagementPasswordResetController extends Controller
             );
     }
 
-    private function statusMessage(
-        string $status
-    ): string {
-        return match ($status) {
-            Password::INVALID_TOKEN =>
-                'لینک بازنشانی رمز عبور نامعتبر یا منقضی شده است.',
-
-            Password::INVALID_USER =>
-                'حساب کاربری معتبر پیدا نشد.',
-
-            default =>
-                'بازنشانی رمز عبور انجام نشد. لطفاً دوباره درخواست لینک کنید.',
-        };
+    private function invalidResetResponse(
+        string $message
+    ): RedirectResponse {
+        return back()
+            ->withInput(
+                request()->only(
+                    'email'
+                )
+            )
+            ->withErrors([
+                'email' => $message,
+            ]);
     }
 }

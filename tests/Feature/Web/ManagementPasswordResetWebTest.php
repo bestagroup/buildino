@@ -158,6 +158,89 @@ class ManagementPasswordResetWebTest extends TestCase
                     ->password
             )
         );
+
+        $this->assertFalse(
+            Password::broker()
+                ->tokenExists(
+                    $user->refresh(),
+                    $token
+                ),
+            'A successfully used password-reset token must be consumed.'
+        );
+    }
+
+    public function test_consumed_token_cannot_be_reused(): void
+    {
+        $user =
+            User::factory()
+                ->create([
+                    'email' =>
+                        'reset-replay@buildino.local',
+                    'email_verified_at' =>
+                        now(),
+                    'is_active' =>
+                        true,
+                    'is_blocked' =>
+                        false,
+                    'password' =>
+                        Hash::make(
+                            'OriginalPass1405'
+                        ),
+                ]);
+
+        $token =
+            Password::broker()
+                ->createToken(
+                    $user
+                );
+
+        $this->post(
+            '/management/reset-password',
+            [
+                'token' =>
+                    $token,
+                'email' =>
+                    $user->email,
+                'password' =>
+                    'FirstPassword1405',
+                'password_confirmation' =>
+                    'FirstPassword1405',
+            ]
+        )->assertRedirect(
+            '/management/login'
+        );
+
+        $this->from(
+            '/management/reset-password/reused'
+        )
+            ->post(
+                '/management/reset-password',
+                [
+                    'token' =>
+                        $token,
+                    'email' =>
+                        $user->email,
+                    'password' =>
+                        'SecondPassword1405',
+                    'password_confirmation' =>
+                        'SecondPassword1405',
+                ]
+            )
+            ->assertRedirect(
+                '/management/reset-password/reused'
+            )
+            ->assertSessionHasErrors(
+                'email'
+            );
+
+        $this->assertTrue(
+            Hash::check(
+                'FirstPassword1405',
+                $user
+                    ->refresh()
+                    ->password
+            )
+        );
     }
 
     public function test_invalid_token_does_not_change_password(): void

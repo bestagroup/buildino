@@ -7,6 +7,8 @@ use App\Http\Requests\Web\ManagementDashboardRequest;
 use App\Models\Building;
 use App\Services\Web\ManagementDashboardAccessService;
 use App\Services\Web\ManagementDashboardService;
+use App\Services\Web\ManagementRoleDashboardService;
+use App\Services\Web\ManagementUiContextService;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 
@@ -15,7 +17,9 @@ class ManagementDashboardController extends Controller
     public function index(
         ManagementDashboardRequest $request,
         ManagementDashboardAccessService $access,
-        ManagementDashboardService $dashboard
+        ManagementDashboardService $dashboard,
+        ManagementUiContextService $ui,
+        ManagementRoleDashboardService $roleDashboard
     ): View {
         $user = $request->user();
 
@@ -45,7 +49,10 @@ class ManagementDashboardController extends Controller
                 $selectedBuilding !== null,
                 Response::HTTP_FORBIDDEN
             );
-        } elseif (! $platformAccess) {
+        } elseif (
+            ! $platformAccess
+            && $buildings->count() === 1
+        ) {
             $selectedBuilding =
                 $buildings->first();
         }
@@ -57,6 +64,18 @@ class ManagementDashboardController extends Controller
             $request->validated('from'),
             $request->validated('to')
         );
+
+        $uiContext =
+            $ui->context(
+                $user
+            );
+
+        $roleDashboardData =
+            $roleDashboard->build(
+                $user,
+                $data,
+                $uiContext
+            );
 
         return view(
             'management.dashboard',
@@ -71,6 +90,8 @@ class ManagementDashboardController extends Controller
                     $data,
                 'platformAccess' =>
                     $platformAccess,
+                'roleDashboard' =>
+                    $roleDashboardData,
             ]
         );
     }

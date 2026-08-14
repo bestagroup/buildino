@@ -65,6 +65,71 @@
             }
         );
 
+    const jDateFormat = (
+        value,
+        includeTime = false
+    ) => {
+        const date =
+            value instanceof Date
+                ? value
+                : new Date(value);
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+            return null;
+        }
+
+        if (
+            typeof window.JDate
+            === "function"
+        ) {
+            try {
+                const jalali =
+                    new window.JDate(
+                        date,
+                        {
+                            persianNumerical:
+                                true,
+                        }
+                    );
+
+                const datePart =
+                    jalali.format(
+                        "YYYY/MM/DD"
+                    );
+
+                if (! includeTime) {
+                    return datePart;
+                }
+
+                const timePart =
+                    new Intl.DateTimeFormat(
+                        "fa-IR",
+                        {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: false,
+                        }
+                    ).format(date);
+
+                return `${datePart} - ${timePart}`;
+            } catch {
+                // Intl below remains a reliable fallback.
+            }
+        }
+
+        return includeTime
+            ? formatDateTime.format(
+                date
+            )
+            : formatDate.format(
+                date
+            );
+    };
+
     window.BuildinoUI = {
         toFaDigits,
 
@@ -88,16 +153,10 @@
                 return "—";
             }
 
-            const date =
-                new Date(value);
-
-            return Number.isNaN(
-                date.getTime()
-            )
-                ? String(value)
-                : formatDate.format(
-                    date
-                );
+            return jDateFormat(
+                value,
+                false
+            ) ?? String(value);
         },
 
         dateTime(value) {
@@ -105,16 +164,50 @@
                 return "—";
             }
 
-            const date =
-                new Date(value);
+            return jDateFormat(
+                value,
+                true
+            ) ?? String(value);
+        },
 
-            return Number.isNaN(
-                date.getTime()
-            )
-                ? String(value)
-                : formatDateTime.format(
-                    date
-                );
+        toast(
+            message,
+            tone = "success"
+        ) {
+            if (
+                window.Swal
+                && typeof window.Swal.fire
+                    === "function"
+            ) {
+                const icon =
+                    {
+                        danger: "error",
+                        warning: "warning",
+                        info: "info",
+                        success: "success",
+                    }[tone]
+                    || "success";
+
+                return window.Swal.fire({
+                    toast: true,
+                    position: "top-start",
+                    icon,
+                    title: String(
+                        message ?? ""
+                    ),
+                    showConfirmButton:
+                        false,
+                    timer: 3200,
+                    timerProgressBar:
+                        true,
+                    customClass: {
+                        popup:
+                            "buildino-swal-toast",
+                    },
+                });
+            }
+
+            return null;
         },
     };
 
@@ -143,6 +236,11 @@
                     : "light"
             );
 
+    root.setAttribute(
+        "data-bs-theme",
+        root.dataset.theme
+    );
+
     document
         .getElementById(
             "themeToggle"
@@ -159,6 +257,11 @@
 
                 root.dataset.theme =
                     next;
+
+                root.setAttribute(
+                    "data-bs-theme",
+                    next
+                );
 
                 storage.set(
                     "buildino-theme",
@@ -381,6 +484,271 @@
         "click",
         () => closePopovers()
     );
+
+    /* ---------------------------------------------------------------
+       Bootstrap helpers + Persian presentation
+    ---------------------------------------------------------------- */
+
+    if (
+        window.bootstrap
+        && typeof window.bootstrap.Tooltip
+            === "function"
+    ) {
+        document
+            .querySelectorAll(
+                '[data-bs-toggle="tooltip"]'
+            )
+            .forEach(
+                (element) => {
+                    new window.bootstrap.Tooltip(
+                        element,
+                        {
+                            container:
+                                "body",
+                        }
+                    );
+                }
+            );
+    }
+
+    document
+        .querySelectorAll(
+            "[data-money-value]"
+        )
+        .forEach(
+            (element) => {
+                element.textContent =
+                    window.BuildinoUI
+                        .number(
+                            element.dataset
+                                .moneyValue
+                        );
+            }
+        );
+
+    document
+        .querySelectorAll(
+            "[data-jdate]"
+        )
+        .forEach(
+            (element) => {
+                element.textContent =
+                    window.BuildinoUI
+                        .dateTime(
+                            element.dataset
+                                .jdate
+                        );
+            }
+        );
+
+    /* ---------------------------------------------------------------
+       Header notifications
+    ---------------------------------------------------------------- */
+
+    const notificationBadge =
+        document.getElementById(
+            "managementNotificationBadge"
+        );
+
+    const notificationUnreadText =
+        document.getElementById(
+            "managementNotificationUnreadText"
+        );
+
+    const notificationReadAll =
+        document.getElementById(
+            "managementNotificationsReadAll"
+        );
+
+    const notificationItems = [
+        ...document.querySelectorAll(
+            "[data-management-notification]"
+        ),
+    ];
+
+    const csrfToken =
+        document
+            .querySelector(
+                'meta[name="csrf-token"]'
+            )
+            ?.getAttribute(
+                "content"
+            )
+        || "";
+
+    const notificationFetch =
+        async (
+            url
+        ) => {
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method: "POST",
+                        credentials:
+                            "same-origin",
+                        headers: {
+                            Accept:
+                                "application/json",
+                            "X-Requested-With":
+                                "XMLHttpRequest",
+                            "X-CSRF-TOKEN":
+                                csrfToken,
+                        },
+                    }
+                );
+
+            if (! response.ok) {
+                throw new Error(
+                    "بروزرسانی وضعیت اعلان انجام نشد."
+                );
+            }
+
+            return response.json();
+        };
+
+    const updateUnreadBadge =
+        (count) => {
+            const safeCount =
+                Math.max(
+                    0,
+                    Number(count) || 0
+                );
+
+            if (
+                notificationBadge
+            ) {
+                notificationBadge.hidden =
+                    safeCount < 1;
+
+                notificationBadge.textContent =
+                    safeCount > 99
+                        ? "99+"
+                        : toFaDigits(
+                            safeCount
+                        );
+            }
+
+            if (
+                notificationUnreadText
+            ) {
+                notificationUnreadText.textContent =
+                    window.BuildinoUI
+                        .number(
+                            safeCount
+                        );
+            }
+
+            if (
+                notificationReadAll
+            ) {
+                notificationReadAll.disabled =
+                    safeCount < 1;
+            }
+        };
+
+    const currentUnreadCount =
+        () =>
+            notificationItems
+                .filter(
+                    (item) =>
+                        item.classList
+                            .contains(
+                                "is-unread"
+                            )
+                )
+                .length;
+
+    notificationItems.forEach(
+        (item) => {
+            item.addEventListener(
+                "click",
+                async () => {
+                    const id =
+                        item.dataset
+                            .notificationId;
+
+                    const href =
+                        item.dataset
+                            .notificationHref;
+
+                    try {
+                        if (
+                            item.classList
+                                .contains(
+                                    "is-unread"
+                                )
+                        ) {
+                            await notificationFetch(
+                                `/api/v1/notifications/${encodeURIComponent(id)}/read`
+                            );
+
+                            item.classList
+                                .remove(
+                                    "is-unread"
+                                );
+
+                            updateUnreadBadge(
+                                currentUnreadCount()
+                            );
+                        }
+
+                        if (href) {
+                            window.location.href =
+                                href;
+                        }
+                    } catch (error) {
+                        window.BuildinoUI
+                            .toast(
+                                error.message,
+                                "danger"
+                            );
+                    }
+                }
+            );
+        }
+    );
+
+    notificationReadAll
+        ?.addEventListener(
+            "click",
+            async (
+                event
+            ) => {
+                event.stopPropagation();
+
+                try {
+                    await notificationFetch(
+                        "/api/v1/notifications/read-all"
+                    );
+
+                    notificationItems
+                        .forEach(
+                            (item) =>
+                                item.classList
+                                    .remove(
+                                        "is-unread"
+                                    )
+                        );
+
+                    updateUnreadBadge(
+                        0
+                    );
+
+                    window.BuildinoUI
+                        .toast(
+                            "همه اعلان‌ها خوانده شدند.",
+                            "success"
+                        );
+                } catch (error) {
+                    window.BuildinoUI
+                        .toast(
+                            error.message,
+                            "danger"
+                        );
+                }
+            }
+        );
 
     /* ---------------------------------------------------------------
        Command palette

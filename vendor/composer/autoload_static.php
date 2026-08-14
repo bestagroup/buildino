@@ -23,8 +23,8 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         '662a729f963d39afe703c9d9b7ab4a8c' => __DIR__ . '/..' . '/symfony/polyfill-php83/bootstrap.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         '2203a247e6fda86070a5e4e07aed533a' => __DIR__ . '/..' . '/symfony/clock/Resources/now.php',
-        '09f6b20656683369174dd6fa83b7e5fb' => __DIR__ . '/..' . '/symfony/polyfill-uuid/bootstrap.php',
         'a1105708a18b76903365ca1c4aa61b02' => __DIR__ . '/..' . '/symfony/translation/Resources/functions.php',
+        '09f6b20656683369174dd6fa83b7e5fb' => __DIR__ . '/..' . '/symfony/polyfill-uuid/bootstrap.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         '47e1160838b5e5a10346ac4084b58c23' => __DIR__ . '/..' . '/laravel/prompts/src/helpers.php',
         'e39a8b23c42d4e1452234d762b03835a' => __DIR__ . '/..' . '/ramsey/uuid/src/functions.php',
@@ -40,12 +40,14 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         '58571171fd5812e6e447dce228f52f4d' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Support/helpers.php',
         'a1cfe24d14977df6878b9bf804af2d1c' => __DIR__ . '/..' . '/nunomaduro/collision/src/Adapters/Phpunit/Autoload.php',
         'aadac1114cab8dc19489a7f6dc24c003' => __DIR__ . '/..' . '/pestphp/pest-plugin-arch/src/Autoload.php',
+        'a4ecaeafb8cfb009ad0e052c90355e98' => __DIR__ . '/..' . '/beberlei/assert/lib/Assert/functions.php',
         'f83ed111c2f97a0449abf067f157f418' => __DIR__ . '/..' . '/pestphp/pest/src/Functions.php',
         '7d2876738dc0328edeb8a103c76cd8e7' => __DIR__ . '/..' . '/pestphp/pest/src/Pest.php',
         '801c31d8ed748cfa537fa45402288c95' => __DIR__ . '/..' . '/psy/psysh/src/functions.php',
         'ac0aa5b57142c92aeadc397fa46b9d39' => __DIR__ . '/..' . '/darkaonline/l5-swagger/src/helpers.php',
         'c72349b1fe8d0deeedd3a52e8aa814d8' => __DIR__ . '/..' . '/mockery/mockery/library/helpers.php',
         'ce9671a430e4846b44e1c68c7611f9f5' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery.php',
+        'e4e590a9b5afe940db71ee1662c02677' => __DIR__ . '/..' . '/morilog/jalali/src/helpers.php',
         'd634523d799d97a8ab4807b650bf5cea' => __DIR__ . '/..' . '/pestphp/pest-plugin-laravel/src/Autoload.php',
     );
 
@@ -141,6 +143,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         ),
         'M' =>
         array (
+            'Morilog\\Jalali\\' => 15,
             'Monolog\\' => 8,
             'Mockery\\' => 8,
         ),
@@ -210,6 +213,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         ),
         'A' =>
         array (
+            'Assert\\' => 7,
             'App\\' => 4,
         ),
     );
@@ -467,6 +471,10 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
             0 => __DIR__ . '/..' . '/nette/schema/src',
             1 => __DIR__ . '/..' . '/nette/utils/src',
         ),
+        'Morilog\\Jalali\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/morilog/jalali/src',
+        ),
         'Monolog\\' =>
         array (
             0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
@@ -629,6 +637,10 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         array (
             0 => __DIR__ . '/..' . '/brick/math/src',
         ),
+        'Assert\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/beberlei/assert/lib/Assert',
+        ),
         'App\\' =>
         array (
             0 => __DIR__ . '/../..' . '/app',
@@ -677,6 +689,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Console\\Commands\\ReconcileWallets' => __DIR__ . '/../..' . '/app/Console/Commands/ReconcileWallets.php',
         'App\\Console\\Commands\\RecordSchedulerHeartbeat' => __DIR__ . '/../..' . '/app/Console/Commands/RecordSchedulerHeartbeat.php',
         'App\\Console\\Commands\\ReleaseGate' => __DIR__ . '/../..' . '/app/Console/Commands/ReleaseGate.php',
+        'App\\Console\\Commands\\SeedAccessScenarioCommand' => __DIR__ . '/../..' . '/app/Console/Commands/SeedAccessScenarioCommand.php',
         'App\\Console\\Commands\\SeedDemoData' => __DIR__ . '/../..' . '/app/Console/Commands/SeedDemoData.php',
         'App\\Console\\Commands\\SendInvoiceDueReminders' => __DIR__ . '/../..' . '/app/Console/Commands/SendInvoiceDueReminders.php',
         'App\\Console\\Commands\\SendReservationReminders' => __DIR__ . '/../..' . '/app/Console/Commands/SendReservationReminders.php',
@@ -1206,9 +1219,20 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Services\\Wallet\\WalletTopUpService' => __DIR__ . '/../..' . '/app/Services/Wallet/WalletTopUpService.php',
         'App\\Services\\Web\\ManagementDashboardAccessService' => __DIR__ . '/../..' . '/app/Services/Web/ManagementDashboardAccessService.php',
         'App\\Services\\Web\\ManagementDashboardService' => __DIR__ . '/../..' . '/app/Services/Web/ManagementDashboardService.php',
+        'App\\Services\\Web\\ManagementHeaderContextService' => __DIR__ . '/../..' . '/app/Services/Web/ManagementHeaderContextService.php',
+        'App\\Services\\Web\\ManagementRoleDashboardService' => __DIR__ . '/../..' . '/app/Services/Web/ManagementRoleDashboardService.php',
         'App\\Services\\Web\\ManagementUiContextService' => __DIR__ . '/../..' . '/app/Services/Web/ManagementUiContextService.php',
         'App\\Support\\Authorization\\BuildingVisibilityQuery' => __DIR__ . '/../..' . '/app/Support/Authorization/BuildingVisibilityQuery.php',
+        'App\\Support\\Authorization\\ComplexVisibilityQuery' => __DIR__ . '/../..' . '/app/Support/Authorization/ComplexVisibilityQuery.php',
         'App\\Support\\Authorization\\PermissionChecker' => __DIR__ . '/../..' . '/app/Support/Authorization/PermissionChecker.php',
+        'App\\Support\\Jalali\\JalaliDateFormatter' => __DIR__ . '/../..' . '/app/Support/Jalali/JalaliDateFormatter.php',
+        'Assert\\Assert' => __DIR__ . '/..' . '/beberlei/assert/lib/Assert/Assert.php',
+        'Assert\\Assertion' => __DIR__ . '/..' . '/beberlei/assert/lib/Assert/Assertion.php',
+        'Assert\\AssertionChain' => __DIR__ . '/..' . '/beberlei/assert/lib/Assert/AssertionChain.php',
+        'Assert\\AssertionFailedException' => __DIR__ . '/..' . '/beberlei/assert/lib/Assert/AssertionFailedException.php',
+        'Assert\\InvalidArgumentException' => __DIR__ . '/..' . '/beberlei/assert/lib/Assert/InvalidArgumentException.php',
+        'Assert\\LazyAssertion' => __DIR__ . '/..' . '/beberlei/assert/lib/Assert/LazyAssertion.php',
+        'Assert\\LazyAssertionException' => __DIR__ . '/..' . '/beberlei/assert/lib/Assert/LazyAssertionException.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Brick\\Math\\BigDecimal' => __DIR__ . '/..' . '/brick/math/src/BigDecimal.php',
         'Brick\\Math\\BigInteger' => __DIR__ . '/..' . '/brick/math/src/BigInteger.php',
@@ -1343,6 +1367,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'Database\\Factories\\UnitFactory' => __DIR__ . '/../..' . '/database/factories/UnitFactory.php',
         'Database\\Factories\\UnitInvitationFactory' => __DIR__ . '/../..' . '/database/factories/UnitInvitationFactory.php',
         'Database\\Factories\\UserFactory' => __DIR__ . '/../..' . '/database/factories/UserFactory.php',
+        'Database\\Seeders\\AccessScenarioSeeder' => __DIR__ . '/../..' . '/database/seeders/AccessScenarioSeeder.php',
         'Database\\Seeders\\DatabaseSeeder' => __DIR__ . '/../..' . '/database/seeders/DatabaseSeeder.php',
         'Database\\Seeders\\DemoDataSeeder' => __DIR__ . '/../..' . '/database/seeders/DemoDataSeeder.php',
         'Database\\Seeders\\FinalCompletionPermissionSeeder' => __DIR__ . '/../..' . '/database/seeders/FinalCompletionPermissionSeeder.php',
@@ -1353,6 +1378,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'Database\\Seeders\\ReportExportPermissionSeeder' => __DIR__ . '/../..' . '/database/seeders/ReportExportPermissionSeeder.php',
         'Database\\Seeders\\ReportingCatalogSeeder' => __DIR__ . '/../..' . '/database/seeders/ReportingCatalogSeeder.php',
         'Database\\Seeders\\ReportingPermissionSeeder' => __DIR__ . '/../..' . '/database/seeders/ReportingPermissionSeeder.php',
+        'Database\\Seeders\\RoleMatrixSeeder' => __DIR__ . '/../..' . '/database/seeders/RoleMatrixSeeder.php',
         'Database\\Seeders\\ServiceMarketplacePermissionSeeder' => __DIR__ . '/../..' . '/database/seeders/ServiceMarketplacePermissionSeeder.php',
         'Database\\Seeders\\SystemHealthPermissionSeeder' => __DIR__ . '/../..' . '/database/seeders/SystemHealthPermissionSeeder.php',
         'Database\\Seeders\\WalletAccountingPermissionSeeder' => __DIR__ . '/../..' . '/database/seeders/WalletAccountingPermissionSeeder.php',
@@ -4553,6 +4579,9 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'Monolog\\Test\\MonologTestCase' => __DIR__ . '/..' . '/monolog/monolog/src/Monolog/Test/MonologTestCase.php',
         'Monolog\\Test\\TestCase' => __DIR__ . '/..' . '/monolog/monolog/src/Monolog/Test/TestCase.php',
         'Monolog\\Utils' => __DIR__ . '/..' . '/monolog/monolog/src/Monolog/Utils.php',
+        'Morilog\\Jalali\\CalendarUtils' => __DIR__ . '/..' . '/morilog/jalali/src/CalendarUtils.php',
+        'Morilog\\Jalali\\Converter' => __DIR__ . '/..' . '/morilog/jalali/src/Converter.php',
+        'Morilog\\Jalali\\Jalalian' => __DIR__ . '/..' . '/morilog/jalali/src/Jalalian.php',
         'Nette\\ArgumentOutOfRangeException' => __DIR__ . '/..' . '/nette/utils/src/exceptions.php',
         'Nette\\DeprecatedException' => __DIR__ . '/..' . '/nette/utils/src/exceptions.php',
         'Nette\\DirectoryNotFoundException' => __DIR__ . '/..' . '/nette/utils/src/exceptions.php',
@@ -8678,6 +8707,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'Tests\\Feature\\Auth\\OtpAuthenticationTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/OtpAuthenticationTest.php',
         'Tests\\Feature\\Auth\\PasswordAuthenticationTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/PasswordAuthenticationTest.php',
         'Tests\\Feature\\Auth\\TokenManagementTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/TokenManagementTest.php',
+        'Tests\\Feature\\Authorization\\RoleMatrixAccessScenarioTest' => __DIR__ . '/../..' . '/tests/Feature/Authorization/RoleMatrixAccessScenarioTest.php',
         'Tests\\Feature\\Financial\\PaymentGatewaySecurityFlowTest' => __DIR__ . '/../..' . '/tests/Feature/Financial/PaymentGatewaySecurityFlowTest.php',
         'Tests\\Feature\\Financial\\ProviderSettlementReconciliationFlowTest' => __DIR__ . '/../..' . '/tests/Feature/Financial/ProviderSettlementReconciliationFlowTest.php',
         'Tests\\Feature\\Financial\\ServiceMarketplaceWalletFlowTest' => __DIR__ . '/../..' . '/tests/Feature/Financial/ServiceMarketplaceWalletFlowTest.php',
@@ -8708,8 +8738,10 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'Tests\\Feature\\System\\ReleaseCandidateApiFlowTest' => __DIR__ . '/../..' . '/tests/Feature/System/ReleaseCandidateApiFlowTest.php',
         'Tests\\Feature\\System\\RouteCompositionRebootTest' => __DIR__ . '/../..' . '/tests/Feature/System/RouteCompositionRebootTest.php',
         'Tests\\Feature\\Web\\ManagementCrudWebTest' => __DIR__ . '/../..' . '/tests/Feature/Web/ManagementCrudWebTest.php',
+        'Tests\\Feature\\Web\\ManagementDashboardHeaderUiTest' => __DIR__ . '/../..' . '/tests/Feature/Web/ManagementDashboardHeaderUiTest.php',
         'Tests\\Feature\\Web\\ManagementDashboardWebTest' => __DIR__ . '/../..' . '/tests/Feature/Web/ManagementDashboardWebTest.php',
         'Tests\\Feature\\Web\\ManagementPasswordResetWebTest' => __DIR__ . '/../..' . '/tests/Feature/Web/ManagementPasswordResetWebTest.php',
+        'Tests\\Feature\\Web\\ManagementRoleDashboardWebTest' => __DIR__ . '/../..' . '/tests/Feature/Web/ManagementRoleDashboardWebTest.php',
         'Tests\\Feature\\Web\\ManagementUiUxAccessTest' => __DIR__ . '/../..' . '/tests/Feature/Web/ManagementUiUxAccessTest.php',
         'Tests\\Support\\CreatesBuildingDomainData' => __DIR__ . '/../..' . '/tests/Support/CreatesBuildingDomainData.php',
         'Tests\\TestCase' => __DIR__ . '/../..' . '/tests/TestCase.php',

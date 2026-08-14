@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Observers\ProvisionWalletObserver;
 use App\Services\Web\ManagementUiContextService;
+use App\Services\Web\ManagementHeaderContextService;
 use App\Models\User;
 use App\Models\Unit;
 use App\Models\Building;
@@ -21,6 +22,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(
             ManagementUiContextService::class
+        );
+
+        $this->app->singleton(
+            ManagementHeaderContextService::class
         );
     }
 
@@ -70,6 +75,13 @@ class AppServiceProvider extends ServiceProvider
                     'managementUi',
                     app(
                         ManagementUiContextService::class
+                    )->context($user)
+                );
+
+                $view->with(
+                    'managementHeader',
+                    app(
+                        ManagementHeaderContextService::class
                     )->context($user)
                 );
             }

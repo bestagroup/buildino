@@ -3,6 +3,7 @@
 namespace App\Services\Web;
 
 use App\Enums\InvoiceStatus;
+use App\Enums\NotificationChannel;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Enums\ServiceRequestStatus;
@@ -569,6 +570,10 @@ final class ManagementDashboardService
                     ->where(
                         'notifiable_id',
                         $user->getKey()
+                    )
+                    ->where(
+                        'channel',
+                        NotificationChannel::Database->value
                     )
                     ->whereNull(
                         'read_at'

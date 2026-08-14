@@ -2,13 +2,11 @@
 
 @section('title', 'داشبورد مدیریتی Buildino')
 
-@section('page-title', 'داشبورد مدیریتی')
+@section('page-title', $roleDashboard['profile']['short_title'] ?? 'داشبورد مدیریتی')
 
 @section(
     'page-subtitle',
-    $selectedBuilding
-        ? 'نمای عملیاتی و مالی ' . $selectedBuilding->title
-        : 'نمای کلان پلتفرم و ساختمان‌های تحت مدیریت'
+    ($roleDashboard['profile']['description'] ?? 'مدیریت و پایش سامانه Buildino')
 )
 
 @php
@@ -17,6 +15,35 @@
     $buildingDashboard = $dashboard['building_dashboard'];
     $platformSummary = $dashboard['platform_summary'];
     $currency = $scope['currency'] ?? 'IRR';
+    $headerWallet =
+        $managementHeader['wallet'] ?? [];
+    $headerNotifications =
+        $managementHeader['notifications'] ?? [];
+    $currentRole =
+        data_get(
+            $managementUi ?? [],
+            'primary_role.display_name',
+            'کاربر سامانه'
+        );
+    $accessLabel =
+        data_get(
+            $managementUi ?? [],
+            'access_label',
+            'دسترسی فعال'
+        );
+
+    $roleProfile =
+        $roleDashboard['profile'] ?? [];
+    $roleSections =
+        $roleDashboard['sections'] ?? [];
+    $roleQuickActions =
+        $roleDashboard['quick_actions'] ?? [];
+    $roleModules =
+        $roleDashboard['modules'] ?? [];
+    $roleOperationKeys =
+        $roleDashboard['operation_keys'] ?? [];
+    $roleRecentKeys =
+        $roleDashboard['recent_keys'] ?? [];
 
     $money = static fn ($value) =>
         number_format((int) ($value ?? 0));
@@ -81,96 +108,35 @@
         };
     };
 
-    $moduleRoutes = [
-        'buildings' => 'buildings',
-        'residents' => 'occupancies',
-        'guests' => 'guest-visits',
-        'facilities' => 'reservations',
-        'finance' => 'invoices',
-        'wallets' => 'payments',
-        'services' => 'service-requests',
-        'support' => 'support-tickets',
-        'notifications' => 'notification-preferences',
-        'documents' => 'documents',
-        'reports' => 'report-exports',
-        'security' => 'roles',
-    ];
 
     $financialKpis = $buildingDashboard['kpis'] ?? [];
 
-    $heroKpis = $buildingDashboard
-        ? [
-            [
-                'title' => 'موجودی کیف پول ساختمان',
-                'value' => $money($financialKpis['wallet_balance'] ?? 0),
-                'suffix' => $currency,
-                'icon' => 'wallet',
-                'tone' => 'primary',
-            ],
-            [
-                'title' => 'مطالبات باز',
-                'value' => $money($financialKpis['receivables_outstanding'] ?? 0),
-                'suffix' => $currency,
-                'icon' => 'invoice',
-                'tone' => 'danger',
-            ],
-            [
-                'title' => 'ورودی نقدی دوره',
-                'value' => $money($financialKpis['cash_inflow'] ?? 0),
-                'suffix' => $currency,
-                'icon' => 'money',
-                'tone' => 'success',
-            ],
-            [
-                'title' => 'خروجی نقدی دوره',
-                'value' => $money($financialKpis['cash_outflow'] ?? 0),
-                'suffix' => $currency,
-                'icon' => 'chart',
-                'tone' => 'warning',
-            ],
-        ]
-        : [
-            [
-                'title' => 'ساختمان‌های تحت مدیریت',
-                'value' => number_format($counts['buildings']),
-                'suffix' => 'ساختمان',
-                'icon' => 'building',
-                'tone' => 'primary',
-            ],
-            [
-                'title' => 'کاربران فعال',
-                'value' => number_format($counts['users_total']),
-                'suffix' => 'کاربر',
-                'icon' => 'users',
-                'tone' => 'success',
-            ],
-            [
-                'title' => 'کمیسیون پلتفرم',
-                'value' => $money(
-                    data_get(
-                        $platformSummary,
-                        'service_marketplace.platform_commission',
-                        0
-                    )
-                ),
-                'suffix' => $currency,
-                'icon' => 'money',
-                'tone' => 'warning',
-            ],
-            [
-                'title' => 'مانده کیف پول پلتفرم',
-                'value' => $money(
-                    data_get(
-                        $platformSummary,
-                        'platform_wallets.available_balance',
-                        0
-                    )
-                ),
-                'suffix' => $currency,
-                'icon' => 'wallet',
-                'tone' => 'primary',
-            ],
-        ];
+    $heroKpis =
+        collect(
+            $roleDashboard['kpis'] ?? []
+        )
+            ->map(
+                static function (
+                    array $item
+                ) use ($money): array {
+                    return [
+                        ...$item,
+                        'value' =>
+                            ($item['money'] ?? false)
+                                ? $money($item['value'] ?? 0)
+                                : number_format(
+                                    (int) (
+                                        $item['value']
+                                        ?? 0
+                                    )
+                                ),
+                        'suffix' =>
+                            $item['unit']
+                            ?? '',
+                    ];
+                }
+            )
+            ->all();
 
     $aging = $buildingDashboard['receivables_aging'] ?? [];
     $agingMax = max(
@@ -188,14 +154,16 @@
 <section class="hero-panel" id="overview">
     <div class="hero-panel__copy">
         <span class="eyebrow">
-            {{ $platformAccess && ! $selectedBuilding ? 'Platform Overview' : 'Building Overview' }}
+            {{ $roleProfile['eyebrow'] ?? 'MANAGEMENT WORKSPACE' }}
         </span>
 
         <h2>
+            {{ $roleProfile['title'] ?? 'داشبورد مدیریتی' }}
+
             @if ($selectedBuilding)
-                {{ $selectedBuilding->title }}
-            @else
-                مرکز مدیریت Buildino
+                <small class="hero-role-scope">
+                    {{ $selectedBuilding->title }}
+                </small>
             @endif
         </h2>
 
@@ -266,6 +234,124 @@
     </form>
 </section>
 
+<section
+    class="role-workspace role-workspace--{{ $roleProfile['tone'] ?? 'blue' }}"
+    aria-label="فضای کاری نقش جاری"
+>
+    <div class="role-workspace__identity">
+        <span class="role-workspace__icon">
+            @include(
+                'management.partials.icon',
+                [
+                    'name' => $roleProfile['icon'] ?? 'home',
+                    'size' => 24,
+                ]
+            )
+        </span>
+
+        <div>
+            <span class="eyebrow">
+                فضای کاری شما
+            </span>
+            <h3>
+                {{ $roleProfile['short_title'] ?? $currentRole }}
+            </h3>
+            <p>
+                {{ $roleProfile['description'] ?? '' }}
+            </p>
+        </div>
+    </div>
+
+    @if ($roleQuickActions)
+        <div class="role-workspace__actions">
+            @foreach ($roleQuickActions as $action)
+                <a
+                    class="role-quick-action"
+                    href="{{
+                        route(
+                            'management.operations.show',
+                            $action['resource']
+                        )
+                        . (
+                            ($action['create'] ?? false)
+                                ? '?create=1'
+                                : ''
+                        )
+                    }}"
+                >
+                    @include(
+                        'management.partials.icon',
+                        [
+                            'name' => $action['icon'] ?? 'grid',
+                            'size' => 17,
+                        ]
+                    )
+                    <span>
+                        {{ $action['title'] }}
+                    </span>
+                </a>
+            @endforeach
+        </div>
+    @endif
+</section>
+
+<section class="dashboard-glance-grid" aria-label="خلاصه حساب جاری">
+    <article class="glance-card glance-card--wallet">
+        <span class="glance-card__icon">
+            @include('management.partials.icon', ['name' => 'wallet', 'size' => 20])
+        </span>
+        <div>
+            <span>کیف پول شخصی</span>
+            <strong
+                data-money-value="{{ (int) ($headerWallet['available_balance'] ?? 0) }}"
+            >
+                {{ number_format((int) ($headerWallet['available_balance'] ?? 0)) }}
+            </strong>
+            <small>{{ $headerWallet['currency'] ?? 'IRR' }} قابل استفاده</small>
+        </div>
+    </article>
+
+    <article class="glance-card glance-card--notification">
+        <span class="glance-card__icon">
+            @include('management.partials.icon', ['name' => 'bell', 'size' => 20])
+        </span>
+        <div>
+            <span>اعلان‌های جدید</span>
+            <strong>
+                {{ number_format((int) ($headerNotifications['unread_count'] ?? 0)) }}
+            </strong>
+            <small>پیام خوانده‌نشده</small>
+        </div>
+    </article>
+
+    <article class="glance-card glance-card--role">
+        <span class="glance-card__icon">
+            @include('management.partials.icon', ['name' => 'shield', 'size' => 20])
+        </span>
+        <div>
+            <span>نقش فعال</span>
+            <strong class="glance-card__text-value">{{ $currentRole }}</strong>
+            <small>{{ $accessLabel }}</small>
+        </div>
+    </article>
+
+    <article class="glance-card glance-card--date">
+        <span class="glance-card__icon">
+            @include('management.partials.icon', ['name' => 'calendar', 'size' => 20])
+        </span>
+        <div>
+            <span>تاریخ امروز</span>
+            <strong
+                class="glance-card__text-value"
+                data-jdate="{{ now()->toISOString() }}"
+            >
+                {{ now()->format('Y/m/d') }}
+            </strong>
+            <small>تقویم شمسی</small>
+        </div>
+    </article>
+</section>
+
 @if ($errors->any())
     <div class="alert alert--danger dashboard-alert">
         @foreach ($errors->all() as $error)
@@ -303,6 +389,7 @@
     @endforeach
 </section>
 
+@if ($roleSections['modules'] ?? true)
 <section class="section-block" id="modules">
     <div class="section-heading">
         <div>
@@ -314,20 +401,19 @@
         </div>
 
         <div class="section-heading__meta">
-            <strong>{{ count($dashboard['modules']) }}</strong>
+            <strong>{{ count($roleModules) }}</strong>
             <span>حوزه اصلی</span>
         </div>
     </div>
 
     <div class="module-grid">
-        @foreach ($dashboard['modules'] as $module)
+        @foreach ($roleModules as $module)
             <a
                 class="module-card"
                 href="{{
                     route(
                         'management.operations.show',
-                        $moduleRoutes[$module['key']]
-                            ?? 'complexes'
+                        $module['target_resource']
                     )
                 }}"
             >
@@ -365,8 +451,14 @@
         @endforeach
     </div>
 </section>
+@endif
 
+@if (
+    ($roleSections['finance'] ?? false)
+    || ($roleSections['receivables'] ?? false)
+)
 <section class="dashboard-grid dashboard-grid--2" id="financial">
+    @if ($roleSections['finance'] ?? false)
     <article class="panel">
         <div class="panel__header">
             <div>
@@ -501,7 +593,9 @@
             </div>
         @endif
     </article>
+    @endif
 
+    @if ($roleSections['receivables'] ?? false)
     <article class="panel">
         <div class="panel__header">
             <div>
@@ -550,8 +644,11 @@
             </div>
         @endif
     </article>
+    @endif
 </section>
+@endif
 
+@if ($roleSections['operations'] ?? false)
 <section class="section-block" id="operations">
     <div class="section-heading">
         <div>
@@ -563,29 +660,33 @@
         </div>
     </div>
 
-    <div class="operations-grid">
-        @foreach ([
-            [
+    @php
+        $operationDefinitions = collect([
+            'reservations' => [
                 'title' => 'رزرو امکانات',
                 'icon' => 'calendar',
                 'data' => $dashboard['operations']['reservations'],
             ],
-            [
+            'services' => [
                 'title' => 'خدمات ساختمانی',
                 'icon' => 'tools',
                 'data' => $dashboard['operations']['services'],
             ],
-            [
+            'support' => [
                 'title' => 'تیکت پشتیبانی',
                 'icon' => 'support',
                 'data' => $dashboard['operations']['support'],
             ],
-            [
+            'invoices' => [
                 'title' => 'صورتحساب‌ها',
                 'icon' => 'invoice',
                 'data' => $dashboard['operations']['invoices'],
             ],
-        ] as $operation)
+        ])->only($roleOperationKeys);
+    @endphp
+
+    <div class="operations-grid">
+        @foreach ($operationDefinitions as $operation)
             <article class="operation-card">
                 <div class="operation-card__header">
                     <div class="operation-icon">
@@ -621,7 +722,9 @@
         @endforeach
     </div>
 </section>
+@endif
 
+@if ($roleSections['recent'] ?? false)
 <section class="section-block" id="recent">
     <div class="section-heading">
         <div>
@@ -634,6 +737,7 @@
     </div>
 
     <div class="dashboard-grid dashboard-grid--2">
+        @if (in_array('payments', $roleRecentKeys, true))
         <article class="panel table-panel">
             <div class="panel__header panel__header--compact">
                 <h3>پرداخت‌های اخیر</h3>
@@ -678,7 +782,9 @@
                 </table>
             </div>
         </article>
+        @endif
 
+        @if (in_array('reservations', $roleRecentKeys, true))
         <article class="panel table-panel">
             <div class="panel__header panel__header--compact">
                 <h3>رزروهای اخیر</h3>
@@ -724,7 +830,9 @@
                 </table>
             </div>
         </article>
+        @endif
 
+        @if (in_array('services', $roleRecentKeys, true))
         <article class="panel table-panel">
             <div class="panel__header panel__header--compact">
                 <h3>درخواست‌های خدمت</h3>
@@ -766,7 +874,9 @@
                 </table>
             </div>
         </article>
+        @endif
 
+        @if (in_array('support', $roleRecentKeys, true))
         <article class="panel table-panel">
             <div class="panel__header panel__header--compact">
                 <h3>تیکت‌های اخیر</h3>
@@ -808,10 +918,17 @@
                 </table>
             </div>
         </article>
+        @endif
     </div>
 </section>
+@endif
 
+@if (
+    ($roleSections['system'] ?? false)
+    || ($roleSections['api'] ?? false)
+)
 <section class="dashboard-grid dashboard-grid--2" id="system">
+    @if ($roleSections['system'] ?? false)
     <article class="panel">
         <div class="panel__header">
             <div>
@@ -869,7 +986,9 @@
             @endif
         </div>
     </article>
+    @endif
 
+    @if ($roleSections['api'] ?? false)
     <article class="panel api-card">
         <div class="panel__header">
             <div>
@@ -906,7 +1025,9 @@
             نهایی اجرا می‌شود؛ بنابراین داده نمایشی جداگانه یا Mock ندارد.
         </p>
     </article>
+    @endif
 </section>
+@endif
 
 <footer class="dashboard-footer">
     <div>

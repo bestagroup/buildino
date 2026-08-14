@@ -10,6 +10,15 @@
         'dev' => true,
     ),
     'versions' => array(
+        'beberlei/assert' => array(
+            'pretty_version' => 'v3.3.4',
+            'version' => '3.3.4.0',
+            'reference' => 'f193f4613c7d7fbcee2c05e4daff4061d49c040e',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../beberlei/assert',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'brianium/paratest' => array(
             'pretty_version' => 'v7.8.5',
             'version' => '7.8.5.0',
@@ -592,6 +601,15 @@
             'reference' => 'b321dd6749f0bf7189444158a3ce785cc16d69b0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../monolog/monolog',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'morilog/jalali' => array(
+            'pretty_version' => 'v3.5.0',
+            'version' => '3.5.0.0',
+            'reference' => '40b906c405b72edd20e73797b40be1e650e872c1',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../morilog/jalali',
             'aliases' => array(),
             'dev_requirement' => false,
         ),

@@ -9,6 +9,7 @@ use App\Http\Requests\StoreComplexRequest;
 use App\Http\Requests\UpdateComplexRequest;
 use App\Http\Resources\V1\ComplexResource;
 use App\Models\Complex;
+use App\Support\Authorization\ComplexVisibilityQuery;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -86,15 +87,27 @@ class ComplexController extends Controller
         ]
     )]
     public function index(
-        Request $request
+        Request $request,
+        ComplexVisibilityQuery $visibility
     ): AnonymousResourceCollection {
-        $this->authorize(
-            'viewAny',
-            Complex::class
-        );
-
         $query = Complex::query()
             ->withCount('buildings');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Authorization Scope
+        |--------------------------------------------------------------------------
+        |
+        | Global users see all complexes. Complex-scoped managers see only
+        | their assigned complexes. The restriction is applied before filters
+        | and pagination, preventing cross-scope data leakage.
+        |
+        */
+
+        $visibility->apply(
+            $query,
+            $request->user()
+        );
 
         if ($search = trim((string) $request->query('search'))) {
             $query->where(function ($query) use ($search): void {

@@ -13,6 +13,19 @@
         rel="stylesheet"
         href="{{ asset('css/buildino-fonts.css') }}"
     >
+
+    <link
+        rel="stylesheet"
+        href="{{ config('management_ui.libraries.bootstrap.css') }}"
+        integrity="{{ config('management_ui.libraries.bootstrap.css_integrity') }}"
+        crossorigin="anonymous"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ config('management_ui.libraries.sweetalert2.css') }}"
+    >
+
     <link
         rel="stylesheet"
         href="{{ asset('css/buildino-management.css') }}"
@@ -24,6 +37,18 @@
 @php
     $ui = $managementUi ?? [];
     $nav = $ui['navigation'] ?? [];
+    $header = $managementHeader ?? [];
+    $personalWallet = $header['wallet'] ?? [];
+    $headerNotifications =
+        $header['notifications'] ?? [];
+    $headerNotificationItems =
+        $headerNotifications['items'] ?? [];
+    $headerUnreadCount =
+        (int) (
+            $headerNotifications[
+                'unread_count'
+            ] ?? 0
+        );
     $currentResource = request()->route('resource');
 
     $resourceActive = static function (
@@ -48,6 +73,20 @@
                     $key,
                     $ui['visible_resources'] ?? [],
                     true
+                )
+        );
+
+    $structureTarget =
+        collect([
+            'complexes',
+            'buildings',
+            'blocks',
+            'floors',
+            'units',
+        ])->first(
+            fn (string $key): bool =>
+                $visibleResources->has(
+                    $key
                 )
         );
 
@@ -309,7 +348,8 @@
                                 href="{{
                                     route(
                                         'management.operations.show',
-                                        'complexes'
+                                        $structureTarget
+                                            ?? 'buildings'
                                     )
                                 }}"
                                 class="nav-link {{
@@ -805,6 +845,329 @@
             </div>
 
             <div class="topbar__actions">
+                <div
+                    class="topbar-menu"
+                    data-popover
+                >
+                    <button
+                        type="button"
+                        class="wallet-summary-trigger"
+                        data-popover-trigger
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="bottom"
+                        title="کیف پول شخصی"
+                    >
+                        <span class="wallet-summary-trigger__icon">
+                            @include(
+                                'management.partials.icon',
+                                [
+                                    'name' => 'wallet',
+                                    'size' => 18,
+                                ]
+                            )
+                        </span>
+
+                        <span class="wallet-summary-trigger__copy">
+                            <small>موجودی قابل استفاده</small>
+                            <strong
+                                data-money-value="{{
+                                    (int) (
+                                        $personalWallet[
+                                            'available_balance'
+                                        ] ?? 0
+                                    )
+                                }}"
+                            >
+                                {{
+                                    number_format(
+                                        (int) (
+                                            $personalWallet[
+                                                'available_balance'
+                                            ] ?? 0
+                                        )
+                                    )
+                                }}
+                            </strong>
+                        </span>
+
+                        <span class="wallet-summary-trigger__currency">
+                            {{
+                                $personalWallet['currency']
+                                ?? 'IRR'
+                            }}
+                        </span>
+                    </button>
+
+                    <div
+                        class="popover-menu popover-menu--wallet"
+                        data-popover-menu
+                    >
+                        <div class="wallet-popover__hero">
+                            <span>
+                                @include(
+                                    'management.partials.icon',
+                                    [
+                                        'name' => 'wallet',
+                                        'size' => 22,
+                                    ]
+                                )
+                            </span>
+
+                            <div>
+                                <small>
+                                    کیف پول شخصی شما
+                                </small>
+
+                                <strong
+                                    data-money-value="{{
+                                        (int) (
+                                            $personalWallet[
+                                                'available_balance'
+                                            ] ?? 0
+                                        )
+                                    }}"
+                                >
+                                    {{
+                                        number_format(
+                                            (int) (
+                                                $personalWallet[
+                                                    'available_balance'
+                                                ] ?? 0
+                                            )
+                                        )
+                                    }}
+                                </strong>
+
+                                <em>
+                                    {{
+                                        $personalWallet[
+                                            'currency'
+                                        ] ?? 'IRR'
+                                    }}
+                                </em>
+                            </div>
+                        </div>
+
+                        <div class="wallet-popover__stats">
+                            <div>
+                                <span>مانده کل</span>
+                                <strong
+                                    data-money-value="{{
+                                        (int) (
+                                            $personalWallet[
+                                                'balance'
+                                            ] ?? 0
+                                        )
+                                    }}"
+                                >
+                                    {{
+                                        number_format(
+                                            (int) (
+                                                $personalWallet[
+                                                    'balance'
+                                                ] ?? 0
+                                            )
+                                        )
+                                    }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>مانده قفل‌شده</span>
+                                <strong
+                                    data-money-value="{{
+                                        (int) (
+                                            $personalWallet[
+                                                'locked_balance'
+                                            ] ?? 0
+                                        )
+                                    }}"
+                                >
+                                    {{
+                                        number_format(
+                                            (int) (
+                                                $personalWallet[
+                                                    'locked_balance'
+                                                ] ?? 0
+                                            )
+                                        )
+                                    }}
+                                </strong>
+                            </div>
+                        </div>
+
+                        @if (! ($personalWallet['exists'] ?? false))
+                            <div class="wallet-popover__note">
+                                کیف پول شخصی برای این حساب هنوز Provision نشده است.
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div
+                    class="topbar-menu"
+                    data-popover
+                >
+                    <button
+                        type="button"
+                        class="notification-trigger"
+                        data-popover-trigger
+                        aria-label="اعلان‌ها"
+                        title="اعلان‌ها"
+                    >
+                        @include(
+                            'management.partials.icon',
+                            [
+                                'name' => 'bell',
+                                'size' => 19,
+                            ]
+                        )
+
+                        <span
+                            class="notification-trigger__badge"
+                            id="managementNotificationBadge"
+                            @if ($headerUnreadCount < 1)
+                                hidden
+                            @endif
+                        >
+                            {{
+                                $headerUnreadCount > 99
+                                    ? '99+'
+                                    : $headerUnreadCount
+                            }}
+                        </span>
+                    </button>
+
+                    <div
+                        class="popover-menu popover-menu--notifications"
+                        data-popover-menu
+                        id="managementNotificationMenu"
+                    >
+                        <div class="notification-menu__header">
+                            <div>
+                                <strong>اعلان‌ها</strong>
+                                <span>
+                                    <b id="managementNotificationUnreadText">
+                                        {{
+                                            number_format(
+                                                $headerUnreadCount
+                                            )
+                                        }}
+                                    </b>
+                                    خوانده‌نشده
+                                </span>
+                            </div>
+
+                            <button
+                                type="button"
+                                id="managementNotificationsReadAll"
+                                @disabled($headerUnreadCount < 1)
+                            >
+                                خواندن همه
+                            </button>
+                        </div>
+
+                        <div
+                            class="notification-menu__list"
+                            id="managementNotificationList"
+                        >
+                            @forelse ($headerNotificationItems as $notification)
+                                <button
+                                    type="button"
+                                    class="notification-item {{
+                                        $notification['is_read']
+                                            ? ''
+                                            : 'is-unread'
+                                    }}"
+                                    data-management-notification
+                                    data-notification-id="{{
+                                        $notification['id']
+                                    }}"
+                                    @if ($notification['href'])
+                                        data-notification-href="{{
+                                            $notification['href']
+                                        }}"
+                                    @endif
+                                >
+                                    <span class="notification-item__marker"></span>
+
+                                    <span class="notification-item__body">
+                                        <strong>
+                                            {{
+                                                $notification[
+                                                    'title'
+                                                ]
+                                            }}
+                                        </strong>
+
+                                        <span>
+                                            {{
+                                                \Illuminate\Support\Str::limit(
+                                                    $notification[
+                                                        'message'
+                                                    ],
+                                                    115
+                                                )
+                                            }}
+                                        </span>
+
+                                        <small
+                                            @if ($notification['created_at'])
+                                                data-jdate="{{
+                                                    $notification[
+                                                        'created_at'
+                                                    ]
+                                                }}"
+                                            @endif
+                                        >
+                                            {{
+                                                $notification[
+                                                    'created_at_jalali'
+                                                ]
+                                                ?? '—'
+                                            }}
+                                        </small>
+                                    </span>
+                                </button>
+                            @empty
+                                <div
+                                    class="notification-menu__empty"
+                                    id="managementNotificationEmpty"
+                                >
+                                    @include(
+                                        'management.partials.icon',
+                                        [
+                                            'name' => 'bell',
+                                            'size' => 26,
+                                        ]
+                                    )
+
+                                    <strong>
+                                        اعلان جدیدی ندارید
+                                    </strong>
+
+                                    <span>
+                                        پیام‌های سیستمی و عملیاتی اینجا نمایش داده می‌شوند.
+                                    </span>
+                                </div>
+                            @endforelse
+                        </div>
+
+                        <div class="notification-menu__footer">
+                            <a
+                                href="{{
+                                    route(
+                                        'management.operations.show',
+                                        'notification-preferences'
+                                    )
+                                }}"
+                            >
+                                تنظیمات اعلان‌ها
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 @if ($quickCreate->isNotEmpty())
                     <div class="topbar-menu" data-popover>
                         <button
@@ -1096,6 +1459,23 @@
             ) }}
     };
 </script>
+
+<script
+    src="{{ config('management_ui.libraries.bootstrap.js') }}"
+    integrity="{{ config('management_ui.libraries.bootstrap.js_integrity') }}"
+    crossorigin="anonymous"
+    defer
+></script>
+
+<script
+    src="{{ config('management_ui.libraries.sweetalert2.js') }}"
+    defer
+></script>
+
+<script
+    src="{{ config('management_ui.libraries.jdate.js') }}"
+    defer
+></script>
 
 <script
     src="{{ asset('js/buildino-management.js') }}"

@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Building;
+use App\Models\Complex;
 use App\Models\Floor;
 use App\Models\Unit;
 use App\Models\User;
@@ -72,7 +73,10 @@ abstract class BasePolicy
 
     protected function resolveScope(Model $model): ?Model
     {
-        if ($model instanceof Building) {
+        if (
+            $model instanceof Building
+            || $model instanceof Complex
+        ) {
             return $model;
         }
 
