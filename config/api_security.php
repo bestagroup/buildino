@@ -8,5 +8,4 @@ return [
 
     'require_verified_identity' => env('API_REQUIRE_VERIFIED_IDENTITY', true),
 
-    'trusted_request_id_header' => env('TRUST_REQUEST_ID_HEADER', false),
 ];
