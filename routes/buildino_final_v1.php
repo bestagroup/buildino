@@ -22,4 +22,5 @@ require __DIR__.'/reporting_v1.php';
 require __DIR__.'/report_exports_v1.php';
 require __DIR__.'/payment_gateways_v1.php';
 require __DIR__.'/production_readiness_v1.php';
+require __DIR__.'/mobile_v1.php';
 require __DIR__.'/finalization_v1.php';

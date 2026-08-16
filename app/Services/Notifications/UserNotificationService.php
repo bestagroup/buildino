@@ -8,6 +8,7 @@ use App\Data\Notifications\NotificationMessage;
 use App\Enums\NotificationChannel;
 use App\Enums\NotificationStatus;
 use App\Models\NotificationLog;
+use App\Models\UserDevice;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
@@ -97,10 +98,20 @@ class UserNotificationService
 
             $log->forceFill([
                 'status' => NotificationStatus::Sent,
+                'provider_message_id' =>
+                    $this->providerMessageId(
+                        $response
+                    ),
                 'sent_at' => now(),
                 'failure_reason' => null,
                 'failed_at' => null,
-                'response' => array_merge($log->response ?? [], ['provider_response' => $response]),
+                'response' => array_merge(
+                    $log->response ?? [],
+                    [
+                        'provider_response' =>
+                            $response,
+                    ]
+                ),
             ])->save();
 
             return $log->refresh();
@@ -152,12 +163,95 @@ class UserNotificationService
             throw new \RuntimeException('User has no push token.');
         }
 
-        return $this->push->send(
+        $response = $this->push->send(
             $tokens,
             $notification->title,
             $notification->message,
             $notification->data,
         );
+
+        $invalidTokens =
+            collect(
+                $response['invalid_tokens']
+                ?? []
+            )
+                ->filter(
+                    fn ($token): bool =>
+                        is_string($token)
+                        && $token !== ''
+                )
+                ->unique()
+                ->values();
+
+        if ($invalidTokens->isNotEmpty()) {
+            UserDevice::query()
+                ->whereIn(
+                    'push_token',
+                    $invalidTokens->all()
+                )
+                ->update([
+                    'push_token' => null,
+                ]);
+        }
+
+        /*
+         * Never persist raw device tokens in notification_logs.
+         * FCM sender already exposes token hashes in its diagnostics.
+         */
+        unset(
+            $response['invalid_tokens']
+        );
+
+        if (
+            array_key_exists(
+                'accepted',
+                $response
+            )
+            && ! $response['accepted']
+        ) {
+            throw new \RuntimeException(
+                'Push provider rejected all target devices.'
+            );
+        }
+
+        return $response;
+    }
+
+    private function providerMessageId(
+        array $response
+    ): ?string {
+        foreach (
+            [
+                'provider_message_id',
+                'message_id',
+                'id',
+                'name',
+            ]
+            as $key
+        ) {
+            $value =
+                data_get(
+                    $response,
+                    $key
+                );
+
+            if (
+                is_scalar($value)
+                && trim(
+                    (string) $value
+                ) !== ''
+            ) {
+                return mb_substr(
+                    trim(
+                        (string) $value
+                    ),
+                    0,
+                    255
+                );
+            }
+        }
+
+        return null;
     }
 
     private function providerName(string $channel): string

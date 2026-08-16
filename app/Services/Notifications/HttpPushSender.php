@@ -62,14 +62,34 @@ final class HttpPushSender implements PushSender
             );
         }
 
+        $body =
+            is_array(
+                $response->json()
+            )
+                ? $response->json()
+                : [
+                    'body' =>
+                        mb_substr(
+                            $response->body(),
+                            0,
+                            2000
+                        ),
+                ];
+
         return [
             'provider' => 'http',
             'accepted' => true,
             'tokens_count' => count(array_unique($tokens)),
             'status' => $response->status(),
-            'response' => is_array($response->json())
-                ? $response->json()
-                : ['body' => mb_substr($response->body(), 0, 2000)],
+            'provider_message_id' =>
+                data_get(
+                    $body,
+                    config(
+                        'notifications.http_push.message_id_path',
+                        'id'
+                    )
+                ),
+            'response' => $body,
         ];
     }
 }

@@ -1,0 +1,30 @@
+{
+  "root_cause": "complex multiline @json directives compiled to invalid PHP",
+  "multiline_json_directives_remaining": false,
+  "complex_json_expressions_remaining": false,
+  "simple_json_variables": {
+    "csrf": true,
+    "area": true,
+    "notification_read_url": true,
+    "notification_read_all_url": true,
+    "default_gateway": true,
+    "gateway_enabled": true
+  },
+  "blade_directive_balance": {
+    "php": [
+      1,
+      1
+    ],
+    "if": [
+      6,
+      6
+    ],
+    "forelse": [
+      1,
+      1
+    ]
+  },
+  "test_php_lint_ok": true,
+  "new_migrations": 0,
+  "authorization_changes": 0
+}

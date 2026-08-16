@@ -143,5 +143,23 @@ class ApiContractAuditTest extends TestCase
             count($catalog),
             $postmanRequests
         );
+
+        $uploadOperation = $openApi['paths'][
+            '/documents/{document}/files'
+        ]['post'];
+
+        $this->assertArrayHasKey(
+            'multipart/form-data',
+            $uploadOperation['requestBody']['content']
+        );
+
+        $fileParameter = $openApi['paths'][
+            '/files/{file}/download'
+        ]['get']['parameters'][0];
+
+        $this->assertSame(
+            'uuid',
+            $fileParameter['schema']['format']
+        );
     }
 }

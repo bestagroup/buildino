@@ -15,3 +15,11 @@ Schedule::command(
     ->everyMinute()
     ->withoutOverlapping()
     ->onOneServer();
+
+
+Schedule::command(
+    'notifications:prune-stale-devices'
+)
+    ->dailyAt('03:40')
+    ->withoutOverlapping()
+    ->onOneServer();

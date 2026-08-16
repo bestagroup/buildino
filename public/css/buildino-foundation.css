@@ -1,0 +1,134 @@
+/*
+ * Shared interaction and accessibility layer for management and user panels.
+ * Product-specific colors and components remain in their dedicated themes.
+ */
+
+:root {
+    --buildino-motion-fast: 160ms;
+    --buildino-motion-normal: 280ms;
+    --buildino-ease-standard: cubic-bezier(.2, .8, .2, 1);
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+.page-content,
+.portal-content {
+    animation: buildino-page-enter
+        var(--buildino-motion-normal)
+        var(--buildino-ease-standard)
+        both;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+    transition-duration: var(--buildino-motion-fast);
+    transition-timing-function: var(--buildino-ease-standard);
+}
+
+button[data-buildino-loading='true'],
+[role='button'][data-buildino-loading='true'] {
+    cursor: wait;
+    opacity: .72;
+    pointer-events: none;
+    position: relative;
+}
+
+button[data-buildino-loading='true']::after,
+[role='button'][data-buildino-loading='true']::after {
+    animation: buildino-spin .7s linear infinite;
+    border: 2px solid currentColor;
+    border-inline-start-color: transparent;
+    border-radius: 50%;
+    content: '';
+    height: 1em;
+    margin-inline-start: .55rem;
+    vertical-align: -.12em;
+    width: 1em;
+}
+
+.buildino-skeleton {
+    animation: buildino-skeleton 1.35s ease-in-out infinite;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(148, 163, 184, .12) 20%,
+            rgba(148, 163, 184, .3) 45%,
+            rgba(148, 163, 184, .12) 70%
+        );
+    background-size: 240% 100%;
+    border-radius: .65rem;
+    color: transparent !important;
+    min-height: 1rem;
+    pointer-events: none;
+    user-select: none;
+}
+
+.buildino-empty-state {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+    justify-content: center;
+    min-height: 12rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.swal2-container {
+    direction: rtl;
+    font-family: inherit;
+}
+
+.swal2-popup {
+    border-radius: 1.2rem;
+}
+
+@keyframes buildino-page-enter {
+    from {
+        opacity: .72;
+        transform: translateY(.35rem);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes buildino-spin {
+    to {
+        transform: rotate(1turn);
+    }
+}
+
+@keyframes buildino-skeleton {
+    from {
+        background-position: 100% 0;
+    }
+
+    to {
+        background-position: -100% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+    }
+}

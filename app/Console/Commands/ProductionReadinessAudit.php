@@ -141,6 +141,7 @@ class ProductionReadinessAudit extends Command
                 'openssl',
                 'pdo',
                 'mbstring',
+                'fileinfo',
             ]
             as $extension
         ) {
@@ -155,6 +156,26 @@ class ProductionReadinessAudit extends Command
                 "Required PHP extension [{$extension}] is missing."
             );
         }
+
+        $this->finding(
+            $findings,
+            'Private file disk',
+            (string) config('file_management.disk') === 'private',
+            'critical',
+            'Managed documents must use the dedicated private filesystem disk.'
+        );
+
+        $this->finding(
+            $findings,
+            'Malware scanning',
+            ! $isProduction
+                || (bool) config(
+                    'file_management.scan.enabled',
+                    false
+                ),
+            'critical',
+            'FILE_SCAN_ENABLED must be true in production.'
+        );
 
         $gatewayEnabled =
             (bool) config(
@@ -216,6 +237,72 @@ class ProductionReadinessAudit extends Command
             }
         }
 
+        $defaultGateway =
+            (string) config(
+                'payment_gateways.default',
+                ''
+            );
+
+        $defaultGatewayConfig =
+            (array) config(
+                "payment_gateways.gateways.{$defaultGateway}",
+                []
+            );
+
+        if ($defaultGateway !== '') {
+            $this->finding(
+                $findings,
+                'Default payment gateway exists',
+                $defaultGatewayConfig !== [],
+                'critical',
+                'PAYMENT_GATEWAY_DEFAULT points to an unknown gateway.'
+            );
+
+            if ($isProduction) {
+                $this->finding(
+                    $findings,
+                    'Default payment gateway enabled',
+                    (bool) (
+                        $defaultGatewayConfig[
+                            'enabled'
+                        ]
+                        ?? false
+                    ),
+                    'warning',
+                    'Default payment gateway is disabled; online payments will not be available.'
+                );
+
+                $this->finding(
+                    $findings,
+                    'Default payment gateway driver',
+                    (
+                        $defaultGatewayConfig[
+                            'driver'
+                        ]
+                        ?? ''
+                    ) !== 'fake',
+                    'critical',
+                    'Fake payment driver must never be enabled in production.'
+                );
+
+                $this->finding(
+                    $findings,
+                    'Payment callback HTTPS',
+                    str_starts_with(
+                        strtolower(
+                            (string) config(
+                                'payment_gateways.callback_base_url',
+                                ''
+                            )
+                        ),
+                        'https://'
+                    ),
+                    'critical',
+                    'PAYMENT_GATEWAY_CALLBACK_BASE_URL must use HTTPS in production.'
+                );
+            }
+        }
+
         if ($isProduction) {
             $smsProvider = (string) config(
                 'notifications.sms_provider',
@@ -267,6 +354,19 @@ class ProductionReadinessAudit extends Command
                     'critical',
                     'Production SMS HTTP endpoint must use HTTPS.'
                 );
+
+                $this->finding(
+                    $findings,
+                    'SMS HTTP credentials',
+                    trim(
+                        (string) config(
+                            'notifications.http_sms.token',
+                            ''
+                        )
+                    ) !== '',
+                    'warning',
+                    'SMS_HTTP_TOKEN is empty; verify that your SMS provider really uses unauthenticated requests.'
+                );
             }
 
             if ($pushProvider === 'http') {
@@ -281,6 +381,67 @@ class ProductionReadinessAudit extends Command
                     'Production Push HTTP endpoint must use HTTPS.'
                 );
             }
+
+            if ($pushProvider === 'fcm_v1') {
+                $projectId =
+                    trim(
+                        (string) config(
+                            'notifications.fcm.project_id',
+                            ''
+                        )
+                    );
+
+                $credentialsPath =
+                    trim(
+                        (string) config(
+                            'notifications.fcm.credentials_path',
+                            ''
+                        )
+                    );
+
+                $credentialsBase64 =
+                    trim(
+                        (string) config(
+                            'notifications.fcm.credentials_json_base64',
+                            ''
+                        )
+                    );
+
+                $this->finding(
+                    $findings,
+                    'FCM project id',
+                    $projectId !== '',
+                    'critical',
+                    'FCM_PROJECT_ID is required when PUSH_PROVIDER=fcm_v1.'
+                );
+
+                $this->finding(
+                    $findings,
+                    'FCM service account',
+                    $credentialsBase64 !== ''
+                    || (
+                        $credentialsPath !== ''
+                        && is_file(
+                            $credentialsPath
+                        )
+                    ),
+                    'critical',
+                    'FCM service-account credentials are missing or unreadable.'
+                );
+            }
+
+            $this->finding(
+                $findings,
+                'Notification queue name',
+                trim(
+                    (string) config(
+                        'notifications.queue',
+                        ''
+                    )
+                ) !== '',
+                'critical',
+                'NOTIFICATION_QUEUE must be configured.'
+            );
         }
 
         $runtime =

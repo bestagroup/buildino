@@ -49,13 +49,33 @@ final class HttpSmsSender implements SmsSender
             );
         }
 
+        $body =
+            is_array(
+                $response->json()
+            )
+                ? $response->json()
+                : [
+                    'body' =>
+                        mb_substr(
+                            $response->body(),
+                            0,
+                            2000
+                        ),
+                ];
+
         return [
             'provider' => 'http',
             'accepted' => true,
             'status' => $response->status(),
-            'response' => is_array($response->json())
-                ? $response->json()
-                : ['body' => mb_substr($response->body(), 0, 2000)],
+            'provider_message_id' =>
+                data_get(
+                    $body,
+                    config(
+                        'notifications.http_sms.message_id_path',
+                        'id'
+                    )
+                ),
+            'response' => $body,
         ];
     }
 }

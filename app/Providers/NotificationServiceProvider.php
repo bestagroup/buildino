@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Contracts\Notifications\PushSender;
 use App\Contracts\Notifications\SmsSender;
+use App\Services\Notifications\FcmV1PushSender;
 use App\Services\Notifications\HttpPushSender;
 use App\Services\Notifications\HttpSmsSender;
 use App\Services\Notifications\LogPushSender;
@@ -31,6 +32,7 @@ class NotificationServiceProvider extends ServiceProvider
             fn () => match ((string) config('notifications.push_provider', 'log')) {
                 'log' => new LogPushSender(),
                 'http' => new HttpPushSender(),
+                'fcm_v1' => $this->app->make(FcmV1PushSender::class),
                 default => throw new InvalidArgumentException(
                     'Unsupported Push provider.'
                 ),

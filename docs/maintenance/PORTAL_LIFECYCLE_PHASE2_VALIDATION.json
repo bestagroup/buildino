@@ -1,0 +1,90 @@
+{
+  "php_files": 769,
+  "php_lint_failures": 0,
+  "psr4_mismatches": 0,
+  "duplicate_fqcns": 0,
+  "missing_app_imports": 0,
+  "portal_js_syntax_ok": true,
+  "portal_js_syntax_output": "",
+  "blade_balance": {
+    "resources/views/portal/layouts/app.blade.php": {
+      "if": [
+        6,
+        6
+      ],
+      "foreach": [
+        0,
+        0
+      ],
+      "forelse": [
+        1,
+        1
+      ],
+      "php": [
+        1,
+        1
+      ]
+    },
+    "resources/views/portal/resident/dashboard.blade.php": {
+      "if": [
+        12,
+        12
+      ],
+      "foreach": [
+        8,
+        8
+      ],
+      "forelse": [
+        7,
+        7
+      ],
+      "php": [
+        6,
+        6
+      ]
+    },
+    "resources/views/portal/provider/dashboard.blade.php": {
+      "if": [
+        6,
+        6
+      ],
+      "foreach": [
+        1,
+        1
+      ],
+      "forelse": [
+        4,
+        4
+      ],
+      "php": [
+        2,
+        2
+      ]
+    }
+  },
+  "lifecycle_route_presence": {
+    "invoices/{unitInvoice}/payments": true,
+    "payments/{payment}/gateway/initiate": true,
+    "facility-reservations/{facilityReservation}/pay": true,
+    "facility-reservations/{facilityReservation}/cancel": true,
+    "guest-visits/{guestVisit}/cancel": true,
+    "service-request-quotes/{serviceRequestQuote}/accept": true,
+    "service-requests/{serviceRequest}/confirm": true,
+    "service-requests/{serviceRequest}/cancel-financial": true,
+    "support-tickets/{supportTicket}/messages": true,
+    "support-tickets/{supportTicket}/reopen": true
+  },
+  "lifecycle_hooks": {
+    "invoice_payment": true,
+    "reservation_pay": true,
+    "reservation_cancel": true,
+    "guest_cancel": true,
+    "quote_accept": true,
+    "service_confirm": true,
+    "support_chat": true,
+    "resident_wallet_history": true,
+    "provider_wallet_history": true,
+    "provider_start_payment_gate": true
+  },
+  "new_migrations": 0
+}

@@ -725,200 +725,316 @@
 @endif
 
 @if ($roleSections['recent'] ?? false)
+@php
+    $managementDtQuery =
+        array_filter(
+            [
+                'building_id' =>
+                    $selectedBuilding
+                        ?->getKey(),
+
+                'from' =>
+                    data_get(
+                        $dashboard,
+                        'period.from'
+                    ),
+
+                'to' =>
+                    data_get(
+                        $dashboard,
+                        'period.to'
+                    ),
+            ],
+            static fn ($value): bool =>
+                $value !== null
+                && $value !== ''
+        );
+
+    $managementDtUrl =
+        static fn (
+            string $table
+        ): string =>
+            route(
+                'management.datatables',
+                [
+                    'table' =>
+                        $table,
+                ]
+            )
+            . (
+                $managementDtQuery
+                    ? '?'
+                        . http_build_query(
+                            $managementDtQuery
+                        )
+                    : ''
+            );
+
+    $managementRecentTables = [
+        'payments' => [
+            'title' =>
+                'پرداخت‌های اخیر',
+            'count_id' =>
+                'management-payments-count',
+            'columns' => [
+                [
+                    'data' =>
+                        'payment_number',
+                    'title' =>
+                        'شماره',
+                ],
+                [
+                    'data' =>
+                        'payer_name',
+                    'title' =>
+                        'پرداخت‌کننده',
+                    'orderable' =>
+                        false,
+                ],
+                [
+                    'data' =>
+                        'amount_formatted',
+                    'title' =>
+                        'مبلغ',
+                    'orderable' =>
+                        false,
+                ],
+                [
+                    'data' =>
+                        'status_label',
+                    'title' =>
+                        'وضعیت',
+                    'orderable' =>
+                        false,
+                    'status' =>
+                        true,
+                ],
+                [
+                    'data' =>
+                        'created_at_jalali',
+                    'title' =>
+                        'زمان',
+                    'orderable' =>
+                        false,
+                ],
+            ],
+        ],
+
+        'reservations' => [
+            'title' =>
+                'رزروهای اخیر',
+            'count_id' =>
+                'management-reservations-count',
+            'columns' => [
+                [
+                    'data' =>
+                        'facility_title',
+                    'title' =>
+                        'امکان',
+                    'orderable' =>
+                        false,
+                ],
+                [
+                    'data' =>
+                        'user_name',
+                    'title' =>
+                        'کاربر',
+                    'orderable' =>
+                        false,
+                ],
+                [
+                    'data' =>
+                        'reservation_date_jalali',
+                    'title' =>
+                        'تاریخ',
+                    'orderable' =>
+                        false,
+                ],
+                [
+                    'data' =>
+                        'status_label',
+                    'title' =>
+                        'وضعیت',
+                    'orderable' =>
+                        false,
+                    'status' =>
+                        true,
+                ],
+            ],
+        ],
+
+        'services' => [
+            'title' =>
+                'درخواست‌های خدمت',
+            'count_id' =>
+                'management-services-count',
+            'columns' => [
+                [
+                    'data' =>
+                        'request_number',
+                    'title' =>
+                        'درخواست',
+                ],
+                [
+                    'data' =>
+                        'title',
+                    'title' =>
+                        'عنوان',
+                ],
+                [
+                    'data' =>
+                        'assigned_name',
+                    'title' =>
+                        'مسئول',
+                    'orderable' =>
+                        false,
+                ],
+                [
+                    'data' =>
+                        'status_label',
+                    'title' =>
+                        'وضعیت',
+                    'orderable' =>
+                        false,
+                    'status' =>
+                        true,
+                ],
+                [
+                    'data' =>
+                        'created_at_jalali',
+                    'title' =>
+                        'زمان',
+                    'orderable' =>
+                        false,
+                ],
+            ],
+        ],
+
+        'support' => [
+            'title' =>
+                'تیکت‌های اخیر',
+            'count_id' =>
+                'management-support-count',
+            'columns' => [
+                [
+                    'data' =>
+                        'ticket_number',
+                    'title' =>
+                        'تیکت',
+                ],
+                [
+                    'data' =>
+                        'subject',
+                    'title' =>
+                        'موضوع',
+                ],
+                [
+                    'data' =>
+                        'user_name',
+                    'title' =>
+                        'کاربر',
+                    'orderable' =>
+                        false,
+                ],
+                [
+                    'data' =>
+                        'status_label',
+                    'title' =>
+                        'وضعیت',
+                    'orderable' =>
+                        false,
+                    'status' =>
+                        true,
+                ],
+                [
+                    'data' =>
+                        'created_at_jalali',
+                    'title' =>
+                        'زمان',
+                    'orderable' =>
+                        false,
+                ],
+            ],
+        ],
+    ];
+@endphp
+
 <section class="section-block" id="recent">
     <div class="section-heading">
         <div>
-            <span class="eyebrow">Recent Activity</span>
-            <h3>آخرین فعالیت‌ها</h3>
+            <span class="eyebrow">
+                Server-side Activity
+            </span>
+            <h3>
+                آخرین فعالیت‌ها
+            </h3>
             <p>
-                آخرین عملیات مالی و اجرایی در محدوده انتخاب‌شده.
+                جستجو، مرتب‌سازی و صفحه‌بندی این جداول مستقیماً
+                روی Query پایگاه داده انجام می‌شود.
             </p>
         </div>
     </div>
 
     <div class="dashboard-grid dashboard-grid--2">
-        @if (in_array('payments', $roleRecentKeys, true))
-        <article class="panel table-panel">
-            <div class="panel__header panel__header--compact">
-                <h3>پرداخت‌های اخیر</h3>
-                <span class="record-count">
-                    {{ $dashboard['recent']['payments']->count() }} رکورد
-                </span>
-            </div>
+        @foreach (
+            $roleRecentKeys
+            as $recentKey
+        )
+            @continue(
+                ! isset(
+                    $managementRecentTables[
+                        $recentKey
+                    ]
+                )
+            )
 
-            <div class="responsive-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>شماره</th>
-                            <th>پرداخت‌کننده</th>
-                            <th>مبلغ</th>
-                            <th>وضعیت</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($dashboard['recent']['payments'] as $payment)
-                            <tr>
-                                <td>{{ $payment->payment_number }}</td>
-                                <td>{{ $personName($payment->payerUser) }}</td>
-                                <td>
-                                    {{ $money($payment->amount) }}
-                                    <small>{{ $payment->currency }}</small>
-                                </td>
-                                <td>
-                                    <span class="status-badge {{ $statusClass($payment->status->value) }}">
-                                        {{ $statusLabels[$payment->status->value] ?? $payment->status->value }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="table-empty">
-                                    پرداختی ثبت نشده است.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </article>
-        @endif
+            @php
+                $table =
+                    $managementRecentTables[
+                        $recentKey
+                    ];
+            @endphp
 
-        @if (in_array('reservations', $roleRecentKeys, true))
-        <article class="panel table-panel">
-            <div class="panel__header panel__header--compact">
-                <h3>رزروهای اخیر</h3>
-                <span class="record-count">
-                    {{ $dashboard['recent']['reservations']->count() }} رکورد
-                </span>
-            </div>
+            <article class="panel table-panel">
+                <div class="panel__header panel__header--compact">
+                    <h3>
+                        {{ $table['title'] }}
+                    </h3>
 
-            <div class="responsive-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>امکان</th>
-                            <th>کاربر</th>
-                            <th>تاریخ</th>
-                            <th>وضعیت</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($dashboard['recent']['reservations'] as $reservation)
-                            <tr>
-                                <td>
-                                    {{ $reservation->buildingFacility?->title ?? '—' }}
-                                </td>
-                                <td>{{ $personName($reservation->user) }}</td>
-                                <td>
-                                    {{ optional($reservation->reservation_date)->format('Y-m-d') }}
-                                </td>
-                                <td>
-                                    <span class="status-badge {{ $statusClass($reservation->status->value) }}">
-                                        {{ $statusLabels[$reservation->status->value] ?? $reservation->status->value }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="table-empty">
-                                    رزروی ثبت نشده است.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </article>
-        @endif
+                    <span
+                        class="record-count"
+                        id="{{ $table['count_id'] }}"
+                    >
+                        —
+                    </span>
+                </div>
 
-        @if (in_array('services', $roleRecentKeys, true))
-        <article class="panel table-panel">
-            <div class="panel__header panel__header--compact">
-                <h3>درخواست‌های خدمت</h3>
-                <span class="record-count">
-                    {{ $dashboard['recent']['services']->count() }} رکورد
-                </span>
-            </div>
+                @include(
+                    'shared.server-datatable',
+                    [
+                        'id' =>
+                            "management-{$recentKey}-table",
 
-            <div class="responsive-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>درخواست</th>
-                            <th>عنوان</th>
-                            <th>مسئول</th>
-                            <th>وضعیت</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($dashboard['recent']['services'] as $service)
-                            <tr>
-                                <td>{{ $service->request_number }}</td>
-                                <td>{{ $service->title }}</td>
-                                <td>{{ $personName($service->assignedTo) }}</td>
-                                <td>
-                                    <span class="status-badge {{ $statusClass($service->status->value) }}">
-                                        {{ $statusLabels[$service->status->value] ?? $service->status->value }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="table-empty">
-                                    درخواست خدمتی ثبت نشده است.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </article>
-        @endif
+                        'url' =>
+                            $managementDtUrl(
+                                $recentKey
+                            ),
 
-        @if (in_array('support', $roleRecentKeys, true))
-        <article class="panel table-panel">
-            <div class="panel__header panel__header--compact">
-                <h3>تیکت‌های اخیر</h3>
-                <span class="record-count">
-                    {{ $dashboard['recent']['support']->count() }} رکورد
-                </span>
-            </div>
+                        'columns' =>
+                            $table['columns'],
 
-            <div class="responsive-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>تیکت</th>
-                            <th>موضوع</th>
-                            <th>کاربر</th>
-                            <th>وضعیت</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($dashboard['recent']['support'] as $ticket)
-                            <tr>
-                                <td>{{ $ticket->ticket_number }}</td>
-                                <td>{{ $ticket->subject }}</td>
-                                <td>{{ $personName($ticket->user) }}</td>
-                                <td>
-                                    <span class="status-badge {{ $statusClass($ticket->status->value) }}">
-                                        {{ $statusLabels[$ticket->status->value] ?? $ticket->status->value }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="table-empty">
-                                    تیکتی ثبت نشده است.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </article>
-        @endif
+                        'pageLength' =>
+                            10,
+
+                        'countTarget' =>
+                            '#'
+                            . $table[
+                                'count_id'
+                            ],
+                    ]
+                )
+            </article>
+        @endforeach
     </div>
 </section>
 @endif

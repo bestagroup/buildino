@@ -402,7 +402,40 @@ final class ApiContractService
                 ];
             }
 
-            if (
+            if ($this->isMultipartUploadRoute($route)) {
+                $operation['requestBody'] = [
+                    'required' => true,
+                    'content' => [
+                        'multipart/form-data' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'required' => ['file'],
+                                'properties' => [
+                                    'file' => [
+                                        'type' => 'string',
+                                        'format' => 'binary',
+                                    ],
+                                    'category' => [
+                                        'type' => 'string',
+                                    ],
+                                    'purpose' => [
+                                        'type' => 'string',
+                                        'nullable' => true,
+                                    ],
+                                    'is_confidential' => [
+                                        'type' => 'boolean',
+                                    ],
+                                    'expires_at' => [
+                                        'type' => 'string',
+                                        'format' => 'date-time',
+                                        'nullable' => true,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ];
+            } elseif (
                 in_array(
                     $route['method'],
                     [
@@ -593,6 +626,9 @@ final class ApiContractService
             'payment_id' => '',
             'service_request_id' => '',
             'service_quote_id' => '',
+            'document_id' => '',
+            'meeting_minute_id' => '',
+            'file_uuid' => '',
             'report_definition_id' => '',
             'generated_report_id' => '',
             'provider_bank_account_id' => '',
@@ -704,7 +740,37 @@ final class ApiContractService
             ];
         }
 
+        if ($this->isMultipartUploadRoute($route)) {
+            $request['body'] = [
+                'mode' => 'formdata',
+                'formdata' => [
+                    [
+                        'key' => 'file',
+                        'type' => 'file',
+                        'src' => [],
+                    ],
+                    [
+                        'key' => 'category',
+                        'value' => 'other',
+                        'type' => 'text',
+                    ],
+                    [
+                        'key' => 'purpose',
+                        'value' => 'primary',
+                        'type' => 'text',
+                    ],
+                    [
+                        'key' => 'is_confidential',
+                        'value' => 'false',
+                        'type' => 'text',
+                    ],
+                ],
+            ];
+        }
+
         if (
+            ! $this->isMultipartUploadRoute($route)
+            &&
             is_array(
                 $route['request_example']
             )
@@ -861,6 +927,14 @@ final class ApiContractService
                 '}',
             ],
 
+            'POST api/v1/documents/{document}/files',
+            'POST api/v1/meeting-minutes/{meetingMinute}/files' => [
+                'if (pm.response.code === 201) {',
+                '  const json = pm.response.json();',
+                '  if (json.data?.uuid) pm.environment.set("file_uuid", json.data.uuid);',
+                '}',
+            ],
+
             default => [],
         };
     }
@@ -919,21 +993,38 @@ final class ApiContractService
         );
 
         return array_map(
-            static fn (
-                string $name
-            ): array => [
+            fn (string $name): array => [
                 'name' => $name,
                 'in' => 'path',
                 'required' => true,
-                'schema' => [
-                    'type' =>
-                        $name === 'gateway'
-                            ? 'string'
-                            : 'integer',
-                ],
+                'schema' => match ($name) {
+                    'gateway' => [
+                        'type' => 'string',
+                    ],
+                    'file' => [
+                        'type' => 'string',
+                        'format' => 'uuid',
+                    ],
+                    default => [
+                        'type' => 'integer',
+                    ],
+                },
             ],
             $matches[1]
         );
+    }
+
+    private function isMultipartUploadRoute(array $route): bool
+    {
+        return $route['method'] === 'POST'
+            && in_array(
+                $route['uri'],
+                [
+                    'api/v1/documents/{document}/files',
+                    'api/v1/meeting-minutes/{meetingMinute}/files',
+                ],
+                true
+            );
     }
 
     private function isProtected(
@@ -1189,6 +1280,20 @@ final class ApiContractService
                 'support'
             ) =>
                 'Support',
+
+            str_contains(
+                $path,
+                'files'
+            ),
+            str_contains(
+                $path,
+                'documents'
+            ),
+            str_contains(
+                $path,
+                'meeting-minutes'
+            ) =>
+                'Documents & Files',
 
             str_contains(
                 $path,

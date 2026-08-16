@@ -1,0 +1,25 @@
+{
+  "php_files": 793,
+  "php_lint_failures": 0,
+  "psr4_mismatches": 0,
+  "duplicate_fqcns": 0,
+  "js_syntax": {
+    "public/js/buildino-datatables.js": true,
+    "public/js/buildino-portal.js": true,
+    "public/js/buildino-management.js": true
+  },
+  "fcm_driver_registered": true,
+  "mobile_route_composed_with_require": true,
+  "mobile_bootstrap_route_present": true,
+  "login_device_sync_present": true,
+  "logout_device_release_present": true,
+  "production_audit_extended": true,
+  "credential_like_files": [],
+  "production_private_key_hits": [],
+  "new_migrations": 0,
+  "tests_added": [
+    "tests/Unit/Notifications/FcmV1PushSenderTest.php",
+    "tests/Unit/Notifications/InvalidPushTokenCleanupTest.php",
+    "tests/Feature/Mobile/MobileBootstrapApiTest.php"
+  ]
+}

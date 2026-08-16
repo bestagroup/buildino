@@ -10,6 +10,7 @@ use App\Http\Requests\Auth\PasswordLoginRequest;
 use App\Http\Requests\Auth\RequestOtpRequest;
 use App\Http\Requests\Auth\VerifyOtpRequest;
 use App\Http\Resources\V1\AuthUserResource;
+use App\Services\Notifications\NotificationDeviceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -124,11 +125,21 @@ class AuthController extends Controller
     )]
     public function loginWithOtp(
         VerifyOtpRequest $request,
-        LoginWithOtp $action
+        LoginWithOtp $action,
+        NotificationDeviceService $devices
     ): JsonResponse {
+        $validated =
+            $request->validated();
+
         $result = $action->execute(
-            $request->validated(),
+            $validated,
             $request
+        );
+
+        $this->syncDeviceFromLogin(
+            $result['user'],
+            $validated,
+            $devices
         );
 
         return response()->json([
@@ -180,11 +191,21 @@ class AuthController extends Controller
     )]
     public function loginWithPassword(
         PasswordLoginRequest $request,
-        LoginWithPassword $action
+        LoginWithPassword $action,
+        NotificationDeviceService $devices
     ): JsonResponse {
+        $validated =
+            $request->validated();
+
         $result = $action->execute(
-            $request->validated(),
+            $validated,
             $request
+        );
+
+        $this->syncDeviceFromLogin(
+            $result['user'],
+            $validated,
+            $devices
         );
 
         return response()->json([
@@ -257,8 +278,17 @@ class AuthController extends Controller
             ),
         ]
     )]
-    public function logout(Request $request): JsonResponse
-    {
+    public function logout(
+        Request $request,
+        NotificationDeviceService $devices
+    ): JsonResponse {
+        $devices->release(
+            $request->user(),
+            $request->string(
+                'device_id'
+            )->toString()
+        );
+
         $request->user()
             ->currentAccessToken()
             ?->delete();
@@ -297,4 +327,38 @@ class AuthController extends Controller
 
         return response()->json(status: 204);
     }
+    private function syncDeviceFromLogin(
+        \App\Models\User $user,
+        array $validated,
+        NotificationDeviceService $devices
+    ): void {
+        if (
+            empty(
+                $validated['device_id']
+            )
+        ) {
+            return;
+        }
+
+        $devices->sync(
+            $user,
+            [
+                'device_id' =>
+                    $validated['device_id'],
+
+                'platform' =>
+                    $validated['platform']
+                    ?? null,
+
+                'device_name' =>
+                    $validated['device_name']
+                    ?? null,
+
+                'push_token' =>
+                    $validated['push_token']
+                    ?? null,
+            ]
+        );
+    }
+
 }

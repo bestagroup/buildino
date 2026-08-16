@@ -25,5 +25,28 @@ return [
             'version_constraint' => '^3.5',
             'composer_package' => 'morilog/jalali',
         ],
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DataTables / Yajra
+        |--------------------------------------------------------------------------
+        |
+        | DataTables 2.x is intentionally pinned because Yajra DataTables 12
+        | officially targets DataTables 1.x / 2.x with Laravel 12.
+        |
+        */
+        'datatables' => [
+            'version' => '2.3.8',
+            'css' => 'https://cdn.datatables.net/2.3.8/css/dataTables.bootstrap5.min.css',
+            'js' => 'https://cdn.datatables.net/2.3.8/js/dataTables.min.js',
+            'bootstrap5_js' => 'https://cdn.datatables.net/2.3.8/js/dataTables.bootstrap5.min.js',
+            'responsive_version' => '3.0.8',
+            'responsive_css' => 'https://cdn.datatables.net/responsive/3.0.8/css/responsive.bootstrap5.min.css',
+            'responsive_js' => 'https://cdn.datatables.net/responsive/3.0.8/js/dataTables.responsive.min.js',
+            'responsive_bootstrap5_js' => 'https://cdn.datatables.net/responsive/3.0.8/js/responsive.bootstrap5.min.js',
+            'composer_package' => 'yajra/laravel-datatables-oracle',
+            'version_constraint' => '^12.0',
+        ],
     ],
 ];

@@ -36,6 +36,17 @@ class File extends Model
         'metadata',
     ];
 
+    protected $hidden = [
+        'id',
+        'uploaded_by',
+        'disk',
+        'path',
+        'stored_name',
+        'checksum',
+        'metadata',
+        'deleted_at',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -67,5 +78,10 @@ class File extends Model
     public function generatedReports(): HasMany
     {
         return $this->hasMany(GeneratedReport::class, 'file_id');
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
     }
 }

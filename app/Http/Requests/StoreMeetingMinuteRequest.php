@@ -19,7 +19,7 @@ class StoreMeetingMinuteRequest extends FormRequest
             'meeting_at' => ['required', 'date'],
             'meeting_number' => ['nullable', 'string', 'max:100'],
             'content' => ['nullable', 'string'],
-            'created_by' => ['nullable', 'integer', 'exists:users,id'],
+            'created_by' => ['prohibited'],
         ];
     }
 }

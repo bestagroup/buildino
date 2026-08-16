@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\DocumentRecordController;
 use App\Http\Controllers\Api\V1\FacilityConfigurationController;
 use App\Http\Controllers\Api\V1\FacilityReservationController;
 use App\Http\Controllers\Api\V1\FloorController;
+use App\Http\Controllers\Api\V1\FileController;
 use App\Http\Controllers\Api\V1\GuestVisitController;
 use App\Http\Controllers\Api\V1\InvoiceOperationController;
 use App\Http\Controllers\Api\V1\MeetingMinuteController;
@@ -603,6 +604,26 @@ Route::prefix('v1')
             'meeting-minutes' => MeetingMinuteController::class,
             'support-tickets' => SupportTicketController::class,
         ]);
+
+        Route::post(
+            'documents/{document}/files',
+            [FileController::class, 'storeForDocument']
+        )->name('api.v1.documents.files.store');
+
+        Route::post(
+            'meeting-minutes/{meetingMinute}/files',
+            [FileController::class, 'storeForMeetingMinute']
+        )->name('api.v1.meeting-minutes.files.store');
+
+        Route::get(
+            'files/{file}/download',
+            [FileController::class, 'download']
+        )->name('api.v1.files.download');
+
+        Route::delete(
+            'files/{file}',
+            [FileController::class, 'destroy']
+        )->name('api.v1.files.destroy');
 
         Route::post(
             'support-tickets/{supportTicket}/assign',

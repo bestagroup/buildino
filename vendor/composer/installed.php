@@ -1529,6 +1529,15 @@
             'aliases' => array(),
             'dev_requirement' => true,
         ),
+        'yajra/laravel-datatables-oracle' => array(
+            'pretty_version' => 'v12.0.0',
+            'version' => '12.0.0.0',
+            'reference' => 'bd64f4d801cb73c06c3d44b05330508a904b3de1',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../yajra/laravel-datatables-oracle',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'zircote/swagger-php' => array(
             'pretty_version' => '6.5.3',
             'version' => '6.5.3.0',

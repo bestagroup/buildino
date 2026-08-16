@@ -6,7 +6,12 @@ use App\Http\Controllers\Web\ManagementLookupController;
 use App\Http\Controllers\Web\ManagementOperationsController;
 use App\Http\Controllers\Web\ManagementPasswordResetController;
 use App\Http\Controllers\Web\ManagementUserDataController;
+use App\Http\Controllers\Web\PortalAuthController;
+use App\Http\Controllers\Web\PortalDashboardController;
+use App\Http\Controllers\Web\PortalOperationsController;
+use App\Http\Controllers\Web\WebDataTableController;
 use App\Http\Middleware\EnsureManagementWebAccess;
+use App\Http\Middleware\EnsurePortalWebAccess;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect(
@@ -94,6 +99,22 @@ Route::middleware([
                 'index',
             ]
         )->name('dashboard');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Server-side Dashboard DataTables
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/datatables/{table}',
+            [
+                WebDataTableController::class,
+                'management',
+            ]
+        )
+            ->middleware('throttle:api-v1')
+            ->name('datatables');
 
         /*
         |--------------------------------------------------------------------------
@@ -242,4 +263,187 @@ Route::middleware([
                 'destroy',
             ]
         )->name('logout');
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| Resident / Provider Portal
+|--------------------------------------------------------------------------
+|
+| The portal deliberately uses the same web session guard but a separate
+| access boundary from the management dashboard. Resident access is derived
+| from active UnitOwnership / UnitOccupancy relationships. Provider access
+| is derived from the service_provider role or assigned service requests.
+|
+*/
+
+Route::get(
+    '/portal/login',
+    [
+        PortalAuthController::class,
+        'create',
+    ]
+)->name('portal.login');
+
+Route::post(
+    '/portal/login',
+    [
+        PortalAuthController::class,
+        'store',
+    ]
+)
+    ->middleware('throttle:auth')
+    ->name('portal.login.store');
+
+Route::prefix('portal')
+    ->name('portal.')
+    ->group(function (): void {
+        Route::get(
+            '/',
+            [
+                PortalDashboardController::class,
+                'index',
+            ]
+        )
+            ->middleware(
+                EnsurePortalWebAccess::class
+            )
+            ->name('dashboard');
+
+        Route::get(
+            '/resident',
+            [
+                PortalDashboardController::class,
+                'resident',
+            ]
+        )
+            ->middleware(
+                EnsurePortalWebAccess::class
+                . ':resident'
+            )
+            ->name(
+                'resident.dashboard'
+            );
+
+        Route::get(
+            '/resident/datatables/{table}',
+            [
+                WebDataTableController::class,
+                'resident',
+            ]
+        )
+            ->middleware([
+                EnsurePortalWebAccess::class
+                . ':resident',
+                'throttle:api-v1',
+            ])
+            ->name(
+                'resident.datatables'
+            );
+
+        Route::get(
+            '/resident/operations/{resource}',
+            [
+                PortalOperationsController::class,
+                'residentIndex',
+            ]
+        )
+            ->middleware(
+                EnsurePortalWebAccess::class
+                . ':resident'
+            )
+            ->name(
+                'resident.operations.index'
+            );
+
+        Route::get(
+            '/resident/operations/{resource}/{id}',
+            [
+                PortalOperationsController::class,
+                'residentShow',
+            ]
+        )
+            ->whereNumber('id')
+            ->middleware(
+                EnsurePortalWebAccess::class
+                . ':resident'
+            )
+            ->name(
+                'resident.operations.show'
+            );
+
+        Route::get(
+            '/provider',
+            [
+                PortalDashboardController::class,
+                'provider',
+            ]
+        )
+            ->middleware(
+                EnsurePortalWebAccess::class
+                . ':provider'
+            )
+            ->name(
+                'provider.dashboard'
+            );
+
+        Route::get(
+            '/provider/datatables/{table}',
+            [
+                WebDataTableController::class,
+                'provider',
+            ]
+        )
+            ->middleware([
+                EnsurePortalWebAccess::class
+                . ':provider',
+                'throttle:api-v1',
+            ])
+            ->name(
+                'provider.datatables'
+            );
+
+        Route::get(
+            '/provider/operations/{resource}',
+            [
+                PortalOperationsController::class,
+                'providerIndex',
+            ]
+        )
+            ->middleware(
+                EnsurePortalWebAccess::class
+                . ':provider'
+            )
+            ->name(
+                'provider.operations.index'
+            );
+
+        Route::get(
+            '/provider/operations/{resource}/{id}',
+            [
+                PortalOperationsController::class,
+                'providerShow',
+            ]
+        )
+            ->whereNumber('id')
+            ->middleware(
+                EnsurePortalWebAccess::class
+                . ':provider'
+            )
+            ->name(
+                'provider.operations.show'
+            );
+
+        Route::post(
+            '/logout',
+            [
+                PortalAuthController::class,
+                'destroy',
+            ]
+        )
+            ->middleware(
+                EnsurePortalWebAccess::class
+            )
+            ->name('logout');
     });

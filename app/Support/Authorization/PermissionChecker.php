@@ -10,6 +10,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class PermissionChecker
 {
+    public function allowsAnyScope(
+        User $user,
+        string $permission
+    ): bool {
+        if (! $user->is_active || $user->is_blocked) {
+            return false;
+        }
+
+        return $this->activeAssignments($user)
+            ->whereHas(
+                'role.permissions',
+                fn (Builder $query) => $query->where(
+                    'permissions.name',
+                    $permission
+                )
+            )
+            ->exists();
+    }
+
     public function allows(
         User $user,
         string $permission,

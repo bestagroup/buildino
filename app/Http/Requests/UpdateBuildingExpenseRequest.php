@@ -16,14 +16,20 @@ class UpdateBuildingExpenseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'building_id' => 'sometimes|integer|exists:buildings,id',
+            'building_id' => [
+                'sometimes',
+                'integer',
+                Rule::in([
+                    (int) $this->route('expense')?->building_id,
+                ]),
+            ],
             'fund_id' => 'sometimes|nullable|integer|exists:funds,id',
             'financial_category_id' => 'sometimes|nullable|integer|exists:financial_categories,id',
             'title' => 'sometimes|string|max:255',
             'amount' => 'sometimes|integer|min:1',
             'expense_date' => 'sometimes|date',
             'invoice_number' => 'sometimes|nullable|string|max:100',
-            'status' => ['sometimes', 'sometimes', Rule::enum(FinancialOperationStatus::class)],
+            'status' => ['sometimes', Rule::enum(FinancialOperationStatus::class)],
             'description' => 'sometimes|nullable|string',
         ];
     }

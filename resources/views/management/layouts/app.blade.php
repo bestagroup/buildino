@@ -28,6 +28,26 @@
 
     <link
         rel="stylesheet"
+        href="{{ config('management_ui.libraries.datatables.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ config('management_ui.libraries.datatables.responsive_css') }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/buildino-datatables.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/buildino-foundation.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
         href="{{ asset('css/buildino-management.css') }}"
     >
 
@@ -1468,12 +1488,42 @@
 ></script>
 
 <script
+    src="{{ config('management_ui.libraries.datatables.js') }}"
+    defer
+></script>
+
+<script
+    src="{{ config('management_ui.libraries.datatables.bootstrap5_js') }}"
+    defer
+></script>
+
+<script
+    src="{{ config('management_ui.libraries.datatables.responsive_js') }}"
+    defer
+></script>
+
+<script
+    src="{{ config('management_ui.libraries.datatables.responsive_bootstrap5_js') }}"
+    defer
+></script>
+
+<script
     src="{{ config('management_ui.libraries.sweetalert2.js') }}"
     defer
 ></script>
 
 <script
+    src="{{ asset('js/buildino-foundation.js') }}"
+    defer
+></script>
+
+<script
     src="{{ config('management_ui.libraries.jdate.js') }}"
+    defer
+></script>
+
+<script
+    src="{{ asset('js/buildino-datatables.js') }}"
     defer
 ></script>
 

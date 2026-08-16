@@ -2629,7 +2629,7 @@
             "get": {
                 "operationId": "get_api_v1_documents",
                 "tags": [
-                    "General"
+                    "Documents & Files"
                 ],
                 "summary": "Get /documents",
                 "parameters": [],
@@ -2656,7 +2656,7 @@
             "post": {
                 "operationId": "post_api_v1_documents",
                 "tags": [
-                    "General"
+                    "Documents & Files"
                 ],
                 "summary": "Post /documents",
                 "parameters": [],
@@ -2685,7 +2685,7 @@
             "delete": {
                 "operationId": "delete_api_v1_documents_document",
                 "tags": [
-                    "General"
+                    "Documents & Files"
                 ],
                 "summary": "Delete /documents/{document}",
                 "parameters": [
@@ -2721,7 +2721,7 @@
             "get": {
                 "operationId": "get_api_v1_documents_document",
                 "tags": [
-                    "General"
+                    "Documents & Files"
                 ],
                 "summary": "Get /documents/{document}",
                 "parameters": [
@@ -2757,7 +2757,7 @@
             "patch": {
                 "operationId": "patch_api_v1_documents_document",
                 "tags": [
-                    "General"
+                    "Documents & Files"
                 ],
                 "summary": "Patch /documents/{document}",
                 "parameters": [
@@ -2793,7 +2793,7 @@
             "put": {
                 "operationId": "put_api_v1_documents_document",
                 "tags": [
-                    "General"
+                    "Documents & Files"
                 ],
                 "summary": "Put /documents/{document}",
                 "parameters": [
@@ -2825,6 +2825,78 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/documents/{document}/files": {
+            "post": {
+                "operationId": "post_api_v1_documents_document_files",
+                "tags": [
+                    "Documents & Files"
+                ],
+                "summary": "Post /documents/{document}/files",
+                "parameters": [
+                    {
+                        "name": "document",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "category": {
+                                        "type": "string"
+                                    },
+                                    "purpose": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "is_confidential": {
+                                        "type": "boolean"
+                                    },
+                                    "expires_at": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "nullable": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/expenses": {
@@ -3976,6 +4048,84 @@
                 ]
             }
         },
+        "/files/{file}": {
+            "delete": {
+                "operationId": "delete_api_v1_files_file",
+                "tags": [
+                    "Documents & Files"
+                ],
+                "summary": "Delete /files/{file}",
+                "parameters": [
+                    {
+                        "name": "file",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/files/{file}/download": {
+            "get": {
+                "operationId": "get_api_v1_files_file_download",
+                "tags": [
+                    "Documents & Files"
+                ],
+                "summary": "Get /files/{file}/download",
+                "parameters": [
+                    {
+                        "name": "file",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/floors/{floor}": {
             "delete": {
                 "operationId": "delete_api_v1_floors_floor",
@@ -4814,7 +4964,7 @@
             "get": {
                 "operationId": "get_api_v1_meeting_minutes",
                 "tags": [
-                    "General"
+                    "Documents & Files"
                 ],
                 "summary": "Get /meeting-minutes",
                 "parameters": [],
@@ -4841,7 +4991,7 @@
             "post": {
                 "operationId": "post_api_v1_meeting_minutes",
                 "tags": [
-                    "General"
+                    "Documents & Files"
                 ],
                 "summary": "Post /meeting-minutes",
                 "parameters": [],
@@ -4866,11 +5016,83 @@
                 ]
             }
         },
+        "/meeting-minutes/{meetingMinute}/files": {
+            "post": {
+                "operationId": "post_api_v1_meeting_minutes_meetingminute_files",
+                "tags": [
+                    "Documents & Files"
+                ],
+                "summary": "Post /meeting-minutes/{meetingMinute}/files",
+                "parameters": [
+                    {
+                        "name": "meetingMinute",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "category": {
+                                        "type": "string"
+                                    },
+                                    "purpose": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "is_confidential": {
+                                        "type": "boolean"
+                                    },
+                                    "expires_at": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "nullable": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/meeting-minutes/{meeting_minute}": {
             "delete": {
                 "operationId": "delete_api_v1_meeting_minutes_meeting_minute",
                 "tags": [
-                    "General"
+                    "Documents & Files"
                 ],
                 "summary": "Delete /meeting-minutes/{meeting_minute}",
                 "parameters": [
@@ -4906,7 +5128,7 @@
             "get": {
                 "operationId": "get_api_v1_meeting_minutes_meeting_minute",
                 "tags": [
-                    "General"
+                    "Documents & Files"
                 ],
                 "summary": "Get /meeting-minutes/{meeting_minute}",
                 "parameters": [
@@ -4942,7 +5164,7 @@
             "patch": {
                 "operationId": "patch_api_v1_meeting_minutes_meeting_minute",
                 "tags": [
-                    "General"
+                    "Documents & Files"
                 ],
                 "summary": "Patch /meeting-minutes/{meeting_minute}",
                 "parameters": [
@@ -4978,7 +5200,7 @@
             "put": {
                 "operationId": "put_api_v1_meeting_minutes_meeting_minute",
                 "tags": [
-                    "General"
+                    "Documents & Files"
                 ],
                 "summary": "Put /meeting-minutes/{meeting_minute}",
                 "parameters": [

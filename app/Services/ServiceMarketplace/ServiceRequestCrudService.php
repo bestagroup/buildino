@@ -9,6 +9,8 @@ use App\Models\ServiceRequestWalletPayment;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\Security\BuildingAccessService;
+use App\Services\Security\UnitResidentAccessService;
+use App\Support\Authorization\PermissionChecker;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -16,7 +18,9 @@ use Illuminate\Validation\ValidationException;
 final class ServiceRequestCrudService
 {
     public function __construct(
-        private readonly BuildingAccessService $buildingAccess
+        private readonly BuildingAccessService $buildingAccess,
+        private readonly UnitResidentAccessService $residentAccess,
+        private readonly PermissionChecker $permissions
     ) {
     }
 
@@ -31,9 +35,16 @@ final class ServiceRequestCrudService
                 abort(403);
             }
 
-            $this->assertUnitBelongsToBuilding(
+            $unit = $this->assertUnitBelongsToBuilding(
                 $data['unit_id'] ?? null,
                 $building
+            );
+
+            $this->assertUnitAccess(
+                $actor,
+                $building,
+                $unit,
+                'service-requests.create'
             );
 
             return ServiceRequest::query()->create([
@@ -90,9 +101,16 @@ final class ServiceRequestCrudService
                 $building = $request->building;
             }
 
-            $this->assertUnitBelongsToBuilding(
+            $unit = $this->assertUnitBelongsToBuilding(
                 $data['unit_id'] ?? $request->unit_id,
                 $building
+            );
+
+            $this->assertUnitAccess(
+                $actor,
+                $building,
+                $unit,
+                'service-requests.update'
             );
 
             $request->update($data);
@@ -155,27 +173,54 @@ final class ServiceRequestCrudService
     private function assertUnitBelongsToBuilding(
         ?int $unitId,
         Building $building
-    ): void {
+    ): ?Unit {
         if ($unitId === null) {
-            return;
+            return null;
         }
 
-        $belongs = Unit::query()
-            ->whereKey($unitId)
-            ->whereHas(
-                'floor.block',
-                fn ($query) => $query->where(
-                    'building_id',
-                    $building->getKey()
-                )
-            )
-            ->exists();
+        $unit = Unit::query()
+            ->with('floor.block.building')
+            ->findOrFail($unitId);
 
-        if (! $belongs) {
+        if (
+            (int) $unit->floor?->block?->building_id
+            !== (int) $building->getKey()
+        ) {
             throw ValidationException::withMessages([
                 'unit_id' => 'Unit does not belong to the selected Building.',
             ]);
         }
+
+        return $unit;
+    }
+
+    private function assertUnitAccess(
+        User $actor,
+        Building $building,
+        ?Unit $unit,
+        string $permission
+    ): void {
+        if ($unit === null) {
+            return;
+        }
+
+        if (
+            $this->permissions->allows(
+                $actor,
+                $permission,
+                $building
+            )
+        ) {
+            return;
+        }
+
+        abort_unless(
+            $this->residentAccess->allows(
+                $actor,
+                $unit
+            ),
+            403
+        );
     }
 
     private function requestNumber(): string

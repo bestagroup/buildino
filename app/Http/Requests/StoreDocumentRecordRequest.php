@@ -16,7 +16,14 @@ class StoreDocumentRecordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'documentable_type' => 'required|string|max:255',
+            'documentable_type' => [
+                'required',
+                'string',
+                Rule::in([
+                    'building',
+                    'unit',
+                ]),
+            ],
             'documentable_id' => 'required|integer|min:1',
             'title' => 'required|string|max:255',
             'document_type' => ['required', Rule::enum(DocumentType::class)],

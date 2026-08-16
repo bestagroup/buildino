@@ -1,0 +1,18 @@
+{
+  "root_cause": "portal Blade referenced undefined $user variable",
+  "portal_layout_uses_portal_user": true,
+  "resident_view_uses_portal_user": true,
+  "bare_user_refs": {
+    "resources/views/portal/layouts/app.blade.php": [],
+    "resources/views/portal/resident/dashboard.blade.php": [],
+    "resources/views/portal/provider/dashboard.blade.php": []
+  },
+  "php_lint": {
+    "tests/Feature/Web/PortalWebAccessTest.php": {
+      "ok": true,
+      "output": "No syntax errors detected in /mnt/data/buildino_portal_undefined_user_fix/tests/Feature/Web/PortalWebAccessTest.php"
+    }
+  },
+  "new_migrations": 0,
+  "authorization_changes": 0
+}

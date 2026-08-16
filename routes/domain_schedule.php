@@ -12,6 +12,11 @@ Schedule::command('domain:expire-facility-reservations')
     ->withoutOverlapping()
     ->onOneServer();
 
+Schedule::command('domain:expire-guest-visits')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->onOneServer();
+
 Schedule::command('notifications:invoice-reminders --days=1')
     ->dailyAt('09:00')
     ->withoutOverlapping()

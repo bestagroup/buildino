@@ -49,6 +49,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'ce9671a430e4846b44e1c68c7611f9f5' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery.php',
         'e4e590a9b5afe940db71ee1662c02677' => __DIR__ . '/..' . '/morilog/jalali/src/helpers.php',
         'd634523d799d97a8ab4807b650bf5cea' => __DIR__ . '/..' . '/pestphp/pest-plugin-laravel/src/Autoload.php',
+        '0b47d6d4a00ca9112ba3953b49e7c9a4' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/helper.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -59,6 +60,10 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'p' =>
         array (
             'phpDocumentor\\Reflection\\' => 25,
+        ),
+        'Y' =>
+        array (
+            'Yajra\\DataTables\\' => 17,
         ),
         'W' =>
         array (
@@ -228,6 +233,10 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
             0 => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src',
             1 => __DIR__ . '/..' . '/phpdocumentor/type-resolver/src',
             2 => __DIR__ . '/..' . '/phpdocumentor/reflection-common/src',
+        ),
+        'Yajra\\DataTables\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src',
         ),
         'Whoops\\' =>
         array (
@@ -825,10 +834,15 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Http\\Controllers\\Web\\ManagementOperationsController' => __DIR__ . '/../..' . '/app/Http/Controllers/Web/ManagementOperationsController.php',
         'App\\Http\\Controllers\\Web\\ManagementPasswordResetController' => __DIR__ . '/../..' . '/app/Http/Controllers/Web/ManagementPasswordResetController.php',
         'App\\Http\\Controllers\\Web\\ManagementUserDataController' => __DIR__ . '/../..' . '/app/Http/Controllers/Web/ManagementUserDataController.php',
+        'App\\Http\\Controllers\\Web\\PortalAuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/Web/PortalAuthController.php',
+        'App\\Http\\Controllers\\Web\\PortalDashboardController' => __DIR__ . '/../..' . '/app/Http/Controllers/Web/PortalDashboardController.php',
+        'App\\Http\\Controllers\\Web\\PortalOperationsController' => __DIR__ . '/../..' . '/app/Http/Controllers/Web/PortalOperationsController.php',
+        'App\\Http\\Controllers\\Web\\WebDataTableController' => __DIR__ . '/../..' . '/app/Http/Controllers/Web/WebDataTableController.php',
         'App\\Http\\Middleware\\ApplyApiSecurityHeaders' => __DIR__ . '/../..' . '/app/Http/Middleware/ApplyApiSecurityHeaders.php',
         'App\\Http\\Middleware\\AssignRequestId' => __DIR__ . '/../..' . '/app/Http/Middleware/AssignRequestId.php',
         'App\\Http\\Middleware\\EnsureBuildingAccess' => __DIR__ . '/../..' . '/app/Http/Middleware/EnsureBuildingAccess.php',
         'App\\Http\\Middleware\\EnsureManagementWebAccess' => __DIR__ . '/../..' . '/app/Http/Middleware/EnsureManagementWebAccess.php',
+        'App\\Http\\Middleware\\EnsurePortalWebAccess' => __DIR__ . '/../..' . '/app/Http/Middleware/EnsurePortalWebAccess.php',
         'App\\Http\\Middleware\\EnsureSubscriptionIsActive' => __DIR__ . '/../..' . '/app/Http/Middleware/EnsureSubscriptionIsActive.php',
         'App\\Http\\Middleware\\EnsureUserIsActive' => __DIR__ . '/../..' . '/app/Http/Middleware/EnsureUserIsActive.php',
         'App\\Http\\Middleware\\EnsureVerifiedIdentity' => __DIR__ . '/../..' . '/app/Http/Middleware/EnsureVerifiedIdentity.php',
@@ -1222,6 +1236,10 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Services\\Web\\ManagementHeaderContextService' => __DIR__ . '/../..' . '/app/Services/Web/ManagementHeaderContextService.php',
         'App\\Services\\Web\\ManagementRoleDashboardService' => __DIR__ . '/../..' . '/app/Services/Web/ManagementRoleDashboardService.php',
         'App\\Services\\Web\\ManagementUiContextService' => __DIR__ . '/../..' . '/app/Services/Web/ManagementUiContextService.php',
+        'App\\Services\\Web\\PortalAccessService' => __DIR__ . '/../..' . '/app/Services/Web/PortalAccessService.php',
+        'App\\Services\\Web\\PortalDashboardService' => __DIR__ . '/../..' . '/app/Services/Web/PortalDashboardService.php',
+        'App\\Services\\Web\\PortalOperationDetailService' => __DIR__ . '/../..' . '/app/Services/Web/PortalOperationDetailService.php',
+        'App\\Services\\Web\\WebDataTablePresenter' => __DIR__ . '/../..' . '/app/Services/Web/WebDataTablePresenter.php',
         'App\\Support\\Authorization\\BuildingVisibilityQuery' => __DIR__ . '/../..' . '/app/Support/Authorization/BuildingVisibilityQuery.php',
         'App\\Support\\Authorization\\ComplexVisibilityQuery' => __DIR__ . '/../..' . '/app/Support/Authorization/ComplexVisibilityQuery.php',
         'App\\Support\\Authorization\\PermissionChecker' => __DIR__ . '/../..' . '/app/Support/Authorization/PermissionChecker.php',
@@ -8743,6 +8761,11 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'Tests\\Feature\\Web\\ManagementPasswordResetWebTest' => __DIR__ . '/../..' . '/tests/Feature/Web/ManagementPasswordResetWebTest.php',
         'Tests\\Feature\\Web\\ManagementRoleDashboardWebTest' => __DIR__ . '/../..' . '/tests/Feature/Web/ManagementRoleDashboardWebTest.php',
         'Tests\\Feature\\Web\\ManagementUiUxAccessTest' => __DIR__ . '/../..' . '/tests/Feature/Web/ManagementUiUxAccessTest.php',
+        'Tests\\Feature\\Web\\PortalBladeCompileRegressionTest' => __DIR__ . '/../..' . '/tests/Feature/Web/PortalBladeCompileRegressionTest.php',
+        'Tests\\Feature\\Web\\PortalLifecyclePhase2Test' => __DIR__ . '/../..' . '/tests/Feature/Web/PortalLifecyclePhase2Test.php',
+        'Tests\\Feature\\Web\\PortalOperationalDetailsWebTest' => __DIR__ . '/../..' . '/tests/Feature/Web/PortalOperationalDetailsWebTest.php',
+        'Tests\\Feature\\Web\\PortalWebAccessTest' => __DIR__ . '/../..' . '/tests/Feature/Web/PortalWebAccessTest.php',
+        'Tests\\Feature\\Web\\ServerSideDataTablesWebTest' => __DIR__ . '/../..' . '/tests/Feature/Web/ServerSideDataTablesWebTest.php',
         'Tests\\Support\\CreatesBuildingDomainData' => __DIR__ . '/../..' . '/tests/Support/CreatesBuildingDomainData.php',
         'Tests\\TestCase' => __DIR__ . '/../..' . '/tests/TestCase.php',
         'Tests\\Unit\\Domain\\ChargeServiceTest' => __DIR__ . '/../..' . '/tests/Unit/Domain/ChargeServiceTest.php',
@@ -8799,6 +8822,22 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'Whoops\\Util\\Misc' => __DIR__ . '/..' . '/filp/whoops/src/Whoops/Util/Misc.php',
         'Whoops\\Util\\SystemFacade' => __DIR__ . '/..' . '/filp/whoops/src/Whoops/Util/SystemFacade.php',
         'Whoops\\Util\\TemplateHelper' => __DIR__ . '/..' . '/filp/whoops/src/Whoops/Util/TemplateHelper.php',
+        'Yajra\\DataTables\\ApiResourceDataTable' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/ApiResourceDataTable.php',
+        'Yajra\\DataTables\\CollectionDataTable' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/CollectionDataTable.php',
+        'Yajra\\DataTables\\Contracts\\DataTable' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Contracts/DataTable.php',
+        'Yajra\\DataTables\\Contracts\\Formatter' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Contracts/Formatter.php',
+        'Yajra\\DataTables\\DataTableAbstract' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/DataTableAbstract.php',
+        'Yajra\\DataTables\\DataTables' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/DataTables.php',
+        'Yajra\\DataTables\\DataTablesServiceProvider' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/DataTablesServiceProvider.php',
+        'Yajra\\DataTables\\EloquentDataTable' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/EloquentDataTable.php',
+        'Yajra\\DataTables\\Exceptions\\Exception' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Exceptions/Exception.php',
+        'Yajra\\DataTables\\Facades\\DataTables' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Facades/DataTables.php',
+        'Yajra\\DataTables\\Processors\\DataProcessor' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Processors/DataProcessor.php',
+        'Yajra\\DataTables\\Processors\\RowProcessor' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Processors/RowProcessor.php',
+        'Yajra\\DataTables\\QueryDataTable' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/QueryDataTable.php',
+        'Yajra\\DataTables\\Utilities\\Config' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Utilities/Config.php',
+        'Yajra\\DataTables\\Utilities\\Helper' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Utilities/Helper.php',
+        'Yajra\\DataTables\\Utilities\\Request' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Utilities/Request.php',
         'phpDocumentor\\Reflection\\DocBlock' => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src/DocBlock.php',
         'phpDocumentor\\Reflection\\DocBlockFactory' => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src/DocBlockFactory.php',
         'phpDocumentor\\Reflection\\DocBlockFactoryInterface' => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src/DocBlockFactoryInterface.php',

@@ -18,7 +18,6 @@ class DocumentRecord extends Model
     protected $table = 'document_records';
 
     protected $fillable = [
-        'documentable',
         'title',
         'document_type',
         'document_number',

@@ -15,6 +15,10 @@
     >
     <link
         rel="stylesheet"
+        href="{{ asset('css/buildino-foundation.css') }}"
+    >
+    <link
+        rel="stylesheet"
         href="{{ asset('css/buildino-management.css') }}"
     >
 </head>
@@ -136,6 +140,7 @@
                 method="POST"
                 action="{{ route('management.login.store') }}"
                 class="login-form"
+                data-buildino-submit
             >
                 @csrf
 
@@ -247,5 +252,8 @@
         </div>
     </main>
 </div>
+<script
+    src="{{ asset('js/buildino-foundation.js') }}"
+></script>
 </body>
 </html>

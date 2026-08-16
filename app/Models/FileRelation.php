@@ -22,6 +22,12 @@ class FileRelation extends Model
         'related_id',
     ];
 
+    protected $hidden = [
+        'file_id',
+        'related_type',
+        'related_id',
+    ];
+
     public function file(): BelongsTo
     {
         return $this->belongsTo(File::class, 'file_id');

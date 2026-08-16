@@ -162,10 +162,17 @@ final class ManagementDashboardService
                     $buildingIds
                 ),
 
-            'recent' =>
-                $this->recent(
-                    $buildingIds
-                ),
+            /*
+             * Recent activity tables are loaded through Yajra DataTables
+             * endpoints. Keeping them out of the initial HTML request prevents
+             * four unnecessary result-set queries on every dashboard render.
+             */
+            'recent' => [
+                'payments' => collect(),
+                'reservations' => collect(),
+                'services' => collect(),
+                'support' => collect(),
+            ],
 
             'health' =>
                 $this->healthData(

@@ -1,8 +1,8 @@
 {
     "version": "1.0.0",
-    "generated_at": "2026-08-14T15:41:16.539164Z",
-    "route_count": 237,
-    "contract_hash": "073e5337cc22bcb6fc32de3bce7618e5e5f91eb7e8a2d40551a5a0c345d94244",
+    "generated_at": "2026-08-16T18:59:11.008Z",
+    "route_count": 241,
+    "contract_hash": "549fafc4701ae91158052065c6fa73d74d32df6f9eb88a999b729c3b4fc9d220",
     "routes": [
         {
             "method": "GET",
@@ -513,42 +513,49 @@
             "uri": "api/v1/documents",
             "protected": true,
             "operation_id": "get_api_v1_documents",
-            "tag": "General"
+            "tag": "Documents & Files"
         },
         {
             "method": "POST",
             "uri": "api/v1/documents",
             "protected": true,
             "operation_id": "post_api_v1_documents",
-            "tag": "General"
+            "tag": "Documents & Files"
         },
         {
             "method": "DELETE",
             "uri": "api/v1/documents/{document}",
             "protected": true,
             "operation_id": "delete_api_v1_documents_document",
-            "tag": "General"
+            "tag": "Documents & Files"
         },
         {
             "method": "GET",
             "uri": "api/v1/documents/{document}",
             "protected": true,
             "operation_id": "get_api_v1_documents_document",
-            "tag": "General"
+            "tag": "Documents & Files"
         },
         {
             "method": "PATCH",
             "uri": "api/v1/documents/{document}",
             "protected": true,
             "operation_id": "patch_api_v1_documents_document",
-            "tag": "General"
+            "tag": "Documents & Files"
         },
         {
             "method": "PUT",
             "uri": "api/v1/documents/{document}",
             "protected": true,
             "operation_id": "put_api_v1_documents_document",
-            "tag": "General"
+            "tag": "Documents & Files"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/documents/{document}/files",
+            "operation_id": "post_api_v1_documents_document_files",
+            "tag": "Documents & Files",
+            "protected": true
         },
         {
             "method": "GET",
@@ -755,6 +762,20 @@
         },
         {
             "method": "DELETE",
+            "uri": "api/v1/files/{file}",
+            "operation_id": "delete_api_v1_files_file",
+            "tag": "Documents & Files",
+            "protected": true
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/files/{file}/download",
+            "operation_id": "get_api_v1_files_file_download",
+            "tag": "Documents & Files",
+            "protected": true
+        },
+        {
+            "method": "DELETE",
             "uri": "api/v1/floors/{floor}",
             "protected": true,
             "operation_id": "delete_api_v1_floors_floor",
@@ -919,42 +940,49 @@
             "uri": "api/v1/meeting-minutes",
             "protected": true,
             "operation_id": "get_api_v1_meeting_minutes",
-            "tag": "General"
+            "tag": "Documents & Files"
         },
         {
             "method": "POST",
             "uri": "api/v1/meeting-minutes",
             "protected": true,
             "operation_id": "post_api_v1_meeting_minutes",
-            "tag": "General"
+            "tag": "Documents & Files"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/meeting-minutes/{meetingMinute}/files",
+            "operation_id": "post_api_v1_meeting_minutes_meetingminute_files",
+            "tag": "Documents & Files",
+            "protected": true
         },
         {
             "method": "DELETE",
             "uri": "api/v1/meeting-minutes/{meeting_minute}",
             "protected": true,
             "operation_id": "delete_api_v1_meeting_minutes_meeting_minute",
-            "tag": "General"
+            "tag": "Documents & Files"
         },
         {
             "method": "GET",
             "uri": "api/v1/meeting-minutes/{meeting_minute}",
             "protected": true,
             "operation_id": "get_api_v1_meeting_minutes_meeting_minute",
-            "tag": "General"
+            "tag": "Documents & Files"
         },
         {
             "method": "PATCH",
             "uri": "api/v1/meeting-minutes/{meeting_minute}",
             "protected": true,
             "operation_id": "patch_api_v1_meeting_minutes_meeting_minute",
-            "tag": "General"
+            "tag": "Documents & Files"
         },
         {
             "method": "PUT",
             "uri": "api/v1/meeting-minutes/{meeting_minute}",
             "protected": true,
             "operation_id": "put_api_v1_meeting_minutes_meeting_minute",
-            "tag": "General"
+            "tag": "Documents & Files"
         },
         {
             "method": "GET",

@@ -1,0 +1,12 @@
+/*
+ * Vite entry point.
+ *
+ * The browser-facing Bootstrap theme is currently served from the versioned
+ * public Buildino assets. Keeping this entry point valid makes the standard
+ * Laravel build pipeline deterministic while those assets are migrated into
+ * the bundle in a later phase.
+ */
+
+:root {
+    color-scheme: light dark;
+}

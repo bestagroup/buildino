@@ -3764,15 +3764,26 @@ return [
                 [
                     'name' => 'documentable_type',
                     'label' => 'نوع موجودیت',
-                    'type' => 'text',
+                    'type' => 'select',
                     'required' => true,
-                    'placeholder' => 'App\\Models\\Building'
+                    'readonly_on_edit' => true,
+                    'options' => [
+                        [
+                            'value' => 'building',
+                            'label' => 'ساختمان'
+                        ],
+                        [
+                            'value' => 'unit',
+                            'label' => 'واحد'
+                        ]
+                    ]
                 ],
                 [
                     'name' => 'documentable_id',
                     'label' => 'شناسه موجودیت',
                     'type' => 'number',
-                    'required' => true
+                    'required' => true,
+                    'readonly_on_edit' => true
                 ],
                 [
                     'name' => 'title',

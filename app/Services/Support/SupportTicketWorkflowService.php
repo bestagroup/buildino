@@ -13,6 +13,8 @@ use App\Models\SupportTicket;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\Security\BuildingAccessService;
+use App\Services\Security\UnitResidentAccessService;
+use App\Support\Authorization\PermissionChecker;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -21,6 +23,8 @@ final class SupportTicketWorkflowService
 {
     public function __construct(
         private readonly BuildingAccessService $buildingAccess,
+        private readonly UnitResidentAccessService $residentAccess,
+        private readonly PermissionChecker $permissions,
         private readonly SupportSlaService $sla
     ) {
     }
@@ -31,7 +35,8 @@ final class SupportTicketWorkflowService
             [$buildingId, $unitId] = $this->resolveContext(
                 $actor,
                 $data['building_id'] ?? null,
-                $data['unit_id'] ?? null
+                $data['unit_id'] ?? null,
+                'support-tickets.create'
             );
 
             $priority = isset($data['priority'])
@@ -86,7 +91,8 @@ final class SupportTicketWorkflowService
                 [$buildingId, $unitId] = $this->resolveContext(
                     $actor,
                     $data['building_id'] ?? $ticket->building_id,
-                    $data['unit_id'] ?? $ticket->unit_id
+                    $data['unit_id'] ?? $ticket->unit_id,
+                    'support-tickets.update'
                 );
 
                 $data['building_id'] = $buildingId;
@@ -377,7 +383,8 @@ final class SupportTicketWorkflowService
     private function resolveContext(
         User $actor,
         ?int $buildingId,
-        ?int $unitId
+        ?int $unitId,
+        string $permission
     ): array {
         $unit = null;
         $building = null;
@@ -408,6 +415,22 @@ final class SupportTicketWorkflowService
         }
 
         if ($building && ! $this->buildingAccess->allows($actor, $building)) {
+            abort(403);
+        }
+
+        if (
+            $building
+            && $unit
+            && ! $this->permissions->allows(
+                $actor,
+                $permission,
+                $building
+            )
+            && ! $this->residentAccess->allows(
+                $actor,
+                $unit
+            )
+        ) {
             abort(403);
         }
 

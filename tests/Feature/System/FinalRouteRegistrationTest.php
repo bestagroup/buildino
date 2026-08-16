@@ -8,6 +8,23 @@ use Tests\TestCase;
 
 class FinalRouteRegistrationTest extends TestCase
 {
+    public function test_mobile_bootstrap_route_is_registered_exactly_once(): void
+    {
+        $matches = collect(Route::getRoutes()->getRoutes())
+            ->filter(
+                fn ($route): bool =>
+                    $route->uri() === 'api/v1/mobile/bootstrap'
+                    && in_array('GET', $route->methods(), true)
+            );
+
+        $this->assertCount(1, $matches);
+
+        $this->assertSame(
+            'api.v1.mobile.bootstrap',
+            $matches->first()?->getName()
+        );
+    }
+
     public function test_final_notification_and_service_assignment_routes_are_registered(): void
     {
         $this->assertTrue(

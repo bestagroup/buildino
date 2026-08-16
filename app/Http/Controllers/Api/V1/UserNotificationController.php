@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateNotificationPreferencesRequest;
 use App\Models\NotificationLog;
 use App\Models\UserDevice;
 use App\Models\UserNotificationPreference;
+use App\Services\Notifications\NotificationDeviceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -101,55 +102,18 @@ class UserNotificationController extends Controller
     }
 
     public function registerDevice(
-        RegisterNotificationDeviceRequest $request
+        RegisterNotificationDeviceRequest $request,
+        NotificationDeviceService $devices
     ): JsonResponse {
-        $user = $request->user();
-        $data = $request->validated();
+        $device =
+            $devices->sync(
+                $request->user(),
+                $request->validated()
+            );
 
-        $existing = UserDevice::query()
-            ->where('device_id', $data['device_id'])
-            ->first();
-
-        if ($existing && (int) $existing->user_id !== (int) $user->getKey()) {
-            throw ValidationException::withMessages([
-                'device_id' => 'This device is already registered to another user.',
-            ]);
-        }
-
-        if (! empty($data['push_token'])) {
-            /*
-             * Push tokens are endpoint identities. When a phone changes
-             * account, revoke the same token from every other user first to
-             * prevent cross-account notification leakage.
-             */
-            UserDevice::query()
-                ->where('push_token', $data['push_token'])
-                ->where('user_id', '!=', $user->getKey())
-                ->update(['push_token' => null]);
-        }
-
-        $device = UserDevice::query()->updateOrCreate(
-            [
-                'user_id' => $user->getKey(),
-                'device_id' => $data['device_id'],
-            ],
-            [
-                'platform' => $data['platform'],
-                'device_name' => $data['device_name'] ?? null,
-                'push_token' => $data['push_token'] ?? null,
-                'last_used_at' => now(),
-            ]
-        );
-
-        /*
-         * updateOrCreate() already returns the persisted model with its
-         * primary key and timestamps. Do not call refresh() here: Eloquent
-         * refresh() performs a firstOrFail() internally, which is unnecessary
-         * for this response and can be converted by Laravel into a
-         * NotFoundHttpException.
-         */
         return response()->json([
-            'data' => $device,
+            'data' =>
+                $device,
         ], $device->wasRecentlyCreated ? 201 : 200);
     }
 

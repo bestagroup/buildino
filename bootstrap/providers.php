@@ -7,4 +7,6 @@ return [
     App\Providers\DomainEventServiceProvider::class,
     App\Providers\NotificationServiceProvider::class,
     App\Providers\ApiSecurityServiceProvider::class,
+    App\Providers\FileManagementServiceProvider::class,
+    Yajra\DataTables\DataTablesServiceProvider::class,
 ];

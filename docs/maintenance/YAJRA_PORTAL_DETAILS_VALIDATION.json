@@ -1,0 +1,180 @@
+{
+  "php_files": 779,
+  "php_lint_failures": 0,
+  "psr4_mismatches": 0,
+  "duplicate_fqcns": 0,
+  "js": {
+    "public/js/buildino-datatables.js": {
+      "ok": true,
+      "output": ""
+    },
+    "public/js/buildino-portal.js": {
+      "ok": true,
+      "output": ""
+    },
+    "public/js/buildino-management.js": {
+      "ok": true,
+      "output": ""
+    }
+  },
+  "blade_balance": {
+    "resources/views/management/dashboard.blade.php": {
+      "if": [
+        21,
+        21
+      ],
+      "foreach": [
+        9,
+        9
+      ],
+      "forelse": [
+        1,
+        1
+      ],
+      "php": [
+        8,
+        8
+      ]
+    },
+    "resources/views/management/layouts/app.blade.php": {
+      "if": [
+        21,
+        21
+      ],
+      "foreach": [
+        2,
+        2
+      ],
+      "forelse": [
+        1,
+        1
+      ],
+      "php": [
+        2,
+        2
+      ]
+    },
+    "resources/views/portal/layouts/app.blade.php": {
+      "if": [
+        6,
+        6
+      ],
+      "foreach": [
+        0,
+        0
+      ],
+      "forelse": [
+        1,
+        1
+      ],
+      "php": [
+        1,
+        1
+      ]
+    },
+    "resources/views/portal/resident/dashboard.blade.php": {
+      "if": [
+        11,
+        11
+      ],
+      "foreach": [
+        8,
+        8
+      ],
+      "forelse": [
+        6,
+        6
+      ],
+      "php": [
+        5,
+        5
+      ]
+    },
+    "resources/views/portal/provider/dashboard.blade.php": {
+      "if": [
+        6,
+        6
+      ],
+      "foreach": [
+        1,
+        1
+      ],
+      "forelse": [
+        4,
+        4
+      ],
+      "php": [
+        2,
+        2
+      ]
+    },
+    "resources/views/portal/operations/index.blade.php": {
+      "if": [
+        3,
+        3
+      ],
+      "foreach": [
+        1,
+        1
+      ],
+      "forelse": [
+        0,
+        0
+      ],
+      "php": [
+        1,
+        1
+      ]
+    },
+    "resources/views/portal/operations/show.blade.php": {
+      "if": [
+        1,
+        1
+      ],
+      "foreach": [
+        5,
+        5
+      ],
+      "forelse": [
+        2,
+        2
+      ],
+      "php": [
+        1,
+        1
+      ]
+    },
+    "resources/views/shared/server-datatable.blade.php": {
+      "if": [
+        1,
+        1
+      ],
+      "foreach": [
+        1,
+        1
+      ],
+      "forelse": [
+        0,
+        0
+      ],
+      "php": [
+        1,
+        1
+      ]
+    }
+  },
+  "routes": {
+    "management_datatables": true,
+    "resident_datatables": true,
+    "provider_datatables": true,
+    "resident_operations": true,
+    "provider_operations": true
+  },
+  "management_server_side_tables": 4,
+  "resident_server_side_resources": 6,
+  "provider_server_side_resources": 3,
+  "new_migrations": 0,
+  "yajra_package": "yajra/laravel-datatables-oracle:^12.0",
+  "datatables_frontend": "2.3.8",
+  "responsive_frontend": "3.0.8"
+}

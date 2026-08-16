@@ -119,6 +119,26 @@ return [
             'uri' => 'api/v1/notifications',
             'protected' => true,
         ],
+        [
+            'method' => 'GET',
+            'uri' => 'api/v1/mobile/bootstrap',
+            'protected' => true,
+        ],
+        [
+            'method' => 'PATCH',
+            'uri' => 'api/v1/notification-devices/{userDevice}',
+            'protected' => true,
+        ],
+        [
+            'method' => 'POST',
+            'uri' => 'api/v1/documents/{document}/files',
+            'protected' => true,
+        ],
+        [
+            'method' => 'GET',
+            'uri' => 'api/v1/files/{file}/download',
+            'protected' => true,
+        ],
     ],
 
     /*
@@ -216,6 +236,12 @@ return [
             'push_token' => '{{push_token}}',
         ],
 
+        'PATCH api/v1/notification-devices/{userDevice}' => [
+            'platform' => 'android',
+            'device_name' => 'Postman Device',
+            'push_token' => '{{push_token}}',
+        ],
+
         'PUT api/v1/notification-preferences' => [
             'preferences' => [
                 [
@@ -264,6 +290,7 @@ return [
         'serviceRequestQuote' => 'service_quote_id',
         'document' => 'document_id',
         'meetingMinute' => 'meeting_minute_id',
+        'file' => 'file_uuid',
         'supportTicket' => 'support_ticket_id',
         'wallet' => 'wallet_id',
         'walletTopUp' => 'wallet_topup_id',
@@ -276,6 +303,7 @@ return [
         'reportDefinition' => 'report_definition_id',
         'generatedReport' => 'generated_report_id',
         'gateway' => 'gateway',
+        'userDevice' => 'notification_device_id',
         'complex' => 'complex_id',
     ],
 ];

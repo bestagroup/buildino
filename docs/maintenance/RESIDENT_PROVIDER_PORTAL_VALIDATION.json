@@ -1,0 +1,94 @@
+{
+  "baseline": "buildinoview_role_dashboard_integrated_snapshot.zip",
+  "patch_php_files": 14,
+  "php_lint_failures": 0,
+  "psr4_mismatches": 0,
+  "missing_app_imports": 0,
+  "duplicate_fqcns_integrated": 0,
+  "portal_js_syntax_ok": true,
+  "blade_directive_balance": {
+    "resources/views/portal/provider/dashboard.blade.php": {
+      "if": [
+        6,
+        6
+      ],
+      "foreach": [
+        1,
+        1
+      ],
+      "forelse": [
+        3,
+        3
+      ],
+      "php": [
+        2,
+        2
+      ]
+    },
+    "resources/views/portal/layouts/app.blade.php": {
+      "if": [
+        6,
+        6
+      ],
+      "foreach": [
+        0,
+        0
+      ],
+      "forelse": [
+        1,
+        1
+      ],
+      "php": [
+        1,
+        1
+      ]
+    },
+    "resources/views/portal/auth/login.blade.php": {
+      "if": [
+        2,
+        2
+      ],
+      "foreach": [
+        1,
+        1
+      ],
+      "forelse": [
+        0,
+        0
+      ],
+      "php": [
+        0,
+        0
+      ]
+    },
+    "resources/views/portal/resident/dashboard.blade.php": {
+      "if": [
+        3,
+        3
+      ],
+      "foreach": [
+        7,
+        7
+      ],
+      "forelse": [
+        5,
+        5
+      ],
+      "php": [
+        1,
+        1
+      ]
+    }
+  },
+  "missing_portal_icons": [],
+  "portal_route_markers": {
+    "portal.login": true,
+    "portal.prefix": true,
+    "resident.dashboard": true,
+    "provider.dashboard": true
+  },
+  "cross_unit_service_guard": true,
+  "cross_unit_support_guard": true,
+  "portal_access_test": true,
+  "new_migrations": 0
+}

@@ -529,7 +529,7 @@ return [
                 'ارائه‌دهنده خدمات',
 
             'description' =>
-                'Persona ارائه‌دهنده خدمات؛ در فاز فعلی Portal مستقل Provider ندارد و ورود به Management Dashboard برای آن فعال نیست.',
+                'Persona ارائه‌دهنده خدمات؛ از Portal اختصاصی Provider استفاده می‌کند و ورود به Management Dashboard برای آن فعال نیست.',
 
             'is_system' =>
                 true,
@@ -553,7 +553,7 @@ return [
                 'مالک',
 
             'description' =>
-                'دسترسی کاربر مالک از UnitOwnership استخراج می‌شود؛ این Role عمداً Permission مدیریتی ندارد تا Scope واحد به کل ساختمان گسترش پیدا نکند.',
+                'دسترسی کاربر مالک از UnitOwnership استخراج می‌شود و Portal ساکنین فقط واحدهای مرتبط همان مالک را نمایش می‌دهد؛ این Role عمداً Permission مدیریتی ندارد.',
 
             'is_system' =>
                 true,
@@ -572,7 +572,7 @@ return [
                 'مستأجر',
 
             'description' =>
-                'دسترسی کاربر مستأجر از UnitOccupancy استخراج می‌شود؛ Portal ساکنین در فاز مستقل تکمیل خواهد شد.',
+                'دسترسی کاربر مستأجر از UnitOccupancy استخراج می‌شود و Portal ساکنین فقط واحدهای دارای سکونت فعال همان کاربر را نمایش می‌دهد.',
 
             'is_system' =>
                 true,
