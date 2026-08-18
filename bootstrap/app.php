@@ -1,5 +1,13 @@
 <?php
 
+use App\Exceptions\ApiException;
+use App\Http\Middleware\ApplyApiSecurityHeaders;
+use App\Http\Middleware\AssignRequestId;
+use App\Http\Middleware\EnsureBuildingAccess;
+use App\Http\Middleware\EnsureSubscriptionIsActive;
+use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\EnsureVerifiedIdentity;
+use App\Http\Middleware\ResolveBuildingContext;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -22,11 +30,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
 
         $middleware->alias([
-            'user.active' => \App\Http\Middleware\EnsureUserIsActive::class,
-            'identity.verified' => \App\Http\Middleware\EnsureVerifiedIdentity::class,
-            'building.context' => \App\Http\Middleware\ResolveBuildingContext::class,
-            'building.access' => \App\Http\Middleware\EnsureBuildingAccess::class,
-            'subscription.active' => \App\Http\Middleware\EnsureSubscriptionIsActive::class,
+            'user.active' => EnsureUserIsActive::class,
+            'identity.verified' => EnsureVerifiedIdentity::class,
+            'building.context' => ResolveBuildingContext::class,
+            'building.access' => EnsureBuildingAccess::class,
+            'subscription.active' => EnsureSubscriptionIsActive::class,
         ]);
         /*
          * The management CRUD pages are first-party browser clients of the
@@ -38,13 +46,26 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(
             prepend: [
-                \App\Http\Middleware\AssignRequestId::class,
-                \App\Http\Middleware\ApplyApiSecurityHeaders::class,
+                AssignRequestId::class,
+                ApplyApiSecurityHeaders::class,
             ]
         );
     })
 
     ->withExceptions(function (Exceptions $exceptions): void {
+
+        $exceptions->render(
+            function (ApiException $e, Request $request) {
+                if (! $request->is('api/*')) {
+                    return null;
+                }
+
+                return response()->json([
+                    'code' => $e->errorCode,
+                    'message' => $e->getMessage(),
+                ], $e->status);
+            }
+        );
 
         /*
         |--------------------------------------------------------------------------
@@ -53,8 +74,7 @@ return Application::configure(basePath: dirname(__DIR__))
         */
 
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request, \Throwable $e): bool =>
-                $request->is('api/*') || $request->expectsJson()
+            fn (Request $request, Throwable $e): bool => $request->is('api/*') || $request->expectsJson()
         );
 
         /*
@@ -71,9 +91,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
 
                 return response()->json([
-                    'success' => false,
-                    'message' => 'اطلاعات ارسال‌شده معتبر نیست.',
                     'code' => 'VALIDATION_ERROR',
+                    'message' => 'Validation failed.',
                     'errors' => $e->errors(),
                 ], 422);
             }
@@ -93,9 +112,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
 
                 return response()->json([
-                    'success' => false,
-                    'message' => 'احراز هویت انجام نشده است.',
                     'code' => 'UNAUTHENTICATED',
+                    'message' => 'Authentication is required.',
                 ], 401);
             }
         );
@@ -114,9 +132,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
 
                 return response()->json([
-                    'success' => false,
-                    'message' => 'شما مجوز انجام این عملیات را ندارید.',
                     'code' => 'FORBIDDEN',
+                    'message' => 'You do not have permission to perform this action.',
                 ], 403);
             }
         );
@@ -190,11 +207,25 @@ return Application::configure(basePath: dirname(__DIR__))
                     return null;
                 }
 
+                $status = $e->getStatusCode();
+                $code = match ($status) {
+                    401 => 'UNAUTHENTICATED',
+                    403 => 'FORBIDDEN',
+                    429 => 'RATE_LIMITED',
+                    default => 'HTTP_ERROR',
+                };
+
+                $message = match ($status) {
+                    401 => 'Authentication is required.',
+                    403 => 'You do not have permission to perform this action.',
+                    429 => 'Too many requests.',
+                    default => $e->getMessage() ?: 'The request could not be processed.',
+                };
+
                 return response()->json([
-                    'success' => false,
-                    'message' => $e->getMessage() ?: 'خطایی در پردازش درخواست رخ داده است.',
-                    'code' => 'HTTP_ERROR',
-                ], $e->getStatusCode());
+                    'code' => $code,
+                    'message' => $message,
+                ], $status);
             }
         );
     })

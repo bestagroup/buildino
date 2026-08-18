@@ -2,9 +2,12 @@
 
 namespace Tests\Feature\Mobile;
 
+use App\Models\Role;
+use App\Models\Unit;
+use App\Models\UnitOccupancy;
+use App\Models\UnitOwnership;
 use App\Models\User;
-use App\Models\UserDevice;
-use Database\Seeders\AccessScenarioSeeder;
+use App\Models\UserRoleAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -13,305 +16,215 @@ class MobileBootstrapApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_password_login_can_sync_mobile_device_without_breaking_existing_token_response(): void
+    private const ENDPOINT = '/api/v1/app/bootstrap';
+
+    public function test_unauthenticated_request_uses_standard_error_contract(): void
     {
-        $this->seed(
-            AccessScenarioSeeder::class
-        );
-
-        $owner =
-            $this->user(
-                'role.owner@buildino.local'
-            );
-
-        $response =
-            $this->postJson(
-                '/api/v1/auth/password/login',
-                [
-                    'login' =>
-                        $owner->mobile,
-
-                    'password' =>
-                        'Demo@1405',
-
-                    'device_name' =>
-                        'Owner Android',
-
-                    'device_id' =>
-                        'owner-mobile-device-1',
-
-                    'platform' =>
-                        'android',
-
-                    'push_token' =>
-                        'owner-fcm-token-1',
-                ]
-            );
-
-        $response
-            ->assertOk()
-            ->assertJsonPath(
-                'data.id',
-                $owner->getKey()
-            )
-            ->assertJsonPath(
-                'token_type',
-                'Bearer'
-            );
-
-        $this->assertNotEmpty(
-            $response->json(
-                'access_token'
-            )
-        );
-
-        $this->assertDatabaseHas(
-            'user_devices',
-            [
-                'user_id' =>
-                    $owner->getKey(),
-
-                'device_id' =>
-                    'owner-mobile-device-1',
-
-                'platform' =>
-                    'android',
-
-                'push_token' =>
-                    'owner-fcm-token-1',
-            ]
-        );
-    }
-
-    public function test_owner_mobile_bootstrap_returns_only_resident_scope_and_device_state(): void
-    {
-        $this->seed(
-            AccessScenarioSeeder::class
-        );
-
-        $owner =
-            $this->user(
-                'role.owner@buildino.local'
-            );
-
-        UserDevice::query()
-            ->create([
-                'user_id' =>
-                    $owner->getKey(),
-
-                'device_id' =>
-                    'owner-bootstrap-device',
-
-                'platform' =>
-                    'android',
-
-                'device_name' =>
-                    'Owner Phone',
-
-                'push_token' =>
-                    'owner-bootstrap-token',
-
-                'last_used_at' =>
-                    now(),
+        $this->getJson(self::ENDPOINT)
+            ->assertUnauthorized()
+            ->assertExactJson([
+                'code' => 'UNAUTHENTICATED',
+                'message' => 'Authentication is required.',
             ]);
+    }
 
-        Sanctum::actingAs(
-            $owner,
-            [
-                'api',
-            ]
-        );
+    public function test_unverified_identity_is_rejected(): void
+    {
+        $user = User::factory()->create([
+            'mobile_verified_at' => null,
+            'email_verified_at' => null,
+        ]);
 
-        $response =
-            $this
-                ->withHeaders([
-                    'X-Device-Id' =>
-                        'owner-bootstrap-device',
+        Sanctum::actingAs($user, ['api']);
 
-                    'X-App-Version' =>
-                        '0.9.0',
-                ])
-                ->getJson(
-                    '/api/v1/mobile/bootstrap'
-                );
+        $this->getJson(self::ENDPOINT)
+            ->assertForbidden()
+            ->assertJsonPath('code', 'IDENTITY_VERIFICATION_REQUIRED');
+    }
+
+    public function test_inactive_account_is_rejected_with_account_error(): void
+    {
+        $user = User::factory()->create(['is_active' => false]);
+        Sanctum::actingAs($user, ['api']);
+
+        $this->getJson(self::ENDPOINT)
+            ->assertForbidden()
+            ->assertJsonPath('code', 'AUTH_ACCOUNT_NOT_ALLOWED');
+    }
+
+    public function test_owner_receives_one_owner_context(): void
+    {
+        [$user, $unit] = $this->residentAndUnit();
+        $this->ownership($user, $unit);
+
+        $response = $this->bootstrapAs($user)->assertOk();
 
         $response
-            ->assertOk()
-            ->assertJsonPath(
-                'data.user.id',
-                $owner->getKey()
-            )
-            ->assertJsonPath(
-                'data.device.registered',
-                true
-            )
-            ->assertJsonPath(
-                'data.device.push_enabled',
-                true
-            )
-            ->assertJsonPath(
-                'data.app.upgrade_required',
-                true
-            )
-            ->assertJsonPath(
-                'data.resident.enabled',
-                true
-            );
+            ->assertJsonPath('data.user.id', $user->getKey())
+            ->assertJsonPath('data.personas.0', 'owner')
+            ->assertJsonPath('data.contexts.0.id', 'unit-'.$unit->getKey())
+            ->assertJsonPath('data.contexts.0.relationships.owner', true)
+            ->assertJsonPath('data.contexts.0.relationships.occupant', false);
 
-        $personas =
-            $response->json(
-                'data.personas',
-                []
-            );
-
-        $this->assertContains(
-            'resident',
-            $personas
-        );
-
-        $units =
-            collect(
-                $response->json(
-                    'data.resident.units',
-                    []
-                )
-            )
-                ->pluck(
-                    'unit_number'
-                )
-                ->all();
-
-        $this->assertContains(
-            '101',
-            $units
-        );
-
-        $this->assertNotContains(
-            '102',
-            $units
-        );
+        $this->assertSame([
+            'charges.view' => true,
+            'wallet.view' => true,
+        ], $response->json('data.contexts.0.capabilities'));
     }
 
-    public function test_provider_mobile_bootstrap_exposes_provider_persona_without_resident_scope(): void
+    public function test_occupant_receives_one_occupant_context(): void
     {
-        $this->seed(
-            AccessScenarioSeeder::class
-        );
+        [$user, $unit] = $this->residentAndUnit();
+        $this->occupancy($user, $unit);
 
-        $provider =
-            $this->user(
-                'role.provider@buildino.local'
-            );
+        $this->bootstrapAs($user)
+            ->assertOk()
+            ->assertJsonPath('data.personas.0', 'occupant')
+            ->assertJsonPath('data.contexts.0.relationships.owner', false)
+            ->assertJsonPath('data.contexts.0.relationships.occupant', true);
+    }
 
-        Sanctum::actingAs(
-            $provider,
-            [
-                'api',
-            ]
-        );
+    public function test_owner_and_occupant_relationships_are_merged_per_unit(): void
+    {
+        [$user, $unit] = $this->residentAndUnit();
+        $this->ownership($user, $unit);
+        $this->occupancy($user, $unit);
 
-        $response =
-            $this->getJson(
-                '/api/v1/mobile/bootstrap'
-            );
+        $response = $this->bootstrapAs($user)->assertOk();
 
+        $this->assertCount(1, $response->json('data.contexts'));
         $response
-            ->assertOk()
-            ->assertJsonPath(
-                'data.provider.enabled',
-                true
-            )
-            ->assertJsonPath(
-                'data.resident.enabled',
-                false
-            );
-
-        $personas =
-            $response->json(
-                'data.personas',
-                []
-            );
-
-        $this->assertContains(
-            'provider',
-            $personas
-        );
-
-        $this->assertNotContains(
-            'resident',
-            $personas
-        );
+            ->assertJsonPath('data.personas.0', 'owner')
+            ->assertJsonPath('data.personas.1', 'occupant')
+            ->assertJsonPath('data.contexts.0.relationships.owner', true)
+            ->assertJsonPath('data.contexts.0.relationships.occupant', true);
     }
 
-    public function test_logout_releases_current_mobile_device(): void
+    public function test_multiple_units_produce_multiple_deterministically_ordered_contexts(): void
     {
-        $this->seed(
-            AccessScenarioSeeder::class
-        );
+        $user = User::factory()->create();
+        $first = Unit::factory()->create();
+        $second = Unit::factory()->create();
+        $this->ownership($user, $second);
+        $this->occupancy($user, $first);
 
-        $owner =
-            $this->user(
-                'role.owner@buildino.local'
-            );
+        $response = $this->bootstrapAs($user)->assertOk();
 
-        $token =
-            $owner
-                ->createToken(
-                    'Owner Device',
-                    [
-                        'api',
-                    ]
-                )
-                ->plainTextToken;
-
-        UserDevice::query()
-            ->create([
-                'user_id' =>
-                    $owner->getKey(),
-
-                'device_id' =>
-                    'owner-logout-device',
-
-                'platform' =>
-                    'android',
-
-                'push_token' =>
-                    'owner-logout-token',
-
-                'last_used_at' =>
-                    now(),
-            ]);
-
-        $this
-            ->withToken(
-                $token
-            )
-            ->postJson(
-                '/api/v1/auth/logout',
-                [
-                    'device_id' =>
-                        'owner-logout-device',
-                ]
-            )
-            ->assertNoContent();
-
-        $this->assertDatabaseMissing(
-            'user_devices',
-            [
-                'device_id' =>
-                    'owner-logout-device',
-            ]
-        );
+        $this->assertCount(2, $response->json('data.contexts'));
+        $ids = collect($response->json('data.contexts'))->pluck('id')->all();
+        $this->assertSame(['unit-'.$first->id, 'unit-'.$second->id], $ids);
+        $this->assertSame($ids[0], $response->json('data.suggested_context'));
     }
 
-    private function user(
-        string $email
-    ): User {
-        return User::query()
-            ->where(
-                'email',
-                $email
-            )
-            ->firstOrFail();
+    public function test_unrelated_resident_relationships_are_never_exposed(): void
+    {
+        [$user, $ownUnit] = $this->residentAndUnit();
+        $other = User::factory()->create();
+        $otherUnit = Unit::factory()->create();
+        $this->ownership($user, $ownUnit);
+        $this->ownership($other, $otherUnit);
+        $this->occupancy($other, $ownUnit);
+
+        $response = $this->bootstrapAs($user)->assertOk();
+        $this->assertSame(
+            ['unit-'.$ownUnit->id],
+            collect($response->json('data.contexts'))->pluck('id')->all()
+        );
+        $response->assertJsonPath('data.contexts.0.relationships.occupant', false);
+    }
+
+    public function test_inactive_and_expired_ownerships_are_excluded(): void
+    {
+        $user = User::factory()->create();
+        $inactive = Unit::factory()->create();
+        $expired = Unit::factory()->create();
+        $this->ownership($user, $inactive, ['is_active' => false]);
+        $this->ownership($user, $expired, ['ends_at' => now()->subDay()]);
+
+        $this->bootstrapAs($user)
+            ->assertOk()
+            ->assertJsonCount(0, 'data.contexts');
+    }
+
+    public function test_inactive_and_expired_occupancies_are_excluded(): void
+    {
+        $user = User::factory()->create();
+        $inactive = Unit::factory()->create();
+        $expired = Unit::factory()->create();
+        $this->occupancy($user, $inactive, ['is_active' => false]);
+        $this->occupancy($user, $expired, ['ends_at' => now()->subDay()]);
+
+        $this->bootstrapAs($user)
+            ->assertOk()
+            ->assertJsonCount(0, 'data.contexts');
+    }
+
+    public function test_zero_contexts_is_successful_and_has_null_suggestion(): void
+    {
+        $user = User::factory()->create();
+
+        $this->bootstrapAs($user)
+            ->assertOk()
+            ->assertJsonPath('data.personas', [])
+            ->assertJsonPath('data.contexts', [])
+            ->assertJsonPath('data.suggested_context', null);
+    }
+
+    public function test_management_role_alone_does_not_create_personas_or_contexts(): void
+    {
+        $user = User::factory()->create();
+        $role = Role::query()->create([
+            'name' => 'admin',
+            'display_name' => 'Administrator',
+            'is_system' => true,
+        ]);
+        UserRoleAssignment::query()->create([
+            'user_id' => $user->id,
+            'role_id' => $role->id,
+            'is_active' => true,
+        ]);
+
+        $this->bootstrapAs($user)
+            ->assertOk()
+            ->assertJsonPath('data.personas', [])
+            ->assertJsonPath('data.contexts', []);
+    }
+
+    private function bootstrapAs(User $user)
+    {
+        Sanctum::actingAs($user, ['api']);
+
+        return $this->getJson(self::ENDPOINT);
+    }
+
+    private function residentAndUnit(): array
+    {
+        return [User::factory()->create(), Unit::factory()->create()];
+    }
+
+    private function ownership(User $user, Unit $unit, array $overrides = []): UnitOwnership
+    {
+        return UnitOwnership::query()->create(array_merge([
+            'user_id' => $user->id,
+            'unit_id' => $unit->id,
+            'ownership_percentage' => 100,
+            'starts_at' => now()->subMonth(),
+            'ends_at' => null,
+            'is_primary' => true,
+            'is_active' => true,
+        ], $overrides));
+    }
+
+    private function occupancy(User $user, Unit $unit, array $overrides = []): UnitOccupancy
+    {
+        return UnitOccupancy::query()->create(array_merge([
+            'user_id' => $user->id,
+            'unit_id' => $unit->id,
+            'occupancy_type' => 'tenant',
+            'starts_at' => now()->subMonth(),
+            'ends_at' => null,
+            'is_primary' => true,
+            'is_active' => true,
+        ], $overrides));
     }
 }

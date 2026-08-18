@@ -121,12 +121,7 @@ return [
         ],
         [
             'method' => 'GET',
-            'uri' => 'api/v1/mobile/bootstrap',
-            'protected' => true,
-        ],
-        [
-            'method' => 'PATCH',
-            'uri' => 'api/v1/notification-devices/{userDevice}',
+            'uri' => 'api/v1/app/bootstrap',
             'protected' => true,
         ],
         [
@@ -231,12 +226,6 @@ return [
 
         'POST api/v1/notification-devices' => [
             'device_id' => 'postman-device',
-            'platform' => 'android',
-            'device_name' => 'Postman Device',
-            'push_token' => '{{push_token}}',
-        ],
-
-        'PATCH api/v1/notification-devices/{userDevice}' => [
             'platform' => 'android',
             'device_name' => 'Postman Device',
             'push_token' => '{{push_token}}',

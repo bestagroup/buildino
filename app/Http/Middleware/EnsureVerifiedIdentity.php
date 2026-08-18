@@ -17,7 +17,10 @@ class EnsureVerifiedIdentity
         $user = $request->user();
 
         if (! $user) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
+            return response()->json([
+                'code' => 'UNAUTHENTICATED',
+                'message' => 'Authentication is required.',
+            ], 401);
         }
 
         $verified = $user->mobile_verified_at !== null
@@ -25,6 +28,7 @@ class EnsureVerifiedIdentity
 
         if (! $verified) {
             return response()->json([
+                'code' => 'IDENTITY_VERIFICATION_REQUIRED',
                 'message' => 'A verified mobile number or email address is required.',
             ], 403);
         }

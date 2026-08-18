@@ -5,7 +5,7 @@
 ## تغییرات انجام‌شده
 
 - provider مربوط به Yajra DataTables به‌صورت صریح در bootstrap ثبت شد.
-- تعریف تکراری `GET /api/v1/mobile/bootstrap` حذف و composition موجود حفظ شد.
+- مسیر canonical موبایل به `GET /api/v1/app/bootstrap` منتقل و composition آن در runtime حفظ شد.
 - فرمان `domain:expire-guest-visits` هر پنج دقیقه زمان‌بندی شد.
 - ورودی‌های مفقود Vite ایجاد شدند.
 - لایه مشترک motion/loading/skeleton/empty-state و SweetAlert به دو پنل افزوده شد.
@@ -28,7 +28,7 @@ composer install
 composer test
 composer release
 php artisan schedule:list
-php artisan route:list --path=api/v1/mobile/bootstrap
+php artisan route:list --path=api/v1/app/bootstrap
 php artisan l5-swagger:generate
 php artisan api:contract:audit
 ```

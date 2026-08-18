@@ -10,7 +10,13 @@
   },
   "fcm_driver_registered": true,
   "mobile_route_composed_with_require": true,
+  "canonical_mobile_bootstrap_route": "GET /api/v1/app/bootstrap",
   "mobile_bootstrap_route_present": true,
+  "mobile_bootstrap_contract": "user/personas/contexts/suggested_context",
+  "resident_context_capabilities": [
+    "charges.view",
+    "wallet.view"
+  ],
   "login_device_sync_present": true,
   "logout_device_release_present": true,
   "production_audit_extended": true,
@@ -20,6 +26,8 @@
   "tests_added": [
     "tests/Unit/Notifications/FcmV1PushSenderTest.php",
     "tests/Unit/Notifications/InvalidPushTokenCleanupTest.php",
-    "tests/Feature/Mobile/MobileBootstrapApiTest.php"
+    "tests/Feature/Mobile/MobileBootstrapApiTest.php",
+    "tests/Feature/Auth/PasswordAuthenticationTest.php",
+    "tests/Feature/Auth/OtpAuthenticationTest.php"
   ]
 }

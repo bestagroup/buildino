@@ -133,10 +133,9 @@ class ApiContractAuditTest extends TestCase
                 $postman['item']
             )
                 ->sum(
-                    fn (array $folder): int =>
-                        count(
-                            $folder['item']
-                        )
+                    fn (array $folder): int => count(
+                        $folder['item']
+                    )
                 );
 
         $this->assertSame(
@@ -161,5 +160,26 @@ class ApiContractAuditTest extends TestCase
             'uuid',
             $fileParameter['schema']['format']
         );
+
+        $bootstrap = $openApi['paths']['/app/bootstrap']['get'];
+        $this->assertSame(
+            '#/components/schemas/MobileBootstrapResponse',
+            $bootstrap['responses']['200']['content']['application/json']['schema']['$ref']
+        );
+        $this->assertSame(
+            '#/components/responses/RateLimited',
+            $bootstrap['responses']['429']['$ref']
+        );
+
+        foreach (['/auth/password/login', '/auth/otp/login'] as $path) {
+            $this->assertSame(
+                '#/components/schemas/LoginResponse',
+                $openApi['paths'][$path]['post']['responses']['200']['content']['application/json']['schema']['$ref']
+            );
+        }
+
+        $capabilities = $openApi['components']['schemas']['ResidentContext']['properties']['capabilities']['properties'];
+        $this->assertArrayHasKey('charges.view', $capabilities);
+        $this->assertArrayHasKey('wallet.view', $capabilities);
     }
 }

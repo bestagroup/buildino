@@ -12,15 +12,14 @@ class FinalRouteRegistrationTest extends TestCase
     {
         $matches = collect(Route::getRoutes()->getRoutes())
             ->filter(
-                fn ($route): bool =>
-                    $route->uri() === 'api/v1/mobile/bootstrap'
+                fn ($route): bool => $route->uri() === 'api/v1/app/bootstrap'
                     && in_array('GET', $route->methods(), true)
             );
 
         $this->assertCount(1, $matches);
 
         $this->assertSame(
-            'api.v1.mobile.bootstrap',
+            'api.v1.app.bootstrap',
             $matches->first()?->getName()
         );
     }
@@ -69,8 +68,7 @@ class FinalRouteRegistrationTest extends TestCase
             [
                 $notification,
                 $serviceAssignment,
-            ]
-            as $route
+            ] as $route
         ) {
             $middleware = $route->gatherMiddleware();
 

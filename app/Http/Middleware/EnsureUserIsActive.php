@@ -14,7 +14,8 @@ class EnsureUserIsActive
 
         if (! $user) {
             return response()->json([
-                'message' => 'Unauthenticated.',
+                'code' => 'UNAUTHENTICATED',
+                'message' => 'Authentication is required.',
             ], 401);
         }
 
@@ -22,6 +23,7 @@ class EnsureUserIsActive
             $user->currentAccessToken()?->delete();
 
             return response()->json([
+                'code' => 'AUTH_ACCOUNT_NOT_ALLOWED',
                 'message' => 'Your account is inactive or blocked.',
             ], 403);
         }

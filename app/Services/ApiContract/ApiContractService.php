@@ -391,8 +391,72 @@ final class ApiContractService
                         '$ref' =>
                             '#/components/responses/ValidationError',
                     ],
+
+                    '429' => [
+                        '$ref' =>
+                            '#/components/responses/RateLimited',
+                    ],
                 ],
             ];
+
+            if ($path === '/app/bootstrap' && $route['method'] === 'GET') {
+                $operation['summary'] = 'Bootstrap the authenticated resident application';
+                $operation['responses']['200'] = [
+                    'description' => 'Authenticated resident contexts',
+                    'content' => [
+                        'application/json' => [
+                            'schema' => ['$ref' => '#/components/schemas/MobileBootstrapResponse'],
+                        ],
+                    ],
+                ];
+            }
+
+            if (
+                in_array($path, ['/auth/password/login', '/auth/otp/login'], true)
+                && $route['method'] === 'POST'
+            ) {
+                $operation['responses']['200'] = [
+                    'description' => 'Authentication successful',
+                    'content' => [
+                        'application/json' => [
+                            'schema' => ['$ref' => '#/components/schemas/LoginResponse'],
+                        ],
+                    ],
+                ];
+                $operation['responses']['403'] = [
+                    'description' => 'Account not allowed or identity verification required',
+                    'content' => [
+                        'application/json' => [
+                            'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],
+                            'examples' => [
+                                'accountNotAllowed' => ['value' => [
+                                    'code' => 'AUTH_ACCOUNT_NOT_ALLOWED',
+                                    'message' => 'This account is not allowed to sign in.',
+                                ]],
+                                'identityVerificationRequired' => ['value' => [
+                                    'code' => 'IDENTITY_VERIFICATION_REQUIRED',
+                                    'message' => 'A verified mobile number or email address is required.',
+                                ]],
+                            ],
+                        ],
+                    ],
+                ];
+            }
+
+            if ($path === '/auth/password/login' && $route['method'] === 'POST') {
+                $operation['responses']['401'] = [
+                    'description' => 'Credentials are invalid',
+                    'content' => [
+                        'application/json' => [
+                            'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],
+                            'example' => [
+                                'code' => 'AUTH_INVALID_CREDENTIALS',
+                                'message' => 'The provided credentials are invalid.',
+                            ],
+                        ],
+                    ],
+                ];
+            }
 
             if ($route['protected']) {
                 $operation['security'] = [
@@ -523,16 +587,136 @@ final class ApiContractService
                     'Unauthenticated' => [
                         'description' =>
                             'Authentication required',
+                        'content' => ['application/json' => [
+                            'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],
+                            'example' => [
+                                'code' => 'UNAUTHENTICATED',
+                                'message' => 'Authentication is required.',
+                            ],
+                        ]],
                     ],
 
                     'Forbidden' => [
                         'description' =>
-                            'Permission or scope denied',
+                            'Permission denied, account not allowed, or identity verification required',
+                        'content' => ['application/json' => [
+                            'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],
+                        ]],
                     ],
 
                     'ValidationError' => [
                         'description' =>
                             'Request validation failed',
+                        'content' => ['application/json' => [
+                            'schema' => ['$ref' => '#/components/schemas/ValidationErrorResponse'],
+                        ]],
+                    ],
+
+                    'RateLimited' => [
+                        'description' => 'Request rate limit exceeded',
+                        'content' => ['application/json' => [
+                            'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],
+                            'example' => [
+                                'code' => 'RATE_LIMITED',
+                                'message' => 'Too many requests.',
+                            ],
+                        ]],
+                    ],
+                ],
+
+                'schemas' => $this->contractSchemas(),
+            ],
+        ];
+    }
+
+    private function contractSchemas(): array
+    {
+        return [
+            'ErrorResponse' => [
+                'type' => 'object',
+                'required' => ['code', 'message'],
+                'properties' => [
+                    'code' => ['type' => 'string'],
+                    'message' => ['type' => 'string'],
+                ],
+            ],
+            'ValidationErrorResponse' => [
+                'allOf' => [
+                    ['$ref' => '#/components/schemas/ErrorResponse'],
+                    [
+                        'type' => 'object',
+                        'required' => ['errors'],
+                        'properties' => [
+                            'errors' => [
+                                'type' => 'object',
+                                'additionalProperties' => [
+                                    'type' => 'array',
+                                    'items' => ['type' => 'string'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'LoginResponse' => [
+                'type' => 'object',
+                'required' => ['data', 'access_token', 'token_type'],
+                'properties' => [
+                    'data' => ['type' => 'object', 'additionalProperties' => true],
+                    'access_token' => ['type' => 'string'],
+                    'token_type' => ['type' => 'string', 'enum' => ['Bearer']],
+                ],
+            ],
+            'MobileBootstrapResponse' => [
+                'type' => 'object',
+                'required' => ['data'],
+                'properties' => [
+                    'data' => [
+                        'type' => 'object',
+                        'required' => ['user', 'personas', 'contexts', 'suggested_context'],
+                        'properties' => [
+                            'user' => ['type' => 'object', 'additionalProperties' => true],
+                            'personas' => [
+                                'type' => 'array',
+                                'items' => ['type' => 'string', 'enum' => ['owner', 'occupant']],
+                            ],
+                            'contexts' => [
+                                'type' => 'array',
+                                'items' => ['$ref' => '#/components/schemas/ResidentContext'],
+                            ],
+                            'suggested_context' => [
+                                'type' => 'string',
+                                'nullable' => true,
+                                'description' => 'A deterministic ID from contexts, or null when contexts is empty.',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'ResidentContext' => [
+                'type' => 'object',
+                'required' => ['id', 'building', 'unit', 'relationships', 'capabilities'],
+                'properties' => [
+                    'id' => ['type' => 'string', 'example' => 'unit-42'],
+                    'building' => ['type' => 'object', 'additionalProperties' => true],
+                    'unit' => ['type' => 'object', 'additionalProperties' => true],
+                    'relationships' => [
+                        'type' => 'object',
+                        'required' => ['owner', 'occupant'],
+                        'properties' => [
+                            'owner' => ['type' => 'boolean'],
+                            'occupant' => ['type' => 'boolean'],
+                        ],
+                    ],
+                    'capabilities' => [
+                        'type' => 'object',
+                        'description' => 'Context-local capabilities. charges.view permits viewing unit charges; wallet.view permits viewing the unit wallet.',
+                        'required' => ['charges.view', 'wallet.view'],
+                        'properties' => [
+                            'charges.view' => ['type' => 'boolean'],
+                            'wallet.view' => ['type' => 'boolean'],
+                        ],
+                        'additionalProperties' => ['type' => 'boolean'],
                     ],
                 ],
             ],

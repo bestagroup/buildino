@@ -1,10 +1,11 @@
 <?php
+
 namespace App\Services\Auth;
 
+use App\Exceptions\ApiException;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class AuthenticationService
 {
@@ -14,8 +15,11 @@ class AuthenticationService
         $user = User::query()->where($column, $login)->first();
 
         if (! $user || ! $user->password || ! Hash::check($password, $user->password)) {
-            throw ValidationException::withMessages(['login' => 'Invalid credentials.']);
+            throw new ApiException('AUTH_INVALID_CREDENTIALS', 'The provided credentials are invalid.', 401);
         }
+
+        $this->ensureAccountAllowed($user);
+        $this->ensureIdentityVerified($user);
 
         return $this->issueToken($user, $deviceName, $request);
     }
@@ -26,8 +30,10 @@ class AuthenticationService
         $user = User::query()->where($column, $identifier)->first();
 
         if (! $user) {
-            throw ValidationException::withMessages(['identifier' => 'No active account exists for this identifier.']);
+            throw new ApiException('AUTH_INVALID_CREDENTIALS', 'The provided credentials are invalid.', 401);
         }
+
+        $this->ensureAccountAllowed($user);
 
         if ($channel === 'email' && ! $user->email_verified_at) {
             $user->forceFill(['email_verified_at' => now()])->save();
@@ -41,9 +47,7 @@ class AuthenticationService
 
     private function issueToken(User $user, string $deviceName, Request $request): array
     {
-        if (! $user->is_active || $user->is_blocked) {
-            throw ValidationException::withMessages(['login' => 'This account is not allowed to sign in.']);
-        }
+        $this->ensureAccountAllowed($user);
 
         $user->forceFill([
             'last_login_at' => now(),
@@ -53,5 +57,27 @@ class AuthenticationService
         $token = $user->createToken($deviceName, ['api'])->plainTextToken;
 
         return ['user' => $user->fresh(), 'token' => $token, 'token_type' => 'Bearer'];
+    }
+
+    private function ensureAccountAllowed(User $user): void
+    {
+        if (! $user->is_active || $user->is_blocked) {
+            throw new ApiException('AUTH_ACCOUNT_NOT_ALLOWED', 'This account is not allowed to sign in.', 403);
+        }
+    }
+
+    private function ensureIdentityVerified(User $user): void
+    {
+        if (
+            config('api_security.require_verified_identity', true)
+            && ! $user->mobile_verified_at
+            && ! $user->email_verified_at
+        ) {
+            throw new ApiException(
+                'IDENTITY_VERIFICATION_REQUIRED',
+                'A verified mobile number or email address is required.',
+                403
+            );
+        }
     }
 }

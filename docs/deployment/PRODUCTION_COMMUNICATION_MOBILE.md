@@ -192,49 +192,27 @@ the current Sanctum token is revoked and that device registry row is released so
 New endpoint:
 
 ```text
-GET /api/v1/mobile/bootstrap
+GET /api/v1/app/bootstrap
 ```
 
 Headers:
 
 ```text
 Authorization: Bearer <sanctum-token>
-X-Device-Id: <installation-id>
-X-App-Version: 1.0.0
 ```
 
-Returns one lightweight payload containing:
+Returns the canonical resident bootstrap payload containing:
 
 ```text
-API version / server time
-minimum supported app version
-latest app version
-upgrade required / update available
-maintenance mode
 authenticated user
-active roles + scope
-available personas:
-  resident
-  provider
-  management
-resident units + unit wallet balances
-provider active job count
-personal wallet balance
-unread notification count
-current device registration state
-feature flags
+relationship-derived personas: owner and/or occupant
+one context per related unit
+merged owner/occupant relationship flags per context
+context-local charges.view and wallet.view capabilities
+a deterministic suggested_context, or null when no context exists
 ```
 
-Large collections are intentionally excluded. Flutter should use existing paginated endpoints for invoices, reservations, services, tickets, wallet entries, notifications, etc.
-
-Configuration:
-
-```env
-MOBILE_MIN_SUPPORTED_VERSION=1.0.0
-MOBILE_LATEST_VERSION=1.0.0
-MOBILE_MAINTENANCE_MODE=false
-MOBILE_MAINTENANCE_MESSAGE="سامانه موقتاً در حال بروزرسانی است."
-```
+Only active, date-valid ownerships and occupancies belonging to the authenticated user are considered. Management/provider roles do not create resident contexts.
 
 ---
 
