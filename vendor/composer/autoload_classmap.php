@@ -8118,6 +8118,7 @@ return array(
     'Tests\\Feature\\Security\\UnitInvitationFlowTest' => $baseDir . '/tests/Feature/Security/UnitInvitationFlowTest.php',
     'Tests\\Feature\\Security\\UnitResidencyAuthorizationTest' => $baseDir . '/tests/Feature/Security/UnitResidencyAuthorizationTest.php',
     'Tests\\Feature\\System\\ApiContractAuditTest' => $baseDir . '/tests/Feature/System/ApiContractAuditTest.php',
+    'Tests\\Feature\\System\\AuthenticationResponsiveVisualQaTest' => $baseDir . '/tests/Feature/System/AuthenticationResponsiveVisualQaTest.php',
     'Tests\\Feature\\System\\DashboardThemeIntegrationTest' => $baseDir . '/tests/Feature/System/DashboardThemeIntegrationTest.php',
     'Tests\\Feature\\System\\DemoDataGeneratorTest' => $baseDir . '/tests/Feature/System/DemoDataGeneratorTest.php',
     'Tests\\Feature\\System\\FinalCompletionFlowTest' => $baseDir . '/tests/Feature/System/FinalCompletionFlowTest.php',

@@ -1,0 +1,19 @@
+{
+  "php_files": 818,
+  "php_syntax_errors": [],
+  "js_files": 8,
+  "js_errors": [],
+  "json_files": 26,
+  "json_errors": [],
+  "css_files": 16,
+  "css_errors": [],
+  "psr4_mismatches": [],
+  "duplicate_fqcn": {},
+  "local_asset_refs": 69,
+  "missing_assets": [],
+  "contract_before": 87,
+  "contract_after": 87,
+  "contract_identical": true,
+  "backend_changed": [],
+  "font_binaries": []
+}

@@ -175,6 +175,7 @@
             class="layout-overlay"
             id="layoutOverlay"
             data-materialize-overlay
+            aria-hidden="true"
             role="button"
             tabindex="-1"
             aria-label="بستن منو"
@@ -190,6 +191,8 @@
                     type="button"
                     class="materialize-mobile-toggle nav-link d-xl-none"
                     data-materialize-menu-toggle
+                    aria-expanded="false"
+                    aria-controls="layout-menu"
                     aria-label="نمایش منو"
                 >
                     @include('management.partials.icon', ['name' => 'menu', 'size' => 22])
@@ -602,6 +605,7 @@
                     type="button"
                     class="icon-button"
                     id="materializeThemeToggle" data-materialize-theme-toggle
+                    aria-pressed="false"
                     aria-label="تغییر پوسته"
                     title="تغییر پوسته"
                 >

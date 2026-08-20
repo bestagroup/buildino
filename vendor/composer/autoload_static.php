@@ -8770,6 +8770,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'Tests\\Feature\\Security\\UnitInvitationFlowTest' => __DIR__ . '/../..' . '/tests/Feature/Security/UnitInvitationFlowTest.php',
         'Tests\\Feature\\Security\\UnitResidencyAuthorizationTest' => __DIR__ . '/../..' . '/tests/Feature/Security/UnitResidencyAuthorizationTest.php',
         'Tests\\Feature\\System\\ApiContractAuditTest' => __DIR__ . '/../..' . '/tests/Feature/System/ApiContractAuditTest.php',
+        'Tests\\Feature\\System\\AuthenticationResponsiveVisualQaTest' => __DIR__ . '/../..' . '/tests/Feature/System/AuthenticationResponsiveVisualQaTest.php',
         'Tests\\Feature\\System\\DashboardThemeIntegrationTest' => __DIR__ . '/../..' . '/tests/Feature/System/DashboardThemeIntegrationTest.php',
         'Tests\\Feature\\System\\DemoDataGeneratorTest' => __DIR__ . '/../..' . '/tests/Feature/System/DemoDataGeneratorTest.php',
         'Tests\\Feature\\System\\FinalCompletionFlowTest' => __DIR__ . '/../..' . '/tests/Feature/System/FinalCompletionFlowTest.php',

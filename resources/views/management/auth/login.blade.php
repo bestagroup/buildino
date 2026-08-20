@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="robots" content="noindex,nofollow">
-    <meta name="color-scheme" content="light">
+    <meta name="color-scheme" content="light dark">
 
     <title>ورود به پنل مدیریتی Buildino</title>
     <!-- Materialize RTL theme extracted from the supplied UI reference -->
@@ -30,6 +30,22 @@
 </head>
 
 <body class="login-page buildino-materio-shell materialize-auth">
+
+<button
+    type="button"
+    class="materialize-auth-theme-toggle"
+    data-materialize-theme-toggle
+    aria-label="تغییر پوسته"
+    aria-pressed="false"
+    title="تغییر پوسته"
+>
+    <span class="theme-icon theme-icon--light">
+        @include('management.partials.icon', ['name' => 'moon', 'size' => 18])
+    </span>
+    <span class="theme-icon theme-icon--dark">
+        @include('management.partials.icon', ['name' => 'sun', 'size' => 18])
+    </span>
+</button>
 <div class="login-shell">
     <section class="login-visual">
         <div class="login-visual__mesh"></div>
@@ -126,14 +142,14 @@
             </div>
 
             @if (session('status'))
-                <div class="alert alert--success login-alert">
+                <div class="alert alert--success login-alert" role="status" aria-live="polite">
                     <strong>انجام شد</strong>
                     <span>{{ session('status') }}</span>
                 </div>
             @endif
 
             @if ($errors->any())
-                <div class="alert alert--danger login-alert">
+                <div class="alert alert--danger login-alert" role="alert" aria-live="assertive">
                     <strong>ورود انجام نشد</strong>
 
                     @foreach ($errors->all() as $error)

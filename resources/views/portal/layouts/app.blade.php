@@ -163,6 +163,7 @@
             class="layout-overlay"
             id="portalLayoutOverlay"
             data-materialize-overlay
+            aria-hidden="true"
             role="button"
             tabindex="-1"
             aria-label="بستن منو"
@@ -178,6 +179,8 @@
                     type="button"
                     class="portal-icon-button portal-mobile-menu"
                     id="portalLayoutMenuToggle" data-materialize-menu-toggle
+                    aria-expanded="false"
+                    aria-controls="layout-menu"
                     aria-label="نمایش منو"
                 >
                     @include(
@@ -351,6 +354,8 @@
                     type="button"
                     class="portal-icon-button"
                     id="portalMaterializeThemeToggle" data-materialize-theme-toggle
+                    aria-pressed="false"
+                    aria-label="تغییر پوسته"
                     title="تغییر پوسته"
                 >
                     @include(

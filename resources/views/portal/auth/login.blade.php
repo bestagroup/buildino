@@ -14,6 +14,7 @@
         name="robots"
         content="noindex,nofollow"
     >
+    <meta name="color-scheme" content="light dark">
 
     <title>
         ورود به پرتال Buildino
@@ -42,6 +43,22 @@
 </head>
 
 <body class="portal-login-body buildino-materio-shell materialize-auth">
+
+<button
+    type="button"
+    class="materialize-auth-theme-toggle"
+    data-materialize-theme-toggle
+    aria-label="تغییر پوسته"
+    aria-pressed="false"
+    title="تغییر پوسته"
+>
+    <span class="theme-icon theme-icon--light">
+        @include('management.partials.icon', ['name' => 'moon', 'size' => 18])
+    </span>
+    <span class="theme-icon theme-icon--dark">
+        @include('management.partials.icon', ['name' => 'sun', 'size' => 18])
+    </span>
+</button>
 <div class="portal-login-shell">
     <section class="portal-login-showcase">
         <div class="portal-login-showcase__content">
@@ -136,7 +153,7 @@
             </div>
 
             @if ($errors->any())
-                <div class="alert alert-danger portal-login-alert">
+                <div class="alert alert-danger portal-login-alert" role="alert" aria-live="assertive">
                     @foreach ($errors->all() as $error)
                         <div>
                             {{ $error }}
@@ -146,7 +163,7 @@
             @endif
 
             @if (session('status'))
-                <div class="alert alert-success portal-login-alert">
+                <div class="alert alert-success portal-login-alert" role="status" aria-live="polite">
                     {{ session('status') }}
                 </div>
             @endif

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="robots" content="noindex,nofollow">
+    <meta name="color-scheme" content="light dark">
 
     <title>تعیین رمز عبور جدید | Buildino</title>
     <!-- Materialize RTL theme extracted from the supplied UI reference -->
@@ -29,6 +30,22 @@
 </head>
 
 <body class="login-page auth-recovery-page materialize-auth">
+
+<button
+    type="button"
+    class="materialize-auth-theme-toggle"
+    data-materialize-theme-toggle
+    aria-label="تغییر پوسته"
+    aria-pressed="false"
+    title="تغییر پوسته"
+>
+    <span class="theme-icon theme-icon--light">
+        @include('management.partials.icon', ['name' => 'moon', 'size' => 18])
+    </span>
+    <span class="theme-icon theme-icon--dark">
+        @include('management.partials.icon', ['name' => 'sun', 'size' => 18])
+    </span>
+</button>
 <div class="auth-recovery-shell">
     <main class="auth-recovery-card">
         <a
@@ -69,7 +86,7 @@
         </div>
 
         @if ($errors->any())
-            <div class="alert alert--danger login-alert">
+            <div class="alert alert--danger login-alert" role="alert" aria-live="assertive">
                 <strong>بازنشانی انجام نشد</strong>
 
                 @foreach ($errors->all() as $error)
