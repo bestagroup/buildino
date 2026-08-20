@@ -1860,10 +1860,9 @@
                     <input
                         type="date"
                         name="reservation_date"
-                        min="{{ now()-
-                    class="form-control"
-                >toDateString() }}"
+                        min="{{ now()->toDateString() }}"
                         required
+                        class="form-control"
                     >
                 </label>
 
