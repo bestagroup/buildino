@@ -53,9 +53,12 @@ class ServerSideDataTablesWebTest extends TestCase
             'web'
         );
 
-        $this->get(
-            '/management'
-        )
+        $response =
+            $this->get(
+                '/management'
+            );
+
+        $response
             ->assertOk()
             ->assertSee(
                 'management-payments-table',
@@ -83,6 +86,94 @@ class ServerSideDataTablesWebTest extends TestCase
                 ),
                 false
             );
+
+        $html =
+            $response->getContent();
+
+        $this->assertTrue(
+            str_contains(
+                $html,
+                '/build/assets/app-'
+            ),
+            'The locally built DataTables bundle is missing from the management layout.'
+        );
+
+        $this->assertFalse(
+            str_contains(
+                $html,
+                'cdn.datatables.net'
+            ),
+            'The management layout must not depend on the DataTables CDN.'
+        );
+    }
+
+    public function test_management_recent_datatables_return_yajra_server_side_protocol(): void
+    {
+        $this->seed(
+            AccessScenarioSeeder::class
+        );
+
+        $this->actingAs(
+            $this->user(
+                'role.superadmin@buildino.local'
+            ),
+            'web'
+        );
+
+        $tables = [
+            'payments' => [
+                'payment_number',
+                'payer_name',
+                'amount_formatted',
+                'status_label',
+                'created_at_jalali',
+            ],
+            'reservations' => [
+                'facility_title',
+                'user_name',
+                'reservation_date_jalali',
+                'status_label',
+            ],
+            'services' => [
+                'request_number',
+                'title',
+                'assigned_name',
+                'status_label',
+                'created_at_jalali',
+            ],
+            'support' => [
+                'ticket_number',
+                'subject',
+                'user_name',
+                'status_label',
+                'created_at_jalali',
+            ],
+        ];
+
+        foreach ($tables as $table => $columns) {
+            $this->getJson(
+                route(
+                    'management.datatables',
+                    [
+                        'table' =>
+                            $table,
+                    ]
+                )
+                . '?'
+                . http_build_query(
+                    $this->dataTableQuery(
+                        $columns
+                    )
+                )
+            )
+                ->assertOk()
+                ->assertJsonStructure([
+                    'draw',
+                    'recordsTotal',
+                    'recordsFiltered',
+                    'data',
+                ]);
+        }
     }
 
     public function test_resident_invoice_datatable_returns_yajra_server_side_protocol_and_stays_unit_scoped(): void

@@ -17,8 +17,14 @@ class LoyaltyTransaction extends Model
 
     protected $fillable = [
         'loyalty_account_id',
+        'loyalty_rule_id',
         'type',
         'points',
+        'balance_after',
+        'remaining_points',
+        'idempotency_key',
+        'metadata',
+        'reversed_transaction_id',
         'reference',
         'description',
         'expires_at',
@@ -30,6 +36,9 @@ class LoyaltyTransaction extends Model
     {
         return [
             'points' => 'integer',
+            'balance_after' => 'integer',
+            'remaining_points' => 'integer',
+            'metadata' => 'array',
             'expires_at' => 'datetime',
             'type' => LoyaltyTransactionType::class,
         ];
@@ -43,5 +52,31 @@ class LoyaltyTransaction extends Model
     public function reference(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function loyaltyRule(): BelongsTo
+    {
+        return $this->belongsTo(LoyaltyRule::class, 'loyalty_rule_id');
+    }
+
+    public function reversedTransaction(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'reversed_transaction_id');
+    }
+
+    public function spendAllocations(): HasMany
+    {
+        return $this->hasMany(
+            LoyaltyTransactionAllocation::class,
+            'spend_transaction_id'
+        );
+    }
+
+    public function earnAllocations(): HasMany
+    {
+        return $this->hasMany(
+            LoyaltyTransactionAllocation::class,
+            'earn_transaction_id'
+        );
     }
 }

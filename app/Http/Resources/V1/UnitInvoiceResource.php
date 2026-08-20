@@ -12,7 +12,9 @@ class UnitInvoiceResource extends JsonResource
             'issue_date'=>$this->issue_date?->toDateString(),'due_date'=>$this->due_date?->toDateString(),
             'period_start'=>$this->period_start?->toDateString(),'period_end'=>$this->period_end?->toDateString(),
             'subtotal'=>(int)$this->subtotal,'discount_amount'=>(int)$this->discount_amount,
-            'penalty_amount'=>(int)$this->penalty_amount,'total_amount'=>(int)$this->total_amount,
+            'penalty_amount'=>(int)$this->penalty_amount,
+            'waived_penalty_amount'=>(int)$this->waived_penalty_amount,
+            'total_amount'=>(int)$this->total_amount,
             'paid_amount'=>(int)$this->paid_amount,'outstanding_amount'=>(int)$this->outstanding_amount,
             'status'=>is_object($this->status)?$this->status->value:$this->status,
             'description'=>$this->description,
@@ -25,6 +27,9 @@ class UnitInvoiceResource extends JsonResource
                 'unit_amount'=>(int)$item->unit_amount,'total_amount'=>(int)$item->total_amount,
                 'metadata'=>$item->metadata,
             ])->values()),
+            'installments' => InvoiceInstallmentResource::collection(
+                $this->whenLoaded('invoiceInstallments')
+            ),
             'created_at'=>$this->created_at?->toISOString(),
             'updated_at'=>$this->updated_at?->toISOString(),
         ];

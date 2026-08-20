@@ -17,21 +17,42 @@
 
 @section('sidebar-links')
     @php
-        $resources = config("portal_operations.{$area}", []);
+        $resources =
+            config(
+                "portal_operations.{$area}",
+                []
+            );
     @endphp
 
     @foreach ($resources as $key => $item)
-        <li class="menu-item {{ $resource === $key ? 'active' : '' }}">
-            <a
-                href="{{ route("portal.{$area}.operations.index", ['resource' => $key]) }}"
-                class="menu-link"
-            >
-                <span class="menu-icon">
-                    @include('management.partials.icon', ['name' => $item['icon'] ?? 'grid', 'size' => 18])
-                </span>
-                <div>{{ $item['title'] }}</div>
-            </a>
-        </li>
+        <a
+            href="{{
+                route(
+                    "portal.{$area}.operations.index",
+                    [
+                        'resource' => $key,
+                    ]
+                )
+            }}"
+            class="{{
+                $resource === $key
+                    ? 'is-active'
+                    : ''
+            }}"
+        >
+            @include(
+                'management.partials.icon',
+                [
+                    'name' =>
+                        $item['icon']
+                        ?? 'grid',
+                    'size' => 18,
+                ]
+            )
+            <span>
+                {{ $item['title'] }}
+            </span>
+        </a>
     @endforeach
 @endsection
 
@@ -70,7 +91,7 @@
     <strong>جزئیات</strong>
 </nav>
 
-<section class="portal-detail-hero card">
+<section class="portal-detail-hero">
     <div>
         <span class="portal-eyebrow">
             OPERATION DETAIL
@@ -122,7 +143,7 @@
     ?? []
     as $section
 )
-    <section class="portal-section card">
+    <section class="portal-section">
         <div class="portal-section__heading">
             <div>
                 <span class="portal-eyebrow">
@@ -138,7 +159,7 @@
             ($section['type'] ?? '')
             === 'table'
         )
-            <div class="portal-table-card card">
+            <div class="portal-table-card">
                 <div class="table-responsive">
                     <table class="table portal-table align-middle">
                         <thead>
@@ -221,6 +242,17 @@
                                     ?? '—'
                                 }}
                             </time>
+
+                            @if (! empty($row['url']))
+                                <a
+                                    href="{{ $row['url'] }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="portal-section-link"
+                                >
+                                    دریافت رسید PDF
+                                </a>
+                            @endif
                         </div>
                     </article>
                 @empty

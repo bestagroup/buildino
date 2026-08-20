@@ -68,8 +68,7 @@ class ProviderPayoutController extends Controller
             strtoupper(
                 $request->validated('currency')
                     ?? 'IRR'
-            ),
-            $request->validated('idempotency_key')
+            )
         );
 
         return (new ProviderPayoutResource(

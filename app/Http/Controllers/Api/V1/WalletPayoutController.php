@@ -63,8 +63,7 @@ class WalletPayoutController extends Controller
             $building,
             $account,
             $request->user(),
-            $request->integer('amount'),
-            $request->validated('idempotency_key')
+            $request->integer('amount')
         );
 
         return (new WalletPayoutResource($payout))

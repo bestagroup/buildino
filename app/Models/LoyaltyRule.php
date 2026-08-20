@@ -16,6 +16,7 @@ class LoyaltyRule extends Model
     protected $fillable = [
         'building_id',
         'event_type',
+        'version',
         'points',
         'configuration',
         'starts_at',
@@ -27,6 +28,7 @@ class LoyaltyRule extends Model
     {
         return [
             'points' => 'integer',
+            'version' => 'integer',
             'configuration' => 'array',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',

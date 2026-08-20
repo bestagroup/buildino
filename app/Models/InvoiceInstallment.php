@@ -22,6 +22,9 @@ class InvoiceInstallment extends Model
         'paid_amount',
         'status',
         'paid_at',
+        'penalty_amount',
+        'waived_amount',
+        'metadata',
     ];
 
     protected function casts(): array
@@ -32,6 +35,9 @@ class InvoiceInstallment extends Model
             'amount' => 'integer',
             'paid_amount' => 'integer',
             'paid_at' => 'datetime',
+            'penalty_amount' => 'integer',
+            'waived_amount' => 'integer',
+            'metadata' => 'array',
             'status' => InstallmentStatus::class,
         ];
     }

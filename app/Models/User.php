@@ -210,6 +210,14 @@ class User extends Authenticatable
         return $this->hasMany(LoyaltyRewardClaim::class, 'user_id');
     }
 
+    public function loyaltyAccounts(): MorphMany
+    {
+        return $this->morphMany(
+            LoyaltyAccount::class,
+            'owner'
+        );
+    }
+
     public function loyaltyRewardClaimsAsProcessedBy(): HasMany
     {
         return $this->hasMany(LoyaltyRewardClaim::class, 'processed_by');

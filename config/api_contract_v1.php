@@ -60,6 +60,31 @@ return [
             'protected' => true,
         ],
         [
+            'method' => 'PUT',
+            'uri' => 'api/v1/invoices/{unitInvoice}/installments',
+            'protected' => true,
+        ],
+        [
+            'method' => 'POST',
+            'uri' => 'api/v1/invoices/{unitInvoice}/penalty-adjustments',
+            'protected' => true,
+        ],
+        [
+            'method' => 'GET',
+            'uri' => 'api/v1/payments/{payment}/receipt',
+            'protected' => true,
+        ],
+        [
+            'method' => 'GET',
+            'uri' => 'api/v1/loyalty/me',
+            'protected' => true,
+        ],
+        [
+            'method' => 'POST',
+            'uri' => 'api/v1/loyalty/rewards/{loyaltyReward}/claims',
+            'protected' => true,
+        ],
+        [
             'method' => 'POST',
             'uri' => 'api/v1/payments/{payment}/gateway/initiate',
             'protected' => true,
@@ -181,6 +206,50 @@ return [
             'description' => 'Postman invoice payment',
         ],
 
+        'PUT api/v1/invoices/{unitInvoice}/installments' => [
+            'installments' => [
+                [
+                    'due_date' => '2026-09-20',
+                    'amount' => 500000,
+                ],
+                [
+                    'due_date' => '2026-10-20',
+                    'amount' => 500000,
+                ],
+            ],
+        ],
+
+        'POST api/v1/invoices/{unitInvoice}/penalty-adjustments' => [
+            'action' => 'add',
+            'amount' => 50000,
+            'reason' => 'Late payment penalty',
+        ],
+
+        'POST api/v1/loyalty/rewards/{loyaltyReward}/claims' => [
+            'idempotency_key' => '{{loyalty_claim_idempotency_key}}',
+        ],
+
+        'POST api/v1/buildings/{building}/loyalty-rules' => [
+            'event_type' => 'payment_verified',
+            'points' => 1,
+            'configuration' => [
+                'amount_step' => 100000,
+                'maximum_points' => 500,
+                'expires_days' => 365,
+            ],
+            'is_active' => true,
+        ],
+
+        'POST api/v1/buildings/{building}/loyalty-rewards' => [
+            'title' => 'Service discount',
+            'required_points' => 100,
+            'is_active' => true,
+        ],
+
+        'POST api/v1/loyalty-claims/{loyaltyRewardClaim}/reject' => [
+            'reason' => 'Reward is temporarily unavailable.',
+        ],
+
         'POST api/v1/payments/{payment}/gateway/initiate' => [
             'gateway' => '{{gateway}}',
             'idempotency_key' => '{{payment_idempotency_key}}',
@@ -214,13 +283,6 @@ return [
             'is_active' => true,
         ],
 
-        'POST api/v1/buildings/{building}/bank-accounts' => [
-            'bank_name' => 'Test Bank',
-            'account_holder_name' => 'Building',
-            'iban' => 'IR000000000000000000000010',
-            'is_default' => true,
-        ],
-
         'POST api/v1/provider/bank-accounts' => [
             'bank_name' => 'Test Bank',
             'account_holder_name' => 'Provider',
@@ -232,13 +294,6 @@ return [
             'provider_bank_account_id' => '{{provider_bank_account_id}}',
             'amount' => 100000,
             'currency' => 'IRR',
-            'idempotency_key' => '{{provider_payout_idempotency_key}}',
-        ],
-
-        'POST api/v1/buildings/{building}/wallet-payouts' => [
-            'building_bank_account_id' => '{{building_bank_account_id}}',
-            'amount' => 100000,
-            'idempotency_key' => '{{wallet_payout_idempotency_key}}',
         ],
 
         'POST api/v1/service-requests/{serviceRequest}/assign' => [
@@ -298,6 +353,8 @@ return [
         'chargePeriod' => 'charge_period_id',
         'unitInvoice' => 'invoice_id',
         'payment' => 'payment_id',
+        'loyaltyReward' => 'loyalty_reward_id',
+        'loyaltyRewardClaim' => 'loyalty_claim_id',
         'expense' => 'expense_id',
         'income' => 'income_id',
         'announcement' => 'announcement_id',

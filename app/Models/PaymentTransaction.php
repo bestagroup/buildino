@@ -17,6 +17,9 @@ class PaymentTransaction extends Model
         'payment_id',
         'gateway',
         'idempotency_key',
+        'initiation_token',
+        'initiating_at',
+        'initiation_attempts',
         'authority',
         'gateway_transaction_id',
         'tracking_code',
@@ -33,6 +36,8 @@ class PaymentTransaction extends Model
         return [
             'request_payload' => 'array',
             'response_payload' => 'array',
+            'initiating_at' => 'datetime',
+            'initiation_attempts' => 'integer',
             'requested_at' => 'datetime',
             'verified_at' => 'datetime',
             'failed_at' => 'datetime',

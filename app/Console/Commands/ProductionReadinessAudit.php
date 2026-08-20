@@ -177,6 +177,52 @@ class ProductionReadinessAudit extends Command
             'FILE_SCAN_ENABLED must be true in production.'
         );
 
+        $scanDriver = (string) config(
+            'file_management.scan.driver',
+            'binary'
+        );
+
+        $this->finding(
+            $findings,
+            'Malware scanner driver',
+            ! $isProduction
+                || in_array($scanDriver, ['binary', 'clamd_tcp'], true),
+            'critical',
+            'FILE_SCAN_DRIVER must be binary or clamd_tcp.'
+        );
+
+        if ($isProduction && $scanDriver === 'clamd_tcp') {
+            $this->finding(
+                $findings,
+                'ClamAV TCP host',
+                trim((string) config('file_management.scan.host')) !== '',
+                'critical',
+                'FILE_SCAN_HOST is required for clamd_tcp.'
+            );
+
+            $scanPort = (int) config('file_management.scan.port');
+            $this->finding(
+                $findings,
+                'ClamAV TCP port',
+                $scanPort >= 1 && $scanPort <= 65535,
+                'critical',
+                'FILE_SCAN_PORT must be a valid TCP port.'
+            );
+        }
+
+        if (
+            $isProduction
+            && ($queueDriver === 'redis' || $cacheStore === 'redis')
+        ) {
+            $this->finding(
+                $findings,
+                'PHP extension: redis',
+                extension_loaded('redis'),
+                'critical',
+                'The phpredis extension is required by the configured Redis client.'
+            );
+        }
+
         $gatewayEnabled =
             (bool) config(
                 'payment_gateways.gateways.generic.enabled',

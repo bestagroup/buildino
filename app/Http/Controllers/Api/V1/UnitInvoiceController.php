@@ -116,6 +116,7 @@ class UnitInvoiceController extends Controller
         $invoice->load([
             'unit:id,floor_id,unit_number,title',
             'invoiceItems',
+            'invoiceInstallments',
         ]);
 
         return (new UnitInvoiceResource($invoice))
@@ -139,6 +140,7 @@ class UnitInvoiceController extends Controller
         $unitInvoice->load([
             'unit:id,floor_id,unit_number,title',
             'invoiceItems',
+            'invoiceInstallments',
         ]);
 
         return new UnitInvoiceResource($unitInvoice);
@@ -159,6 +161,7 @@ class UnitInvoiceController extends Controller
         $unitInvoice->load([
             'unit:id,floor_id,unit_number,title',
             'invoiceItems',
+            'invoiceInstallments',
         ]);
 
         return new UnitInvoiceResource($unitInvoice);

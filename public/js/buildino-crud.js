@@ -671,59 +671,51 @@
         } = {}
     ) => {
         if (
-            window.BuildinoUI
-            && typeof window.BuildinoUI.confirm
+            window.Swal
+            && typeof window.Swal.fire
                 === "function"
         ) {
-            return window.BuildinoUI.confirm({
-                title: "تأیید عملیات",
-                text: String(
-                    message
-                    || "آیا مطمئن هستید؟"
-                ),
-                icon:
-                    tone === "danger"
-                        ? "warning"
-                        : tone,
-                confirmButtonText:
-                    confirmText,
-                cancelButtonText:
-                    cancelText,
-            });
+            const result =
+                await window.Swal.fire({
+                    title:
+                        "تأیید عملیات",
+                    text:
+                        String(
+                            message
+                            || "آیا مطمئن هستید؟"
+                        ),
+                    icon:
+                        tone === "danger"
+                            ? "warning"
+                            : tone,
+                    showCancelButton:
+                        true,
+                    confirmButtonText:
+                        confirmText,
+                    cancelButtonText:
+                        cancelText,
+                    reverseButtons:
+                        true,
+                    focusCancel:
+                        true,
+                    customClass: {
+                        popup:
+                            "buildino-swal-popup",
+                        confirmButton:
+                            "buildino-swal-confirm",
+                        cancelButton:
+                            "buildino-swal-cancel",
+                    },
+                });
+
+            return Boolean(
+                result.isConfirmed
+            );
         }
 
         return window.confirm(
             message
         );
-    };
-
-    const clearApiValidation = (form) => {
-        if (
-            form
-            && window.BuildinoUI
-            && typeof window.BuildinoUI.clearValidationErrors
-                === "function"
-        ) {
-            window.BuildinoUI.clearValidationErrors(form);
-        }
-    };
-
-    const applyApiValidation = (form, error) => {
-        if (
-            error?.status !== 422
-            || ! error?.payload?.errors
-            || ! form
-            || ! window.BuildinoUI
-            || typeof window.BuildinoUI.applyValidationErrors
-                !== "function"
-        ) {
-            return false;
-        }
-
-        return window.BuildinoUI.applyValidationErrors(
-            form,
-            error.payload.errors
-        ) > 0;
     };
 
     const validateRequiredContext = (
@@ -1526,21 +1518,6 @@
         input.name =
             field.name;
 
-        // Presentation-only integration with the canonical Materialize/Bootstrap
-        // control language. Field names, values and data contracts stay untouched.
-        if (
-            field.type === "select"
-            || field.type === "multiselect"
-        ) {
-            input.classList.add("form-select");
-        } else if (
-            field.type === "checkbox"
-        ) {
-            input.classList.add("form-check-input");
-        } else {
-            input.classList.add("form-control");
-        }
-
         input.dataset.fieldType =
             field.type
             || "text";
@@ -1932,10 +1909,6 @@
         elements.formError.textContent =
             "";
 
-        clearApiValidation(
-            elements.form
-        );
-
         await renderFields(
             elements.formFields,
             resource.fields || [],
@@ -1980,11 +1953,6 @@
         state.editRow =
             null;
 
-        if (elements.form) {
-            delete elements.form.dataset.idempotencyKey;
-            clearApiValidation(elements.form);
-        }
-
         document.body.classList.remove(
             "crud-overlay-open"
         );
@@ -2010,9 +1978,6 @@
             return;
         }
 
-        elements.formError.textContent = "";
-        clearApiValidation(elements.form);
-
         try {
             const payload =
                 collectPayload(
@@ -2020,24 +1985,6 @@
                     resource.fields || [],
                     mode
                 );
-
-            if (
-                mode === "create"
-                && endpointConfig.idempotency_key_prefix
-                && ! payload.idempotency_key
-            ) {
-                const existingKey =
-                    elements.form.dataset.idempotencyKey;
-
-                const generatedKey =
-                    `${endpointConfig.idempotency_key_prefix}:${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-                payload.idempotency_key =
-                    existingKey || generatedKey;
-
-                elements.form.dataset.idempotencyKey =
-                    payload.idempotency_key;
-            }
 
             const endpoint =
                 interpolate(
@@ -2079,17 +2026,9 @@
                 await loadRows();
             }
         } catch (error) {
-            const hasFieldErrors =
-                applyApiValidation(
-                    elements.form,
-                    error
-                );
-
             elements.formError
                 .textContent =
-                hasFieldErrors
-                    ? "لطفاً خطاهای مشخص‌شده در فرم را اصلاح کنید."
-                    : error.message;
+                error.message;
         } finally {
             elements.saveButton.disabled =
                 false;
@@ -2155,6 +2094,25 @@
         action,
         row
     ) => {
+        if (action.open_url) {
+            try {
+                const endpoint = interpolate(
+                    action.url,
+                    row
+                );
+
+                window.open(
+                    endpoint,
+                    "_blank",
+                    "noopener,noreferrer"
+                );
+            } catch (error) {
+                toast(error.message, "danger");
+            }
+
+            return;
+        }
+
         if (
             action.confirm
             && ! (action.fields || []).length
@@ -2207,10 +2165,6 @@
             .textContent =
             "";
 
-        clearApiValidation(
-            elements.actionForm
-        );
-
         elements.actionSubmit
             .className =
             `crud-button crud-button--${action.tone || "primary"}`;
@@ -2260,10 +2214,6 @@
             null;
         state.actionRow =
             null;
-
-        clearApiValidation(
-            elements.actionForm
-        );
 
         document.body.classList.remove(
             "crud-overlay-open"
@@ -2336,17 +2286,9 @@
                     ?.classList
                     .contains("is-open")
             ) {
-                const hasFieldErrors =
-                    applyApiValidation(
-                        elements.actionForm,
-                        error
-                    );
-
                 elements.actionError
                     .textContent =
-                    hasFieldErrors
-                        ? "لطفاً خطاهای مشخص‌شده در فرم را اصلاح کنید."
-                        : error.message;
+                    error.message;
             } else {
                 toast(
                     error.message,
@@ -2563,10 +2505,6 @@
             return;
         }
 
-        clearApiValidation(
-            elements.singletonForm
-        );
-
         try {
             const payload =
                 collectPayload(
@@ -2600,15 +2538,10 @@
 
             await loadSingleton();
         } catch (error) {
-            if (! applyApiValidation(
-                elements.singletonForm,
-                error
-            )) {
-                toast(
-                    error.message,
-                    "danger"
-                );
-            }
+            toast(
+                error.message,
+                "danger"
+            );
         }
     };
 

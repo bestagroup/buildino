@@ -26,3 +26,13 @@ Schedule::command('notifications:reservation-reminders')
     ->dailyAt('18:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+Schedule::command('invoices:mark-overdue-installments')
+    ->dailyAt('00:10')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command('loyalty:expire-points')
+    ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();

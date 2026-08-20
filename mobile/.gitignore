@@ -1,0 +1,10 @@
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+build/
+android/.gradle/
+android/key.properties
+ios/Flutter/ephemeral/
+*.jks
+*.keystore

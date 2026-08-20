@@ -1,12 +1,5 @@
 <!doctype html>
-<html
-    lang="fa"
-    dir="rtl"
-    class="light-style layout-menu-fixed"
-    data-theme="theme-default"
-    data-assets-path="{{ asset('assets/') }}/"
-    data-template="vertical-menu-template"
->
+<html lang="fa" dir="rtl" data-theme="light">
 <head>
     <meta charset="utf-8">
     <meta
@@ -35,25 +28,19 @@
         href="{{ asset('css/buildino-fonts.css') }}"
     >
 
-    <!-- Materialize RTL dashboard system extracted from the supplied UI reference -->
-    <link id="template-core-css" rel="stylesheet" href="{{ asset('assets/vendor/css/rtl/core.css') }}">
-    <link id="template-theme-css" rel="stylesheet" href="{{ asset('assets/vendor/css/rtl/theme-default.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/materialize-demo.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ config('management_ui.libraries.bootstrap.css') }}"
+        integrity="{{ config('management_ui.libraries.bootstrap.css_integrity') }}"
+        crossorigin="anonymous"
+    >
 
     <link
         rel="stylesheet"
         href="{{ config('management_ui.libraries.sweetalert2.css') }}"
     >
 
-    <link
-        rel="stylesheet"
-        href="{{ config('management_ui.libraries.datatables.css') }}"
-    >
-
-    <link
-        rel="stylesheet"
-        href="{{ config('management_ui.libraries.datatables.responsive_css') }}"
-    >
+    @vite('resources/js/app.js')
 
     <link
         rel="stylesheet"
@@ -70,11 +57,7 @@
         href="{{ asset('css/buildino-portal.css') }}"
     >
 
-
     @stack('styles')
-
-    <!-- Final Materio component polish; intentionally loaded last. -->
-    <link rel="stylesheet" href="{{ asset('css/buildino-materialize.css') }}">
 </head>
 
 @php
@@ -152,35 +135,168 @@
 @endphp
 
 <body
-    class="portal-body materialize-buildino"
+    class="portal-body"
     data-portal-user-id="{{ $portalUser?->getKey() }}"
 >
-<div class="portal-shell layout-wrapper layout-content-navbar">
-    <div class="layout-container">
-        @include('portal.layouts.partials.sidebar')
-
-        <div
-            class="layout-overlay"
-            id="portalLayoutOverlay"
-            data-materialize-overlay
-            aria-hidden="true"
-            role="button"
-            tabindex="-1"
-            aria-label="بستن منو"
-        ></div>
-
-        <div class="portal-main layout-page">
-        <header
-            class="portal-topbar layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
-            id="layout-navbar"
+<div class="portal-shell">
+    <aside
+        class="portal-sidebar"
+        id="portalSidebar"
+    >
+        <a
+            href="{{ route('portal.dashboard') }}"
+            class="portal-brand"
         >
+            <span class="portal-brand__mark">
+                B
+            </span>
+
+            <span class="portal-brand__copy">
+                <strong>Buildino</strong>
+                <small>
+                    پرتال کاربران
+                </small>
+            </span>
+        </a>
+
+        <div class="portal-user-card">
+            <div class="portal-avatar">
+                {{
+                    mb_substr(
+                        $portalUser->first_name
+                        ?: $portalUser->last_name
+                        ?: 'U',
+                        0,
+                        1
+                    )
+                }}
+            </div>
+
+            <div>
+                <strong>
+                    {{
+                        trim(
+                            ($portalUser->first_name ?? '')
+                            . ' '
+                            . ($portalUser->last_name ?? '')
+                        )
+                        ?: $portalUser->mobile
+                    }}
+                </strong>
+
+                <span>
+                    @if ($activeArea === 'provider')
+                        ارائه‌دهنده خدمات
+                    @else
+                        مالک / ساکن
+                    @endif
+                </span>
+            </div>
+        </div>
+
+        <nav class="portal-nav">
+            @if ($portalAreas['resident'] ?? false)
+                <a
+                    href="{{ route('portal.resident.dashboard') }}"
+                    class="{{
+                        $activeArea === 'resident'
+                            ? 'is-active'
+                            : ''
+                    }}"
+                >
+                    @include(
+                        'management.partials.icon',
+                        [
+                            'name' => 'home',
+                            'size' => 19,
+                        ]
+                    )
+
+                    <span>
+                        خانه من
+                    </span>
+                </a>
+            @endif
+
+            @if ($portalAreas['provider'] ?? false)
+                <a
+                    href="{{ route('portal.provider.dashboard') }}"
+                    class="{{
+                        $activeArea === 'provider'
+                            ? 'is-active'
+                            : ''
+                    }}"
+                >
+                    @include(
+                        'management.partials.icon',
+                        [
+                            'name' => 'tools',
+                            'size' => 19,
+                        ]
+                    )
+
+                    <span>
+                        پنل ارائه‌دهنده
+                    </span>
+                </a>
+            @endif
+
+            @yield('sidebar-links')
+        </nav>
+
+        <div class="portal-sidebar__footer">
+            <div class="portal-sidebar__security">
+                @include(
+                    'management.partials.icon',
+                    [
+                        'name' => 'shield',
+                        'size' => 16,
+                    ]
+                )
+
+                <span>
+                    دسترسی امن و محدود به اطلاعات حساب شما
+                </span>
+            </div>
+
+            <form
+                method="POST"
+                action="{{ route('portal.logout') }}"
+            >
+                @csrf
+
+                <button
+                    type="submit"
+                    class="portal-logout"
+                >
+                    @include(
+                        'management.partials.icon',
+                        [
+                            'name' => 'logout',
+                            'size' => 17,
+                        ]
+                    )
+
+                    خروج از حساب
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <button
+        type="button"
+        class="portal-sidebar-backdrop"
+        id="portalSidebarBackdrop"
+        aria-label="بستن منو"
+    ></button>
+
+    <main class="portal-main">
+        <header class="portal-topbar">
             <div class="portal-topbar__title">
                 <button
                     type="button"
                     class="portal-icon-button portal-mobile-menu"
-                    id="portalLayoutMenuToggle" data-materialize-menu-toggle
-                    aria-expanded="false"
-                    aria-controls="layout-menu"
+                    id="portalSidebarToggle"
                     aria-label="نمایش منو"
                 >
                     @include(
@@ -353,9 +469,7 @@
                 <button
                     type="button"
                     class="portal-icon-button"
-                    id="portalMaterializeThemeToggle" data-materialize-theme-toggle
-                    aria-pressed="false"
-                    aria-label="تغییر پوسته"
+                    id="portalThemeToggle"
                     title="تغییر پوسته"
                 >
                     @include(
@@ -369,23 +483,10 @@
             </div>
         </header>
 
-        <div class="content-wrapper">
-            <main class="portal-content container-xxl flex-grow-1 container-p-y">
-                <div class="materialize-content-header">
-                    <div class="materialize-content-header__copy">
-                        <h1>@yield('page-title', 'پرتال کاربری')</h1>
-                        <p>{{ $activeArea === 'provider' ? 'مرکز عملیات ارائه‌دهنده خدمات' : 'مدیریت زندگی و خدمات ساختمان' }}</p>
-                    </div>
-                    <div class="materialize-content-header__breadcrumb">
-                        Buildino / <b>@yield('page-title', 'پرتال')</b>
-                    </div>
-                </div>
-
-                @yield('content')
-            </main>
+        <div class="portal-content">
+            @yield('content')
         </div>
-        </div>
-    </div>
+    </main>
 </div>
 
 <script>
@@ -403,26 +504,6 @@
     src="{{ config('management_ui.libraries.bootstrap.js') }}"
     integrity="{{ config('management_ui.libraries.bootstrap.js_integrity') }}"
     crossorigin="anonymous"
-></script>
-
-<script
-    src="{{ config('management_ui.libraries.datatables.js') }}"
-    defer
-></script>
-
-<script
-    src="{{ config('management_ui.libraries.datatables.bootstrap5_js') }}"
-    defer
-></script>
-
-<script
-    src="{{ config('management_ui.libraries.datatables.responsive_js') }}"
-    defer
-></script>
-
-<script
-    src="{{ config('management_ui.libraries.datatables.responsive_bootstrap5_js') }}"
-    defer
 ></script>
 
 <script
@@ -448,7 +529,5 @@
 ></script>
 
 @stack('scripts')
-
-<script src="{{ asset('js/buildino-materialize.js') }}" defer></script>
 </body>
 </html>

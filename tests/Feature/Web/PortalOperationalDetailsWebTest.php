@@ -3,6 +3,7 @@
 namespace Tests\Feature\Web;
 
 use App\Enums\InvoiceStatus;
+use App\Enums\InstallmentStatus;
 use App\Models\Unit;
 use App\Models\UnitInvoice;
 use App\Models\User;
@@ -87,6 +88,14 @@ class PortalOperationalDetailsWebTest extends TestCase
                 $owner
             );
 
+        $ownerInvoice->invoiceInstallments()->create([
+            'installment_number' => 1,
+            'due_date' => now()->addDays(5)->toDateString(),
+            'amount' => 1_000_000,
+            'paid_amount' => 0,
+            'status' => InstallmentStatus::Pending,
+        ]);
+
         $this->actingAs(
             $owner,
             'web'
@@ -109,6 +118,9 @@ class PortalOperationalDetailsWebTest extends TestCase
             )
             ->assertSee(
                 'اقلام صورتحساب'
+            )
+            ->assertSee(
+                'برنامه اقساط'
             );
 
         $this->get(

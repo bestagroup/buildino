@@ -1881,6 +1881,244 @@
                 ]
             }
         },
+        "/buildings/{building}/loyalty-claims": {
+            "get": {
+                "operationId": "get_api_v1_buildings_building_loyalty_claims",
+                "tags": [
+                    "Buildings"
+                ],
+                "summary": "Get /buildings/{building}/loyalty-claims",
+                "parameters": [
+                    {
+                        "name": "building",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/buildings/{building}/loyalty-rewards": {
+            "get": {
+                "operationId": "get_api_v1_buildings_building_loyalty_rewards",
+                "tags": [
+                    "Buildings"
+                ],
+                "summary": "Get /buildings/{building}/loyalty-rewards",
+                "parameters": [
+                    {
+                        "name": "building",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "post_api_v1_buildings_building_loyalty_rewards",
+                "tags": [
+                    "Buildings"
+                ],
+                "summary": "Post /buildings/{building}/loyalty-rewards",
+                "parameters": [
+                    {
+                        "name": "building",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "example": {
+                                "title": "Service discount",
+                                "required_points": 100,
+                                "is_active": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/buildings/{building}/loyalty-rules": {
+            "get": {
+                "operationId": "get_api_v1_buildings_building_loyalty_rules",
+                "tags": [
+                    "Buildings"
+                ],
+                "summary": "Get /buildings/{building}/loyalty-rules",
+                "parameters": [
+                    {
+                        "name": "building",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "post_api_v1_buildings_building_loyalty_rules",
+                "tags": [
+                    "Buildings"
+                ],
+                "summary": "Post /buildings/{building}/loyalty-rules",
+                "parameters": [
+                    {
+                        "name": "building",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "example": {
+                                "event_type": "payment_verified",
+                                "points": 1,
+                                "configuration": {
+                                    "amount_step": 100000,
+                                    "maximum_points": 500,
+                                    "expires_days": 365
+                                },
+                                "is_active": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/buildings/{building}/payments": {
             "get": {
                 "operationId": "get_api_v1_buildings_building_payments",
@@ -5383,6 +5621,148 @@
                 ]
             }
         },
+        "/invoices/{unitInvoice}/installments": {
+            "delete": {
+                "operationId": "delete_api_v1_invoices_unitinvoice_installments",
+                "tags": [
+                    "Charges & Invoices"
+                ],
+                "summary": "Delete /invoices/{unitInvoice}/installments",
+                "parameters": [
+                    {
+                        "name": "unitInvoice",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "get": {
+                "operationId": "get_api_v1_invoices_unitinvoice_installments",
+                "tags": [
+                    "Charges & Invoices"
+                ],
+                "summary": "Get /invoices/{unitInvoice}/installments",
+                "parameters": [
+                    {
+                        "name": "unitInvoice",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "operationId": "put_api_v1_invoices_unitinvoice_installments",
+                "tags": [
+                    "Charges & Invoices"
+                ],
+                "summary": "Put /invoices/{unitInvoice}/installments",
+                "parameters": [
+                    {
+                        "name": "unitInvoice",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "example": {
+                                "installments": [
+                                    {
+                                        "due_date": "2026-09-20",
+                                        "amount": 500000
+                                    },
+                                    {
+                                        "due_date": "2026-10-20",
+                                        "amount": 500000
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/invoices/{unitInvoice}/issue": {
             "post": {
                 "operationId": "post_api_v1_invoices_unitinvoice_issue",
@@ -5462,7 +5842,328 @@
                     {
                         "bearerAuth": []
                     }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "example": {
+                                "amount": 100000,
+                                "method": "online",
+                                "idempotency_key": "{{invoice_payment_idempotency_key}}",
+                                "description": "Postman invoice payment"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/invoices/{unitInvoice}/penalty-adjustments": {
+            "post": {
+                "operationId": "post_api_v1_invoices_unitinvoice_penalty_adjustments",
+                "tags": [
+                    "Charges & Invoices"
+                ],
+                "summary": "Post /invoices/{unitInvoice}/penalty-adjustments",
+                "parameters": [
+                    {
+                        "name": "unitInvoice",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "example": {
+                                "action": "add",
+                                "amount": 50000,
+                                "reason": "Late payment penalty"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/loyalty-claims/{loyaltyRewardClaim}/approve": {
+            "post": {
+                "operationId": "post_api_v1_loyalty_claims_loyaltyrewardclaim_approve",
+                "tags": [
+                    "General"
+                ],
+                "summary": "Post /loyalty-claims/{loyaltyRewardClaim}/approve",
+                "parameters": [
+                    {
+                        "name": "loyaltyRewardClaim",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
                 ]
+            }
+        },
+        "/loyalty-claims/{loyaltyRewardClaim}/reject": {
+            "post": {
+                "operationId": "post_api_v1_loyalty_claims_loyaltyrewardclaim_reject",
+                "tags": [
+                    "General"
+                ],
+                "summary": "Post /loyalty-claims/{loyaltyRewardClaim}/reject",
+                "parameters": [
+                    {
+                        "name": "loyaltyRewardClaim",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "example": {
+                                "reason": "Reward is temporarily unavailable."
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/loyalty/claims": {
+            "get": {
+                "operationId": "get_api_v1_loyalty_claims",
+                "tags": [
+                    "General"
+                ],
+                "summary": "Get /loyalty/claims",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/loyalty/me": {
+            "get": {
+                "operationId": "get_api_v1_loyalty_me",
+                "tags": [
+                    "General"
+                ],
+                "summary": "Get /loyalty/me",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/loyalty/rewards": {
+            "get": {
+                "operationId": "get_api_v1_loyalty_rewards",
+                "tags": [
+                    "General"
+                ],
+                "summary": "Get /loyalty/rewards",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/loyalty/rewards/{loyaltyReward}/claims": {
+            "post": {
+                "operationId": "post_api_v1_loyalty_rewards_loyaltyreward_claims",
+                "tags": [
+                    "General"
+                ],
+                "summary": "Post /loyalty/rewards/{loyaltyReward}/claims",
+                "parameters": [
+                    {
+                        "name": "loyaltyReward",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "example": {
+                                "idempotency_key": "{{loyalty_claim_idempotency_key}}"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/meeting-minutes": {
@@ -5846,6 +6547,45 @@
                     "General"
                 ],
                 "summary": "Delete /notification-devices/{userDevice}",
+                "parameters": [
+                    {
+                        "name": "userDevice",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "patch_api_v1_notification_devices_userdevice",
+                "tags": [
+                    "General"
+                ],
+                "summary": "Patch /notification-devices/{userDevice}",
                 "parameters": [
                     {
                         "name": "userDevice",
@@ -6300,6 +7040,47 @@
                         }
                     }
                 }
+            }
+        },
+        "/payments/{payment}/receipt": {
+            "get": {
+                "operationId": "get_api_v1_payments_payment_receipt",
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get /payments/{payment}/receipt",
+                "parameters": [
+                    {
+                        "name": "payment",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/payments/{payment}/verify": {

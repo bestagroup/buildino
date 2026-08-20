@@ -224,13 +224,25 @@
     const init =
         (table) => {
             if (
-                ! window.DataTable
-                || table.dataset
+                table.dataset
                     .dtReady
                 === "1"
             ) {
                 return;
             }
+
+            if (
+                ! window.DataTable
+            ) {
+                table.dataset
+                    .dtWaiting =
+                    "1";
+
+                return;
+            }
+
+            delete table.dataset
+                .dtWaiting;
 
             const columns =
                 decodeColumns(
@@ -261,11 +273,6 @@
                             .dtCountTarget
                     )
                     : null;
-
-            shell?.setAttribute(
-                "aria-busy",
-                "true"
-            );
 
             const instance =
                 new window.DataTable(
@@ -327,26 +334,17 @@
                                             ?.message
                                         || "دریافت اطلاعات جدول ناموفق بود.";
 
-                                    loading
-                                        ?.setAttribute(
-                                            "hidden",
-                                            "hidden"
-                                        );
-
-                                    shell?.setAttribute(
-                                        "aria-busy",
-                                        "false"
-                                    );
-
                                     if (
-                                        window.BuildinoUI
-                                        && typeof window.BuildinoUI.toast
-                                            === "function"
+                                        window.Swal
                                     ) {
-                                        window.BuildinoUI.toast(
-                                            `خطای جدول: ${message}`,
-                                            "danger"
-                                        );
+                                        window.Swal.fire({
+                                            icon:
+                                                "error",
+                                            title:
+                                                "خطای جدول",
+                                            text:
+                                                message,
+                                        });
                                     }
                                 },
                         },
@@ -363,11 +361,6 @@
                                         "hidden",
                                         "hidden"
                                     );
-
-                                shell?.setAttribute(
-                                    "aria-busy",
-                                    "false"
-                                );
 
                                 if (
                                     countTarget
@@ -401,18 +394,10 @@
                     (field) => {
                         field.addEventListener(
                             "change",
-                            () => {
-                                loading?.removeAttribute(
-                                    "hidden"
-                                );
-                                shell?.setAttribute(
-                                    "aria-busy",
-                                    "true"
-                                );
+                            () =>
                                 instance
                                     .ajax
-                                    .reload();
-                            }
+                                    .reload()
                         );
                     }
                 );
@@ -434,14 +419,6 @@
                                         "";
                                 }
                             );
-
-                        loading?.removeAttribute(
-                            "hidden"
-                        );
-                        shell?.setAttribute(
-                            "aria-busy",
-                            "true"
-                        );
 
                         instance
                             .search(
@@ -475,6 +452,16 @@
     } else {
         boot();
     }
+
+    document.addEventListener(
+        "buildino:datatables-ready",
+        boot
+    );
+
+    window.addEventListener(
+        "load",
+        boot
+    );
 
     window.BuildinoDataTables = {
         boot,

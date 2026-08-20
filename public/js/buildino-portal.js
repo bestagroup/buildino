@@ -142,14 +142,24 @@
             tone = "success"
         ) => {
             if (
-                window.BuildinoUI
-                && typeof window.BuildinoUI.toast
-                    === "function"
+                window.Swal
             ) {
-                window.BuildinoUI.toast(
-                    message,
-                    tone
-                );
+                window.Swal.fire({
+                    toast: true,
+                    position:
+                        "top-start",
+                    icon:
+                        tone,
+                    title:
+                        message,
+                    showConfirmButton:
+                        false,
+                    timer:
+                        3500,
+                    timerProgressBar:
+                        true,
+                });
+
                 return;
             }
 
@@ -164,19 +174,25 @@
             text
         ) => {
             if (
-                window.BuildinoUI
-                && typeof window.BuildinoUI.confirm
-                    === "function"
+                window.Swal
             ) {
-                return window.BuildinoUI.confirm({
-                    title,
-                    text,
-                    icon: "question",
-                    confirmButtonText:
-                        "بله، ادامه بده",
-                    cancelButtonText:
-                        "انصراف",
-                });
+                const result =
+                    await window.Swal.fire({
+                        title,
+                        text,
+                        icon:
+                            "question",
+                        showCancelButton:
+                            true,
+                        confirmButtonText:
+                            "بله، ادامه بده",
+                        cancelButtonText:
+                            "انصراف",
+                        reverseButtons:
+                            true,
+                    });
+
+                return result.isConfirmed;
             }
 
             return window.confirm(
@@ -194,56 +210,18 @@
             }
 
             if (state) {
-                const form =
-                    button.closest(
-                        "form"
-                    );
-
-                if (
-                    form
-                    && window.BuildinoUI
-                    && typeof window.BuildinoUI.clearValidationErrors
-                        === "function"
-                ) {
-                    window.BuildinoUI.clearValidationErrors(
-                        form
-                    );
-                }
-
                 button.dataset
                     .originalText =
                     button.textContent;
 
-                if (
-                    window.BuildinoUI
-                    && typeof window.BuildinoUI.setLoading
-                        === "function"
-                ) {
-                    window.BuildinoUI.setLoading(
-                        button,
-                        true
-                    );
-                } else {
-                    button.disabled =
-                        true;
-                }
+                button.disabled =
+                    true;
 
                 button.textContent =
                     "در حال انجام...";
             } else {
-                if (
-                    window.BuildinoUI
-                    && typeof window.BuildinoUI.setLoading
-                        === "function"
-                ) {
-                    window.BuildinoUI.setLoading(
-                        button,
-                        false
-                    );
-                } else {
-                    button.disabled =
-                        false;
-                }
+                button.disabled =
+                    false;
 
                 if (
                     button.dataset
@@ -252,40 +230,9 @@
                     button.textContent =
                         button.dataset
                             .originalText;
-                    delete button.dataset
-                        .originalText;
                 }
             }
         };
-
-    const handleFormError = (form, error) => {
-        if (
-            error?.status === 422
-            && error?.payload?.errors
-            && window.BuildinoUI
-            && typeof window.BuildinoUI.applyValidationErrors
-                === "function"
-        ) {
-            const applied =
-                window.BuildinoUI.applyValidationErrors(
-                    form,
-                    error.payload.errors
-                );
-
-            if (applied > 0) {
-                toast(
-                    "لطفاً خطاهای مشخص‌شده در فرم را اصلاح کنید.",
-                    "warning"
-                );
-                return;
-            }
-        }
-
-        toast(
-            error.message,
-            "error"
-        );
-    };
 
     const closeModal =
         (form) => {
@@ -663,9 +610,9 @@
             } catch (
                 error
             ) {
-                handleFormError(
-                    form,
-                    error
+                toast(
+                    error.message,
+                    "error"
                 );
             } finally {
                 submitting(
@@ -752,9 +699,9 @@
             } catch (
                 error
             ) {
-                handleFormError(
-                    form,
-                    error
+                toast(
+                    error.message,
+                    "error"
                 );
             } finally {
                 submitting(
@@ -848,9 +795,9 @@
             } catch (
                 error
             ) {
-                handleFormError(
-                    form,
-                    error
+                toast(
+                    error.message,
+                    "error"
                 );
             } finally {
                 submitting(
@@ -1010,9 +957,9 @@
                 } catch (
                     error
                 ) {
-                    handleFormError(
-                        form,
-                        error
+                    toast(
+                        error.message,
+                        "error"
                     );
                 } finally {
                     submitting(
@@ -1190,9 +1137,9 @@
             } catch (
                 error
             ) {
-                handleFormError(
-                    form,
-                    error
+                toast(
+                    error.message,
+                    "error"
                 );
             } finally {
                 submitting(
@@ -1320,9 +1267,9 @@
             } catch (
                 error
             ) {
-                handleFormError(
-                    form,
-                    error
+                toast(
+                    error.message,
+                    "error"
                 );
             } finally {
                 submitting(
@@ -1479,9 +1426,9 @@
             } catch (
                 error
             ) {
-                handleFormError(
-                    form,
-                    error
+                toast(
+                    error.message,
+                    "error"
                 );
             } finally {
                 submitting(
@@ -1525,13 +1472,6 @@
             );
 
             try {
-                const idempotencyKey =
-                    form.dataset.idempotencyKey
-                    || `portal-provider-payout:${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-                form.dataset.idempotencyKey =
-                    idempotencyKey;
-
                 await api(
                     "/api/v1/provider/payouts",
                     {
@@ -1555,8 +1495,6 @@
                                     ),
                                 currency:
                                     "IRR",
-                                idempotency_key:
-                                    idempotencyKey,
                             }),
                     }
                 );
@@ -1568,9 +1506,9 @@
             } catch (
                 error
             ) {
-                handleFormError(
-                    form,
-                    error
+                toast(
+                    error.message,
+                    "error"
                 );
             } finally {
                 submitting(
@@ -1916,9 +1854,9 @@
             } catch (
                 error
             ) {
-                handleFormError(
-                    form,
-                    error
+                toast(
+                    error.message,
+                    "error"
                 );
             } finally {
                 submitting(
@@ -2674,9 +2612,9 @@
                 } catch (
                     error
                 ) {
-                    handleFormError(
-                        form,
-                        error
+                    toast(
+                        error.message,
+                        "error"
                     );
                 } finally {
                     submitting(
@@ -2738,6 +2676,56 @@
                             );
                             button.disabled =
                                 false;
+                        }
+                    }
+                );
+            }
+        );
+
+    $$('[data-loyalty-claim]')
+        .forEach(
+            (button) => {
+                button.addEventListener(
+                    "click",
+                    async () => {
+                        const confirmed =
+                            await confirmAction(
+                                "دریافت جایزه",
+                                "امتیاز لازم از حساب شما کسر و درخواست جایزه ثبت شود؟"
+                            );
+
+                        if (! confirmed) {
+                            return;
+                        }
+
+                        button.disabled = true;
+
+                        try {
+                            await api(
+                                `/api/v1/loyalty/rewards/${encodeURIComponent(button.dataset.rewardId)}/claims`,
+                                {
+                                    method: "POST",
+                                    body: JSON.stringify({
+                                        idempotency_key:
+                                            `portal-${button.dataset.rewardId}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                                    }),
+                                }
+                            );
+
+                            toast(
+                                "درخواست جایزه ثبت شد."
+                            );
+
+                            window.setTimeout(
+                                () => window.location.reload(),
+                                650
+                            );
+                        } catch (error) {
+                            toast(
+                                error.message,
+                                "error"
+                            );
+                            button.disabled = false;
                         }
                     }
                 );

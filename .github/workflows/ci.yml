@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      APP_ENV: testing
+      APP_DEBUG: false
+      DB_CONNECTION: sqlite
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      SMS_PROVIDER: log
+      PUSH_PROVIDER: log
+      FILE_SCAN_ENABLED: false
+      PAYMENT_GATEWAY_GENERIC_ENABLED: false
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer:v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Validate dependency manifests
+        run: composer validate --strict
+
+      - name: Audit PHP dependencies
+        run: composer audit --no-interaction
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+          php artisan migrate --force
+
+      - name: Lint PHP source
+        run: find app config database routes tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Run application tests
+        run: php artisan test
+
+      - name: Run release audits
+        run: php artisan release:gate
+
+      - name: Verify generated API artifacts are current
+        run: |
+          php artisan api:contract:export
+          git diff --exit-code -- docs/api postman
+
+  container:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      DB_DATABASE: buildino
+      DB_USERNAME: buildino
+      DB_PASSWORD: ci-database-password
+      DB_ROOT_PASSWORD: ci-root-password
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Prepare production environment template
+        run: cp .env.production.example .env.production
+
+      - name: Validate production Compose model
+        run: docker compose --env-file .env.production -f compose.production.yml config --quiet
+
+      - name: Build application image
+        run: docker build --target application --tag buildino/app:ci .
+
+      - name: Build web image
+        run: docker build --target web --tag buildino/web:ci .
+
+  mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Analyze mobile source
+        working-directory: mobile
+        run: flutter analyze
+
+      - name: Run mobile tests
+        working-directory: mobile
+        run: flutter test

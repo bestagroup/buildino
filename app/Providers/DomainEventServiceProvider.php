@@ -12,6 +12,7 @@ use App\Events\SupportTicketMessageAdded;
 use App\Events\WalletTransferCompleted;
 use App\Listeners\NotifyInvoiceIssued;
 use App\Listeners\NotifyPaymentVerified;
+use App\Listeners\AwardPaymentLoyaltyPoints;
 use App\Listeners\NotifyReservationApproved;
 use App\Listeners\NotifyReservationCreated;
 use App\Listeners\NotifySupportTicketAssigned;
@@ -24,7 +25,10 @@ class DomainEventServiceProvider extends ServiceProvider
 {
     protected $listen = [
         InvoiceIssued::class => [NotifyInvoiceIssued::class],
-        PaymentVerified::class => [NotifyPaymentVerified::class],
+        PaymentVerified::class => [
+            AwardPaymentLoyaltyPoints::class,
+            NotifyPaymentVerified::class,
+        ],
         FacilityReservationCreated::class => [NotifyReservationCreated::class],
         FacilityReservationApproved::class => [NotifyReservationApproved::class],
         SupportTicketAssigned::class => [NotifySupportTicketAssigned::class],

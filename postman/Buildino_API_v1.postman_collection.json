@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "a71c6045-c2c9-494d-8c3b-0a6aff824b16",
+        "_postman_id": "84339641-9787-4fde-9174-fb3033f3451b",
         "name": "Buildino API V1",
         "description": "Runtime-aligned Buildino API V1 collection. Generated from Laravel routes.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -2963,6 +2963,237 @@
                     ]
                 },
                 {
+                    "name": "GET /buildings/{building}/loyalty-claims",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/buildings/{{building_id}}/loyalty-claims",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "buildings",
+                                "{{building_id}}",
+                                "loyalty-claims"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "GET /buildings/{building}/loyalty-rewards",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/buildings/{{building_id}}/loyalty-rewards",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "buildings",
+                                "{{building_id}}",
+                                "loyalty-rewards"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "POST /buildings/{building}/loyalty-rewards",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/buildings/{{building_id}}/loyalty-rewards",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "buildings",
+                                "{{building_id}}",
+                                "loyalty-rewards"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"Service discount\",\n    \"required_points\": 100,\n    \"is_active\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "GET /buildings/{building}/loyalty-rules",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/buildings/{{building_id}}/loyalty-rules",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "buildings",
+                                "{{building_id}}",
+                                "loyalty-rules"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "POST /buildings/{building}/loyalty-rules",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/buildings/{{building_id}}/loyalty-rules",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "buildings",
+                                "{{building_id}}",
+                                "loyalty-rules"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"event_type\": \"payment_verified\",\n    \"points\": 1,\n    \"configuration\": {\n        \"amount_step\": 100000,\n        \"maximum_points\": 500,\n        \"expires_days\": 365\n    },\n    \"is_active\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
                     "name": "GET /buildings/{building}/payments",
                     "request": {
                         "method": "GET",
@@ -4279,6 +4510,142 @@
                     ]
                 },
                 {
+                    "name": "DELETE /invoices/{unitInvoice}/installments",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/invoices/{{invoice_id}}/installments",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoices",
+                                "{{invoice_id}}",
+                                "installments"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "GET /invoices/{unitInvoice}/installments",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/invoices/{{invoice_id}}/installments",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoices",
+                                "{{invoice_id}}",
+                                "installments"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PUT /invoices/{unitInvoice}/installments",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/invoices/{{invoice_id}}/installments",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoices",
+                                "{{invoice_id}}",
+                                "installments"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"installments\": [\n        {\n            \"due_date\": \"2026-09-20\",\n            \"amount\": 500000\n        },\n        {\n            \"due_date\": \"2026-10-20\",\n            \"amount\": 500000\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
                     "name": "POST /invoices/{unitInvoice}/issue",
                     "request": {
                         "method": "POST",
@@ -4327,6 +4694,10 @@
                             {
                                 "key": "Accept",
                                 "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -4341,6 +4712,69 @@
                                 "{{invoice_id}}",
                                 "payments"
                             ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"amount\": 100000,\n    \"method\": \"online\",\n    \"idempotency_key\": \"{{invoice_payment_idempotency_key}}\",\n    \"description\": \"Postman invoice payment\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "POST /invoices/{unitInvoice}/penalty-adjustments",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/invoices/{{invoice_id}}/penalty-adjustments",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoices",
+                                "{{invoice_id}}",
+                                "penalty-adjustments"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"action\": \"add\",\n    \"amount\": 50000,\n    \"reason\": \"Late payment penalty\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     },
                     "event": [
@@ -5986,6 +6420,276 @@
                     ]
                 },
                 {
+                    "name": "POST /loyalty-claims/{loyaltyRewardClaim}/approve",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/loyalty-claims/{{loyalty_claim_id}}/approve",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "loyalty-claims",
+                                "{{loyalty_claim_id}}",
+                                "approve"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "POST /loyalty-claims/{loyaltyRewardClaim}/reject",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/loyalty-claims/{{loyalty_claim_id}}/reject",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "loyalty-claims",
+                                "{{loyalty_claim_id}}",
+                                "reject"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"Reward is temporarily unavailable.\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "GET /loyalty/claims",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/loyalty/claims",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "loyalty",
+                                "claims"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "GET /loyalty/me",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/loyalty/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "loyalty",
+                                "me"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "GET /loyalty/rewards",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/loyalty/rewards",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "loyalty",
+                                "rewards"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "POST /loyalty/rewards/{loyaltyReward}/claims",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/loyalty/rewards/{{loyalty_reward_id}}/claims",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "loyalty",
+                                "rewards",
+                                "{{loyalty_reward_id}}",
+                                "claims"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"idempotency_key\": \"{{loyalty_claim_idempotency_key}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
                     "name": "GET /notification-devices",
                     "request": {
                         "method": "GET",
@@ -6080,6 +6784,46 @@
                     "name": "DELETE /notification-devices/{userDevice}",
                     "request": {
                         "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notification-devices/{{notification_device_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notification-devices",
+                                "{{notification_device_id}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PATCH /notification-devices/{userDevice}",
+                    "request": {
+                        "method": "PATCH",
                         "header": [
                             {
                                 "key": "Accept",
@@ -6929,6 +7673,47 @@
                                     "  const json = pm.response.json();",
                                     "  if (json.data?.authority) pm.environment.set(\"gateway_authority\", json.data.authority);",
                                     "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "GET /payments/{payment}/receipt",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments/{{payment_id}}/receipt",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments",
+                                "{{payment_id}}",
+                                "receipt"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
                                 ]
                             }
                         }

@@ -22,6 +22,8 @@ class LoyaltyRewardClaim extends Model
         'processed_by',
         'processed_at',
         'rejection_reason',
+        'idempotency_key',
+        'loyalty_transaction_id',
     ];
 
     protected function casts(): array
@@ -46,5 +48,13 @@ class LoyaltyRewardClaim extends Model
     public function processedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'processed_by');
+    }
+
+    public function loyaltyTransaction(): BelongsTo
+    {
+        return $this->belongsTo(
+            LoyaltyTransaction::class,
+            'loyalty_transaction_id'
+        );
     }
 }

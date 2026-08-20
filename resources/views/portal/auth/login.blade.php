@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fa" dir="rtl" class="light-style" data-theme="theme-default" data-assets-path="{{ asset('assets/') }}/">
+<html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8">
     <meta
@@ -14,20 +14,21 @@
         name="robots"
         content="noindex,nofollow"
     >
-    <meta name="color-scheme" content="light dark">
 
     <title>
         ورود به پرتال Buildino
     </title>
-    <!-- Materialize RTL theme extracted from the supplied UI reference -->
-    <link id="template-core-css" rel="stylesheet" href="{{ asset('assets/vendor/css/rtl/core.css') }}">
-    <link id="template-theme-css" rel="stylesheet" href="{{ asset('assets/vendor/css/rtl/theme-default.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/materialize-demo.css') }}">
-
 
     <link
         rel="stylesheet"
         href="{{ asset('css/buildino-fonts.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ config('management_ui.libraries.bootstrap.css') }}"
+        integrity="{{ config('management_ui.libraries.bootstrap.css_integrity') }}"
+        crossorigin="anonymous"
     >
 
     <link
@@ -39,26 +40,9 @@
         rel="stylesheet"
         href="{{ asset('css/buildino-portal.css') }}"
     >
-    <link rel="stylesheet" href="{{ asset('css/buildino-materialize.css') }}">
 </head>
 
-<body class="portal-login-body buildino-materio-shell materialize-auth">
-
-<button
-    type="button"
-    class="materialize-auth-theme-toggle"
-    data-materialize-theme-toggle
-    aria-label="تغییر پوسته"
-    aria-pressed="false"
-    title="تغییر پوسته"
->
-    <span class="theme-icon theme-icon--light">
-        @include('management.partials.icon', ['name' => 'moon', 'size' => 18])
-    </span>
-    <span class="theme-icon theme-icon--dark">
-        @include('management.partials.icon', ['name' => 'sun', 'size' => 18])
-    </span>
-</button>
+<body class="portal-login-body">
 <div class="portal-login-shell">
     <section class="portal-login-showcase">
         <div class="portal-login-showcase__content">
@@ -153,7 +137,7 @@
             </div>
 
             @if ($errors->any())
-                <div class="alert alert-danger portal-login-alert" role="alert" aria-live="assertive">
+                <div class="alert alert-danger portal-login-alert">
                     @foreach ($errors->all() as $error)
                         <div>
                             {{ $error }}
@@ -163,7 +147,7 @@
             @endif
 
             @if (session('status'))
-                <div class="alert alert-success portal-login-alert" role="status" aria-live="polite">
+                <div class="alert alert-success portal-login-alert">
                     {{ session('status') }}
                 </div>
             @endif
@@ -255,8 +239,5 @@
 <script
     src="{{ asset('js/buildino-foundation.js') }}"
 ></script>
-
-<script src="{{ asset('js/buildino-materialize.js') }}" defer></script>
-
 </body>
 </html>

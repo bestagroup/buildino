@@ -1,0 +1,113 @@
+name: buildino
+
+x-app: &app
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: application
+  image: buildino/app:${BUILDINO_IMAGE_TAG:-latest}
+  env_file:
+    - .env.production
+  environment:
+    APP_ENV: production
+    APP_DEBUG: "false"
+    DB_HOST: db
+    DB_PORT: 3306
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    CACHE_STORE: redis
+    QUEUE_CONNECTION: redis
+    FILE_SCAN_ENABLED: "true"
+    FILE_SCAN_DRIVER: clamd_tcp
+    FILE_SCAN_HOST: clamav
+    FILE_SCAN_PORT: 3310
+  restart: unless-stopped
+  volumes:
+    - app_storage:/var/www/html/storage
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    clamav:
+      condition: service_started
+
+services:
+  app:
+    <<: *app
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    image: buildino/web:${BUILDINO_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${APP_HTTP_PORT:-8080}:80"
+    depends_on:
+      app:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/api/v1/system/readiness || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  queue-default:
+    <<: *app
+    command: ["php", "artisan", "queue:work", "--queue=default", "--sleep=2", "--tries=3", "--timeout=90", "--max-time=3600"]
+
+  queue-notifications:
+    <<: *app
+    command: ["php", "artisan", "queue:work", "--queue=notifications", "--sleep=2", "--tries=3", "--timeout=90", "--max-time=3600"]
+
+  queue-reports:
+    <<: *app
+    command: ["php", "artisan", "queue:work", "--queue=reports", "--sleep=2", "--tries=3", "--timeout=300", "--max-time=3600"]
+
+  scheduler:
+    <<: *app
+    command: ["php", "artisan", "schedule:work"]
+
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE:?DB_DATABASE is required}
+      MARIADB_USER: ${DB_USERNAME:?DB_USERNAME is required}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  clamav:
+    image: clamav/clamav:1.4
+    restart: unless-stopped
+    volumes:
+      - clamav_data:/var/lib/clamav
+
+volumes:
+  app_storage:
+  db_data:
+  redis_data:
+  clamav_data:

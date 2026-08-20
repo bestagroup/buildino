@@ -1,12 +1,5 @@
 <!doctype html>
-<html
-    lang="fa"
-    dir="rtl"
-    class="light-style layout-menu-fixed"
-    data-theme="theme-default"
-    data-assets-path="{{ asset('assets/') }}/"
-    data-template="vertical-menu-template"
->
+<html lang="fa" dir="rtl" data-theme="light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -21,25 +14,19 @@
         href="{{ asset('css/buildino-fonts.css') }}"
     >
 
-    <!-- Materialize RTL dashboard system extracted from the supplied UI reference -->
-    <link id="template-core-css" rel="stylesheet" href="{{ asset('assets/vendor/css/rtl/core.css') }}">
-    <link id="template-theme-css" rel="stylesheet" href="{{ asset('assets/vendor/css/rtl/theme-default.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/materialize-demo.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ config('management_ui.libraries.bootstrap.css') }}"
+        integrity="{{ config('management_ui.libraries.bootstrap.css_integrity') }}"
+        crossorigin="anonymous"
+    >
 
     <link
         rel="stylesheet"
         href="{{ config('management_ui.libraries.sweetalert2.css') }}"
     >
 
-    <link
-        rel="stylesheet"
-        href="{{ config('management_ui.libraries.datatables.css') }}"
-    >
-
-    <link
-        rel="stylesheet"
-        href="{{ config('management_ui.libraries.datatables.responsive_css') }}"
-    >
+    @vite('resources/js/app.js')
 
     <link
         rel="stylesheet"
@@ -57,8 +44,6 @@
     >
 
     @stack('styles')
-    <!-- Canonical Materialize adapter; loaded after operational/page styles. -->
-    <link rel="stylesheet" href="{{ asset('css/buildino-materialize.css') }}">
 </head>
 
 @php
@@ -166,41 +151,686 @@
             ->values();
 @endphp
 
-<body class="management-body materialize-buildino">
-<div class="management-shell layout-wrapper layout-content-navbar">
-    <div class="layout-container">
-        @include('management.layouts.partials.sidebar')
+<body class="management-body">
+<div class="management-shell">
+    <aside
+        class="sidebar"
+        id="managementSidebar"
+        aria-label="منوی اصلی مدیریت"
+    >
+        <div class="sidebar__top">
+            <a
+                class="sidebar__brand"
+                href="{{ route('management.dashboard') }}"
+                aria-label="Buildino"
+            >
+                <div class="brand-mark">
+                    <span>B</span>
+                </div>
 
-        <div
-            class="layout-overlay"
-            id="layoutOverlay"
-            data-materialize-overlay
-            aria-hidden="true"
-            role="button"
-            tabindex="-1"
-            aria-label="بستن منو"
-        ></div>
+                <div class="brand-copy">
+                    <strong>Buildino</strong>
+                    <span>سامانه مدیریت هوشمند ساختمان</span>
+                </div>
+            </a>
 
-        <div class="main-area layout-page">
-        <header
-            class="topbar layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
-            id="layout-navbar"
-        >
-            <div class="topbar__start layout-navbar-nav-left">
+            <button
+                type="button"
+                class="sidebar-collapse-button"
+                id="sidebarCollapse"
+                aria-label="جمع کردن منو"
+                title="جمع کردن منو"
+            >
+                @include(
+                    'management.partials.icon',
+                    [
+                        'name' => 'chevron',
+                        'size' => 18,
+                    ]
+                )
+            </button>
+        </div>
+
+        <div class="sidebar__identity">
+            <div class="avatar avatar--sidebar">
+                {{ mb_substr(
+                    $user->first_name
+                        ?: $user->last_name
+                        ?: 'U',
+                    0,
+                    1
+                ) }}
+            </div>
+
+            <div class="sidebar__identity-copy">
+                <strong>
+                    {{
+                        trim(
+                            ($user->first_name ?? '')
+                            . ' '
+                            . ($user->last_name ?? '')
+                        )
+                        ?: $user->mobile
+                    }}
+                </strong>
+
+                <span>
+                    {{
+                        data_get(
+                            $ui,
+                            'primary_role.display_name',
+                            'کاربر سامانه'
+                        )
+                    }}
+                </span>
+            </div>
+
+            <span
+                class="access-dot"
+                title="{{ $ui['access_label'] ?? 'دسترسی فعال' }}"
+            ></span>
+        </div>
+
+        <div class="sidebar__scope">
+            @include(
+                'management.partials.icon',
+                [
+                    'name' => 'shield',
+                    'size' => 15,
+                ]
+            )
+
+            <span>
+                {{ $ui['access_label'] ?? 'دسترسی مدیریتی' }}
+            </span>
+        </div>
+
+        <nav class="sidebar__nav">
+            <section class="nav-group is-open" data-nav-group="general">
                 <button
                     type="button"
-                    class="materialize-mobile-toggle nav-link d-xl-none"
-                    data-materialize-menu-toggle
-                    aria-expanded="false"
-                    aria-controls="layout-menu"
-                    aria-label="نمایش منو"
+                    class="nav-group__title"
+                    data-nav-toggle
                 >
-                    @include('management.partials.icon', ['name' => 'menu', 'size' => 22])
+                    <span>عمومی</span>
+                    @include(
+                        'management.partials.icon',
+                        [
+                            'name' => 'chevron',
+                            'size' => 14,
+                        ]
+                    )
                 </button>
 
-                <div class="materialize-navbar-context">
-                    <strong>@yield('page-title', 'پنل مدیریتی')</strong>
-                    <small>{{ $ui['access_label'] ?? 'Buildino Management' }}</small>
+                <div class="nav-group__items">
+                    <a
+                        href="{{ route('management.dashboard') }}"
+                        class="nav-link {{
+                            request()->routeIs('management.dashboard')
+                                ? 'is-active'
+                                : ''
+                        }}"
+                        data-nav-key="dashboard"
+                    >
+                        <span class="nav-link__icon">
+                            @include(
+                                'management.partials.icon',
+                                ['name' => 'home']
+                            )
+                        </span>
+
+                        <span class="nav-link__label">
+                            داشبورد
+                        </span>
+                    </a>
+
+                    @if ($nav['operations'] ?? false)
+                        <a
+                            href="{{ route('management.operations.index') }}"
+                            class="nav-link {{
+                                request()->routeIs('management.operations.index')
+                                    ? 'is-active'
+                                    : ''
+                            }}"
+                            data-nav-key="operations"
+                        >
+                            <span class="nav-link__icon">
+                                @include(
+                                    'management.partials.icon',
+                                    ['name' => 'grid']
+                                )
+                            </span>
+
+                            <span class="nav-link__label">
+                                مرکز عملیات
+                            </span>
+                        </a>
+                    @endif
+                </div>
+            </section>
+
+            @if (
+                ($nav['structure'] ?? false)
+                || ($nav['residents'] ?? false)
+                || ($nav['guests'] ?? false)
+                || ($nav['facilities'] ?? false)
+            )
+                <section
+                    class="nav-group {{
+                        $resourceActive([
+                            'complexes',
+                            'buildings',
+                            'blocks',
+                            'floors',
+                            'units',
+                            'ownerships',
+                            'occupancies',
+                            'invitations',
+                            'guest-visits',
+                            'facilities',
+                            'facility-schedules',
+                            'facility-time-slots',
+                            'facility-rules',
+                            'facility-blackouts',
+                            'reservations',
+                        ])
+                            ? 'is-open'
+                            : ''
+                    }}"
+                    data-nav-group="building"
+                >
+                    <button
+                        type="button"
+                        class="nav-group__title"
+                        data-nav-toggle
+                    >
+                        <span>ساختمان و ساکنین</span>
+                        @include(
+                            'management.partials.icon',
+                            [
+                                'name' => 'chevron',
+                                'size' => 14,
+                            ]
+                        )
+                    </button>
+
+                    <div class="nav-group__items">
+                        @if ($nav['structure'] ?? false)
+                            <a
+                                href="{{
+                                    route(
+                                        'management.operations.show',
+                                        $structureTarget
+                                            ?? 'buildings'
+                                    )
+                                }}"
+                                class="nav-link {{
+                                    $resourceActive([
+                                        'complexes',
+                                        'buildings',
+                                        'blocks',
+                                        'floors',
+                                        'units',
+                                    ])
+                                        ? 'is-active'
+                                        : ''
+                                }}"
+                                data-nav-key="structure"
+                            >
+                                <span class="nav-link__icon">
+                                    @include(
+                                        'management.partials.icon',
+                                        ['name' => 'building']
+                                    )
+                                </span>
+                                <span class="nav-link__label">
+                                    ساختار مجتمع
+                                </span>
+                            </a>
+                        @endif
+
+                        @if ($nav['residents'] ?? false)
+                            <a
+                                href="{{
+                                    route(
+                                        'management.operations.show',
+                                        'occupancies'
+                                    )
+                                }}"
+                                class="nav-link {{
+                                    $resourceActive([
+                                        'ownerships',
+                                        'occupancies',
+                                        'invitations',
+                                    ])
+                                        ? 'is-active'
+                                        : ''
+                                }}"
+                                data-nav-key="residents"
+                            >
+                                <span class="nav-link__icon">
+                                    @include(
+                                        'management.partials.icon',
+                                        ['name' => 'users']
+                                    )
+                                </span>
+                                <span class="nav-link__label">
+                                    مالکین و ساکنین
+                                </span>
+                            </a>
+                        @endif
+
+                        @if ($nav['guests'] ?? false)
+                            <a
+                                href="{{
+                                    route(
+                                        'management.operations.show',
+                                        'guest-visits'
+                                    )
+                                }}"
+                                class="nav-link {{
+                                    $currentResource === 'guest-visits'
+                                        ? 'is-active'
+                                        : ''
+                                }}"
+                                data-nav-key="guests"
+                            >
+                                <span class="nav-link__icon">
+                                    @include(
+                                        'management.partials.icon',
+                                        ['name' => 'user-plus']
+                                    )
+                                </span>
+                                <span class="nav-link__label">
+                                    مهمان و تردد
+                                </span>
+                            </a>
+                        @endif
+
+                        @if ($nav['facilities'] ?? false)
+                            <a
+                                href="{{
+                                    route(
+                                        'management.operations.show',
+                                        'facilities'
+                                    )
+                                }}"
+                                class="nav-link {{
+                                    $resourceActive([
+                                        'facilities',
+                                        'facility-schedules',
+                                        'facility-time-slots',
+                                        'facility-rules',
+                                        'facility-blackouts',
+                                        'reservations',
+                                    ])
+                                        ? 'is-active'
+                                        : ''
+                                }}"
+                                data-nav-key="facilities"
+                            >
+                                <span class="nav-link__icon">
+                                    @include(
+                                        'management.partials.icon',
+                                        ['name' => 'calendar']
+                                    )
+                                </span>
+                                <span class="nav-link__label">
+                                    امکانات و رزرو
+                                </span>
+                            </a>
+                        @endif
+                    </div>
+                </section>
+            @endif
+
+            @if (
+                ($nav['finance'] ?? false)
+                || ($nav['services'] ?? false)
+                || ($nav['support'] ?? false)
+            )
+                <section
+                    class="nav-group {{
+                        $resourceActive([
+                            'charge-formulas',
+                            'charge-periods',
+                            'invoices',
+                            'expenses',
+                            'incomes',
+                            'payments',
+                            'bank-accounts',
+                            'wallet-payouts',
+                            'bill-payments',
+                            'service-requests',
+                            'support-tickets',
+                            'support-categories',
+                            'support-sla',
+                        ])
+                            ? 'is-open'
+                            : ''
+                    }}"
+                    data-nav-group="operations"
+                >
+                    <button
+                        type="button"
+                        class="nav-group__title"
+                        data-nav-toggle
+                    >
+                        <span>عملیات سازمانی</span>
+                        @include(
+                            'management.partials.icon',
+                            [
+                                'name' => 'chevron',
+                                'size' => 14,
+                            ]
+                        )
+                    </button>
+
+                    <div class="nav-group__items">
+                        @if ($nav['finance'] ?? false)
+                            <a
+                                href="{{
+                                    route(
+                                        'management.operations.show',
+                                        'invoices'
+                                    )
+                                }}"
+                                class="nav-link {{
+                                    $resourceActive([
+                                        'charge-formulas',
+                                        'charge-periods',
+                                        'invoices',
+                                        'expenses',
+                                        'incomes',
+                                        'payments',
+                                        'bank-accounts',
+                                        'wallet-payouts',
+                                        'bill-payments',
+                                    ])
+                                        ? 'is-active'
+                                        : ''
+                                }}"
+                                data-nav-key="finance"
+                            >
+                                <span class="nav-link__icon">
+                                    @include(
+                                        'management.partials.icon',
+                                        ['name' => 'wallet']
+                                    )
+                                </span>
+                                <span class="nav-link__label">
+                                    مالی و کیف پول
+                                </span>
+                            </a>
+                        @endif
+
+                        @if ($nav['services'] ?? false)
+                            <a
+                                href="{{
+                                    route(
+                                        'management.operations.show',
+                                        'service-requests'
+                                    )
+                                }}"
+                                class="nav-link {{
+                                    $currentResource === 'service-requests'
+                                        ? 'is-active'
+                                        : ''
+                                }}"
+                                data-nav-key="services"
+                            >
+                                <span class="nav-link__icon">
+                                    @include(
+                                        'management.partials.icon',
+                                        ['name' => 'tools']
+                                    )
+                                </span>
+                                <span class="nav-link__label">
+                                    خدمات ساختمان
+                                </span>
+                            </a>
+                        @endif
+
+                        @if ($nav['support'] ?? false)
+                            <a
+                                href="{{
+                                    route(
+                                        'management.operations.show',
+                                        'support-tickets'
+                                    )
+                                }}"
+                                class="nav-link {{
+                                    $resourceActive([
+                                        'support-tickets',
+                                        'support-categories',
+                                        'support-sla',
+                                    ])
+                                        ? 'is-active'
+                                        : ''
+                                }}"
+                                data-nav-key="support"
+                            >
+                                <span class="nav-link__icon">
+                                    @include(
+                                        'management.partials.icon',
+                                        ['name' => 'support']
+                                    )
+                                </span>
+                                <span class="nav-link__label">
+                                    پشتیبانی و SLA
+                                </span>
+                            </a>
+                        @endif
+                    </div>
+                </section>
+            @endif
+
+            @if (
+                ($nav['content'] ?? false)
+                || ($nav['reports'] ?? false)
+                || ($nav['access'] ?? false)
+                || ($nav['system'] ?? false)
+            )
+                <section
+                    class="nav-group {{
+                        $resourceActive([
+                            'announcements',
+                            'documents',
+                            'meeting-minutes',
+                            'notification-preferences',
+                            'report-exports',
+                            'users',
+                            'roles',
+                            'role-assignments',
+                        ])
+                            ? 'is-open'
+                            : ''
+                    }}"
+                    data-nav-group="administration"
+                >
+                    <button
+                        type="button"
+                        class="nav-group__title"
+                        data-nav-toggle
+                    >
+                        <span>مدیریت سامانه</span>
+                        @include(
+                            'management.partials.icon',
+                            [
+                                'name' => 'chevron',
+                                'size' => 14,
+                            ]
+                        )
+                    </button>
+
+                    <div class="nav-group__items">
+                        @if ($nav['content'] ?? false)
+                            <a
+                                href="{{
+                                    route(
+                                        'management.operations.show',
+                                        'announcements'
+                                    )
+                                }}"
+                                class="nav-link {{
+                                    $resourceActive([
+                                        'announcements',
+                                        'documents',
+                                        'meeting-minutes',
+                                        'notification-preferences',
+                                    ])
+                                        ? 'is-active'
+                                        : ''
+                                }}"
+                                data-nav-key="content"
+                            >
+                                <span class="nav-link__icon">
+                                    @include(
+                                        'management.partials.icon',
+                                        ['name' => 'bell']
+                                    )
+                                </span>
+                                <span class="nav-link__label">
+                                    اطلاع‌رسانی و اسناد
+                                </span>
+                            </a>
+                        @endif
+
+                        @if ($nav['reports'] ?? false)
+                            <a
+                                href="{{
+                                    route(
+                                        'management.operations.show',
+                                        'report-exports'
+                                    )
+                                }}"
+                                class="nav-link {{
+                                    $currentResource === 'report-exports'
+                                        ? 'is-active'
+                                        : ''
+                                }}"
+                                data-nav-key="reports"
+                            >
+                                <span class="nav-link__icon">
+                                    @include(
+                                        'management.partials.icon',
+                                        ['name' => 'chart']
+                                    )
+                                </span>
+                                <span class="nav-link__label">
+                                    گزارش‌ها
+                                </span>
+                            </a>
+                        @endif
+
+                        @if ($nav['access'] ?? false)
+                            <a
+                                href="{{
+                                    route(
+                                        'management.operations.show',
+                                        'users'
+                                    )
+                                }}"
+                                class="nav-link {{
+                                    $resourceActive([
+                                        'users',
+                                        'roles',
+                                        'role-assignments',
+                                    ])
+                                        ? 'is-active'
+                                        : ''
+                                }}"
+                                data-nav-key="access"
+                            >
+                                <span class="nav-link__icon">
+                                    @include(
+                                        'management.partials.icon',
+                                        ['name' => 'key']
+                                    )
+                                </span>
+                                <span class="nav-link__label">
+                                    کاربران و دسترسی
+                                </span>
+                            </a>
+                        @endif
+
+                        @if ($nav['system'] ?? false)
+                            <a
+                                href="{{
+                                    route(
+                                        'management.dashboard'
+                                    )
+                                }}#system"
+                                class="nav-link"
+                                data-nav-key="system"
+                            >
+                                <span class="nav-link__icon">
+                                    @include(
+                                        'management.partials.icon',
+                                        ['name' => 'health']
+                                    )
+                                </span>
+                                <span class="nav-link__label">
+                                    سلامت و کنترل
+                                </span>
+                            </a>
+                        @endif
+                    </div>
+                </section>
+            @endif
+        </nav>
+
+        <div class="sidebar__footer">
+            <div class="sidebar__version">
+                <span class="status-indicator"></span>
+                <div>
+                    <strong>Buildino v1.0</strong>
+                    <span>سامانه آماده بهره‌برداری</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <button
+        type="button"
+        class="sidebar-backdrop"
+        id="sidebarBackdrop"
+        aria-label="بستن منو"
+    ></button>
+
+    <main class="main-area">
+        <header class="topbar">
+            <div class="topbar__start">
+                <button
+                    type="button"
+                    class="icon-button mobile-menu"
+                    id="sidebarToggle"
+                    aria-label="نمایش منو"
+                >
+                    @include(
+                        'management.partials.icon',
+                        ['name' => 'menu']
+                    )
+                </button>
+
+                <div class="page-heading">
+                    <span class="page-heading__eyebrow">
+                        BUILDINO MANAGEMENT
+                    </span>
+
+                    <h1>
+                        @yield(
+                            'page-title',
+                            'پنل مدیریتی'
+                        )
+                    </h1>
+
+                    <p>
+                        @yield(
+                            'page-subtitle',
+                            'مدیریت و پایش سامانه Buildino'
+                        )
+                    </p>
                 </div>
             </div>
 
@@ -604,8 +1234,7 @@
                 <button
                     type="button"
                     class="icon-button"
-                    id="materializeThemeToggle" data-materialize-theme-toggle
-                    aria-pressed="false"
+                    id="themeToggle"
                     aria-label="تغییر پوسته"
                     title="تغییر پوسته"
                 >
@@ -766,23 +1395,10 @@
             </div>
         </header>
 
-        <div class="content-wrapper">
-            <main class="page-content container-xxl flex-grow-1 container-p-y">
-                <div class="materialize-content-header">
-                    <div class="materialize-content-header__copy">
-                        <h1>@yield('page-title', 'پنل مدیریتی')</h1>
-                        <p>@yield('page-subtitle', 'مدیریت و پایش سامانه Buildino')</p>
-                    </div>
-                    <div class="materialize-content-header__breadcrumb">
-                        Buildino / <b>@yield('page-title', 'مدیریت')</b>
-                    </div>
-                </div>
-
-                @yield('content')
-            </main>
+        <div class="page-content">
+            @yield('content')
         </div>
-        </div>
-    </div>
+    </main>
 </div>
 
 <div
@@ -864,26 +1480,6 @@
 ></script>
 
 <script
-    src="{{ config('management_ui.libraries.datatables.js') }}"
-    defer
-></script>
-
-<script
-    src="{{ config('management_ui.libraries.datatables.bootstrap5_js') }}"
-    defer
-></script>
-
-<script
-    src="{{ config('management_ui.libraries.datatables.responsive_js') }}"
-    defer
-></script>
-
-<script
-    src="{{ config('management_ui.libraries.datatables.responsive_bootstrap5_js') }}"
-    defer
-></script>
-
-<script
     src="{{ config('management_ui.libraries.sweetalert2.js') }}"
     defer
 ></script>
@@ -909,7 +1505,5 @@
 ></script>
 
 @stack('scripts')
-
-<script src="{{ asset('js/buildino-materialize.js') }}" defer></script>
 </body>
 </html>

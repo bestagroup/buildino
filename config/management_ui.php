@@ -38,13 +38,9 @@ return [
         */
         'datatables' => [
             'version' => '2.3.8',
-            'css' => 'https://cdn.datatables.net/2.3.8/css/dataTables.bootstrap5.min.css',
-            'js' => 'https://cdn.datatables.net/2.3.8/js/dataTables.min.js',
-            'bootstrap5_js' => 'https://cdn.datatables.net/2.3.8/js/dataTables.bootstrap5.min.js',
             'responsive_version' => '3.0.8',
-            'responsive_css' => 'https://cdn.datatables.net/responsive/3.0.8/css/responsive.bootstrap5.min.css',
-            'responsive_js' => 'https://cdn.datatables.net/responsive/3.0.8/js/dataTables.responsive.min.js',
-            'responsive_bootstrap5_js' => 'https://cdn.datatables.net/responsive/3.0.8/js/responsive.bootstrap5.min.js',
+            'npm_package' => 'datatables.net-bs5',
+            'responsive_npm_package' => 'datatables.net-responsive-bs5',
             'composer_package' => 'yajra/laravel-datatables-oracle',
             'version_constraint' => '^12.0',
         ],

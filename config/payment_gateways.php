@@ -16,6 +16,15 @@ return [
         300
     ),
 
+    /*
+     * DB-backed lease used to serialize gateway initiation for the same
+     * PaymentTransaction. A stale claim may be recovered after this TTL.
+     */
+    'initiation_claim_ttl_seconds' => (int) env(
+        'PAYMENT_GATEWAY_INITIATION_CLAIM_TTL',
+        90
+    ),
+
     'gateways' => [
         /*
          * Provider-neutral HTTPS JSON adapter.

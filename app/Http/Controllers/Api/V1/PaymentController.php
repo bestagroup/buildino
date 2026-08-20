@@ -9,10 +9,12 @@ use App\Models\Building;
 use App\Models\Payment;
 use App\Models\UnitInvoice;
 use App\Services\InvoiceAccessService;
+use App\Services\PaymentReceiptService;
 use App\Services\PaymentService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 class PaymentController extends Controller
 {
@@ -94,5 +96,48 @@ class PaymentController extends Controller
         $payment->load(['paymentAllocations', 'walletTopUp']);
 
         return new PaymentResource($payment);
+    }
+
+    public function receipt(
+        Request $request,
+        Payment $payment,
+        PermissionChecker $permissions,
+        PaymentReceiptService $receipts
+    ): Response {
+        $this->allowView($request, $payment, $permissions);
+
+        [$receipt, $payload] = $receipts->generate($payment);
+
+        return response($payload->content, 200, [
+            'Content-Type' => $payload->mimeType,
+            'Content-Disposition' => sprintf(
+                'inline; filename="%s.pdf"',
+                $receipt->receipt_number
+            ),
+            'Cache-Control' => 'private, no-store, max-age=0',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    private function allowView(
+        Request $request,
+        Payment $payment,
+        PermissionChecker $permissions
+    ): void {
+        $payment->loadMissing('building');
+
+        abort_unless(
+            (int) $payment->payer_user_id
+                === (int) $request->user()->getKey()
+            || (
+                $payment->building
+                && $permissions->allows(
+                    $request->user(),
+                    'payments.view',
+                    $payment->building
+                )
+            ),
+            403
+        );
     }
 }

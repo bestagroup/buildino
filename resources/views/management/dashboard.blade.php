@@ -151,7 +151,7 @@
 @endphp
 
 @section('content')
-<section class="hero-panel card mb-4 buildino-dashboard-overview" id="overview">
+<section class="hero-panel" id="overview">
     <div class="hero-panel__copy">
         <span class="eyebrow">
             {{ $roleProfile['eyebrow'] ?? 'MANAGEMENT WORKSPACE' }}
@@ -235,7 +235,7 @@
 </section>
 
 <section
-    class="role-workspace card mb-4 buildino-dashboard-role role-workspace--{{ $roleProfile['tone'] ?? 'blue' }}"
+    class="role-workspace role-workspace--{{ $roleProfile['tone'] ?? 'blue' }}"
     aria-label="فضای کاری نقش جاری"
 >
     <div class="role-workspace__identity">
@@ -295,8 +295,8 @@
     @endif
 </section>
 
-<section class="dashboard-glance-grid buildino-stat-grid mb-4" aria-label="خلاصه حساب جاری">
-    <article class="glance-card card h-100 glance-card--wallet">
+<section class="dashboard-glance-grid" aria-label="خلاصه حساب جاری">
+    <article class="glance-card glance-card--wallet">
         <span class="glance-card__icon">
             @include('management.partials.icon', ['name' => 'wallet', 'size' => 20])
         </span>
@@ -311,7 +311,7 @@
         </div>
     </article>
 
-    <article class="glance-card card h-100 glance-card--notification">
+    <article class="glance-card glance-card--notification">
         <span class="glance-card__icon">
             @include('management.partials.icon', ['name' => 'bell', 'size' => 20])
         </span>
@@ -324,7 +324,7 @@
         </div>
     </article>
 
-    <article class="glance-card card h-100 glance-card--role">
+    <article class="glance-card glance-card--role">
         <span class="glance-card__icon">
             @include('management.partials.icon', ['name' => 'shield', 'size' => 20])
         </span>
@@ -335,7 +335,7 @@
         </div>
     </article>
 
-    <article class="glance-card card h-100 glance-card--date">
+    <article class="glance-card glance-card--date">
         <span class="glance-card__icon">
             @include('management.partials.icon', ['name' => 'calendar', 'size' => 20])
         </span>
@@ -367,9 +367,9 @@
     </div>
 @endif
 
-<section class="kpi-grid buildino-kpi-grid mb-4">
+<section class="kpi-grid">
     @foreach ($heroKpis as $item)
-        <article class="kpi-card card h-100 kpi-card--{{ $item['tone'] }}">
+        <article class="kpi-card kpi-card--{{ $item['tone'] }}">
             <div class="kpi-card__icon">
                 @include(
                     'management.partials.icon',
@@ -390,7 +390,7 @@
 </section>
 
 @if ($roleSections['modules'] ?? true)
-<section class="section-block card mb-4 buildino-section-card" id="modules">
+<section class="section-block" id="modules">
     <div class="section-heading">
         <div>
             <span class="eyebrow">System Capabilities</span>
@@ -409,7 +409,7 @@
     <div class="module-grid">
         @foreach ($roleModules as $module)
             <a
-                class="module-card card h-100"
+                class="module-card"
                 href="{{
                     route(
                         'management.operations.show',
@@ -457,9 +457,9 @@
     ($roleSections['finance'] ?? false)
     || ($roleSections['receivables'] ?? false)
 )
-<section class="dashboard-grid dashboard-grid--2 buildino-dashboard-grid mb-4" id="financial">
+<section class="dashboard-grid dashboard-grid--2" id="financial">
     @if ($roleSections['finance'] ?? false)
-    <article class="panel card h-100">
+    <article class="panel">
         <div class="panel__header">
             <div>
                 <span class="eyebrow">Finance</span>
@@ -596,7 +596,7 @@
     @endif
 
     @if ($roleSections['receivables'] ?? false)
-    <article class="panel card h-100">
+    <article class="panel">
         <div class="panel__header">
             <div>
                 <span class="eyebrow">Receivables</span>
@@ -649,7 +649,7 @@
 @endif
 
 @if ($roleSections['operations'] ?? false)
-<section class="section-block card mb-4 buildino-section-card" id="operations">
+<section class="section-block" id="operations">
     <div class="section-heading">
         <div>
             <span class="eyebrow">Operations</span>
@@ -687,7 +687,7 @@
 
     <div class="operations-grid">
         @foreach ($operationDefinitions as $operation)
-            <article class="operation-card card h-100">
+            <article class="operation-card">
                 <div class="operation-card__header">
                     <div class="operation-icon">
                         @include(
@@ -1045,7 +1045,7 @@
 )
 <section class="dashboard-grid dashboard-grid--2" id="system">
     @if ($roleSections['system'] ?? false)
-    <article class="panel card h-100">
+    <article class="panel">
         <div class="panel__header">
             <div>
                 <span class="eyebrow">System Health</span>

@@ -13,7 +13,6 @@ class WalletPayoutRequest extends Model
 
     protected $fillable = [
         'uuid',
-        'idempotency_key',
         'building_id',
         'wallet_id',
         'building_bank_account_id',

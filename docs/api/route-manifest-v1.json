@@ -1,8 +1,8 @@
 {
     "version": "1.0.0",
-    "generated_at": "2026-08-18T09:24:05.842780Z",
-    "route_count": 242,
-    "contract_hash": "20db4f600467b8249136445e672e2e054c72facc2cff0a4ad7ef1a422d6e9195",
+    "generated_at": "2026-08-20T20:03:53.916327Z",
+    "route_count": 259,
+    "contract_hash": "acc1717c9305457d64be67ffd82d30555732efd1c5a5125e024d3bfb780fb949",
     "routes": [
         {
             "method": "GET",
@@ -332,6 +332,41 @@
             "protected": true,
             "operation_id": "get_api_v1_buildings_building_invoices",
             "tag": "Charges & Invoices"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/loyalty-claims",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_loyalty_claims",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/loyalty-rewards",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_loyalty_rewards",
+            "tag": "Buildings"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/buildings/{building}/loyalty-rewards",
+            "protected": true,
+            "operation_id": "post_api_v1_buildings_building_loyalty_rewards",
+            "tag": "Buildings"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/buildings/{building}/loyalty-rules",
+            "protected": true,
+            "operation_id": "get_api_v1_buildings_building_loyalty_rules",
+            "tag": "Buildings"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/buildings/{building}/loyalty-rules",
+            "protected": true,
+            "operation_id": "post_api_v1_buildings_building_loyalty_rules",
+            "tag": "Buildings"
         },
         {
             "method": "GET",
@@ -929,6 +964,27 @@
             "tag": "Charges & Invoices"
         },
         {
+            "method": "DELETE",
+            "uri": "api/v1/invoices/{unitInvoice}/installments",
+            "protected": true,
+            "operation_id": "delete_api_v1_invoices_unitinvoice_installments",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/invoices/{unitInvoice}/installments",
+            "protected": true,
+            "operation_id": "get_api_v1_invoices_unitinvoice_installments",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "PUT",
+            "uri": "api/v1/invoices/{unitInvoice}/installments",
+            "protected": true,
+            "operation_id": "put_api_v1_invoices_unitinvoice_installments",
+            "tag": "Charges & Invoices"
+        },
+        {
             "method": "POST",
             "uri": "api/v1/invoices/{unitInvoice}/issue",
             "protected": true,
@@ -941,6 +997,55 @@
             "protected": true,
             "operation_id": "post_api_v1_invoices_unitinvoice_payments",
             "tag": "Charges & Invoices"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/invoices/{unitInvoice}/penalty-adjustments",
+            "protected": true,
+            "operation_id": "post_api_v1_invoices_unitinvoice_penalty_adjustments",
+            "tag": "Charges & Invoices"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/loyalty-claims/{loyaltyRewardClaim}/approve",
+            "protected": true,
+            "operation_id": "post_api_v1_loyalty_claims_loyaltyrewardclaim_approve",
+            "tag": "General"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/loyalty-claims/{loyaltyRewardClaim}/reject",
+            "protected": true,
+            "operation_id": "post_api_v1_loyalty_claims_loyaltyrewardclaim_reject",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/loyalty/claims",
+            "protected": true,
+            "operation_id": "get_api_v1_loyalty_claims",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/loyalty/me",
+            "protected": true,
+            "operation_id": "get_api_v1_loyalty_me",
+            "tag": "General"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/loyalty/rewards",
+            "protected": true,
+            "operation_id": "get_api_v1_loyalty_rewards",
+            "tag": "General"
+        },
+        {
+            "method": "POST",
+            "uri": "api/v1/loyalty/rewards/{loyaltyReward}/claims",
+            "protected": true,
+            "operation_id": "post_api_v1_loyalty_rewards_loyaltyreward_claims",
+            "tag": "General"
         },
         {
             "method": "GET",
@@ -1010,6 +1115,13 @@
             "uri": "api/v1/notification-devices/{userDevice}",
             "protected": true,
             "operation_id": "delete_api_v1_notification_devices_userdevice",
+            "tag": "General"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/notification-devices/{userDevice}",
+            "protected": true,
+            "operation_id": "patch_api_v1_notification_devices_userdevice",
             "tag": "General"
         },
         {
@@ -1087,6 +1199,13 @@
             "uri": "api/v1/payments/{payment}/gateway/initiate",
             "protected": true,
             "operation_id": "post_api_v1_payments_payment_gateway_initiate",
+            "tag": "Payments"
+        },
+        {
+            "method": "GET",
+            "uri": "api/v1/payments/{payment}/receipt",
+            "protected": true,
+            "operation_id": "get_api_v1_payments_payment_receipt",
             "tag": "Payments"
         },
         {

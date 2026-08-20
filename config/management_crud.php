@@ -2377,6 +2377,101 @@ return [
                     'method' => 'POST',
                     'url' => '/api/v1/invoices/{id}/issue',
                     'tone' => 'success'
+                ],
+                [
+                    'key' => 'penalty-adjustment',
+                    'title' => 'جریمه / بخشودگی',
+                    'method' => 'POST',
+                    'url' => '/api/v1/invoices/{id}/penalty-adjustments',
+                    'tone' => 'warning',
+                    'fields' => [
+                        [
+                            'name' => 'action',
+                            'label' => 'نوع عملیات',
+                            'type' => 'select',
+                            'required' => true,
+                            'options' => [
+                                ['value' => 'add', 'label' => 'افزودن جریمه'],
+                                ['value' => 'waive', 'label' => 'بخشودگی جریمه']
+                            ]
+                        ],
+                        ['name' => 'amount', 'label' => 'مبلغ', 'type' => 'number', 'required' => true],
+                        ['name' => 'reason', 'label' => 'دلیل', 'type' => 'textarea', 'required' => true]
+                    ],
+                    'confirm' => 'تغییر مبلغ صورتحساب و ثبت سند ممیزی انجام شود؟'
+                ]
+            ]
+        ],
+        'invoice-installments' => [
+            'permission' => 'invoices.update',
+            'permission_scope' => 'any',
+            'group' => 'finance',
+            'title' => 'برنامه اقساط',
+            'description' => 'تعریف، مشاهده و لغو برنامه اقساط صورتحساب',
+            'note' => 'مجموع مبالغ اقساط باید دقیقاً برابر مبلغ کل صورتحساب باشد. جایگزینی برنامه فقط پیش از ثبت پرداخت ممکن است.',
+            'context' => [
+                [
+                    'name' => 'unit_invoice_id',
+                    'label' => 'صورتحساب',
+                    'lookup' => 'invoices',
+                    'required' => true
+                ]
+            ],
+            'list' => [
+                'method' => 'GET',
+                'url' => '/api/v1/invoices/{unit_invoice_id}/installments'
+            ],
+            'create' => [
+                'method' => 'PUT',
+                'url' => '/api/v1/invoices/{unit_invoice_id}/installments'
+            ],
+            'columns' => [
+                [
+                    'key' => 'installment_number',
+                    'label' => 'قسط'
+                ],
+                [
+                    'key' => 'amount',
+                    'label' => 'مبلغ'
+                ],
+                [
+                    'key' => 'paid_amount',
+                    'label' => 'پرداخت‌شده'
+                ],
+                [
+                    'key' => 'penalty_amount',
+                    'label' => 'جریمه'
+                ],
+                [
+                    'key' => 'waived_amount',
+                    'label' => 'بخشوده'
+                ],
+                [
+                    'key' => 'due_date',
+                    'label' => 'سررسید'
+                ],
+                [
+                    'key' => 'status',
+                    'label' => 'وضعیت'
+                ]
+            ],
+            'fields' => [
+                [
+                    'name' => 'installments',
+                    'label' => 'اقساط',
+                    'type' => 'json',
+                    'required' => true,
+                    'placeholder' => '[{"amount":500000,"due_date":"2026-09-20"},{"amount":500000,"due_date":"2026-10-20"}]'
+                ]
+            ],
+            'actions' => [
+                [
+                    'key' => 'cancel-plan',
+                    'title' => 'لغو برنامه',
+                    'method' => 'DELETE',
+                    'url' => '/api/v1/invoices/{unit_invoice_id}/installments',
+                    'tone' => 'danger',
+                    'confirm' => 'کل برنامه اقساط این صورتحساب لغو شود؟'
                 ]
             ]
         ],
@@ -2736,6 +2831,152 @@ return [
                     'method' => 'POST',
                     'url' => '/api/v1/payments/{id}/verify',
                     'tone' => 'success'
+                ],
+                [
+                    'key' => 'receipt',
+                    'title' => 'رسید PDF',
+                    'method' => 'GET',
+                    'url' => '/api/v1/payments/{id}/receipt',
+                    'tone' => 'info',
+                    'open_url' => true
+                ]
+            ]
+        ],
+        'loyalty-rules' => [
+            'permission' => 'loyalty-rewards.view',
+            'permission_scope' => 'any',
+            'group' => 'finance',
+            'title' => 'قواعد امتیاز وفاداری',
+            'description' => 'نسخه‌بندی قواعد امتیازدهی پرداخت‌های موفق',
+            'context' => [
+                [
+                    'name' => 'building_id',
+                    'label' => 'ساختمان',
+                    'lookup' => 'buildings',
+                    'required' => true
+                ]
+            ],
+            'list' => [
+                'method' => 'GET',
+                'url' => '/api/v1/buildings/{building_id}/loyalty-rules?per_page=100'
+            ],
+            'create' => [
+                'method' => 'POST',
+                'url' => '/api/v1/buildings/{building_id}/loyalty-rules'
+            ],
+            'columns' => [
+                ['key' => 'id', 'label' => 'ID'],
+                ['key' => 'event_type', 'label' => 'رویداد'],
+                ['key' => 'version', 'label' => 'نسخه'],
+                ['key' => 'points', 'label' => 'امتیاز'],
+                ['key' => 'starts_at', 'label' => 'شروع'],
+                ['key' => 'ends_at', 'label' => 'پایان'],
+                ['key' => 'is_active', 'label' => 'فعال']
+            ],
+            'fields' => [
+                [
+                    'name' => 'event_type',
+                    'label' => 'رویداد',
+                    'type' => 'select',
+                    'required' => true,
+                    'options' => [
+                        ['value' => 'payment_verified', 'label' => 'تأیید پرداخت']
+                    ]
+                ],
+                ['name' => 'points', 'label' => 'امتیاز هر گام', 'type' => 'number', 'required' => true],
+                [
+                    'name' => 'configuration',
+                    'label' => 'تنظیمات محاسبه',
+                    'type' => 'json',
+                    'placeholder' => '{"amount_step":100000,"minimum_amount":100000,"maximum_points":500,"expires_days":365}'
+                ],
+                ['name' => 'starts_at', 'label' => 'شروع', 'type' => 'datetime-local'],
+                ['name' => 'ends_at', 'label' => 'پایان', 'type' => 'datetime-local'],
+                ['name' => 'is_active', 'label' => 'فعال', 'type' => 'checkbox', 'default' => true]
+            ]
+        ],
+        'loyalty-rewards' => [
+            'permission' => 'loyalty-rewards.view',
+            'permission_scope' => 'any',
+            'group' => 'finance',
+            'title' => 'جوایز وفاداری',
+            'description' => 'تعریف جوایز قابل دریافت با امتیاز',
+            'context' => [
+                [
+                    'name' => 'building_id',
+                    'label' => 'ساختمان',
+                    'lookup' => 'buildings',
+                    'required' => true
+                ]
+            ],
+            'list' => [
+                'method' => 'GET',
+                'url' => '/api/v1/buildings/{building_id}/loyalty-rewards?per_page=100'
+            ],
+            'create' => [
+                'method' => 'POST',
+                'url' => '/api/v1/buildings/{building_id}/loyalty-rewards'
+            ],
+            'columns' => [
+                ['key' => 'id', 'label' => 'ID'],
+                ['key' => 'title', 'label' => 'عنوان'],
+                ['key' => 'required_points', 'label' => 'امتیاز لازم'],
+                ['key' => 'is_active', 'label' => 'فعال'],
+                ['key' => 'created_at', 'label' => 'ایجاد']
+            ],
+            'fields' => [
+                ['name' => 'title', 'label' => 'عنوان', 'type' => 'text', 'required' => true],
+                ['name' => 'description', 'label' => 'توضیحات', 'type' => 'textarea'],
+                ['name' => 'required_points', 'label' => 'امتیاز لازم', 'type' => 'number', 'required' => true],
+                ['name' => 'is_active', 'label' => 'فعال', 'type' => 'checkbox', 'default' => true]
+            ]
+        ],
+        'loyalty-claims' => [
+            'permission' => 'loyalty-rewards.view',
+            'permission_scope' => 'any',
+            'group' => 'finance',
+            'title' => 'درخواست‌های جایزه',
+            'description' => 'بررسی، تأیید یا رد درخواست استفاده از امتیاز',
+            'context' => [
+                [
+                    'name' => 'building_id',
+                    'label' => 'ساختمان',
+                    'lookup' => 'buildings',
+                    'required' => true
+                ]
+            ],
+            'list' => [
+                'method' => 'GET',
+                'url' => '/api/v1/buildings/{building_id}/loyalty-claims?per_page=100'
+            ],
+            'columns' => [
+                ['key' => 'id', 'label' => 'ID'],
+                ['key' => 'user_name', 'label' => 'کاربر'],
+                ['key' => 'reward.title', 'label' => 'جایزه'],
+                ['key' => 'status', 'label' => 'وضعیت'],
+                ['key' => 'claimed_at', 'label' => 'درخواست'],
+                ['key' => 'processed_at', 'label' => 'رسیدگی']
+            ],
+            'fields' => [],
+            'actions' => [
+                [
+                    'key' => 'approve',
+                    'title' => 'تأیید',
+                    'method' => 'POST',
+                    'url' => '/api/v1/loyalty-claims/{id}/approve',
+                    'tone' => 'success',
+                    'confirm' => 'این درخواست جایزه تأیید شود؟'
+                ],
+                [
+                    'key' => 'reject',
+                    'title' => 'رد',
+                    'method' => 'POST',
+                    'url' => '/api/v1/loyalty-claims/{id}/reject',
+                    'tone' => 'danger',
+                    'fields' => [
+                        ['name' => 'reason', 'label' => 'دلیل رد', 'type' => 'textarea', 'required' => true]
+                    ],
+                    'confirm' => 'امتیاز کسرشده به حساب کاربر بازگردانده و درخواست رد شود؟'
                 ]
             ]
         ],
@@ -2852,8 +3093,7 @@ return [
             ],
             'create' => [
                 'method' => 'POST',
-                'url' => '/api/v1/buildings/{building_id}/wallet-payouts',
-                'idempotency_key_prefix' => 'management-wallet-payout'
+                'url' => '/api/v1/buildings/{building_id}/wallet-payouts'
             ],
             'columns' => [
                 [

@@ -83,6 +83,9 @@ class PortalWebAccessTest extends TestCase
             )
             ->assertSee(
                 'درخواست خدمت'
+            )
+            ->assertSee(
+                'باشگاه وفاداری'
             );
     }
 

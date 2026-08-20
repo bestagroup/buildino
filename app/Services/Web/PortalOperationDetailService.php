@@ -122,6 +122,7 @@ final class PortalOperationDetailService
                     'unit:id,unit_number,title',
                     'building:id,title,currency',
                     'invoiceItems',
+                    'invoiceInstallments',
                     'paymentAllocations.payment:id,payment_number,amount,status,paid_at',
                 ])
                 ->whereIn(
@@ -214,6 +215,14 @@ final class PortalOperationDetailService
                             $invoice
                                 ->outstanding_amount
                         ),
+
+                'جریمه فعال' =>
+                    $this->presenter
+                        ->money($invoice->penalty_amount),
+
+                'جریمه بخشوده' =>
+                    $this->presenter
+                        ->money($invoice->waived_penalty_amount),
             ],
 
             'sections' => [
@@ -249,6 +258,49 @@ final class PortalOperationDetailService
                                             $item
                                                 ->total_amount
                                         ),
+                                ]
+                            )
+                            ->all(),
+                ],
+                [
+                    'title' =>
+                        'برنامه اقساط',
+
+                    'type' =>
+                        'table',
+
+                    'columns' => [
+                        'قسط',
+                        'سررسید',
+                        'مبلغ',
+                        'پرداخت‌شده',
+                        'مانده',
+                        'وضعیت',
+                    ],
+
+                    'rows' =>
+                        $invoice
+                            ->invoiceInstallments
+                            ->map(
+                                fn ($installment): array => [
+                                    (string) $installment->installment_number,
+                                    $this->presenter->date($installment->due_date),
+                                    $this->presenter->money(
+                                        (int) $installment->amount
+                                        + (int) $installment->penalty_amount
+                                        - (int) $installment->waived_amount
+                                    ),
+                                    $this->presenter->money($installment->paid_amount),
+                                    $this->presenter->money(
+                                        max(
+                                            0,
+                                            (int) $installment->amount
+                                            + (int) $installment->penalty_amount
+                                            - (int) $installment->waived_amount
+                                            - (int) $installment->paid_amount
+                                        )
+                                    ),
+                                    $this->presenter->statusLabel($installment->status),
                                 ]
                             )
                             ->all(),
@@ -294,6 +346,13 @@ final class PortalOperationDetailService
                                                 ?? $allocation
                                                     ->created_at
                                             ),
+
+                                    'url' =>
+                                        $allocation->payment
+                                            ? url(
+                                                "/api/v1/payments/{$allocation->payment->id}/receipt"
+                                            )
+                                            : null,
                                 ]
                             )
                             ->all(),

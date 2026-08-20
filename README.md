@@ -1,59 +1,125 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Buildino
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Buildino یک سامانه مدیریت ساختمان مبتنی بر Laravel 12 و PHP 8.2 است. محصول شامل پنل مدیریت، پرتال نقش‌محور ساکن/مالک/ارائه‌دهنده خدمت، API نسخه‌بندی‌شده و کلاینت Flutter ساکنان در پوشه `mobile/` است.
 
-## About Laravel
+## قابلیت‌ها
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- ساختار مجتمع، ساختمان، بلوک، طبقه، واحد، مالکیت و سکونت
+- نقش و مجوز scope-aware در سطح سراسری، مجتمع و ساختمان
+- مهمان، تردد، امکانات، ظرفیت، رزرو و پرداخت رزرو
+- شارژ، صورتحساب، اقساط، جریمه/بخشودگی، پرداخت و رسید PDF
+- کیف پول، انتقال، تسویه ارائه‌دهنده، حسابداری و مغایرت‌گیری
+- خدمات، پیشنهاد قیمت، پرداخت، تیکت، پیام و SLA
+- اعلان درون‌برنامه‌ای، SMS، ایمیل و FCM HTTP v1
+- اسناد خصوصی با کنترل دسترسی و اسکن ClamAV
+- گزارش‌های صفی CSV/Excel/PDF و پاک‌سازی زمان‌بندی‌شده
+- ledger وفاداری، rule versioning، انقضای امتیاز و درخواست جایزه
+- کلاینت Flutter با ورود امن، انتخاب واحد، صورتحساب/اقساط، وفاداری و دریافت رسید
+- OpenAPI/Postman تولیدشده از route catalog، health، heartbeat و release gate
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## نیازمندی توسعه محلی
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.2 یا بالاتر و Composer 2
+- Node.js 24 و npm
+- SQLite برای تست یا MySQL/MariaDB برای اجرای محلی
 
-## Learning Laravel
+راه‌اندازی استاندارد:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+composer install
+copy .env.example .env
+php artisan key:generate
+php artisan migrate --force
+npm ci
+npm run build
+php artisan serve
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+در Linux/macOS به‌جای `copy` از `cp` استفاده کنید. برای پردازش کامل دامنه، worker و scheduler نیز باید فعال باشند:
 
-## Laravel Sponsors
+```bash
+php artisan queue:work --queue=default,notifications,reports --tries=3
+php artisan schedule:work
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+ورودی‌ها:
 
-### Premium Partners
+- پنل مدیریت: `/management`
+- پرتال کاربران: `/portal/login`
+- readiness عمومی: `/api/v1/system/readiness`
+- قرارداد OpenAPI: `docs/api/openapi-v1.json`
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## داده آزمایشی
 
-## Contributing
+فقط در محیط غیرتولید:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+php artisan buildino:access-scenario
+php artisan buildino:demo-data
+```
 
-## Code of Conduct
+حساب‌ها و رمزهای demo در `docs/authorization/ROLE_MATRIX.md` مستند شده‌اند و نباید به production منتقل شوند.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## کنترل کیفیت
 
-## Security Vulnerabilities
+```bash
+composer validate --strict
+composer audit
+npm ci
+npm run build
+npm audit --audit-level=high
+php artisan test
+php artisan api:contract:audit
+php artisan release:gate
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+برای بازتولید قراردادها:
 
-## License
+```bash
+php artisan api:contract:export
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+`release:gate --production` علاوه بر یکپارچگی داده، تنظیمات سرویس‌های واقعی و heartbeat صف/scheduler را نیز بررسی می‌کند و باید روی همان محیط production اجرا شود.
+
+## استقرار کانتینری
+
+فایل‌های `Dockerfile` و `compose.production.yml` سرویس‌های زیر را تعریف می‌کنند:
+
+```text
+Nginx + PHP-FPM
+MariaDB + Redis + ClamAV
+default / notifications / reports workers
+Laravel scheduler
+```
+
+نمونه تنظیمات را کپی و همه secretها را از secret manager یا محیط استقرار تزریق کنید:
+
+```bash
+cp .env.production.example .env.production
+docker compose --env-file .env.production -f compose.production.yml build
+docker compose --env-file .env.production -f compose.production.yml up -d
+docker compose --env-file .env.production -f compose.production.yml exec app php artisan migrate --force
+docker compose --env-file .env.production -f compose.production.yml exec app php artisan release:gate --production
+```
+
+راهنمای کامل انتشار، rollback و restore در `docs/production/DEPLOYMENT_RUNBOOK.md` قرار دارد.
+
+## امنیت و داده حساس
+
+- فایل‌های `.env`، credentialهای FCM، کلیدها و خروجی‌های runtime نباید commit شوند.
+- اگر نسخه قدیمی مخزن شامل secret بوده است، حذف فایل از commit جاری کافی نیست؛ تاریخچه باید با فرآیند کنترل‌شده بازنویسی و همه کلیدهای افشاشده rotate شوند.
+- callback و webhook پرداخت باید HTTPS، امضاشده، idempotent و محدود به PSP پیکربندی‌شده باشند.
+- فایل‌های بارگذاری‌شده روی disk خصوصی قرار می‌گیرند و در production اسکن بدافزار اجباری است.
+
+## مستندات
+
+- `docs/architecture/COMPLETION_PLAN.md`: وضعیت قابلیت‌ها و معیار تحویل
+- `docs/authorization/ROLE_MATRIX.md`: نقش‌ها و scopeها
+- `docs/deployment/PRODUCTION_COMMUNICATION_MOBILE.md`: SMS، FCM، PSP و قرارداد موبایل
+- `mobile/README.md`: اجرای کلاینت Flutter و ساخت خروجی Android/iOS
+- `docs/production/INTEGRATION_ENV_CHECKLIST.md`: متغیرهای integration
+- `docs/production/DEPLOYMENT_RUNBOOK.md`: انتشار، مانیتورینگ، backup و rollback
+
+## مجوز
+
+مجوز نهایی محصول باید پیش از انتشار عمومی توسط مالک پروژه تعیین شود. وابستگی‌های ثالث تابع مجوزهای خود هستند.

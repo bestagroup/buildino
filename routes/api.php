@@ -27,6 +27,8 @@ use App\Http\Controllers\Api\V1\SupportTicketOperationController;
 use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Api\V1\UnitInvitationController;
 use App\Http\Controllers\Api\V1\UnitInvoiceController;
+use App\Http\Controllers\Api\V1\InvoiceInstallmentController;
+use App\Http\Controllers\Api\V1\LoyaltyController;
 use App\Http\Controllers\Api\V1\UnitOccupancyController;
 use App\Http\Controllers\Api\V1\UnitOwnershipController;
 use App\Http\Controllers\Api\V1\UserNotificationController;
@@ -553,6 +555,87 @@ Route::prefix('v1')
             [InvoiceOperationController::class, 'issue']
         );
 
+        Route::get(
+            'invoices/{unitInvoice}/installments',
+            [InvoiceInstallmentController::class, 'index']
+        );
+
+        Route::put(
+            'invoices/{unitInvoice}/installments',
+            [InvoiceInstallmentController::class, 'replace']
+        );
+
+        Route::delete(
+            'invoices/{unitInvoice}/installments',
+            [InvoiceInstallmentController::class, 'destroy']
+        );
+
+        Route::post(
+            'invoices/{unitInvoice}/penalty-adjustments',
+            [InvoiceOperationController::class, 'adjustPenalty']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Loyalty ledger, rewards and claims
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            'loyalty/me',
+            [LoyaltyController::class, 'account']
+        );
+
+        Route::get(
+            'loyalty/rewards',
+            [LoyaltyController::class, 'rewards']
+        );
+
+        Route::get(
+            'loyalty/claims',
+            [LoyaltyController::class, 'claims']
+        );
+
+        Route::post(
+            'loyalty/rewards/{loyaltyReward}/claims',
+            [LoyaltyController::class, 'claim']
+        );
+
+        Route::get(
+            'buildings/{building}/loyalty-rules',
+            [LoyaltyController::class, 'buildingRules']
+        );
+
+        Route::post(
+            'buildings/{building}/loyalty-rules',
+            [LoyaltyController::class, 'storeRule']
+        );
+
+        Route::get(
+            'buildings/{building}/loyalty-rewards',
+            [LoyaltyController::class, 'buildingRewards']
+        );
+
+        Route::post(
+            'buildings/{building}/loyalty-rewards',
+            [LoyaltyController::class, 'storeReward']
+        );
+
+        Route::get(
+            'buildings/{building}/loyalty-claims',
+            [LoyaltyController::class, 'buildingClaims']
+        );
+
+        Route::post(
+            'loyalty-claims/{loyaltyRewardClaim}/approve',
+            [LoyaltyController::class, 'approveClaim']
+        );
+
+        Route::post(
+            'loyalty-claims/{loyaltyRewardClaim}/reject',
+            [LoyaltyController::class, 'rejectClaim']
+        );
+
         /*
         |--------------------------------------------------------------------------
         | Payments
@@ -572,6 +655,11 @@ Route::prefix('v1')
         Route::get(
             'payments/{payment}',
             [PaymentController::class, 'show']
+        );
+
+        Route::get(
+            'payments/{payment}/receipt',
+            [PaymentController::class, 'receipt']
         );
 
         Route::post(

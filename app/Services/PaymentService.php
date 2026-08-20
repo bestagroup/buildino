@@ -23,7 +23,8 @@ class PaymentService
 {
     public function __construct(
         private readonly WalletTopUpService $walletTopUps,
-        private readonly GatewayPayloadSanitizer $gatewayPayloads
+        private readonly GatewayPayloadSanitizer $gatewayPayloads,
+        private readonly InvoiceInstallmentService $installments
     ) {
     }
 
@@ -610,6 +611,7 @@ class PaymentService
 
             $updates[] = [
                 'invoice' => $invoice,
+                'applied_amount' => (int) $allocation->amount,
                 'paid_amount' => $newPaid,
                 'outstanding_amount' => $newOutstanding,
                 'status' => $newOutstanding === 0
@@ -619,6 +621,11 @@ class PaymentService
         }
 
         foreach ($updates as $update) {
+            $this->installments->applyPayment(
+                $update['invoice'],
+                $update['applied_amount']
+            );
+
             $update['invoice']->update([
                 'paid_amount' => $update['paid_amount'],
                 'outstanding_amount' =>

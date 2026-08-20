@@ -624,6 +624,118 @@ class PaymentGatewaySecurityFlowTest extends TestCase
         );
     }
 
+
+    public function test_active_gateway_initiation_claim_blocks_duplicate_provider_request(): void
+    {
+        config([
+            'payment_gateways.initiation_claim_ttl_seconds' => 90,
+        ]);
+
+        [
+            $topUp,
+            $payer,
+        ] = $this->pendingTopUp(
+            410_000,
+            'gateway-active-claim-key'
+        );
+
+        $payment = $topUp
+            ->payment()
+            ->firstOrFail();
+
+        $transaction = $payment
+            ->paymentTransactions()
+            ->firstOrFail();
+
+        $transaction->update([
+            'initiation_token' => (string) str()->uuid(),
+            'initiating_at' => now(),
+            'initiation_attempts' => 1,
+        ]);
+
+        try {
+            app(
+                PaymentGatewayInitiationService::class
+            )->initiate(
+                $payment,
+                'fake',
+                'gateway-active-claim-key',
+                $payer
+            );
+
+            $this->fail(
+                'A second provider initiation was allowed while a live claim existed.'
+            );
+        } catch (HttpException $exception) {
+            $this->assertSame(
+                409,
+                $exception->getStatusCode()
+            );
+        }
+
+        $transaction->refresh();
+
+        $this->assertNull($transaction->authority);
+        $this->assertSame(
+            1,
+            (int) $transaction->initiation_attempts
+        );
+    }
+
+    public function test_stale_gateway_initiation_claim_can_be_recovered_safely(): void
+    {
+        config([
+            'payment_gateways.initiation_claim_ttl_seconds' => 30,
+        ]);
+
+        [
+            $topUp,
+            $payer,
+        ] = $this->pendingTopUp(
+            420_000,
+            'gateway-stale-claim-key'
+        );
+
+        $payment = $topUp
+            ->payment()
+            ->firstOrFail();
+
+        $transaction = $payment
+            ->paymentTransactions()
+            ->firstOrFail();
+
+        $transaction->update([
+            'initiation_token' => (string) str()->uuid(),
+            'initiating_at' => now()->subMinutes(5),
+            'initiation_attempts' => 1,
+        ]);
+
+        $recovered = app(
+            PaymentGatewayInitiationService::class
+        )->initiate(
+            $payment,
+            'fake',
+            'gateway-stale-claim-key',
+            $payer
+        );
+
+        $this->assertSame(
+            $transaction->id,
+            $recovered->id
+        );
+        $this->assertNotNull($recovered->authority);
+        $this->assertNull($recovered->initiation_token);
+        $this->assertNull($recovered->initiating_at);
+        $this->assertSame(
+            2,
+            (int) $recovered->initiation_attempts
+        );
+        $this->assertSame(
+            PaymentStatus::Processing,
+            $payment->fresh()->status
+        );
+    }
+
     private function pendingTopUp(
         int $amount,
         string $idempotencyKey

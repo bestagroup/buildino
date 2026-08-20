@@ -1,4 +1,14 @@
+/*
+|--------------------------------------------------------------------------
+| Buildino Persian Typography
+|--------------------------------------------------------------------------
+|
+| The project intentionally uses the system Persian-capable font stack until
+| licensed Yekan Bakh files are supplied by the deployer. No missing font URL
+| is declared here, so production pages do not generate avoidable 404s.
+|
+*/
+
 :root {
-    --buildino-font-family: "Yekan Bakh", "IRANSansX", Tahoma, Arial, sans-serif;
+    --buildino-font-persian: Tahoma, "Segoe UI", Arial, sans-serif;
 }
-html, body, button, input, select, textarea { font-family: var(--buildino-font-family); }

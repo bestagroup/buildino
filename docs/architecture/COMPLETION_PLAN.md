@@ -1,52 +1,62 @@
-# نقشه تکمیل Buildino
+# وضعیت تکمیل Buildino
 
-این سند backlog اجرایی سه محصول «داشبورد مدیریت»، «پرتال کاربران» و
-«اپلیکیشن کاربران» است. ترتیب مراحل بر اساس ریسک امنیتی، وابستگی فنی و
-ارزش قابل تحویل تعیین شده است.
+این سند وضعیت قابل اثبات repository را از کارهایی که فقط روی staging/production و با credential واقعی قابل تأیید هستند جدا می‌کند. «تکمیل کد» به معنی وجود implementation، migration، permission، API/UI و تست خودکار مرتبط است؛ به معنی فعال‌بودن سرویس بیرونی مشتری نیست.
 
-| فاز | محدوده | خروجی قابل تحویل | معیار خروج | وضعیت |
-|---:|---|---|---|---|
-| 0 | پاک‌سازی snapshot | حذف secret و runtime artifact از بسته، یک منبع OpenAPI و Postman | اسکن بسته هیچ `.env`، log، session، cache یا سند API قدیمی نشان ندهد | تکمیل شده |
-| 1 | تثبیت زیرساخت | رفع binding دیتاتیبل، route تکراری، scheduler، Vite entry و release gate | نصب تمیز، build موفق، route و schedule یکتا، تست‌ها سبز | پیاده‌سازی کامل؛ تست runtime لازم است |
-| 2 | امنیت scope و فایل | محدودسازی query/create به ساختمان و واحد، target allowlist، دانلود مجاز و اسکن فایل | تست عبور و منع دسترسی بین دو ساختمان برای منابع مالی، اسناد و فایل | پیاده‌سازی کامل؛ تست runtime لازم است |
-| 3 | هویت و ضدسوءاستفاده | SMS واقعی OTP، دعوت قابل قبول، Socialite، Captcha و تشخیص device | هیچ OTP در log، اتصال حساب امن، rate-limit و تست abuse | برنامه‌ریزی شده |
-| 4 | ساختار ساختمان | UI کامل پارکینگ، انباری، قوانین، شماره ضروری، اسناد و صورت‌جلسات | عملیات CRUD و audit از هر سه سطح مرتبط قابل انجام باشد | برنامه‌ریزی شده |
-| 5 | موتور شارژ | فرمول هزینه مشترک/اختصاصی، دوره شارژ، صدور گروهی و تعدیل | بازتولیدپذیری صورتحساب و تست rounding/تفکیک واحدها | برنامه‌ریزی شده |
-| 6 | پرداخت واقعی | PSP منتخب، callback/webhook امن، QR، پرداخت دستی و reconciliation | idempotency، verify مستقل، مغایرت‌گیری و تست sandbox PSP | برنامه‌ریزی شده |
-| 7 | اقساط و رسید | برنامه اقساط، دیرکرد/بخشودگی، رسید PDF و تاریخچه تغییر | جمع اقساط با صورتحساب برابر و هر تغییر audit شود | برنامه‌ریزی شده |
-| 8 | صندوق و حسابداری | صندوق ساختمان، سرفصل‌ها، درآمد/هزینه و گزارش گردش | posting دوبل، عدم مانده منفی غیرمجاز و reconciliation سبز | برنامه‌ریزی شده |
-| 9 | رزرو کامل | ظرفیت، محدودیت واحد، لغو/تعمیرات، پرداخت و اعلان تغییر | جلوگیری از هم‌پوشانی همزمان و تست race condition | برنامه‌ریزی شده |
-| 10 | اعلان هدفمند | مخاطب‌گذاری مجتمع/ساختمان/نقش، ترجیح کانال و push | delivery قابل رهگیری و عدم ارسال خارج scope | برنامه‌ریزی شده |
-| 11 | درخواست و پشتیبانی | SLA، ارجاع، پیام، ضمیمه، وضعیت و رضایت | زمان پاسخ/حل قابل گزارش و فایل‌ها مجاز باشند | برنامه‌ریزی شده |
-| 12 | UI مدیریت | design system، DataTables server-side همه فهرست‌ها، فرم و تقویم جلالی | بدون فهرست 100تایی client-side، responsive و keyboard-accessible | برنامه‌ریزی شده |
-| 13 | UI پرتال | داشبورد نقش‌محور مالک/مستأجر/خدمات، پرداخت و رزرو روان | آزمون مسیرهای اصلی روی موبایل وب و desktop | برنامه‌ریزی شده |
-| 14 | قرارداد اپلیکیشن | bootstrap پایدار، pagination، error envelope و version policy | تست contract و backward compatibility برای نسخه پشتیبانی‌شده | برنامه‌ریزی شده |
-| 15 | Swagger و Postman | شرح/نمونه/خطا برای هر endpoint و تست موردبه‌مورد | تعداد route، operation و request برابر و audit خودکار سبز | برنامه‌ریزی شده |
-| 16 | گزارش و خروجی | درآمد، هزینه، بدهکاران، پرداخت، صندوق و export صفی | scope صحیح، سقف ردیف، پاک‌سازی فایل و تست داده واقعی | برنامه‌ریزی شده |
-| 17 | وفاداری | امتیاز، خوش‌حسابی، ledger امتیاز و rule versioning | هر امتیاز قابل توضیح/برگشت و بدون محاسبه تکراری باشد | برنامه‌ریزی شده |
-| 18 | مشاهده‌پذیری | health، heartbeat، queue metrics، audit activity و alert | failure سناریوهای صف/درگاه/ذخیره‌سازی هشدار بدهد | برنامه‌ریزی شده |
-| 19 | QA و انتشار | تست end-to-end، performance، accessibility، backup/restore و runbook | release gate production و سناریوی restore تایید شود | برنامه‌ریزی شده |
+| فاز | محدوده | وضعیت repository | معیار/شاهد |
+|---:|---|---|---|
+| 0 | پاک‌سازی snapshot | تکمیل | `.env`، IDE، vendor، archive و runtime artifact از tracking خارج؛ CI و ignore policy فعال |
+| 1 | زیرساخت Laravel/Vite | تکمیل | نصب lock‌شده، build، route/view/config cache و release gate |
+| 2 | scope و فایل خصوصی | تکمیل | policy/PermissionChecker، تست cross-scope، private disk و ClamAV binary/TCP |
+| 3 | هویت و ضدسوءاستفاده | تکمیل | password/OTP، reset، device binding، token revoke، rate limit و عدم بازگرداندن OTP تولید |
+| 4 | ساختار ساختمان | تکمیل | مجتمع تا واحد، پارکینگ/انباری، مالکیت/سکونت/دعوت، اسناد و CRUD مدیریتی |
+| 5 | موتور شارژ | تکمیل | formula/period/calculate/issue، rounding سرور و تست مالی |
+| 6 | پرداخت | تکمیل کد | adapter عمومی PSP، initiate/verify/callback/webhook، HMAC، replay protection و reconciliation؛ تست sandbox PSP بیرونی لازم است |
+| 7 | اقساط و رسید | تکمیل | برنامه متوازن، پرداخت ترتیبی، overdue، جریمه/بخشودگی audited و receipt PDF |
+| 8 | صندوق و حسابداری | تکمیل | کیف پول، posting، تسویه، payout، audit و integrity gate |
+| 9 | رزرو | تکمیل | ظرفیت/قواعد/blackout، overlap/race protection، لغو و پرداخت |
+| 10 | اعلان | تکمیل کد | inbox/preferences، SMS HTTP، FCM v1، SMTP و cleanup token؛ delivery واقعی نیازمند credential است |
+| 11 | خدمات و پشتیبانی | تکمیل | request/quote/assign/pay، ticket/message/SLA/resolve/reopen و گزارش |
+| 12 | UI مدیریت | تکمیل | design system، CRUD پویا، DataTables server-side محلی، اقساط و وفاداری |
+| 13 | UI پرتال | تکمیل وب | داشبوردهای resident/provider، جزئیات عملیاتی و responsive web؛ پذیرش مرورگر واقعی staging لازم است |
+| 14 | موبایل | تکمیل source | auth/device/bootstrap/version/features/pagination و کلاینت Flutter با secure storage، واحدها، صورتحساب/اقساط، وفاداری و تست CI؛ تولید binary امضاشده به SDK و کلیدهای مالک وابسته است |
+| 15 | OpenAPI/Postman | تکمیل | هر route-method از catalog runtime صادر و security drift خودکار audit می‌شود |
+| 16 | گزارش/خروجی | تکمیل | گزارش مالی/عملیاتی، export صفی CSV/Excel/PDF، retention و permission scope |
+| 17 | وفاداری | تکمیل | ledger idempotent، FIFO allocation، expiry، reversal، rule versioning و claim workflow |
+| 18 | مشاهده‌پذیری | تکمیل کد | readiness/admin health، scheduler/queue heartbeat، integrity/accounting/gateway audits |
+| 19 | QA و انتشار | تکمیل repository | PHPUnit/contract/build/audit/CI، Docker production، backup/restore/rollback runbook؛ restore drill و UAT باید روی staging اجرا شود |
 
-## ترتیب اجرای فاز جاری
+## دروازه تحویل
 
-1. اجرای Composer روی محیط PHP 8.2+ و بازتولید package discovery.
-2. اجرای PHPUnit و اصلاح هر regression ناشی از route/scheduler/provider.
-3. اجرای `npm install` و `npm run build` و ثبت lockfile.
-4. تولید مجدد Swagger و مقایسه عملیات با route manifest و Postman.
-5. اجرای اسکن بسته و تحویل snapshot پاک.
+قبل از tag انتشار باید همه این فرمان‌ها سبز باشند:
 
-## سیاست کتابخانه‌های رابط و هویت
+```bash
+composer validate --strict
+composer audit
+npm ci
+npm run build
+npm audit --audit-level=high
+php artisan migrate:fresh --force
+php artisan test
+php artisan api:contract:export
+php artisan release:gate
+```
 
-| کتابخانه | نسخه پایه سازگار | سیاست استفاده |
-|---|---:|---|
-| Bootstrap | 5.3.8 | مبنای grid، فرم، modal و دسترس‌پذیری هر دو پنل |
-| SweetAlert2 | 11.26.25 | confirm، feedback و toast؛ بدون `alert()` در جریان نهایی |
-| DataTables | 2.3.8 | renderer سمت مرورگر با pagination/filter سمت سرور |
-| Yajra DataTables | 12.x | query builder scope-aware؛ بدون materialize کردن collection بزرگ |
-| Morilog Jalali | 3.5.x | تبدیل سمت سرور؛ ذخیره زمان همچنان UTC |
-| Laravel Socialite | 5.29.x | فقط login/link؛ عدم اعتماد به email بدون تایید provider |
-| Matomo Device Detector | 6.5.x | metadata حداقلی و بدون fingerprint دائمی کاربر |
-| Mews Captcha | 3.5.x | فرم‌های عمومی پرریسک؛ OTP همچنان rate-limited |
+روی production/staging واقعی:
 
-سه وابستگی آخر بعد از نصب با Composer، بررسی extensionها و ثبت دقیق در
-`composer.lock` فعال می‌شوند.
+```bash
+php artisan system:dispatch-queue-heartbeats
+php artisan system:scheduler-heartbeat
+php artisan release:gate --production
+```
+
+## خروجی‌های خارج از اختیار repository
+
+این موارد را نمی‌توان با کد یا داده ساختگی «سبز» اعلام کرد:
+
+- credential و تأیید قرارداد PSP، SMS، FCM و SMTP
+- DNS، TLS، سرور، registry و سیاست secret manager مالک پروژه
+- بازنویسی تاریخچه Git و rotation کلیدهای قبلی بدون تأیید مالک
+- UAT مرورگر/دستگاه واقعی، تست sandbox PSP و restore drill staging
+- ایجاد scaffolding نهایی Android/iOS و ساخت/امضای binary native بدون Flutter SDK، keystore و Apple/Google accounts
+
+راهنمای اجرای این موارد در `docs/production/DEPLOYMENT_RUNBOOK.md` و `docs/production/SECURITY_ROTATION_CHECKLIST.md` قرار دارد.

@@ -12,6 +12,8 @@ use App\Enums\WalletPayoutStatus;
 use App\Models\BuildingFacility;
 use App\Models\FacilityReservation;
 use App\Models\GuestVisit;
+use App\Models\LoyaltyReward;
+use App\Models\LoyaltyRewardClaim;
 use App\Models\ProviderBankAccount;
 use App\Models\ProviderPayoutRequest;
 use App\Models\ServiceRequest;
@@ -22,6 +24,7 @@ use App\Models\UnitInvoice;
 use App\Models\Wallet;
 use App\Models\User;
 use App\Support\Jalali\JalaliDateFormatter;
+use App\Services\Loyalty\LoyaltyLedgerService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -30,7 +33,8 @@ final class PortalDashboardService
     public function __construct(
         private readonly PortalAccessService $access,
         private readonly ManagementHeaderContextService $header,
-        private readonly JalaliDateFormatter $jalali
+        private readonly JalaliDateFormatter $jalali,
+        private readonly LoyaltyLedgerService $loyalty
     ) {
     }
 
@@ -308,6 +312,46 @@ final class PortalDashboardService
                     'title',
                 ]);
 
+        $loyaltyAccount = $this->loyalty->accountFor($user);
+        $loyaltyRewards = LoyaltyReward::query()
+            ->where('is_active', true)
+            ->where(function (Builder $query) use ($buildingIds): void {
+                $query->whereNull('building_id');
+
+                if ($buildingIds->isNotEmpty()) {
+                    $query->orWhereIn('building_id', $buildingIds->all());
+                }
+            })
+            ->orderBy('required_points')
+            ->limit(12)
+            ->get()
+            ->map(fn (LoyaltyReward $reward): array => [
+                'id' => $reward->getKey(),
+                'title' => $reward->title,
+                'description' => $reward->description,
+                'required_points' => (int) $reward->required_points,
+                'can_claim' => (int) $loyaltyAccount->balance
+                    >= (int) $reward->required_points,
+            ]);
+
+        $loyaltyClaims = LoyaltyRewardClaim::query()
+            ->where('user_id', $user->getKey())
+            ->with('loyaltyReward:id,title,required_points')
+            ->latest('id')
+            ->limit(10)
+            ->get()
+            ->map(fn (LoyaltyRewardClaim $claim): array => [
+                'id' => $claim->getKey(),
+                'title' => $claim->loyaltyReward?->title ?: 'جایزه',
+                'points' => (int) ($claim->loyaltyReward?->required_points ?? 0),
+                'status' => $claim->status instanceof \BackedEnum
+                    ? $claim->status->value
+                    : $claim->status,
+                'claimed_at_jalali' => $this->jalali->dateTime(
+                    $claim->claimed_at ?? $claim->created_at
+                ),
+            ]);
+
         return [
             'area' =>
                 'resident',
@@ -343,6 +387,12 @@ final class PortalDashboardService
 
             'support_categories' =>
                 $categories,
+
+            'loyalty' => [
+                'balance' => (int) $loyaltyAccount->balance,
+                'rewards' => $loyaltyRewards->all(),
+                'claims' => $loyaltyClaims->all(),
+            ],
 
             'stats' => [
                 'units' =>

@@ -182,6 +182,11 @@ return [
                 'meeting-minutes.create',
                 'meeting-minutes.update',
 
+                'loyalty-rewards.view',
+                'loyalty-rewards.create',
+                'loyalty-rewards.update',
+                'loyalty-rewards.delete',
+
                 'generated-reports.view',
                 'generated-reports.create',
             ],
@@ -327,6 +332,11 @@ return [
                 'meeting-minutes.create',
                 'meeting-minutes.update',
 
+                'loyalty-rewards.view',
+                'loyalty-rewards.create',
+                'loyalty-rewards.update',
+                'loyalty-rewards.delete',
+
                 'generated-reports.view',
                 'generated-reports.create',
             ],
@@ -424,6 +434,11 @@ return [
                 'building-bills.fail',
 
                 'wallet-accounting.view',
+
+                'loyalty-rewards.view',
+                'loyalty-rewards.create',
+                'loyalty-rewards.update',
+                'loyalty-rewards.delete',
 
                 'generated-reports.view',
                 'generated-reports.create',

@@ -146,6 +146,8 @@ Also run the Laravel scheduler continuously.
 
 ## 6. Mobile / Flutter Authentication
 
+پیاده‌سازی مرجع این قرارداد در `mobile/` قرار دارد؛ دستورهای ایجاد platform و build release در `mobile/README.md` ثبت شده‌اند.
+
 Existing endpoints:
 
 ```text
