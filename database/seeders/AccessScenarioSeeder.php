@@ -2,13 +2,21 @@
 
 namespace Database\Seeders;
 
+use App\Enums\ChargePeriodStatus;
+use App\Enums\InvoiceStatus;
 use App\Enums\OccupancyType;
+use App\Enums\ServiceRequestPriority;
+use App\Enums\ServiceRequestStatus;
 use App\Models\Block;
 use App\Models\Building;
+use App\Models\ChargePeriod;
 use App\Models\Complex;
 use App\Models\Floor;
+use App\Models\InvoiceItem;
 use App\Models\Role;
+use App\Models\ServiceRequest;
 use App\Models\Unit;
+use App\Models\UnitInvoice;
 use App\Models\UnitOccupancy;
 use App\Models\UnitOwnership;
 use App\Models\User;
@@ -367,6 +375,20 @@ class AccessScenarioSeeder extends Seeder
                 ]
             );
 
+        $financialScenario =
+            $this->financialScenario(
+                $buildingA,
+                $unitsA,
+                $users['superadmin']
+            );
+
+        $serviceScenario =
+            $this->serviceScenario(
+                $buildingA,
+                $unitsA,
+                $users
+            );
+
         return [
             'complex' =>
                 $primaryComplex,
@@ -385,6 +407,359 @@ class AccessScenarioSeeder extends Seeder
 
             'users' =>
                 $users,
+
+            'charge_period' =>
+                $financialScenario[
+                    'charge_period'
+                ],
+
+            'invoices' =>
+                $financialScenario[
+                    'invoices'
+                ],
+
+            'service_requests' =>
+                $serviceScenario,
+        ];
+    }
+
+    /**
+     * Give each resident persona a payable, deterministic charge invoice.
+     * The wallet itself is provisioned by ProvisionWalletObserver when the
+     * User and Unit records are created.
+     *
+     * @param  array<string, Unit>  $units
+     * @return array{charge_period: ChargePeriod, invoices: array<string, UnitInvoice>}
+     */
+    private function financialScenario(
+        Building $building,
+        array $units,
+        User $actor
+    ): array {
+        $periodStart = now()
+            ->startOfMonth()
+            ->startOfDay();
+
+        $periodEnd = now()
+            ->endOfMonth()
+            ->startOfDay();
+
+        $chargePeriod =
+            ChargePeriod::query()
+                ->updateOrCreate(
+                    [
+                        'building_id' =>
+                            $building->getKey(),
+
+                        'period_start' =>
+                            $periodStart,
+
+                        'period_end' =>
+                            $periodEnd,
+                    ],
+                    [
+                        'title' =>
+                            'شارژ ماهانه سناریوی دسترسی',
+
+                        'due_date' =>
+                            now()
+                                ->addDays(10)
+                                ->toDateString(),
+
+                        'status' =>
+                            ChargePeriodStatus::Issued,
+
+                        'created_by' =>
+                            $actor->getKey(),
+                    ]
+                );
+
+        $invoiceDefinitions = [
+            'owner' => [
+                'unit' =>
+                    $units['101'],
+
+                'number' =>
+                    'ACCESS-OWNER-CHARGE',
+
+                'amount' =>
+                    4_500_000,
+            ],
+
+            'tenant' => [
+                'unit' =>
+                    $units['102'],
+
+                'number' =>
+                    'ACCESS-TENANT-CHARGE',
+
+                'amount' =>
+                    3_200_000,
+            ],
+        ];
+
+        $invoices = [];
+
+        foreach (
+            $invoiceDefinitions
+            as $persona => $definition
+        ) {
+            $invoice =
+                UnitInvoice::query()
+                    ->withTrashed()
+                    ->updateOrCreate(
+                        [
+                            'invoice_number' =>
+                                $definition[
+                                    'number'
+                                ],
+                        ],
+                        [
+                            'building_id' =>
+                                $building->getKey(),
+
+                            'unit_id' =>
+                                $definition[
+                                    'unit'
+                                ]->getKey(),
+
+                            'charge_period_id' =>
+                                $chargePeriod->getKey(),
+
+                            'issue_date' =>
+                                now()
+                                    ->toDateString(),
+
+                            'due_date' =>
+                                now()
+                                    ->addDays(10)
+                                    ->toDateString(),
+
+                            'period_start' =>
+                                $periodStart
+                                    ->toDateString(),
+
+                            'period_end' =>
+                                $periodEnd
+                                    ->toDateString(),
+
+                            'subtotal' =>
+                                $definition[
+                                    'amount'
+                                ],
+
+                            'discount_amount' =>
+                                0,
+
+                            'penalty_amount' =>
+                                0,
+
+                            'total_amount' =>
+                                $definition[
+                                    'amount'
+                                ],
+
+                            'paid_amount' =>
+                                0,
+
+                            'outstanding_amount' =>
+                                $definition[
+                                    'amount'
+                                ],
+
+                            'status' =>
+                                InvoiceStatus::Issued,
+
+                            'description' =>
+                                'صورتحساب قابل پرداخت برای سناریوی کنترل دسترسی پرتال',
+
+                            'created_by' =>
+                                $actor->getKey(),
+                        ]
+                    );
+
+            if ($invoice->trashed()) {
+                $invoice->restore();
+            }
+
+            InvoiceItem::query()
+                ->updateOrCreate(
+                    [
+                        'unit_invoice_id' =>
+                            $invoice->getKey(),
+
+                        'title' =>
+                            'شارژ ماهانه ساختمان',
+                    ],
+                    [
+                        'charge_item_id' =>
+                            null,
+
+                        'description' =>
+                            'آیتم سناریوی Role و Scope',
+
+                        'quantity' =>
+                            1,
+
+                        'unit_amount' =>
+                            $definition[
+                                'amount'
+                            ],
+
+                        'total_amount' =>
+                            $definition[
+                                'amount'
+                            ],
+
+                        'metadata' => [
+                            'scenario' =>
+                                'access',
+
+                            'persona' =>
+                                $persona,
+                        ],
+                    ]
+                );
+
+            $invoices[$persona] =
+                $invoice;
+        }
+
+        return [
+            'charge_period' =>
+                $chargePeriod,
+
+            'invoices' =>
+                $invoices,
+        ];
+    }
+
+    /**
+     * Seed one provider-owned job and one comparison job so Provider Portal
+     * isolation is visible immediately after running the scenario command.
+     *
+     * @param  array<string, User>  $users
+     * @param  array<string, Unit>  $units
+     * @return array<string, ServiceRequest>
+     */
+    private function serviceScenario(
+        Building $building,
+        array $units,
+        array $users
+    ): array {
+        $providerRequest =
+            ServiceRequest::query()
+                ->withTrashed()
+                ->updateOrCreate(
+                    [
+                        'request_number' =>
+                            'ACCESS-PROVIDER-SERVICE',
+                    ],
+                    [
+                        'building_id' =>
+                            $building->getKey(),
+
+                        'unit_id' =>
+                            $units['101']
+                                ->getKey(),
+
+                        'requested_by' =>
+                            $users['owner']
+                                ->getKey(),
+
+                        'type' =>
+                            'electrical',
+
+                        'priority' =>
+                            ServiceRequestPriority::Normal,
+
+                        'status' =>
+                            ServiceRequestStatus::Assigned,
+
+                        'title' =>
+                            'خدمت اختصاصی ارائه‌دهنده آزمایشی',
+
+                        'description' =>
+                            'این درخواست فقط در پرتال ارائه‌دهنده تخصیص‌یافته نمایش داده می‌شود.',
+
+                        'assigned_to' =>
+                            $users[
+                                'service_provider'
+                            ]->getKey(),
+
+                        'assigned_at' =>
+                            now(),
+
+                        'completed_at' =>
+                            null,
+                    ]
+                );
+
+        $comparisonRequest =
+            ServiceRequest::query()
+                ->withTrashed()
+                ->updateOrCreate(
+                    [
+                        'request_number' =>
+                            'ACCESS-OTHER-SERVICE',
+                    ],
+                    [
+                        'building_id' =>
+                            $building->getKey(),
+
+                        'unit_id' =>
+                            $units['102']
+                                ->getKey(),
+
+                        'requested_by' =>
+                            $users['tenant']
+                                ->getKey(),
+
+                        'type' =>
+                            'cleaning',
+
+                        'priority' =>
+                            ServiceRequestPriority::Low,
+
+                        'status' =>
+                            ServiceRequestStatus::Assigned,
+
+                        'title' =>
+                            'خدمت مقایسه‌ای خارج از کارتابل ارائه‌دهنده',
+
+                        'description' =>
+                            'این رکورد برای اثبات عدم نمایش کار سایر کاربران ایجاد می‌شود.',
+
+                        'assigned_to' =>
+                            $users['operator']
+                                ->getKey(),
+
+                        'assigned_at' =>
+                            now(),
+
+                        'completed_at' =>
+                            null,
+                    ]
+                );
+
+        foreach (
+            [
+                $providerRequest,
+                $comparisonRequest,
+            ]
+            as $request
+        ) {
+            if ($request->trashed()) {
+                $request->restore();
+            }
+        }
+
+        return [
+            'provider' =>
+                $providerRequest,
+
+            'comparison' =>
+                $comparisonRequest,
         ];
     }
 

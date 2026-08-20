@@ -680,40 +680,6 @@
     background: var(--info-soft);
 }
 
-.crud-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 13px;
-    margin-top: 10px;
-    padding-top: 10px;
-    color: var(--muted);
-    font-size: 12px;
-}
-
-.crud-pagination > div {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-}
-
-.crud-page-button {
-    min-width: 52px;
-    height: 30px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface-soft);
-    color: var(--text);
-    font-family: var(--font-ui);
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.crud-page-button:disabled {
-    opacity: .42;
-    cursor: not-allowed;
-}
-
 /* ------------------------------------------------------------------
    Forms / Drawer / Modal
 ------------------------------------------------------------------- */
@@ -854,8 +820,7 @@ body.crud-overlay-open {
 
 .crud-field input:not([type="checkbox"]),
 .crud-field select,
-.crud-field textarea,
-.crud-lookup-filter {
+.crud-field textarea {
     width: 100%;
     min-width: 0;
     border: 1px solid var(--border);
@@ -869,8 +834,7 @@ body.crud-overlay-open {
 }
 
 .crud-field input:not([type="checkbox"]),
-.crud-field select,
-.crud-lookup-filter {
+.crud-field select {
     height: 41px;
     padding: 0 10px;
 }
@@ -889,8 +853,7 @@ body.crud-overlay-open {
 
 .crud-field input:focus,
 .crud-field select:focus,
-.crud-field textarea:focus,
-.crud-lookup-filter:focus {
+.crud-field textarea:focus {
     border-color:
         color-mix(
             in srgb,
@@ -943,18 +906,6 @@ body.crud-overlay-open {
     color: var(--muted-2);
     font-size: 12px;
     line-height: 1.7;
-}
-
-.crud-lookup-search {
-    display: grid;
-    gap: 4px;
-}
-
-.crud-lookup-filter {
-    height: 34px;
-    border-radius: 8px;
-    background: var(--surface);
-    font-size: 12px;
 }
 
 .crud-form-actions {
@@ -1175,11 +1126,6 @@ body.crud-overlay-open {
     }
 
     .crud-context-card__heading {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .crud-pagination {
         align-items: flex-start;
         flex-direction: column;
     }

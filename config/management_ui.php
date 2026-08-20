@@ -44,5 +44,12 @@ return [
             'composer_package' => 'yajra/laravel-datatables-oracle',
             'version_constraint' => '^12.0',
         ],
+
+        'select2' => [
+            'version' => '4.1.0',
+            'npm_package' => 'select2',
+            'jquery_version' => '3.7.1',
+            'jquery_npm_package' => 'jquery',
+        ],
     ],
 ];

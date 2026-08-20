@@ -29,7 +29,7 @@ UnitOccupancy
 | finance_manager | Building | بله | مالی، شارژ، Wallet، قبض و گزارش |
 | operator | Building | بله | مهمان، رزرو، خدمات و عملیات |
 | support_agent | Building | بله | تیکت و SLA |
-| service_provider | Building | خیر | Provider Persona؛ Portal مستقل بعداً |
+| service_provider | Building | خیر | پرتال اختصاصی ارائه‌دهنده؛ فقط کارهای تخصیص‌یافته، کیف پول و تسویه خودش |
 | owner | UnitOwnership | خیر | مالک؛ دسترسی Relation-driven |
 | tenant | UnitOccupancy | خیر | مستأجر؛ دسترسی Relation-driven |
 
@@ -149,13 +149,30 @@ Demo@1405
 | Owner | 09121110007 | role.owner@buildino.local |
 | Tenant | 09121110008 | role.tenant@buildino.local |
 
+مسیر ورود نقش‌های مدیریتی (`superadmin` تا `support_agent`):
+
+```text
+/management/login
+```
+
+مسیر ورود مالک، مستأجر و ارائه‌دهنده خدمات:
+
+```text
+/portal/login
+```
+
+پس از ورود، Middleware و Scope همان حساب مقصد مجاز را انتخاب می‌کند؛
+ورود پرتال به معنی دسترسی به پنل مدیریت و داده سایر واحدها یا ارائه‌دهندگان نیست.
+
 ## داده Scope تست
 
 ```text
 مجتمع آزمایشی دسترسی
 ├── ساختمان آلفا
-│   ├── واحد 101 → Owner
-│   └── واحد 102 → Tenant
+│   ├── واحد 101 → Owner + کیف پول + صورتحساب قابل پرداخت
+│   ├── واحد 102 → Tenant + کیف پول + صورتحساب قابل پرداخت
+│   ├── کار خدماتی Owner → Service Provider
+│   └── کار مقایسه‌ای Tenant → Operator (خارج از کارتابل Provider)
 └── ساختمان بتا
 
 مجتمع خارج از محدوده

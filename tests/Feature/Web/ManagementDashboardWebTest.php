@@ -5,6 +5,7 @@ namespace Tests\Feature\Web;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\UserRoleAssignment;
+use App\Services\System\RuntimeHeartbeatService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\CreatesBuildingDomainData;
 use Tests\TestCase;
@@ -186,6 +187,46 @@ class ManagementDashboardWebTest extends TestCase
             )
             ->assertSee(
                 'نمای کل پلتفرم'
+            );
+    }
+
+    public function test_dashboard_renders_scheduler_queue_and_system_health_as_ok_with_fresh_runtime(): void
+    {
+        $this->createBuildingGraph();
+
+        $admin = $this->createUser();
+
+        $this->grantPermission(
+            $admin->id,
+            null,
+            'reports.platform.view'
+        );
+        $this->grantPermission(
+            $admin->id,
+            null,
+            'system.health.view'
+        );
+
+        app(RuntimeHeartbeatService::class)
+            ->touch('scheduler');
+
+        $this->actingAs(
+            $admin,
+            'web'
+        );
+
+        $this->get('/management')
+            ->assertOk()
+            ->assertSee(
+                'health-pill health-pill--ok',
+                false
+            )
+            ->assertSee('سالم')
+            ->assertSee('Scheduler')
+            ->assertSee('Queue')
+            ->assertSee(
+                'health-text health-text--ok',
+                false
             );
     }
 

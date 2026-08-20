@@ -6,6 +6,7 @@ use App\Enums\ServiceRequestPriority;
 use App\Enums\ServiceRequestStatus;
 use App\Models\ServiceRequest;
 use App\Models\Unit;
+use App\Models\UnitInvoice;
 use App\Models\User;
 use Database\Seeders\AccessScenarioSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -267,6 +268,91 @@ class PortalWebAccessTest extends TestCase
                 "/api/v1/units/{$unit->getKey()}/invoices"
             )
             ->assertOk();
+    }
+
+    public function test_owner_can_pay_only_own_seeded_charge_invoice(): void
+    {
+        $this->seed(
+            AccessScenarioSeeder::class
+        );
+
+        $owner =
+            $this->user(
+                'role.owner@buildino.local'
+            );
+
+        $ownInvoice =
+            UnitInvoice::query()
+                ->where(
+                    'invoice_number',
+                    'ACCESS-OWNER-CHARGE'
+                )
+                ->firstOrFail();
+
+        $tenantInvoice =
+            UnitInvoice::query()
+                ->where(
+                    'invoice_number',
+                    'ACCESS-TENANT-CHARGE'
+                )
+                ->firstOrFail();
+
+        $this->actingAs(
+            $owner,
+            'web'
+        );
+
+        $headers = [
+            'Origin' =>
+                config(
+                    'app.url',
+                    'http://localhost'
+                ),
+
+            'Referer' =>
+                rtrim(
+                    config(
+                        'app.url',
+                        'http://localhost'
+                    ),
+                    '/'
+                )
+                . '/portal/resident',
+        ];
+
+        $this->withHeaders(
+            $headers
+        )
+            ->postJson(
+                "/api/v1/invoices/{$ownInvoice->getKey()}/payments",
+                [
+                    'amount' =>
+                        500_000,
+
+                    'method' =>
+                        'manual',
+                ]
+            )
+            ->assertCreated()
+            ->assertJsonPath(
+                'data.payer_user_id',
+                $owner->getKey()
+            );
+
+        $this->withHeaders(
+            $headers
+        )
+            ->postJson(
+                "/api/v1/invoices/{$tenantInvoice->getKey()}/payments",
+                [
+                    'amount' =>
+                        500_000,
+
+                    'method' =>
+                        'manual',
+                ]
+            )
+            ->assertForbidden();
     }
 
     public function test_resident_cannot_create_service_or_support_request_for_another_unit_in_same_building(): void

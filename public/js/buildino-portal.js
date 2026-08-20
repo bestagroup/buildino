@@ -847,10 +847,15 @@
                 ...unit.options,
             ].forEach(
                 (option) => {
-                    option.hidden =
+                    const unavailable =
                         option.dataset
                             .buildingId
                         !== buildingId;
+
+                    option.hidden =
+                        unavailable;
+                    option.disabled =
+                        unavailable;
                 }
             );
 
@@ -872,6 +877,9 @@
                     firstVisible
                         .value;
             }
+
+            window.BuildinoSelect2
+                ?.refresh(unit);
         };
 
     reservationForm

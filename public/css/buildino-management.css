@@ -700,7 +700,7 @@ body.sidebar-collapsed .sidebar__version {
     display: block;
     margin-bottom: 1px;
     color: var(--muted-2);
-    font-size: 7.7px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: .8px;
     direction: ltr;
@@ -855,7 +855,7 @@ html[data-theme="dark"] .theme-icon--dark {
 }
 
 .quick-create-button span {
-    font-size: 9.8px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -1077,7 +1077,7 @@ html[data-theme="dark"] .theme-icon--dark {
 .role-chip small {
     margin-top: 1px;
     color: var(--muted);
-    font-size: 7.4px;
+    font-size: 12px;
 }
 
 .popover-logout {
@@ -1266,7 +1266,7 @@ body.command-open .command-palette {
     border-top: 1px solid var(--border);
     background: var(--surface-soft);
     color: var(--muted-2);
-    font-size: 7.7px;
+    font-size: 12px;
 }
 
 /* ------------------------------------------------------------------
@@ -2049,7 +2049,7 @@ tbody tr:hover td {
     min-width: 58px;
     padding: 3px 7px;
     border-radius: 999px;
-    font-size: 7.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -2499,7 +2499,7 @@ tbody tr:hover td {
     border-radius: 10px;
     background: #f8fafc;
     color: #758397;
-    font-size: 8.4px;
+    font-size: 12px;
     line-height: 1.8;
 }
 
@@ -3052,13 +3052,13 @@ tbody tr:hover td {
 
 .wallet-summary-trigger__copy small {
     color: var(--muted);
-    font-size: 7.3px;
+    font-size: 12px;
     line-height: 1.1;
 }
 
 .wallet-summary-trigger__copy strong {
     color: var(--text);
-    font-size: 10px;
+    font-size: 12px;
     line-height: 1.2;
     font-weight: 800;
     direction: ltr;
@@ -3066,7 +3066,7 @@ tbody tr:hover td {
 
 .wallet-summary-trigger__currency {
     color: var(--accent);
-    font-size: 7px;
+    font-size: 12px;
     font-weight: 800;
     direction: ltr;
 }
@@ -3115,7 +3115,7 @@ tbody tr:hover td {
 
 .wallet-popover__hero small {
     color: rgba(255,255,255,.68);
-    font-size: 8px;
+    font-size: 12px;
 }
 
 .wallet-popover__hero strong {
@@ -3129,7 +3129,7 @@ tbody tr:hover td {
     margin-top: 1px;
     color: #a9e6e1;
     font-style: normal;
-    font-size: 8px;
+    font-size: 12px;
 }
 
 .wallet-popover__stats {
@@ -3153,12 +3153,12 @@ tbody tr:hover td {
 
 .wallet-popover__stats span {
     color: var(--muted);
-    font-size: 7.4px;
+    font-size: 12px;
 }
 
 .wallet-popover__stats strong {
     margin-top: 3px;
-    font-size: 10px;
+    font-size: 12px;
     direction: ltr;
 }
 
@@ -3168,7 +3168,7 @@ tbody tr:hover td {
     border-radius: 9px;
     background: var(--warning-soft);
     color: var(--warning);
-    font-size: 8px;
+    font-size: 12px;
 }
 
 .notification-trigger {
@@ -3216,7 +3216,7 @@ tbody tr:hover td {
             #b9213a
         );
     color: #fff;
-    font-size: 7px;
+    font-size: 12px;
     font-weight: 900;
     box-shadow: 0 4px 10px rgba(185, 33, 58, .26);
 }
@@ -3252,7 +3252,7 @@ tbody tr:hover td {
 .notification-menu__header span {
     margin-top: 2px;
     color: var(--muted);
-    font-size: 7.7px;
+    font-size: 12px;
 }
 
 .notification-menu__header button {
@@ -3261,7 +3261,7 @@ tbody tr:hover td {
     border-radius: 8px;
     background: var(--surface);
     color: var(--primary-700);
-    font-size: 7.8px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
 }
@@ -3340,7 +3340,7 @@ tbody tr:hover td {
 
 .notification-item__body strong {
     overflow: hidden;
-    font-size: 9.3px;
+    font-size: 12px;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -3350,7 +3350,7 @@ tbody tr:hover td {
     margin-top: 2px;
     overflow: hidden;
     color: var(--muted);
-    font-size: 8.1px;
+    font-size: 12px;
     line-height: 1.75;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -3359,7 +3359,7 @@ tbody tr:hover td {
 .notification-item__body small {
     margin-top: 5px;
     color: var(--muted-2);
-    font-size: 7.1px;
+    font-size: 12px;
 }
 
 .notification-menu__empty {
@@ -3375,13 +3375,13 @@ tbody tr:hover td {
 
 .notification-menu__empty strong {
     color: var(--text-soft);
-    font-size: 9.5px;
+    font-size: 12px;
 }
 
 .notification-menu__empty span {
     max-width: 260px;
     color: var(--muted);
-    font-size: 8px;
+    font-size: 12px;
 }
 
 .notification-menu__footer {
@@ -3393,7 +3393,7 @@ tbody tr:hover td {
 
 .notification-menu__footer a {
     color: var(--primary-700);
-    font-size: 8px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -3461,7 +3461,7 @@ tbody tr:hover td {
 
 .glance-card > div > span {
     color: var(--muted);
-    font-size: 7.8px;
+    font-size: 12px;
 }
 
 .glance-card > div > strong {
@@ -3475,11 +3475,11 @@ tbody tr:hover td {
 .glance-card > div > small {
     margin-top: 1px;
     color: var(--muted-2);
-    font-size: 7px;
+    font-size: 12px;
 }
 
 .glance-card .glance-card__text-value {
-    font-size: 10px;
+    font-size: 12px;
     direction: rtl;
 }
 
@@ -3813,7 +3813,7 @@ tbody tr:hover td {
     max-width: 690px;
     margin: 0;
     color: var(--muted);
-    font-size: 8.8px;
+    font-size: 12px;
     line-height: 1.9;
 }
 
@@ -3847,7 +3847,7 @@ tbody tr:hover td {
         );
     color: var(--text-soft);
     box-shadow: var(--shadow-xs);
-    font-size: 8.4px;
+    font-size: 12px;
     font-weight: 700;
     transition:
         transform var(--transition),

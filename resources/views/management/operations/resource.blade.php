@@ -206,13 +206,6 @@
                 </div>
 
                 <div class="crud-toolbar__actions">
-                    <select id="crudPageSize">
-                        <option value="10">۱۰ رکورد</option>
-                        <option value="25" selected>۲۵ رکورد</option>
-                        <option value="50">۵۰ رکورد</option>
-                        <option value="100">۱۰۰ رکورد</option>
-                    </select>
-
                     <button
                         type="button"
                         class="crud-button crud-button--soft"
@@ -244,31 +237,6 @@
                 </table>
             </div>
 
-            <div
-                class="crud-pagination"
-                id="crudPagination"
-                hidden
-            >
-                <span id="crudRecordSummary"></span>
-
-                <div>
-                    <button
-                        type="button"
-                        id="crudPrevPage"
-                        class="crud-page-button"
-                    >
-                        قبلی
-                    </button>
-                    <strong id="crudCurrentPage">1</strong>
-                    <button
-                        type="button"
-                        id="crudNextPage"
-                        class="crud-page-button"
-                    >
-                        بعدی
-                    </button>
-                </div>
-            </div>
         </section>
     @endif
 

@@ -51,7 +51,11 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"npm run dev\" --names='server,queue,vite'"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#86efac,#fda4af,#fde047,#fdba74\" \"php artisan serve\" \"php artisan schedule:work\" \"php artisan queue:work --queue=default --sleep=2 --tries=3 --timeout=90\" \"php artisan queue:work --queue=notifications --sleep=2 --tries=3 --timeout=90\" \"php artisan queue:work --queue=reports --sleep=2 --tries=3 --timeout=300\" \"npm run dev\" --names=server,scheduler,queue-default,queue-notifications,queue-reports,vite --kill-others"
+        ],
+        "runtime": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#c4b5fd,#86efac,#fda4af,#fde047\" \"php artisan schedule:work\" \"php artisan queue:work --queue=default --sleep=2 --tries=3 --timeout=90\" \"php artisan queue:work --queue=notifications --sleep=2 --tries=3 --timeout=90\" \"php artisan queue:work --queue=reports --sleep=2 --tries=3 --timeout=300\" --names=scheduler,queue-default,queue-notifications,queue-reports --kill-others"
         ],
         "test": [
             "@php artisan config:clear --ansi",

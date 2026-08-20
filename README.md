@@ -35,12 +35,15 @@ npm run build
 php artisan serve
 ```
 
-در Linux/macOS به‌جای `copy` از `cp` استفاده کنید. برای پردازش کامل دامنه، worker و scheduler نیز باید فعال باشند:
+در Linux/macOS به‌جای `copy` از `cp` استفاده کنید. برای اجرای دائمی Scheduler و worker مستقل هر سه صف:
 
 ```bash
-php artisan queue:work --queue=default,notifications,reports --tries=3
-php artisan schedule:work
+composer runtime
 ```
+
+فرمان `composer dev` نیز سرور، Vite، Scheduler و workerهای
+`default`، `notifications` و `reports` را یکجا اجرا می‌کند. فعال‌نبودن هرکدام
+به‌درستی باعث نمایش وضعیت کاهش کیفیت در داشبورد می‌شود.
 
 ورودی‌ها:
 

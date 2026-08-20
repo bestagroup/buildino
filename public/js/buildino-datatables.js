@@ -284,6 +284,16 @@
                             true,
                         responsive:
                             true,
+                        layout: {
+                            topStart:
+                                null,
+                            topEnd:
+                                "search",
+                            bottomStart:
+                                "info",
+                            bottomEnd:
+                                null,
+                        },
                         searchDelay:
                             350,
                         pageLength:
@@ -417,6 +427,12 @@
                                 (field) => {
                                     field.value =
                                         "";
+
+                                    window
+                                        .BuildinoSelect2
+                                        ?.refresh(
+                                            field
+                                        );
                                 }
                             );
 

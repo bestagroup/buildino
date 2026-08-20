@@ -30,12 +30,6 @@
         tableWrap: $("#crudTableWrap"),
         tableHead: $("#crudTableHead"),
         tableBody: $("#crudTableBody"),
-        pagination: $("#crudPagination"),
-        summary: $("#crudRecordSummary"),
-        currentPage: $("#crudCurrentPage"),
-        prevPage: $("#crudPrevPage"),
-        nextPage: $("#crudNextPage"),
-        pageSize: $("#crudPageSize"),
         drawer: $("#crudDrawer"),
         drawerBackdrop: $("#crudDrawerBackdrop"),
         drawerClose: $("#crudDrawerClose"),
@@ -66,7 +60,7 @@
         rows: [],
         filteredRows: [],
         currentPage: 1,
-        pageSize: Number(elements.pageSize?.value || 25),
+        pageSize: 25,
         editRow: null,
         action: null,
         actionRow: null,
@@ -573,10 +567,6 @@
                 elements.tableWrap.hidden = true;
             }
 
-            if (elements.pagination) {
-                elements.pagination.hidden = true;
-            }
-
             return;
         }
 
@@ -602,9 +592,6 @@
             elements.tableWrap.hidden = true;
         }
 
-        if (elements.pagination) {
-            elements.pagination.hidden = true;
-        }
     };
 
     const toast = (
@@ -811,112 +798,11 @@
         return url.toString();
     };
 
-    const enhanceLookupSearch = (
+    const refreshLookupSelect = (
         select
     ) => {
-        if (
-            ! select
-            || select.dataset
-                .lookupEnhanced
-                === "1"
-            || select.options.length
-                < 12
-        ) {
-            return;
-        }
-
-        const wrapper =
-            select.parentElement;
-
-        if (! wrapper) {
-            return;
-        }
-
-        const search =
-            document.createElement(
-                "input"
-            );
-
-        search.type =
-            "search";
-
-        search.className =
-            "crud-lookup-filter";
-
-        search.placeholder =
-            "جستجو در گزینه‌ها...";
-
-        search.autocomplete =
-            "off";
-
-        search.addEventListener(
-            "input",
-            () => {
-                const term =
-                    String(
-                        search.value
-                        || ""
-                    )
-                        .trim()
-                        .toLocaleLowerCase(
-                            "fa"
-                        )
-                        .replace(
-                            /ي/g,
-                            "ی"
-                        )
-                        .replace(
-                            /ك/g,
-                            "ک"
-                        );
-
-                [...select.options]
-                    .forEach(
-                        (option) => {
-                            if (
-                                option.value
-                                === ""
-                            ) {
-                                option.hidden =
-                                    false;
-                                return;
-                            }
-
-                            const label =
-                                String(
-                                    option.textContent
-                                    || ""
-                                )
-                                    .toLocaleLowerCase(
-                                        "fa"
-                                    )
-                                    .replace(
-                                        /ي/g,
-                                        "ی"
-                                    )
-                                    .replace(
-                                        /ك/g,
-                                        "ک"
-                                    );
-
-                            option.hidden =
-                                term
-                                ? ! label.includes(
-                                    term
-                                )
-                                : false;
-                        }
-                    );
-            }
-        );
-
-        select.before(
-            search
-        );
-
-        select.dataset
-            .lookupEnhanced =
-            "1";
+        window.BuildinoSelect2
+            ?.refresh(select);
     };
 
     const loadLookupOptions = async (
@@ -937,6 +823,10 @@
         select.innerHTML =
             placeholder
             + `<option value="" disabled>در حال بارگذاری...</option>`;
+
+        refreshLookupSelect(
+            select
+        );
 
         try {
             const { payload } =
@@ -995,13 +885,17 @@
                 );
             });
 
-            enhanceLookupSearch(
+            refreshLookupSelect(
                 select
             );
         } catch (error) {
             select.innerHTML =
                 placeholder
                 + `<option value="" disabled>خطا در دریافت گزینه‌ها</option>`;
+
+            refreshLookupSelect(
+                select
+            );
         }
     };
 
@@ -1307,45 +1201,6 @@
 
         elements.tableWrap.hidden =
             false;
-
-        if (elements.pagination) {
-            elements.pagination.hidden =
-                false;
-        }
-
-        const total =
-            state.filteredRows.length;
-
-        const from =
-            total
-                ? start + 1
-                : 0;
-
-        const to =
-            Math.min(
-                start + state.pageSize,
-                total
-            );
-
-        if (elements.summary) {
-            elements.summary.textContent =
-                `نمایش ${from} تا ${to} از ${total} رکورد`;
-        }
-
-        if (elements.currentPage) {
-            elements.currentPage.textContent =
-                state.currentPage;
-        }
-
-        if (elements.prevPage) {
-            elements.prevPage.disabled =
-                state.currentPage <= 1;
-        }
-
-        if (elements.nextPage) {
-            elements.nextPage.disabled =
-                to >= total;
-        }
 
         bindTableActions();
     };
@@ -1713,6 +1568,9 @@
         row = null,
         mode = "create"
     ) => {
+        window.BuildinoSelect2
+            ?.destroy(container);
+
         container.innerHTML =
             "";
 
@@ -1738,6 +1596,9 @@
                 );
             }
         }
+
+        window.BuildinoSelect2
+            ?.enhance(container);
     };
 
     const collectPayload = (
@@ -2623,60 +2484,6 @@
                     state.currentPage =
                         1;
                     applySearch();
-                }
-            );
-
-        elements.pageSize
-            ?.addEventListener(
-                "change",
-                () => {
-                    state.pageSize =
-                        Number(
-                            elements
-                                .pageSize
-                                .value
-                        );
-                    state.currentPage =
-                        1;
-                    renderTable();
-                }
-            );
-
-        elements.prevPage
-            ?.addEventListener(
-                "click",
-                () => {
-                    if (
-                        state.currentPage
-                        > 1
-                    ) {
-                        state.currentPage -=
-                            1;
-                        renderTable();
-                    }
-                }
-            );
-
-        elements.nextPage
-            ?.addEventListener(
-                "click",
-                () => {
-                    const max =
-                        Math.ceil(
-                            state
-                                .filteredRows
-                                .length
-                            / state.pageSize
-                        );
-
-                    if (
-                        state.currentPage
-                        < max
-                    ) {
-                        state.currentPage +=
-                            1;
-                        renderTable();
-                    }
                 }
             );
 

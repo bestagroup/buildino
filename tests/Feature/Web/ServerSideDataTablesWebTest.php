@@ -37,6 +37,46 @@ class ServerSideDataTablesWebTest extends TestCase
         );
     }
 
+    public function test_table_pagination_controls_are_not_rendered(): void
+    {
+        $runtime = (string) file_get_contents(
+            public_path('js/buildino-datatables.js')
+        );
+        $styles = (string) file_get_contents(
+            public_path('css/buildino-datatables.css')
+        );
+        $crudView = (string) file_get_contents(
+            resource_path(
+                'views/management/operations/resource.blade.php'
+            )
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/bottomEnd:\s*null/',
+            $runtime
+        );
+        $this->assertMatchesRegularExpression(
+            '/topStart:\s*null/',
+            $runtime
+        );
+        $this->assertMatchesRegularExpression(
+            '/div\.dt-container \.dt-length,\s*div\.dt-container \.dt-paging\s*\{\s*display:\s*none !important;/s',
+            $styles
+        );
+        $this->assertStringNotContainsString(
+            'crudPagination',
+            $crudView
+        );
+        $this->assertStringNotContainsString(
+            'crud-page-button',
+            $crudView
+        );
+        $this->assertStringNotContainsString(
+            'crudPageSize',
+            $crudView
+        );
+    }
+
     public function test_management_dashboard_renders_server_side_tables_instead_of_rows(): void
     {
         $this->seed(
@@ -327,7 +367,7 @@ class ServerSideDataTablesWebTest extends TestCase
             )
             ->assertJsonPath(
                 'recordsTotal',
-                1
+                2
             );
 
         $numbers =
@@ -347,8 +387,18 @@ class ServerSideDataTablesWebTest extends TestCase
             $numbers
         );
 
+        $this->assertContains(
+            'ACCESS-OWNER-CHARGE',
+            $numbers
+        );
+
         $this->assertNotContains(
             'DT-OTHER-001',
+            $numbers
+        );
+
+        $this->assertNotContains(
+            'ACCESS-TENANT-CHARGE',
             $numbers
         );
     }
@@ -369,7 +419,7 @@ class ServerSideDataTablesWebTest extends TestCase
             'web'
         );
 
-        $this->getJson(
+        $response = $this->getJson(
             route(
                 'portal.provider.datatables',
                 [
@@ -391,7 +441,9 @@ class ServerSideDataTablesWebTest extends TestCase
                     ]
                 )
             )
-        )
+        );
+
+        $response
             ->assertOk()
             ->assertJsonStructure([
                 'draw',
@@ -399,6 +451,28 @@ class ServerSideDataTablesWebTest extends TestCase
                 'recordsFiltered',
                 'data',
             ]);
+
+        $numbers =
+            collect(
+                $response->json(
+                    'data',
+                    []
+                )
+            )
+                ->pluck(
+                    'request_number'
+                )
+                ->all();
+
+        $this->assertContains(
+            'ACCESS-PROVIDER-SERVICE',
+            $numbers
+        );
+
+        $this->assertNotContains(
+            'ACCESS-OTHER-SERVICE',
+            $numbers
+        );
     }
 
     /**

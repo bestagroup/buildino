@@ -4,14 +4,19 @@ namespace Tests\Feature\Authorization;
 
 use App\Models\Building;
 use App\Models\Complex;
+use App\Models\Floor;
+use App\Models\InvoiceItem;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\ServiceRequest;
+use App\Models\UnitInvoice;
 use App\Models\UnitOccupancy;
 use App\Models\UnitOwnership;
 use App\Models\User;
 use App\Services\Web\ManagementDashboardAccessService;
 use App\Support\Authorization\PermissionChecker;
 use Database\Seeders\AccessScenarioSeeder;
+use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\RoleMatrixSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -20,6 +25,25 @@ use Tests\TestCase;
 class RoleMatrixAccessScenarioTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_default_database_seeder_synchronizes_full_role_matrix(): void
+    {
+        $this->seed(
+            DatabaseSeeder::class
+        );
+
+        $this->assertEqualsCanonicalizing(
+            array_keys(
+                config(
+                    'role_matrix.roles',
+                    []
+                )
+            ),
+            Role::query()
+                ->pluck('name')
+                ->all()
+        );
+    }
 
     public function test_role_matrix_references_only_registered_permissions(): void
     {
@@ -262,6 +286,93 @@ class RoleMatrixAccessScenarioTest extends TestCase
         );
     }
 
+    public function test_building_manager_can_manage_only_units_of_assigned_building(): void
+    {
+        $this->seed(
+            AccessScenarioSeeder::class
+        );
+
+        $manager =
+            $this->user(
+                'role.building@buildino.local'
+            );
+
+        $assignedFloor =
+            Floor::query()
+                ->whereHas(
+                    'block.building',
+                    fn ($query) =>
+                        $query->where(
+                            'code',
+                            'DEMO-BUILDING-A'
+                        )
+                )
+                ->firstOrFail();
+
+        $outsideFloor =
+            Floor::query()
+                ->whereHas(
+                    'block.building',
+                    fn ($query) =>
+                        $query->where(
+                            'code',
+                            'DEMO-BUILDING-B'
+                        )
+                )
+                ->firstOrFail();
+
+        Sanctum::actingAs(
+            $manager
+        );
+
+        $this->getJson(
+            "/api/v1/floors/{$assignedFloor->getKey()}/units"
+        )
+            ->assertOk()
+            ->assertJsonCount(
+                2,
+                'data'
+            );
+
+        $this->postJson(
+            "/api/v1/floors/{$assignedFloor->getKey()}/units",
+            [
+                'unit_number' =>
+                    '103',
+
+                'title' =>
+                    'واحد 103 مدیر ساختمان',
+
+                'area' =>
+                    90,
+
+                'bedrooms' =>
+                    2,
+
+                'usage_type' =>
+                    'residential',
+
+                'is_active' =>
+                    true,
+            ]
+        )->assertCreated();
+
+        $this->getJson(
+            "/api/v1/floors/{$outsideFloor->getKey()}/units"
+        )->assertForbidden();
+
+        $this->postJson(
+            "/api/v1/floors/{$outsideFloor->getKey()}/units",
+            [
+                'unit_number' =>
+                    '103',
+
+                'usage_type' =>
+                    'residential',
+            ]
+        )->assertForbidden();
+    }
+
     public function test_management_dashboard_scope_matches_role_assignment(): void
     {
         $this->seed(
@@ -467,6 +578,49 @@ class RoleMatrixAccessScenarioTest extends TestCase
                     'code',
                     'like',
                     'DEMO-COMPLEX-%'
+                )
+                ->count()
+        );
+
+        $this->assertSame(
+            2,
+            UnitInvoice::query()
+                ->whereIn(
+                    'invoice_number',
+                    [
+                        'ACCESS-OWNER-CHARGE',
+                        'ACCESS-TENANT-CHARGE',
+                    ]
+                )
+                ->count()
+        );
+
+        $this->assertSame(
+            2,
+            InvoiceItem::query()
+                ->whereHas(
+                    'unitInvoice',
+                    fn ($query) =>
+                        $query->whereIn(
+                            'invoice_number',
+                            [
+                                'ACCESS-OWNER-CHARGE',
+                                'ACCESS-TENANT-CHARGE',
+                            ]
+                        )
+                )
+                ->count()
+        );
+
+        $this->assertSame(
+            2,
+            ServiceRequest::query()
+                ->whereIn(
+                    'request_number',
+                    [
+                        'ACCESS-PROVIDER-SERVICE',
+                        'ACCESS-OTHER-SERVICE',
+                    ]
                 )
                 ->count()
         );
