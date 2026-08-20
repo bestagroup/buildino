@@ -22,7 +22,10 @@ class ApiSecurityServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('otp-request', function (Request $request): array {
-            $identifier = strtolower(trim((string) $request->input('identifier', 'unknown')));
+            $identifier = strtolower(trim((string) $request->input(
+                'identifier',
+                $request->input('mobile', 'unknown')
+            )));
 
             return [
                 Limit::perMinute((int) config('api_security.otp_request_rate_limit', 5))
@@ -31,7 +34,6 @@ class ApiSecurityServiceProvider extends ServiceProvider
                     ->by('ip:'.$request->ip()),
             ];
         });
-
 
         RateLimiter::for('system-health', function (Request $request): Limit {
             return Limit::perMinute(30)

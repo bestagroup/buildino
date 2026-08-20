@@ -224,6 +224,16 @@
                 </button>
             </form>
 
+            <div class="portal-login-register">
+                <span>
+                    حساب پرتال ندارید؟ به‌عنوان مالک، ساکن یا ارائه‌دهنده خدمات ثبت‌نام کنید.
+                </span>
+
+                <a href="{{ route('register', ['persona' => 'tenant']) }}">
+                    ایجاد حساب کاربری
+                </a>
+            </div>
+
             <div class="portal-login-management">
                 <span>
                     مدیر ساختمان یا کاربر سازمانی هستید؟

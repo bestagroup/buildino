@@ -1424,6 +1424,29 @@ html[data-theme="dark"] .portal-modal .btn-close {
     font-size: 7.8px;
 }
 
+.portal-login-register {
+    display: grid;
+    gap: 8px;
+    margin-top: 15px;
+    padding: 11px;
+    border: 1px solid #dce8f1;
+    border-radius: 11px;
+    background: #f5f9fc;
+    color: #718196;
+    font-size: 8px;
+    line-height: 1.7;
+    text-align: center;
+}
+
+.portal-login-register a {
+    display: block;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #e3eff7;
+    color: #28638f;
+    font-weight: 700;
+}
+
 .portal-login-management a {
     color: #29658f;
     font-weight: 700;

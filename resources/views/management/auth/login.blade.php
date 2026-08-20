@@ -236,6 +236,29 @@
                 </button>
             </form>
 
+            <div class="login-registration-cta">
+                <div>
+                    @include(
+                        'management.partials.icon',
+                        [
+                            'name' => 'user-plus',
+                            'size' => 18,
+                        ]
+                    )
+
+                    <span>
+                        <strong>هنوز حساب ندارید؟</strong>
+                        <small>
+                            به‌عنوان مدیر ساختمان یا یکی از نقش‌های سامانه ثبت‌نام کنید.
+                        </small>
+                    </span>
+                </div>
+
+                <a href="{{ route('register', ['persona' => 'building_manager']) }}">
+                    ساخت حساب جدید
+                </a>
+            </div>
+
             <div class="login-security-note">
                 @include(
                     'management.partials.icon',

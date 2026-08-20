@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\ManagementUserDataController;
 use App\Http\Controllers\Web\PortalAuthController;
 use App\Http\Controllers\Web\PortalDashboardController;
 use App\Http\Controllers\Web\PortalOperationsController;
+use App\Http\Controllers\Web\RegistrationController;
 use App\Http\Controllers\Web\WebDataTableController;
 use App\Http\Middleware\EnsureManagementWebAccess;
 use App\Http\Middleware\EnsurePortalWebAccess;
@@ -19,8 +20,67 @@ Route::redirect(
     '/management'
 );
 
+Route::get(
+    '/invitations/accept',
+    [
+        RegistrationController::class,
+        'invitation',
+    ]
+)
+    ->middleware('throttle:auth')
+    ->name('invitations.accept');
+
 Route::middleware('guest')
     ->group(function (): void {
+        Route::get(
+            '/register',
+            [
+                RegistrationController::class,
+                'create',
+            ]
+        )->name('register');
+
+        Route::post(
+            '/register',
+            [
+                RegistrationController::class,
+                'store',
+            ]
+        )
+            ->middleware([
+                'throttle:auth',
+                'throttle:otp-request',
+            ])
+            ->name('register.store');
+
+        Route::get(
+            '/register/verify',
+            [
+                RegistrationController::class,
+                'verifyForm',
+            ]
+        )->name('register.verify');
+
+        Route::post(
+            '/register/verify',
+            [
+                RegistrationController::class,
+                'verify',
+            ]
+        )
+            ->middleware('throttle:auth')
+            ->name('register.verify.store');
+
+        Route::post(
+            '/register/otp/resend',
+            [
+                RegistrationController::class,
+                'resend',
+            ]
+        )
+            ->middleware('throttle:otp-request')
+            ->name('register.otp.resend');
+
         Route::get(
             '/management/login',
             [
@@ -40,7 +100,6 @@ Route::middleware('guest')
             ->name(
                 'management.login.store'
             );
-
 
         /*
         |--------------------------------------------------------------------------
@@ -265,7 +324,6 @@ Route::middleware([
         )->name('logout');
     });
 
-
 /*
 |--------------------------------------------------------------------------
 | Resident / Provider Portal
@@ -320,7 +378,7 @@ Route::prefix('portal')
         )
             ->middleware(
                 EnsurePortalWebAccess::class
-                . ':resident'
+                .':resident'
             )
             ->name(
                 'resident.dashboard'
@@ -335,7 +393,7 @@ Route::prefix('portal')
         )
             ->middleware([
                 EnsurePortalWebAccess::class
-                . ':resident',
+                .':resident',
                 'throttle:api-v1',
             ])
             ->name(
@@ -351,7 +409,7 @@ Route::prefix('portal')
         )
             ->middleware(
                 EnsurePortalWebAccess::class
-                . ':resident'
+                .':resident'
             )
             ->name(
                 'resident.operations.index'
@@ -367,7 +425,7 @@ Route::prefix('portal')
             ->whereNumber('id')
             ->middleware(
                 EnsurePortalWebAccess::class
-                . ':resident'
+                .':resident'
             )
             ->name(
                 'resident.operations.show'
@@ -382,7 +440,7 @@ Route::prefix('portal')
         )
             ->middleware(
                 EnsurePortalWebAccess::class
-                . ':provider'
+                .':provider'
             )
             ->name(
                 'provider.dashboard'
@@ -397,7 +455,7 @@ Route::prefix('portal')
         )
             ->middleware([
                 EnsurePortalWebAccess::class
-                . ':provider',
+                .':provider',
                 'throttle:api-v1',
             ])
             ->name(
@@ -413,7 +471,7 @@ Route::prefix('portal')
         )
             ->middleware(
                 EnsurePortalWebAccess::class
-                . ':provider'
+                .':provider'
             )
             ->name(
                 'provider.operations.index'
@@ -429,7 +487,7 @@ Route::prefix('portal')
             ->whereNumber('id')
             ->middleware(
                 EnsurePortalWebAccess::class
-                . ':provider'
+                .':provider'
             )
             ->name(
                 'provider.operations.show'

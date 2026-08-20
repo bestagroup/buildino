@@ -2,6 +2,7 @@
 
 namespace App\Services\Web;
 
+use App\Enums\OccupancyType;
 use App\Models\ServiceRequest;
 use App\Models\Unit;
 use App\Models\UnitOccupancy;
@@ -88,25 +89,23 @@ final class PortalAccessService
                             'unitOwnerships',
                             fn (
                                 Builder $relation
-                            ) =>
-                                $this
-                                    ->activeResidentRelation(
-                                        $relation,
-                                        $user,
-                                        $today
-                                    )
+                            ) => $this
+                                ->activeResidentRelation(
+                                    $relation,
+                                    $user,
+                                    $today
+                                )
                         )
                         ->orWhereHas(
                             'unitOccupancies',
                             fn (
                                 Builder $relation
-                            ) =>
-                                $this
-                                    ->activeResidentRelation(
-                                        $relation,
-                                        $user,
-                                        $today
-                                    )
+                            ) => $this
+                                ->activeResidentRelation(
+                                    $relation,
+                                    $user,
+                                    $today
+                                )
                         );
                 }
             )
@@ -230,12 +229,10 @@ final class PortalAccessService
             return [
                 'type' => 'owner',
                 'label' => 'مالک',
-                'is_primary' =>
-                    (bool) $ownership
-                        ->is_primary,
-                'ownership_percentage' =>
-                    (float) $ownership
-                        ->ownership_percentage,
+                'is_primary' => (bool) $ownership
+                    ->is_primary,
+                'ownership_percentage' => (float) $ownership
+                    ->ownership_percentage,
             ];
         }
 
@@ -275,20 +272,29 @@ final class PortalAccessService
                 )
                 ->first();
 
+        if (
+            $occupancy?->occupancy_type
+                === OccupancyType::Owner
+        ) {
+            return [
+                'type' => 'owner',
+                'label' => 'مالک',
+                'is_primary' => (bool) $occupancy->is_primary,
+                'ownership_percentage' => null,
+            ];
+        }
+
         return [
             'type' => 'tenant',
-            'label' =>
-                $occupancy
+            'label' => $occupancy
                     ? 'مستأجر / ساکن'
                     : 'ساکن',
-            'is_primary' =>
-                (bool) (
-                    $occupancy
-                        ?->is_primary
-                    ?? false
-                ),
-            'ownership_percentage' =>
-                null,
+            'is_primary' => (bool) (
+                $occupancy
+                    ?->is_primary
+                ?? false
+            ),
+            'ownership_percentage' => null,
         ];
     }
 
