@@ -1316,7 +1316,24 @@
                     {
                         "bearerAuth": []
                     }
-                ]
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "example": {
+                                "bank_name": "Test Bank",
+                                "account_holder_name": "Building",
+                                "iban": "IR000000000000000000000010",
+                                "is_default": true
+                            }
+                        }
+                    }
+                }
             }
         },
         "/buildings/{building}/bill-payments": {
@@ -2422,7 +2439,23 @@
                     {
                         "bearerAuth": []
                     }
-                ]
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "example": {
+                                "building_bank_account_id": "{{building_bank_account_id}}",
+                                "amount": 100000,
+                                "idempotency_key": "{{wallet_payout_idempotency_key}}"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/buildings/{building}/wallet-topups": {
@@ -5462,7 +5495,24 @@
                     {
                         "bearerAuth": []
                     }
-                ]
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "example": {
+                                "amount": 100000,
+                                "method": "online",
+                                "idempotency_key": "{{invoice_payment_idempotency_key}}",
+                                "description": "Postman invoice payment"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/meeting-minutes": {
@@ -5846,6 +5896,45 @@
                     "General"
                 ],
                 "summary": "Delete /notification-devices/{userDevice}",
+                "parameters": [
+                    {
+                        "name": "userDevice",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "patch_api_v1_notification_devices_userdevice",
+                "tags": [
+                    "General"
+                ],
+                "summary": "Patch /notification-devices/{userDevice}",
                 "parameters": [
                     {
                         "name": "userDevice",
@@ -6721,7 +6810,8 @@
                             "example": {
                                 "provider_bank_account_id": "{{provider_bank_account_id}}",
                                 "amount": 100000,
-                                "currency": "IRR"
+                                "currency": "IRR",
+                                "idempotency_key": "{{provider_payout_idempotency_key}}"
                             }
                         }
                     }

@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "a71c6045-c2c9-494d-8c3b-0a6aff824b16",
+        "_postman_id": "9d6d0b87-f0b3-4b64-b9ac-55448cfbbf83",
         "name": "Buildino API V1",
         "description": "Runtime-aligned Buildino API V1 collection. Generated from Laravel routes.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -2723,6 +2723,10 @@
                             {
                                 "key": "Accept",
                                 "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -2737,6 +2741,15 @@
                                 "{{building_id}}",
                                 "bank-accounts"
                             ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"bank_name\": \"Test Bank\",\n    \"account_holder_name\": \"Building\",\n    \"iban\": \"IR000000000000000000000010\",\n    \"is_default\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     },
                     "event": [
@@ -2750,7 +2763,11 @@
                                     "});",
                                     "pm.test(\"Request ID is present\", function () {",
                                     "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
-                                    "});"
+                                    "});",
+                                    "if (pm.response.code === 201) {",
+                                    "  const json = pm.response.json();",
+                                    "  if (json.data?.id) pm.environment.set(\"building_bank_account_id\", json.data.id);",
+                                    "}"
                                 ]
                             }
                         }
@@ -4327,6 +4344,10 @@
                             {
                                 "key": "Accept",
                                 "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -4341,6 +4362,15 @@
                                 "{{invoice_id}}",
                                 "payments"
                             ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"amount\": 100000,\n    \"method\": \"online\",\n    \"idempotency_key\": \"{{invoice_payment_idempotency_key}}\",\n    \"description\": \"Postman invoice payment\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     },
                     "event": [
@@ -6117,6 +6147,46 @@
                     ]
                 },
                 {
+                    "name": "PATCH /notification-devices/{userDevice}",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notification-devices/{{notification_device_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notification-devices",
+                                "{{notification_device_id}}"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"No server error\", function () {",
+                                    "  pm.expect(pm.response.code).to.be.below(500);",
+                                    "});",
+                                    "pm.test(\"Request ID is present\", function () {",
+                                    "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
                     "name": "GET /notification-preferences",
                     "request": {
                         "method": "GET",
@@ -7349,7 +7419,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"provider_bank_account_id\": \"{{provider_bank_account_id}}\",\n    \"amount\": 100000,\n    \"currency\": \"IRR\"\n}",
+                            "raw": "{\n    \"provider_bank_account_id\": \"{{provider_bank_account_id}}\",\n    \"amount\": 100000,\n    \"currency\": \"IRR\",\n    \"idempotency_key\": \"{{provider_payout_idempotency_key}}\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -9653,6 +9723,10 @@
                             {
                                 "key": "Accept",
                                 "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -9667,6 +9741,15 @@
                                 "{{building_id}}",
                                 "wallet-payouts"
                             ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"building_bank_account_id\": \"{{building_bank_account_id}}\",\n    \"amount\": 100000,\n    \"idempotency_key\": \"{{wallet_payout_idempotency_key}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     },
                     "event": [
@@ -9680,7 +9763,11 @@
                                     "});",
                                     "pm.test(\"Request ID is present\", function () {",
                                     "  pm.expect(pm.response.headers.get(\"X-Request-ID\")).to.exist;",
-                                    "});"
+                                    "});",
+                                    "if (pm.response.code === 201) {",
+                                    "  const json = pm.response.json();",
+                                    "  if (json.data?.id) pm.environment.set(\"wallet_payout_id\", json.data.id);",
+                                    "}"
                                 ]
                             }
                         }

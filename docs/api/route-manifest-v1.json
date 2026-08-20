@@ -1,8 +1,8 @@
 {
     "version": "1.0.0",
-    "generated_at": "2026-08-18T09:24:05.842780Z",
-    "route_count": 242,
-    "contract_hash": "20db4f600467b8249136445e672e2e054c72facc2cff0a4ad7ef1a422d6e9195",
+    "generated_at": "2026-08-20T11:26:18.486315Z",
+    "route_count": 243,
+    "contract_hash": "fb03f471d4ab2b6e6e68f17b09eb06586d736aeb3af8776f623a2a30483bb0ab",
     "routes": [
         {
             "method": "GET",
@@ -1010,6 +1010,13 @@
             "uri": "api/v1/notification-devices/{userDevice}",
             "protected": true,
             "operation_id": "delete_api_v1_notification_devices_userdevice",
+            "tag": "General"
+        },
+        {
+            "method": "PATCH",
+            "uri": "api/v1/notification-devices/{userDevice}",
+            "protected": true,
+            "operation_id": "patch_api_v1_notification_devices_userdevice",
             "tag": "General"
         },
         {

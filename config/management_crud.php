@@ -2852,7 +2852,8 @@ return [
             ],
             'create' => [
                 'method' => 'POST',
-                'url' => '/api/v1/buildings/{building_id}/wallet-payouts'
+                'url' => '/api/v1/buildings/{building_id}/wallet-payouts',
+                'idempotency_key_prefix' => 'management-wallet-payout'
             ],
             'columns' => [
                 [

@@ -1,0 +1,17 @@
+{
+  "php_files_checked": 803,
+  "php_syntax_errors": 0,
+  "psr4_mismatches": 0,
+  "duplicate_fqcn": 0,
+  "json_errors": 0,
+  "javascript_files_checked": 9,
+  "javascript_syntax_errors": 0,
+  "css_brace_errors": 0,
+  "executable_require_once": 0,
+  "ui_views_changed": 0,
+  "ui_css_changed": 0,
+  "ui_javascript_changed": 0,
+  "routes_changed": 0,
+  "runtime_tests_executed": false,
+  "runtime_tests_reason": "vendor directory and Composer CLI are not available in the execution environment"
+}

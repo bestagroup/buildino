@@ -13,6 +13,7 @@ class ProviderPayoutRequest extends Model
 
     protected $fillable = [
         'uuid',
+        'idempotency_key',
         'provider_user_id',
         'wallet_id',
         'provider_bank_account_id',

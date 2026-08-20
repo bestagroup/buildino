@@ -214,6 +214,13 @@ return [
             'is_active' => true,
         ],
 
+        'POST api/v1/buildings/{building}/bank-accounts' => [
+            'bank_name' => 'Test Bank',
+            'account_holder_name' => 'Building',
+            'iban' => 'IR000000000000000000000010',
+            'is_default' => true,
+        ],
+
         'POST api/v1/provider/bank-accounts' => [
             'bank_name' => 'Test Bank',
             'account_holder_name' => 'Provider',
@@ -225,6 +232,13 @@ return [
             'provider_bank_account_id' => '{{provider_bank_account_id}}',
             'amount' => 100000,
             'currency' => 'IRR',
+            'idempotency_key' => '{{provider_payout_idempotency_key}}',
+        ],
+
+        'POST api/v1/buildings/{building}/wallet-payouts' => [
+            'building_bank_account_id' => '{{building_bank_account_id}}',
+            'amount' => 100000,
+            'idempotency_key' => '{{wallet_payout_idempotency_key}}',
         ],
 
         'POST api/v1/service-requests/{serviceRequest}/assign' => [

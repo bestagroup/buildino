@@ -11,6 +11,18 @@ class StoreProviderPayoutRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (
+            ! $this->filled('idempotency_key')
+            && $this->hasHeader('Idempotency-Key')
+        ) {
+            $this->merge([
+                'idempotency_key' => $this->header('Idempotency-Key'),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -28,6 +40,11 @@ class StoreProviderPayoutRequest extends FormRequest
                 'nullable',
                 'string',
                 'size:3',
+            ],
+            'idempotency_key' => [
+                'nullable',
+                'string',
+                'max:120',
             ],
         ];
     }

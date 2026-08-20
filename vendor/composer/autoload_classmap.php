@@ -8095,6 +8095,7 @@ return array(
     'Tests\\Feature\\Authorization\\RoleMatrixAccessScenarioTest' => $baseDir . '/tests/Feature/Authorization/RoleMatrixAccessScenarioTest.php',
     'Tests\\Feature\\Financial\\InvoicePaymentReservationTest' => $baseDir . '/tests/Feature/Financial/InvoicePaymentReservationTest.php',
     'Tests\\Feature\\Financial\\PaymentGatewaySecurityFlowTest' => $baseDir . '/tests/Feature/Financial/PaymentGatewaySecurityFlowTest.php',
+    'Tests\\Feature\\Financial\\PayoutRequestIdempotencyTest' => $baseDir . '/tests/Feature/Financial/PayoutRequestIdempotencyTest.php',
     'Tests\\Feature\\Financial\\ProviderSettlementReconciliationFlowTest' => $baseDir . '/tests/Feature/Financial/ProviderSettlementReconciliationFlowTest.php',
     'Tests\\Feature\\Financial\\ServiceMarketplaceWalletFlowTest' => $baseDir . '/tests/Feature/Financial/ServiceMarketplaceWalletFlowTest.php',
     'Tests\\Feature\\Financial\\WalletAccountingBridgeTest' => $baseDir . '/tests/Feature/Financial/WalletAccountingBridgeTest.php',

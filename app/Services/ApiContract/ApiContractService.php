@@ -815,8 +815,14 @@ final class ApiContractService
             'file_uuid' => '',
             'report_definition_id' => '',
             'generated_report_id' => '',
+            'building_bank_account_id' => '',
+            'wallet_payout_id' => '',
+            'wallet_payout_idempotency_key' =>
+                'postman-wallet-payout-idempotency',
             'provider_bank_account_id' => '',
             'provider_payout_id' => '',
+            'provider_payout_idempotency_key' =>
+                'postman-provider-payout-idempotency',
             'wallet_transfer_id' => '',
         ];
 
@@ -1087,6 +1093,20 @@ final class ApiContractService
                 'if (pm.response.code >= 200 && pm.response.code < 300) {',
                 '  const json = pm.response.json();',
                 '  if (json.data?.id) pm.environment.set("service_quote_id", json.data.id);',
+                '}',
+            ],
+
+            'POST api/v1/buildings/{building}/bank-accounts' => [
+                'if (pm.response.code === 201) {',
+                '  const json = pm.response.json();',
+                '  if (json.data?.id) pm.environment.set("building_bank_account_id", json.data.id);',
+                '}',
+            ],
+
+            'POST api/v1/buildings/{building}/wallet-payouts' => [
+                'if (pm.response.code === 201) {',
+                '  const json = pm.response.json();',
+                '  if (json.data?.id) pm.environment.set("wallet_payout_id", json.data.id);',
                 '}',
             ],
 

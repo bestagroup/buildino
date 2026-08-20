@@ -8747,6 +8747,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'Tests\\Feature\\Authorization\\RoleMatrixAccessScenarioTest' => __DIR__ . '/../..' . '/tests/Feature/Authorization/RoleMatrixAccessScenarioTest.php',
         'Tests\\Feature\\Financial\\InvoicePaymentReservationTest' => __DIR__ . '/../..' . '/tests/Feature/Financial/InvoicePaymentReservationTest.php',
         'Tests\\Feature\\Financial\\PaymentGatewaySecurityFlowTest' => __DIR__ . '/../..' . '/tests/Feature/Financial/PaymentGatewaySecurityFlowTest.php',
+        'Tests\\Feature\\Financial\\PayoutRequestIdempotencyTest' => __DIR__ . '/../..' . '/tests/Feature/Financial/PayoutRequestIdempotencyTest.php',
         'Tests\\Feature\\Financial\\ProviderSettlementReconciliationFlowTest' => __DIR__ . '/../..' . '/tests/Feature/Financial/ProviderSettlementReconciliationFlowTest.php',
         'Tests\\Feature\\Financial\\ServiceMarketplaceWalletFlowTest' => __DIR__ . '/../..' . '/tests/Feature/Financial/ServiceMarketplaceWalletFlowTest.php',
         'Tests\\Feature\\Financial\\WalletAccountingBridgeTest' => __DIR__ . '/../..' . '/tests/Feature/Financial/WalletAccountingBridgeTest.php',
