@@ -9,7 +9,7 @@
 @endpush
 
 @section('content')
-<section class="crud-hero">
+<section class="crud-hero card mb-4 buildino-operations-overview">
     <div>
         <span class="eyebrow">Operational Web UI</span>
         <h2>مرکز عملیات Buildino</h2>
@@ -47,9 +47,9 @@
     </div>
 </section>
 
-<div class="crud-groups">
+<div class="crud-groups buildino-operations-groups">
     @foreach ($groups as $group)
-        <section class="crud-group">
+        <section class="crud-group card">
             <div class="crud-group__heading">
                 <div class="crud-group__icon">
                     @include(
@@ -70,7 +70,7 @@
             <div class="crud-resource-grid">
                 @foreach ($group['resources'] as $resource)
                     <a
-                        class="crud-resource-card"
+                        class="crud-resource-card card h-100"
                         href="{{
                             route(
                                 'management.operations.show',

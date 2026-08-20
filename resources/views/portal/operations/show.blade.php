@@ -17,42 +17,21 @@
 
 @section('sidebar-links')
     @php
-        $resources =
-            config(
-                "portal_operations.{$area}",
-                []
-            );
+        $resources = config("portal_operations.{$area}", []);
     @endphp
 
     @foreach ($resources as $key => $item)
-        <a
-            href="{{
-                route(
-                    "portal.{$area}.operations.index",
-                    [
-                        'resource' => $key,
-                    ]
-                )
-            }}"
-            class="{{
-                $resource === $key
-                    ? 'is-active'
-                    : ''
-            }}"
-        >
-            @include(
-                'management.partials.icon',
-                [
-                    'name' =>
-                        $item['icon']
-                        ?? 'grid',
-                    'size' => 18,
-                ]
-            )
-            <span>
-                {{ $item['title'] }}
-            </span>
-        </a>
+        <li class="menu-item {{ $resource === $key ? 'active' : '' }}">
+            <a
+                href="{{ route("portal.{$area}.operations.index", ['resource' => $key]) }}"
+                class="menu-link"
+            >
+                <span class="menu-icon">
+                    @include('management.partials.icon', ['name' => $item['icon'] ?? 'grid', 'size' => 18])
+                </span>
+                <div>{{ $item['title'] }}</div>
+            </a>
+        </li>
     @endforeach
 @endsection
 
@@ -91,7 +70,7 @@
     <strong>جزئیات</strong>
 </nav>
 
-<section class="portal-detail-hero">
+<section class="portal-detail-hero card">
     <div>
         <span class="portal-eyebrow">
             OPERATION DETAIL
@@ -143,7 +122,7 @@
     ?? []
     as $section
 )
-    <section class="portal-section">
+    <section class="portal-section card">
         <div class="portal-section__heading">
             <div>
                 <span class="portal-eyebrow">
@@ -159,7 +138,7 @@
             ($section['type'] ?? '')
             === 'table'
         )
-            <div class="portal-table-card">
+            <div class="portal-table-card card">
                 <div class="table-responsive">
                     <table class="table portal-table align-middle">
                         <thead>

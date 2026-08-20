@@ -14,48 +14,26 @@
 
 @section('sidebar-links')
     @php
-        $resources =
-            config(
-                "portal_operations.{$area}",
-                []
-            );
+        $resources = config("portal_operations.{$area}", []);
     @endphp
 
     @foreach ($resources as $key => $item)
-        <a
-            href="{{
-                route(
-                    "portal.{$area}.operations.index",
-                    [
-                        'resource' => $key,
-                    ]
-                )
-            }}"
-            class="{{
-                $resource === $key
-                    ? 'is-active'
-                    : ''
-            }}"
-        >
-            @include(
-                'management.partials.icon',
-                [
-                    'name' =>
-                        $item['icon']
-                        ?? 'grid',
-                    'size' => 18,
-                ]
-            )
-
-            <span>
-                {{ $item['title'] }}
-            </span>
-        </a>
+        <li class="menu-item {{ $resource === $key ? 'active' : '' }}">
+            <a
+                href="{{ route("portal.{$area}.operations.index", ['resource' => $key]) }}"
+                class="menu-link"
+            >
+                <span class="menu-icon">
+                    @include('management.partials.icon', ['name' => $item['icon'] ?? 'grid', 'size' => 18])
+                </span>
+                <div>{{ $item['title'] }}</div>
+            </a>
+        </li>
     @endforeach
 @endsection
 
 @section('content')
-<section class="portal-operation-hero">
+<section class="portal-operation-hero card">
     <div>
         <span class="portal-eyebrow">
             SERVER-SIDE DATATABLE
@@ -82,14 +60,14 @@
                 "portal.{$area}.dashboard"
             )
         }}"
-        class="portal-action-button"
+        class="portal-action-button btn btn-outline-primary"
     >
         بازگشت به داشبورد
     </a>
 </section>
 
 <section
-    class="portal-section portal-datatable-section"
+    class="portal-section portal-datatable-section card"
     data-dt-filter-scope
 >
     <div class="portal-datatable-toolbar">
@@ -105,6 +83,7 @@
                 <span>وضعیت</span>
 
                 <select
+                    class="form-select form-select-sm"
                     data-dt-filter="status"
                 >
                     <option value="">
@@ -148,6 +127,7 @@
                 <span>از تاریخ</span>
                 <input
                     type="date"
+                    class="form-control form-control-sm"
                     data-dt-filter="from"
                 >
             </label>
@@ -165,6 +145,7 @@
                 <span>تا تاریخ</span>
                 <input
                     type="date"
+                    class="form-control form-control-sm"
                     data-dt-filter="to"
                 >
             </label>
@@ -172,14 +153,14 @@
 
         <button
             type="button"
-            class="portal-dt-reset"
+            class="portal-dt-reset btn btn-label-secondary"
             data-dt-reset
         >
             پاک‌کردن فیلتر
         </button>
     </div>
 
-    <div class="portal-datatable-card">
+    <div class="portal-datatable-card card">
         @include(
             'shared.server-datatable',
             [

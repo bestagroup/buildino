@@ -20,7 +20,7 @@
     class="buildino-dt-shell"
     data-dt-shell
 >
-    <div class="buildino-dt-loading" data-dt-loading>
+    <div class="buildino-dt-loading" data-dt-loading role="status" aria-live="polite">
         <span class="spinner-border spinner-border-sm"></span>
         <span>در حال دریافت اطلاعات...</span>
     </div>
@@ -28,7 +28,7 @@
     <div class="table-responsive">
         <table
             id="{{ $tableId }}"
-            class="table align-middle buildino-datatable js-server-datatable"
+            class="table table-hover align-middle buildino-datatable js-server-datatable"
             data-dt-url="{{ $url }}"
             data-dt-columns="{{ $encodedColumns }}"
             data-dt-page-length="{{ $pageLength ?? 10 }}"

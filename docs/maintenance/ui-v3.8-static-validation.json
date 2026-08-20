@@ -1,0 +1,19 @@
+{
+  "phase": "v3.8-management-materialize-visual-qa",
+  "php_files_linted": 799,
+  "php_syntax_errors": 0,
+  "psr4_mismatches": 0,
+  "duplicate_fqcn": 0,
+  "json_files_checked": 24,
+  "json_errors": 0,
+  "css_braces_balanced": true,
+  "local_asset_references": 69,
+  "missing_local_assets": 0,
+  "forms_before": 20,
+  "forms_after": 20,
+  "fields_before": 67,
+  "fields_after": 67,
+  "semantic_form_field_contract_changes": 0,
+  "runtime_tests_executed": false,
+  "runtime_tests_reason": "vendor directory is not bundled in the snapshot"
+}

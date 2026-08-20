@@ -4,6 +4,7 @@ namespace Tests\Unit\Notifications;
 
 use App\Services\Notifications\FcmV1PushSender;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -11,21 +12,14 @@ class FcmV1PushSenderTest extends TestCase
 {
     public function test_fcm_http_v1_uses_oauth_and_reports_unregistered_tokens(): void
     {
-        $privateKeyResource =
-            openssl_pkey_new([
-                'private_key_bits' =>
-                    2048,
+        Cache::clear();
 
-                'private_key_type' =>
-                    OPENSSL_KEYTYPE_RSA,
-            ]);
-
-        $this->assertNotFalse(
-            $privateKeyResource
+        $privateKey = (string) file_get_contents(
+            base_path('tests/Fixtures/fcm_test_private_key.pem')
         );
 
-        openssl_pkey_export(
-            $privateKeyResource,
+        $this->assertStringContainsString(
+            'BEGIN PRIVATE KEY',
             $privateKey
         );
 

@@ -1,0 +1,21 @@
+{
+  "phase": "v3.1-invoice-payment-reservation",
+  "source": "buildino_v3(1).zip canonical snapshot",
+  "production_code_changes": [
+    "app/Services/PaymentService.php",
+    "app/Http/Requests/StorePaymentRequest.php",
+    "app/Http/Controllers/Api/V1/PaymentController.php",
+    "app/Models/Payment.php"
+  ],
+  "migration": "database/migrations/2026_08_19_230000_add_idempotency_key_to_payments.php",
+  "regression_test": "tests/Feature/Financial/InvoicePaymentReservationTest.php",
+  "invariants": [
+    "invoice row is locked before payment availability is evaluated",
+    "pending, processing and retryable failed payments reserve invoice outstanding amount",
+    "same idempotency key with same semantics returns the original payment",
+    "same idempotency key with different semantics is rejected",
+    "legacy clients without idempotency keys remain supported"
+  ],
+  "runtime_test_claimed": false,
+  "api_contract_export_required": true
+}

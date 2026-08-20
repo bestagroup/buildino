@@ -689,6 +689,11 @@ Route::prefix('v1')
                     [UserNotificationController::class, 'registerDevice']
                 )->name('api.v1.notification-devices.store');
 
+                Route::patch(
+                    'notification-devices/{userDevice}',
+                    [UserNotificationController::class, 'updateDevice']
+                )->name('api.v1.notification-devices.update');
+
                 Route::delete(
                     'notification-devices/{userDevice}',
                     [UserNotificationController::class, 'deleteDevice']

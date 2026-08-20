@@ -15,7 +15,7 @@ class UiFoundationWebTest extends TestCase
             ->assertSee('data-buildino-submit', false);
     }
 
-    public function test_portal_login_loads_bootstrap_and_shared_ui_foundation(): void
+    public function test_portal_login_loads_materialize_core_and_shared_ui_foundation(): void
     {
         $response = $this->get('/portal/login')
             ->assertOk()
@@ -23,10 +23,13 @@ class UiFoundationWebTest extends TestCase
             ->assertSee('buildino-foundation.js', false)
             ->assertSee('data-buildino-submit', false);
 
-        $response->assertSee(
-            (string) config('management_ui.libraries.bootstrap.css'),
-            false
-        );
+        $response
+            ->assertSee('assets/vendor/css/rtl/core.css', false)
+            ->assertSee('css/buildino-materialize.css', false)
+            ->assertDontSee(
+                (string) config('management_ui.libraries.bootstrap.css'),
+                false
+            );
     }
 
     public function test_required_ui_library_versions_are_pinned(): void

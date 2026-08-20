@@ -22,6 +22,13 @@ class UserDevice extends Model
         'last_used_at',
     ];
 
+    /**
+     * Push tokens are delivery credentials, not API response data.
+     */
+    protected $hidden = [
+        'push_token',
+    ];
+
     protected function casts(): array
     {
         return [

@@ -56,6 +56,11 @@ return [
         ],
         [
             'method' => 'POST',
+            'uri' => 'api/v1/invoices/{unitInvoice}/payments',
+            'protected' => true,
+        ],
+        [
+            'method' => 'POST',
             'uri' => 'api/v1/payments/{payment}/gateway/initiate',
             'protected' => true,
         ],
@@ -167,6 +172,13 @@ return [
             'gateway' => '{{gateway}}',
             'idempotency_key' => '{{payment_idempotency_key}}',
             'description' => 'Postman RC wallet top-up',
+        ],
+
+        'POST api/v1/invoices/{unitInvoice}/payments' => [
+            'amount' => 100000,
+            'method' => 'online',
+            'idempotency_key' => '{{invoice_payment_idempotency_key}}',
+            'description' => 'Postman invoice payment',
         ],
 
         'POST api/v1/payments/{payment}/gateway/initiate' => [

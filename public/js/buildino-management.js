@@ -130,7 +130,14 @@
             );
     };
 
-    window.BuildinoUI = {
+    const sharedUi =
+        window.BuildinoUI
+        && typeof window.BuildinoUI === "object"
+            ? window.BuildinoUI
+            : {};
+
+    window.BuildinoUI = Object.freeze({
+        ...sharedUi,
         toFaDigits,
 
         number(value) {
@@ -209,7 +216,7 @@
 
             return null;
         },
-    };
+    });
 
     /* ---------------------------------------------------------------
        Theme

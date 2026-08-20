@@ -2,132 +2,544 @@
 
 namespace App\Services\Mobile;
 
+use App\Enums\NotificationChannel;
 use App\Http\Resources\V1\AuthUserResource;
-use App\Models\Unit;
-use App\Models\UnitOccupancy;
-use App\Models\UnitOwnership;
+use App\Models\NotificationLog;
+use App\Models\ServiceRequest;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\Web\ManagementDashboardAccessService;
+use App\Services\Web\PortalAccessService;
+use App\Services\Wallet\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 final class MobileBootstrapService
 {
-    public function build(User $user, Request $request): array
-    {
-        $relationships = $this->relationships($user);
+    public function __construct(
+        private readonly PortalAccessService $portalAccess,
+        private readonly ManagementDashboardAccessService $managementAccess,
+        private readonly WalletService $wallets
+    ) {
+    }
 
-        $contexts = $relationships
-            ->map(fn (array $relationship): array => $this->context($relationship))
-            ->values()
-            ->all();
+    public function build(
+        User $user,
+        Request $request
+    ): array {
+        $residentUnits =
+            $this->portalAccess
+                ->residentUnits(
+                    $user
+                );
 
-        $personas = [];
+        $residentContexts =
+            $this->residentContexts(
+                $user,
+                $residentUnits
+            );
 
-        if ($relationships->contains(fn (array $relationship): bool => $relationship['owner'])) {
-            $personas[] = 'owner';
-        }
+        $resident =
+            $residentContexts !== [];
 
-        if ($relationships->contains(fn (array $relationship): bool => $relationship['occupant'])) {
-            $personas[] = 'occupant';
-        }
+        $personas =
+            $this->residentPersonas(
+                $residentContexts
+            );
+
+        $provider =
+            $this->portalAccess
+                ->hasProviderAccess(
+                    $user
+                );
+
+        $management =
+            $this->managementAccess
+                ->hasAnyAccess(
+                    $user
+                );
+
+        $personalWallet =
+            $this->wallets
+                ->walletFor(
+                    $user,
+                    'IRR'
+                );
+
+        $deviceId =
+            trim(
+                (string) (
+                    $request->header(
+                        'X-Device-Id'
+                    )
+                    ?: $request->query(
+                        'device_id',
+                        ''
+                    )
+                )
+            );
+
+        $device =
+            $deviceId !== ''
+                ? $user
+                    ->userDevices()
+                    ->where(
+                        'device_id',
+                        $deviceId
+                    )
+                    ->first()
+                : null;
+
+        $appVersion =
+            trim(
+                (string) $request->header(
+                    'X-App-Version',
+                    ''
+                )
+            );
+
+        $minimumVersion =
+            (string) config(
+                'mobile.minimum_supported_version',
+                '1.0.0'
+            );
+
+        $latestVersion =
+            (string) config(
+                'mobile.latest_version',
+                $minimumVersion
+            );
 
         return [
-            'user' => (new AuthUserResource($user))->resolve($request),
-            'personas' => $personas,
-            'contexts' => $contexts,
-            'suggested_context' => $contexts[0]['id'] ?? null,
+            'api' => [
+                'version' =>
+                    (string) config(
+                        'mobile.api_version',
+                        'v1'
+                    ),
+
+                'server_time' =>
+                    now()->toISOString(),
+            ],
+
+            'app' => [
+                'client_version' =>
+                    $appVersion
+                    !== ''
+                        ? $appVersion
+                        : null,
+
+                'minimum_supported_version' =>
+                    $minimumVersion,
+
+                'latest_version' =>
+                    $latestVersion,
+
+                'upgrade_required' =>
+                    $appVersion !== ''
+                    && version_compare(
+                        $appVersion,
+                        $minimumVersion,
+                        '<'
+                    ),
+
+                'update_available' =>
+                    $appVersion !== ''
+                    && version_compare(
+                        $appVersion,
+                        $latestVersion,
+                        '<'
+                    ),
+
+                'maintenance_mode' =>
+                    (bool) config(
+                        'mobile.maintenance_mode',
+                        false
+                    ),
+
+                'maintenance_message' =>
+                    config(
+                        'mobile.maintenance_message'
+                    ),
+            ],
+
+            'user' =>
+                (new AuthUserResource(
+                    $user
+                ))->resolve(
+                    $request
+                ),
+
+            'personas' =>
+                $personas,
+
+            'contexts' =>
+                $residentContexts,
+
+            'suggested_context' =>
+                $residentContexts[0]['id']
+                ?? null,
+
+            'roles' =>
+                $this->roles(
+                    $user
+                ),
+
+            'resident' => [
+                'enabled' =>
+                    $resident,
+
+                'units' =>
+                    $residentUnits
+                        ->map(
+                            fn ($unit): array =>
+                                $this->unit(
+                                    $user,
+                                    $unit
+                                )
+                        )
+                        ->values()
+                        ->all(),
+            ],
+
+            'provider' => [
+                'enabled' =>
+                    $provider,
+
+                'active_jobs' =>
+                    $provider
+                        ? ServiceRequest::query()
+                            ->where(
+                                'assigned_to',
+                                $user->getKey()
+                            )
+                            ->whereNotIn(
+                                'status',
+                                [
+                                    'completed',
+                                    'cancelled',
+                                ]
+                            )
+                            ->count()
+                        : 0,
+            ],
+
+            'wallet' => [
+                'id' =>
+                    $personalWallet
+                        ->getKey(),
+
+                'uuid' =>
+                    $personalWallet
+                        ->uuid,
+
+                'balance' =>
+                    (int) $personalWallet
+                        ->balance,
+
+                'locked_balance' =>
+                    (int) $personalWallet
+                        ->locked_balance,
+
+                'available_balance' =>
+                    $personalWallet
+                        ->availableBalance(),
+
+                'currency' =>
+                    strtoupper(
+                        $personalWallet
+                            ->currency
+                        ?: 'IRR'
+                    ),
+            ],
+
+            'notifications' => [
+                'unread_count' =>
+                    NotificationLog::query()
+                        ->where(
+                            'notifiable_type',
+                            $user
+                                ->getMorphClass()
+                        )
+                        ->where(
+                            'notifiable_id',
+                            $user
+                                ->getKey()
+                        )
+                        ->where(
+                            'channel',
+                            NotificationChannel::Database
+                                ->value
+                        )
+                        ->whereNull(
+                            'read_at'
+                        )
+                        ->count(),
+
+                'push_provider' =>
+                    (string) config(
+                        'notifications.push_provider',
+                        'log'
+                    ),
+            ],
+
+            'device' => [
+                'requested_device_id' =>
+                    $deviceId
+                    !== ''
+                        ? $deviceId
+                        : null,
+
+                'registered' =>
+                    $device !== null,
+
+                'id' =>
+                    $device
+                        ?->getKey(),
+
+                'platform' =>
+                    $device
+                        ?->platform,
+
+                'device_name' =>
+                    $device
+                        ?->device_name,
+
+                'push_enabled' =>
+                    filled(
+                        $device
+                            ?->push_token
+                    ),
+
+                'last_used_at' =>
+                    $device
+                        ?->last_used_at
+                        ?->toISOString(),
+            ],
+
+            'features' =>
+                config(
+                    'mobile.features',
+                    []
+                ),
         ];
     }
 
     /**
-     * Return one merged, current relationship record per unit.
+     * Build canonical, resident-only contexts. Access validity is resolved by
+     * PortalAccessService so mobile composition cannot drift from web scope rules.
      *
-     * @return Collection<int, array{unit: Unit, owner: bool, occupant: bool}>
+     * @param  Collection<int, mixed>  $residentUnits
+     * @return array<int, array<string, mixed>>
      */
-    private function relationships(User $user): Collection
-    {
-        $today = now()->toDateString();
-        $with = ['unit.floor.block.building'];
-        $byUnit = collect();
-
-        $ownerships = UnitOwnership::query()
-            ->with($with)
-            ->where('user_id', $user->getKey())
-            ->where('is_active', true)
-            ->whereDate('starts_at', '<=', $today)
-            ->where(fn (Builder $query) => $query
-                ->whereNull('ends_at')
-                ->orWhereDate('ends_at', '>=', $today))
-            ->get();
-
-        foreach ($ownerships as $ownership) {
-            if (! $ownership->unit) {
-                continue;
-            }
-
-            $byUnit->put($ownership->unit_id, [
-                'unit' => $ownership->unit,
-                'owner' => true,
-                'occupant' => false,
-            ]);
+    private function residentContexts(
+        User $user,
+        Collection $residentUnits
+    ): array {
+        if ($residentUnits->isEmpty()) {
+            return [];
         }
 
-        $occupancies = UnitOccupancy::query()
-            ->with($with)
-            ->where('user_id', $user->getKey())
-            ->where('is_active', true)
-            ->whereDate('starts_at', '<=', $today)
-            ->where(fn (Builder $query) => $query
-                ->whereNull('ends_at')
-                ->orWhereDate('ends_at', '>=', $today))
-            ->get();
+        $relationshipFlags =
+            $this->portalAccess
+                ->residentRelationshipFlags(
+                    $user,
+                    $residentUnits
+                );
 
-        foreach ($occupancies as $occupancy) {
-            if (! $occupancy->unit) {
-                continue;
-            }
+        return $residentUnits
+            ->sortBy(fn ($unit): int => (int) $unit->getKey())
+            ->map(function ($unit) use ($relationshipFlags): array {
+                $unitId = (int) $unit->getKey();
+                $building = $unit
+                    ->floor
+                    ?->block
+                    ?->building;
 
-            $existing = $byUnit->get($occupancy->unit_id, [
-                'unit' => $occupancy->unit,
-                'owner' => false,
-                'occupant' => false,
-            ]);
+                $relationships = $relationshipFlags[$unitId]
+                    ?? [
+                        'owner' => false,
+                        'occupant' => false,
+                    ];
 
-            $existing['occupant'] = true;
-            $byUnit->put($occupancy->unit_id, $existing);
-        }
+                return [
+                    'id' => 'unit-'.$unitId,
 
-        return $byUnit->sortKeys()->values();
+                    'building' => [
+                        'id' => $building?->getKey(),
+                        'title' => $building?->title,
+                    ],
+
+                    'unit' => [
+                        'id' => $unitId,
+                        'unit_number' => $unit->unit_number,
+                        'title' => $unit->title
+                            ?: ('واحد '.$unit->unit_number),
+                    ],
+
+                    'relationships' => [
+                        'owner' => (bool) $relationships['owner'],
+                        'occupant' => (bool) $relationships['occupant'],
+                    ],
+
+                    'capabilities' => [
+                        'charges.view' => true,
+                        'wallet.view' => true,
+                    ],
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     /**
-     * @param  array{unit: Unit, owner: bool, occupant: bool}  $relationship
+     * @param  array<int, array<string, mixed>>  $contexts
+     * @return array<int, string>
      */
-    private function context(array $relationship): array
-    {
-        $unit = $relationship['unit'];
-        $building = $unit->floor?->block?->building;
+    private function residentPersonas(
+        array $contexts
+    ): array {
+        $owner = false;
+        $occupant = false;
+
+        foreach ($contexts as $context) {
+            $owner = $owner
+                || (bool) (
+                    $context['relationships']['owner']
+                    ?? false
+                );
+
+            $occupant = $occupant
+                || (bool) (
+                    $context['relationships']['occupant']
+                    ?? false
+                );
+        }
+
+        return array_values(
+            array_filter([
+                $owner ? 'owner' : null,
+                $occupant ? 'occupant' : null,
+            ])
+        );
+    }
+
+    private function roles(
+        User $user
+    ): array {
+        return $user
+            ->userRoleAssignments()
+            ->active()
+            ->with(
+                'role:id,name,display_name'
+            )
+            ->get()
+            ->map(
+                fn ($assignment): array => [
+                    'name' =>
+                        $assignment
+                            ->role
+                            ?->name,
+
+                    'display_name' =>
+                        $assignment
+                            ->role
+                            ?->display_name,
+
+                    'scope_type' =>
+                        $assignment
+                            ->scope_type,
+
+                    'scope_id' =>
+                        $assignment
+                            ->scope_id,
+                ]
+            )
+            ->values()
+            ->all();
+    }
+
+    private function unit(
+        User $user,
+        $unit
+    ): array {
+        $building =
+            $unit
+                ->floor
+                ?->block
+                ?->building;
+
+        $currency =
+            strtoupper(
+                $building
+                    ?->currency
+                ?: 'IRR'
+            );
+
+        $wallet =
+            $this->wallets
+                ->walletFor(
+                    $unit,
+                    $currency
+                );
 
         return [
-            'id' => 'unit-'.$unit->getKey(),
+            'id' =>
+                $unit->getKey(),
+
+            'unit_number' =>
+                $unit->unit_number,
+
+            'title' =>
+                $unit->title
+                ?: (
+                    'واحد '
+                    . $unit->unit_number
+                ),
+
             'building' => [
-                'id' => $building?->getKey(),
-                'code' => $building?->code,
-                'title' => $building?->title,
+                'id' =>
+                    $building
+                        ?->getKey(),
+
+                'title' =>
+                    $building
+                        ?->title,
             ],
-            'unit' => [
-                'id' => $unit->getKey(),
-                'unit_number' => $unit->unit_number,
-                'title' => $unit->title,
+
+            'complex' => [
+                'id' =>
+                    $building
+                        ?->complex
+                        ?->getKey(),
+
+                'title' =>
+                    $building
+                        ?->complex
+                        ?->title,
             ],
-            'relationships' => [
-                'owner' => $relationship['owner'],
-                'occupant' => $relationship['occupant'],
-            ],
-            'capabilities' => [
-                'charges.view' => true,
-                'wallet.view' => true,
+
+            'relationship' =>
+                $this->portalAccess
+                    ->residentRelationship(
+                        $user,
+                        $unit
+                    ),
+
+            'wallet' => [
+                'id' =>
+                    $wallet
+                        ->getKey(),
+
+                'available_balance' =>
+                    $wallet
+                        ->availableBalance(),
+
+                'locked_balance' =>
+                    (int) $wallet
+                        ->locked_balance,
+
+                'currency' =>
+                    $currency,
             ],
         ];
     }

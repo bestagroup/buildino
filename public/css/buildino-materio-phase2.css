@@ -1,0 +1,1289 @@
+/*
+ * Buildino Materio UI – Phase 2
+ * Final presentation override loaded after all legacy/page-specific styles.
+ * No route, field name/id, data-* contract or business behavior is changed here.
+ */
+:root {
+    --bui-surface: var(--buildino-card, #fff);
+    --bui-surface-soft: rgba(var(--buildino-primary-rgb, 102, 108, 255), .035);
+    --bui-surface-muted: rgba(76, 78, 100, .035);
+    --bui-border: var(--buildino-border, #e9e9ed);
+    --bui-heading: var(--buildino-heading, #5d5f72);
+    --bui-text: var(--buildino-text, #77798d);
+    --bui-muted: var(--buildino-muted, #9b9caf);
+    --bui-primary: var(--buildino-primary, #666cff);
+    --bui-radius: .75rem;
+    --bui-radius-lg: 1rem;
+    --bui-shadow: 0 .125rem .625rem rgba(76, 78, 100, .10);
+    --bui-shadow-hover: 0 .45rem 1.5rem rgba(76, 78, 100, .16);
+}
+
+html[data-theme="dark"] {
+    --bui-surface-soft: rgba(var(--buildino-primary-rgb, 102, 108, 255), .08);
+    --bui-surface-muted: rgba(255, 255, 255, .035);
+    --bui-shadow: 0 .125rem .625rem rgba(0, 0, 0, .22);
+    --bui-shadow-hover: 0 .5rem 1.5rem rgba(0, 0, 0, .3);
+}
+
+/* Global page rhythm ---------------------------------------------------- */
+.management-body .page-content,
+.portal-body .portal-content {
+    padding: 1.5rem 1.625rem 2.25rem;
+}
+
+.management-body .page-content > *,
+.portal-body .portal-content > * {
+    width: 100%;
+}
+
+.eyebrow,
+.portal-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    color: var(--bui-primary);
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .055em;
+    text-transform: uppercase;
+}
+
+.eyebrow::before,
+.portal-eyebrow::before {
+    content: "";
+    width: .4rem;
+    height: .4rem;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 .18rem rgba(var(--buildino-primary-rgb), .1);
+}
+
+/* Header / navbar ------------------------------------------------------- */
+.management-body .topbar,
+.portal-body .portal-topbar {
+    border: 1px solid var(--bui-border);
+    box-shadow: var(--bui-shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.management-body .topbar__title h1,
+.portal-body .portal-topbar__title h1 {
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: -.01em;
+}
+
+.management-body .topbar__title > div > span,
+.portal-body .portal-topbar__title > div > span {
+    font-size: .64rem;
+    letter-spacing: .08em;
+    color: var(--bui-muted);
+}
+
+/* Sidebar refinement --------------------------------------------------- */
+.management-body .sidebar,
+.portal-body .portal-sidebar {
+    border-left-color: rgba(76, 78, 100, .07);
+}
+
+.management-body .nav-group__title {
+    position: relative;
+    margin-top: .8rem;
+    padding-top: .45rem;
+    padding-bottom: .45rem;
+    min-height: auto;
+    font-size: .64rem;
+    font-weight: 800;
+    letter-spacing: .035em;
+}
+
+.management-body .nav-group__title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    margin-inline-start: .55rem;
+    background: var(--bui-border);
+}
+
+.management-body .nav-link,
+.portal-body .portal-nav a {
+    min-height: 2.75rem;
+    margin-block: .08rem;
+    border-radius: .55rem;
+    font-weight: 600;
+}
+
+.management-body .nav-link.is-active,
+.portal-body .portal-nav a.is-active {
+    box-shadow: 0 .25rem .75rem rgba(var(--buildino-primary-rgb), .28);
+}
+
+/* Shared card system ---------------------------------------------------- */
+.hero-panel,
+.role-workspace,
+.glance-card,
+.kpi-card,
+.module-card,
+.operation-card,
+.panel,
+.section-block,
+.crud-header,
+.crud-panel,
+.crud-context-card,
+.portal-hero,
+.portal-operation-hero,
+.portal-detail-hero,
+.portal-section,
+.portal-datatable-card,
+.portal-table-card,
+.portal-wallet-history-card,
+.portal-list-card,
+.portal-unit-card,
+.portal-job-card,
+.portal-bank-account {
+    border-color: var(--bui-border) !important;
+    border-radius: var(--bui-radius-lg) !important;
+    box-shadow: var(--bui-shadow) !important;
+}
+
+.glance-card,
+.kpi-card,
+.module-card,
+.operation-card,
+.portal-stat-card,
+.portal-unit-card,
+.portal-job-card,
+.portal-list-card,
+.portal-wallet-history-card,
+.portal-bank-account {
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.glance-card:hover,
+.kpi-card:hover,
+.module-card:hover,
+.operation-card:hover,
+.portal-stat-card:hover,
+.portal-unit-card:hover,
+.portal-job-card:hover,
+.portal-list-card:hover,
+.portal-wallet-history-card:hover,
+.portal-bank-account:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--bui-shadow-hover) !important;
+    border-color: rgba(var(--buildino-primary-rgb), .18) !important;
+}
+
+/* Dashboard hero -------------------------------------------------------- */
+.management-body .hero-panel {
+    position: relative;
+    overflow: hidden;
+    padding: 1.5rem;
+    background:
+        radial-gradient(circle at 8% -15%, rgba(var(--buildino-primary-rgb), .13), transparent 35%),
+        var(--bui-surface);
+}
+
+.management-body .hero-panel::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    bottom: 0;
+    width: .28rem;
+    background: linear-gradient(180deg, var(--bui-primary), #8b90ff);
+}
+
+.management-body .hero-panel__copy {
+    position: relative;
+    z-index: 1;
+}
+
+.management-body .hero-panel__copy h2 {
+    font-size: clamp(1.25rem, 2vw, 1.65rem);
+    font-weight: 800;
+}
+
+.management-body .dashboard-filter {
+    position: relative;
+    z-index: 1;
+    background: rgba(var(--buildino-primary-rgb), .045);
+    border-color: rgba(var(--buildino-primary-rgb), .12);
+    border-radius: var(--bui-radius);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+}
+
+.management-body .dashboard-filter label > span,
+.portal-body .portal-datatable-toolbar label > span {
+    font-size: .68rem;
+    font-weight: 700;
+    color: var(--bui-muted);
+}
+
+/* Dashboard role workspace --------------------------------------------- */
+.management-body .role-workspace {
+    position: relative;
+    overflow: hidden;
+    padding: 1.1rem 1.25rem;
+    background: linear-gradient(105deg, var(--bui-surface), var(--bui-surface-soft));
+}
+
+.management-body .role-workspace::after {
+    content: "";
+    position: absolute;
+    width: 10rem;
+    height: 10rem;
+    border-radius: 50%;
+    inset-inline-end: -5rem;
+    top: -6rem;
+    background: rgba(var(--buildino-primary-rgb), .06);
+    pointer-events: none;
+}
+
+.management-body .role-workspace__icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: .75rem;
+}
+
+/* KPI / stats ----------------------------------------------------------- */
+.management-body .dashboard-glance-grid,
+.management-body .kpi-grid,
+.portal-body .portal-stat-grid {
+    gap: 1.1rem;
+}
+
+.management-body .glance-card,
+.management-body .kpi-card,
+.portal-body .portal-stat-card {
+    position: relative;
+    min-height: 6.8rem;
+    align-items: center;
+    overflow: hidden;
+    padding: 1.15rem;
+    background: var(--bui-surface);
+}
+
+.management-body .glance-card::after,
+.management-body .kpi-card::after,
+.portal-body .portal-stat-card::after {
+    content: "";
+    position: absolute;
+    width: 4.75rem;
+    height: 4.75rem;
+    border-radius: 50%;
+    inset-inline-end: -2rem;
+    bottom: -2.5rem;
+    background: rgba(var(--buildino-primary-rgb), .055);
+    pointer-events: none;
+}
+
+.management-body .glance-card__icon,
+.management-body .kpi-card__icon,
+.portal-body .portal-stat-card__icon {
+    width: 2.9rem;
+    height: 2.9rem;
+    border-radius: .75rem;
+}
+
+.management-body .glance-card strong,
+.management-body .kpi-card strong,
+.portal-body .portal-stat-card strong {
+    color: var(--bui-heading);
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+
+.management-body .kpi-card--success::before,
+.management-body .kpi-card--warning::before,
+.management-body .kpi-card--danger::before,
+.management-body .kpi-card--info::before,
+.management-body .kpi-card--primary::before {
+    content: "";
+    position: absolute;
+    top: .8rem;
+    bottom: .8rem;
+    inset-inline-start: 0;
+    width: .2rem;
+    border-radius: .2rem;
+    background: var(--bui-primary);
+}
+.management-body .kpi-card--success::before { background: var(--buildino-success); }
+.management-body .kpi-card--warning::before { background: var(--buildino-warning); }
+.management-body .kpi-card--danger::before { background: var(--buildino-danger); }
+.management-body .kpi-card--info::before { background: var(--buildino-info); }
+
+/* Section titles -------------------------------------------------------- */
+.management-body .section-heading,
+.management-body .panel__header,
+.portal-body .portal-section__heading,
+.management-body .crud-panel__header {
+    position: relative;
+    margin-bottom: 1rem;
+    padding-bottom: .85rem;
+    border-bottom: 1px solid var(--bui-border);
+}
+
+.management-body .section-heading h3,
+.management-body .panel__header h3,
+.portal-body .portal-section__heading h3,
+.management-body .crud-panel__header h3 {
+    margin: .1rem 0;
+    font-size: .95rem;
+    font-weight: 800;
+}
+
+/* Management module + operation cards --------------------------------- */
+.management-body .module-card,
+.management-body .operation-card {
+    position: relative;
+    overflow: hidden;
+    padding: 1.05rem;
+    background: var(--bui-surface);
+}
+
+.management-body .module-card::before,
+.management-body .operation-card::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    bottom: 0;
+    width: .2rem;
+    background: rgba(var(--buildino-primary-rgb), .5);
+}
+
+.management-body .module-card__top,
+.management-body .operation-card__header {
+    align-items: center;
+}
+
+.management-body .module-icon,
+.management-body .operation-icon,
+.management-body .panel-icon {
+    border-radius: .72rem;
+}
+
+/* Dense metric/list rows ------------------------------------------------ */
+.metric-row,
+.status-list__item,
+.portal-list-item,
+.portal-wallet-entry {
+    background: var(--bui-surface-muted);
+    border-color: rgba(76,78,100,.07);
+    border-radius: .65rem;
+    min-height: 3rem;
+}
+
+.metric-row:hover,
+.status-list__item:hover,
+.portal-list-item:hover,
+.portal-wallet-entry:hover {
+    background: var(--bui-surface-soft);
+}
+
+/* Status chips ---------------------------------------------------------- */
+.status-badge,
+.portal-status,
+.module-state,
+.health-pill,
+.crud-access-badge {
+    gap: .35rem;
+    padding: .3rem .62rem;
+    border: 1px solid transparent;
+    font-size: .66rem;
+    font-weight: 800;
+}
+
+.status-badge::before,
+.portal-status::before,
+.module-state::before,
+.health-pill::before {
+    content: "";
+    width: .38rem;
+    height: .38rem;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .85;
+}
+
+.status-badge--success,
+.portal-status.is-success,
+.portal-status--success {
+    border-color: rgba(114,225,40,.16);
+}
+.status-badge--warning,
+.portal-status.is-warning,
+.portal-status--warning {
+    border-color: rgba(253,181,40,.18);
+}
+.status-badge--danger,
+.portal-status.is-danger,
+.portal-status--danger {
+    border-color: rgba(255,77,73,.18);
+}
+
+/* Forms ----------------------------------------------------------------- */
+.management-body input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.management-body select,
+.management-body textarea,
+.portal-body input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.portal-body select,
+.portal-body textarea {
+    border-radius: .55rem;
+    border-color: rgba(76,78,100,.16);
+    box-shadow: none;
+}
+
+.management-body input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):hover,
+.management-body select:hover,
+.management-body textarea:hover,
+.portal-body input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):hover,
+.portal-body select:hover,
+.portal-body textarea:hover {
+    border-color: rgba(var(--buildino-primary-rgb), .4);
+}
+
+.management-body input:focus,
+.management-body select:focus,
+.management-body textarea:focus,
+.portal-body input:focus,
+.portal-body select:focus,
+.portal-body textarea:focus {
+    border-color: var(--bui-primary) !important;
+    box-shadow: 0 0 0 .18rem rgba(var(--buildino-primary-rgb), .12) !important;
+}
+
+/* CRUD ------------------------------------------------------------------ */
+.management-body .crud-page {
+    gap: 1.15rem;
+}
+
+.management-body .crud-breadcrumb,
+.portal-body .portal-breadcrumb {
+    padding: .1rem .15rem;
+    font-weight: 600;
+}
+
+.management-body .crud-header {
+    position: relative;
+    overflow: hidden;
+    padding: 1.35rem 1.4rem;
+    background: linear-gradient(115deg, var(--bui-surface), var(--bui-surface-soft));
+}
+
+.management-body .crud-header::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    bottom: 0;
+    width: .25rem;
+    background: var(--bui-primary);
+}
+
+.management-body .crud-header__copy,
+.management-body .crud-header__actions {
+    position: relative;
+    z-index: 1;
+}
+
+.management-body .crud-sibling-nav {
+    padding: .45rem;
+    gap: .25rem;
+    border-radius: .75rem;
+    box-shadow: var(--bui-shadow);
+}
+
+.management-body .crud-sibling-nav a {
+    min-height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    border-radius: .5rem;
+    font-weight: 700;
+}
+
+.management-body .crud-context-card {
+    padding: 1.1rem;
+    background: linear-gradient(180deg, var(--bui-surface), rgba(var(--buildino-primary-rgb), .018));
+}
+
+.management-body .crud-context-card__heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: .8rem;
+    border-bottom: 1px solid var(--bui-border);
+}
+
+.management-body .crud-context-grid {
+    padding-top: .15rem;
+}
+
+.management-body .crud-panel {
+    padding: 1.15rem;
+}
+
+.management-body .crud-toolbar {
+    align-items: center;
+    padding: .75rem;
+    margin: -.15rem -.15rem 1rem;
+    border-radius: .7rem;
+    background: var(--bui-surface-muted);
+    border: 1px solid rgba(76,78,100,.06);
+}
+
+.management-body .crud-search {
+    position: relative;
+    flex: 1 1 20rem;
+}
+
+.management-body .crud-search::before {
+    content: "⌕";
+    position: absolute;
+    inset-inline-start: .85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--bui-muted);
+    pointer-events: none;
+    font-size: 1.05rem;
+}
+
+.management-body .crud-search input {
+    padding-inline-start: 2.3rem !important;
+    background: var(--bui-surface);
+}
+
+.management-body .crud-table-wrap {
+    border-radius: .75rem;
+    box-shadow: inset 0 0 0 1px rgba(76,78,100,.025);
+}
+
+.management-body .crud-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: color-mix(in srgb, var(--bui-surface) 92%, var(--bui-primary) 8%);
+    text-transform: none;
+    font-size: .7rem;
+    letter-spacing: 0;
+}
+
+.management-body .crud-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.management-body .crud-pagination {
+    align-items: center;
+    justify-content: space-between;
+    padding-top: .85rem;
+    border-top: 1px solid var(--bui-border);
+}
+
+.management-body .crud-page-button,
+.portal-body .portal-dt-reset {
+    min-height: 2.25rem;
+    padding: .4rem .7rem;
+    border: 1px solid var(--bui-border);
+    border-radius: .5rem;
+    color: var(--bui-text);
+    background: var(--bui-surface);
+    font: inherit;
+    font-size: .72rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.management-body .crud-page-button:hover,
+.portal-body .portal-dt-reset:hover {
+    color: var(--bui-primary);
+    border-color: rgba(var(--buildino-primary-rgb), .25);
+    background: var(--bui-surface-soft);
+}
+
+/* CRUD drawer/modal ----------------------------------------------------- */
+.management-body .crud-drawer {
+    width: min(38rem, 100vw);
+    border: 0;
+    box-shadow: -1rem 0 3rem rgba(38,40,66,.18);
+}
+
+.management-body .crud-drawer__header,
+.management-body .crud-modal__header {
+    padding: 1.1rem 1.2rem;
+    background: color-mix(in srgb, var(--bui-surface) 95%, var(--bui-primary) 5%);
+}
+
+.management-body .crud-drawer .crud-form,
+.management-body .crud-modal form {
+    padding: 1.2rem;
+}
+
+.management-body .crud-drawer .crud-form-actions,
+.management-body .crud-modal .crud-form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin: 1rem -1.2rem -1.2rem;
+    padding: .9rem 1.2rem;
+    background: var(--bui-surface);
+    border-top: 1px solid var(--bui-border);
+}
+
+.management-body .crud-modal {
+    border-radius: 1rem;
+    box-shadow: 0 1.5rem 4rem rgba(38,40,66,.22);
+}
+
+.management-body .crud-drawer-backdrop,
+.management-body .crud-modal-backdrop,
+.management-body .command-backdrop,
+.management-body .sidebar-backdrop,
+.portal-body .portal-sidebar-backdrop {
+    background: rgba(38,40,66,.44);
+    backdrop-filter: blur(2px);
+}
+
+/* DataTables ------------------------------------------------------------ */
+.buildino-dt-shell {
+    position: relative;
+    border-radius: .75rem;
+}
+
+.buildino-dt-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    min-height: 4.5rem;
+    padding: 1rem;
+    color: var(--bui-muted);
+    background: var(--bui-surface-muted);
+    border: 1px dashed rgba(76,78,100,.14);
+    border-radius: .7rem;
+}
+
+.buildino-dt-shell .dt-container,
+.buildino-dt-shell .dataTables_wrapper {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    gap: .8rem 1rem;
+    align-items: center;
+}
+
+.buildino-dt-shell .dt-search,
+.buildino-dt-shell .dataTables_filter {
+    justify-self: start;
+}
+
+.buildino-dt-shell .dt-length,
+.buildino-dt-shell .dataTables_length {
+    justify-self: end;
+}
+
+.buildino-dt-shell .dt-layout-row,
+.buildino-dt-shell .dataTables_wrapper > .row {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin: 0;
+}
+
+.buildino-dt-shell .dt-search input,
+.buildino-dt-shell .dataTables_filter input,
+.buildino-dt-shell .dt-length select,
+.buildino-dt-shell .dataTables_length select {
+    min-height: 2.35rem;
+    border-radius: .5rem !important;
+    border: 1px solid var(--bui-border) !important;
+    background: var(--bui-surface) !important;
+    color: var(--bui-heading) !important;
+}
+
+.buildino-dt-shell .dt-paging,
+.buildino-dt-shell .dataTables_paginate {
+    justify-self: end;
+}
+
+.buildino-dt-shell .dt-info,
+.buildino-dt-shell .dataTables_info {
+    justify-self: start;
+    color: var(--bui-muted);
+    font-size: .7rem;
+}
+
+.buildino-dt-shell .dt-paging-button,
+.buildino-dt-shell .paginate_button,
+.buildino-dt-shell .page-link {
+    min-width: 2.15rem;
+    min-height: 2.15rem;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    margin: 0 .12rem !important;
+    border: 1px solid var(--bui-border) !important;
+    border-radius: .48rem !important;
+    color: var(--bui-text) !important;
+    background: var(--bui-surface) !important;
+    box-shadow: none !important;
+}
+
+.buildino-dt-shell .dt-paging-button.current,
+.buildino-dt-shell .paginate_button.current,
+.buildino-dt-shell .page-item.active .page-link {
+    color: #fff !important;
+    border-color: var(--bui-primary) !important;
+    background: var(--bui-primary) !important;
+}
+
+.buildino-dt-shell .table-responsive {
+    grid-column: 1 / -1;
+    border-radius: .75rem;
+}
+
+.buildino-datatable thead th {
+    background: color-mix(in srgb, var(--bui-surface) 93%, var(--bui-primary) 7%) !important;
+    color: var(--bui-heading) !important;
+    font-weight: 800 !important;
+    font-size: .7rem !important;
+}
+
+.buildino-datatable tbody tr:last-child td {
+    border-bottom: 0 !important;
+}
+
+/* Portal hero ----------------------------------------------------------- */
+.portal-body .portal-hero,
+.portal-body .portal-operation-hero,
+.portal-body .portal-detail-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 1.45rem 1.5rem;
+    background:
+        radial-gradient(circle at 12% 0, rgba(var(--buildino-primary-rgb), .12), transparent 34%),
+        linear-gradient(120deg, var(--bui-surface), var(--bui-surface-soft));
+}
+
+.portal-body .portal-hero::after,
+.portal-body .portal-operation-hero::after,
+.portal-body .portal-detail-hero::after {
+    content: "";
+    position: absolute;
+    width: 12rem;
+    height: 12rem;
+    border-radius: 50%;
+    inset-inline-end: -5rem;
+    top: -7rem;
+    background: rgba(var(--buildino-primary-rgb), .055);
+    pointer-events: none;
+}
+
+.portal-body .portal-hero__copy,
+.portal-body .portal-hero__actions,
+.portal-body .portal-operation-hero > *,
+.portal-body .portal-detail-hero > * {
+    position: relative;
+    z-index: 1;
+}
+
+.portal-body .portal-hero__copy h2,
+.portal-body .portal-operation-hero h2,
+.portal-body .portal-detail-hero h2 {
+    color: var(--bui-heading);
+    font-size: clamp(1.2rem, 2vw, 1.55rem);
+    font-weight: 800;
+}
+
+.portal-body .portal-hero__meta > *,
+.portal-body .portal-detail-facts > * {
+    padding: .3rem .58rem;
+    border: 1px solid rgba(76,78,100,.08);
+    border-radius: 999px;
+    background: rgba(255,255,255,.45);
+}
+
+html[data-theme="dark"] .portal-body .portal-hero__meta > *,
+html[data-theme="dark"] .portal-body .portal-detail-facts > * {
+    background: rgba(255,255,255,.035);
+}
+
+/* Portal cards ---------------------------------------------------------- */
+.portal-body .portal-stat-card {
+    position: relative;
+    overflow: hidden;
+    padding: 1.15rem;
+    min-height: 7rem;
+    align-items: center;
+    background: var(--bui-surface);
+    border: 1px solid var(--bui-border);
+    border-radius: var(--bui-radius-lg);
+    box-shadow: var(--bui-shadow);
+}
+
+.portal-body .portal-section {
+    padding: 1.2rem;
+}
+
+.portal-body .portal-unit-card,
+.portal-body .portal-job-card,
+.portal-body .portal-list-card,
+.portal-body .portal-wallet-history-card,
+.portal-body .portal-bank-account {
+    padding: 1.05rem;
+    background: var(--bui-surface);
+}
+
+.portal-body .portal-unit-card__top,
+.portal-body .portal-job-card__header {
+    padding-bottom: .75rem;
+    border-bottom: 1px solid var(--bui-border);
+}
+
+.portal-body .portal-unit-card__facts,
+.portal-body .portal-job-card__meta {
+    margin-top: .8rem;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: .55rem;
+}
+
+.portal-body .portal-unit-card__facts > *,
+.portal-body .portal-job-card__meta > * {
+    padding: .55rem .65rem;
+    border-radius: .6rem;
+    background: var(--bui-surface-muted);
+}
+
+.portal-body .portal-job-card__actions {
+    margin-top: 1rem;
+    padding-top: .85rem;
+    border-top: 1px solid var(--bui-border);
+}
+
+/* Portal DataTable filters --------------------------------------------- */
+.portal-body .portal-datatable-section {
+    overflow: hidden;
+}
+
+.portal-body .portal-datatable-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: .75rem;
+    margin: -.15rem -.15rem 1rem;
+    padding: .85rem;
+    background: var(--bui-surface-muted);
+    border: 1px solid rgba(76,78,100,.06);
+    border-radius: .75rem;
+}
+
+.portal-body .portal-datatable-toolbar label {
+    min-width: 10rem;
+    flex: 1 1 10rem;
+    display: grid;
+    gap: .35rem;
+}
+
+.portal-body .portal-datatable-toolbar .portal-dt-reset {
+    flex: 0 0 auto;
+}
+
+.portal-body .portal-datatable-card {
+    padding: 1rem;
+    box-shadow: none !important;
+    background: transparent;
+    border: 0 !important;
+}
+
+/* Portal detail --------------------------------------------------------- */
+.portal-body .portal-detail-facts {
+    display: grid;
+    grid-template-columns: repeat(4,minmax(0,1fr));
+    gap: .8rem;
+    margin: 0 0 1.25rem;
+}
+
+.portal-body .portal-detail-facts article {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .25rem;
+    padding: .85rem .95rem;
+    border: 1px solid var(--bui-border);
+    border-radius: .75rem;
+    background: var(--bui-surface);
+    box-shadow: var(--bui-shadow);
+}
+
+.portal-body .portal-detail-facts article span {
+    color: var(--bui-muted);
+    font-size: .67rem;
+}
+
+.portal-body .portal-detail-facts article strong {
+    color: var(--bui-heading);
+    font-size: .82rem;
+}
+
+.portal-body .portal-detail-timeline {
+    position: relative;
+    display: grid;
+    gap: .75rem;
+}
+
+.portal-body .portal-detail-timeline article {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1rem minmax(0,1fr);
+    gap: .7rem;
+}
+
+.portal-body .portal-detail-timeline__dot {
+    width: .65rem;
+    height: .65rem;
+    margin-top: .28rem;
+    border-radius: 50%;
+    background: var(--bui-primary);
+    box-shadow: 0 0 0 .22rem rgba(var(--buildino-primary-rgb), .12);
+}
+
+.portal-body .portal-detail-timeline article > div {
+    padding: .75rem .85rem;
+    border: 1px solid var(--bui-border);
+    border-radius: .7rem;
+    background: var(--bui-surface-muted);
+}
+
+/* Bootstrap modal alignment with supplied theme ------------------------ */
+.portal-body .modal-content,
+.management-body .modal-content {
+    border: 1px solid var(--bui-border);
+    border-radius: 1rem;
+    background: var(--bui-surface);
+    box-shadow: 0 1.5rem 4rem rgba(38,40,66,.22);
+}
+
+.portal-body .modal-header,
+.management-body .modal-header {
+    padding: 1rem 1.15rem;
+    border-bottom-color: var(--bui-border);
+    background: color-mix(in srgb, var(--bui-surface) 95%, var(--bui-primary) 5%);
+    border-radius: 1rem 1rem 0 0;
+}
+
+.portal-body .modal-title,
+.management-body .modal-title {
+    color: var(--bui-heading);
+    font-size: .95rem;
+    font-weight: 800;
+}
+
+.portal-body .modal-body,
+.management-body .modal-body {
+    padding: 1.15rem;
+}
+
+.portal-body .modal-footer,
+.management-body .modal-footer {
+    padding: .85rem 1.15rem;
+    border-top-color: var(--bui-border);
+}
+
+/* Empty states ---------------------------------------------------------- */
+.empty-state,
+.portal-empty-state,
+.portal-empty-mini,
+.portal-table-empty,
+.crud-state {
+    border-radius: .75rem;
+    color: var(--bui-muted);
+}
+
+.empty-state,
+.portal-empty-state,
+.portal-empty-mini {
+    border: 1px dashed rgba(76,78,100,.16);
+    background: var(--bui-surface-muted);
+}
+
+.empty-state::before,
+.portal-empty-state::before,
+.portal-empty-mini::before {
+    content: "—";
+    width: 2.6rem;
+    height: 2.6rem;
+    margin: 0 auto .55rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--bui-primary);
+    background: rgba(var(--buildino-primary-rgb), .1);
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+/* Buttons --------------------------------------------------------------- */
+.crud-button,
+.portal-primary-button,
+.portal-action-button,
+.portal-inline-action,
+.portal-section-link,
+.role-quick-action,
+.filter-submit {
+    border-radius: .55rem !important;
+    font-weight: 700;
+}
+
+.crud-button--primary,
+.portal-primary-button,
+.portal-action-button--primary,
+.role-quick-action,
+.filter-submit {
+    background: linear-gradient(135deg, var(--bui-primary), #777cff) !important;
+}
+
+/* Responsive ------------------------------------------------------------ */
+@media (max-width: 1199.98px) {
+    .management-body .dashboard-glance-grid,
+    .management-body .kpi-grid,
+    .portal-body .portal-stat-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+    }
+
+    .portal-body .portal-detail-facts {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .management-body .page-content,
+    .portal-body .portal-content {
+        padding: 1rem .85rem 1.5rem;
+    }
+
+    .management-body .dashboard-glance-grid,
+    .management-body .kpi-grid,
+    .portal-body .portal-stat-grid,
+    .portal-body .portal-detail-facts,
+    .portal-body .portal-unit-card__facts,
+    .portal-body .portal-job-card__meta {
+        grid-template-columns: 1fr;
+    }
+
+    .management-body .crud-header,
+    .management-body .crud-toolbar,
+    .management-body .crud-context-card__heading,
+    .portal-body .portal-hero,
+    .portal-body .portal-operation-hero,
+    .portal-body .portal-detail-hero {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .management-body .crud-search,
+    .management-body .crud-toolbar__actions,
+    .management-body .crud-toolbar__actions > *,
+    .portal-body .portal-datatable-toolbar label,
+    .portal-body .portal-datatable-toolbar .portal-dt-reset {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .buildino-dt-shell .dt-container,
+    .buildino-dt-shell .dataTables_wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    .buildino-dt-shell .dt-search,
+    .buildino-dt-shell .dataTables_filter,
+    .buildino-dt-shell .dt-length,
+    .buildino-dt-shell .dataTables_length,
+    .buildino-dt-shell .dt-info,
+    .buildino-dt-shell .dataTables_info,
+    .buildino-dt-shell .dt-paging,
+    .buildino-dt-shell .dataTables_paginate {
+        justify-self: stretch;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .glance-card,
+    .kpi-card,
+    .module-card,
+    .operation-card,
+    .portal-stat-card,
+    .portal-unit-card,
+    .portal-job-card,
+    .portal-list-card,
+    .portal-wallet-history-card,
+    .portal-bank-account {
+        transition: none;
+    }
+}
+
+/* Management financial / health widgets -------------------------------- */
+.management-body .mini-stat-grid,
+.management-body .api-stat-grid {
+    gap: .75rem;
+}
+
+.management-body .mini-stat-grid > *,
+.management-body .api-stat-grid > * {
+    padding: .8rem .9rem;
+    border: 1px solid rgba(76,78,100,.07);
+    border-radius: .7rem;
+    background: var(--bui-surface-muted);
+}
+
+.management-body .aging-chart {
+    display: grid;
+    gap: .85rem;
+}
+
+.management-body .aging-row {
+    display: grid;
+    grid-template-columns: minmax(8rem,.8fr) minmax(10rem,1.5fr);
+    align-items: center;
+    gap: .85rem;
+}
+
+.management-body .aging-row__label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    color: var(--bui-text);
+    font-size: .72rem;
+}
+
+.management-body .aging-row__bar {
+    height: .55rem;
+    background: rgba(76,78,100,.08);
+}
+
+.management-body .health-summary {
+    display: grid;
+    gap: .65rem;
+}
+
+.management-body .health-summary > * {
+    padding: .75rem .85rem;
+    border: 1px solid rgba(76,78,100,.07);
+    border-radius: .65rem;
+    background: var(--bui-surface-muted);
+}
+
+.management-body .api-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.management-body .api-card::after {
+    content: "API";
+    position: absolute;
+    inset-inline-end: 1rem;
+    bottom: -.35rem;
+    color: rgba(var(--buildino-primary-rgb), .055);
+    font-size: 4.6rem;
+    font-weight: 900;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.management-body .api-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.management-body .dashboard-alert,
+.management-body .alert {
+    border-radius: .7rem;
+    border-width: 1px;
+    box-shadow: none;
+}
+
+.management-body .dashboard-footer {
+    margin-top: 1.25rem;
+    padding: .85rem 1rem;
+    border: 1px solid var(--bui-border);
+    border-radius: .75rem;
+    background: var(--bui-surface-muted);
+    color: var(--bui-muted);
+    font-size: .68rem;
+    text-align: center;
+}
+
+/* Portal operational widgets ------------------------------------------- */
+.portal-body .portal-unit-card__role,
+.portal-body .portal-wallet-entry__type,
+.portal-body .portal-job-awaiting,
+.portal-body .portal-quote-inline,
+.portal-body .portal-quote-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    width: fit-content;
+    padding: .28rem .58rem;
+    border-radius: 999px;
+    color: var(--bui-primary);
+    background: rgba(var(--buildino-primary-rgb), .09);
+    font-size: .66rem;
+    font-weight: 800;
+}
+
+.portal-body .portal-wallet-history-card--wide {
+    grid-column: 1 / -1;
+}
+
+.portal-body .portal-bank-account {
+    display: grid;
+    gap: .55rem;
+}
+
+.portal-body .portal-ticket-conversation {
+    display: grid;
+    gap: .65rem;
+    max-height: 24rem;
+    overflow-y: auto;
+    padding: .75rem;
+    border: 1px solid var(--bui-border);
+    border-radius: .75rem;
+    background: var(--bui-surface-muted);
+    scrollbar-width: thin;
+}
+
+.portal-body .portal-ticket-conversation > * {
+    padding: .7rem .8rem;
+    border-radius: .7rem;
+    background: var(--bui-surface);
+    border: 1px solid rgba(76,78,100,.07);
+}
+
+.portal-body .portal-ticket-reply {
+    margin-top: .75rem;
+    padding-top: .75rem;
+    border-top: 1px solid var(--bui-border);
+}
+
+.portal-body .portal-row-actions,
+.portal-body .portal-section__actions {
+    gap: .45rem;
+}
+
+.portal-body .portal-mini-link {
+    color: var(--bui-primary);
+    font-size: .68rem;
+    font-weight: 800;
+}
+
+@media (max-width: 767.98px) {
+    .management-body .aging-row {
+        grid-template-columns: 1fr;
+        gap: .35rem;
+    }
+
+    .portal-body .portal-wallet-history-card--wide {
+        grid-column: auto;
+    }
+}

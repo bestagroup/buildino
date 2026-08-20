@@ -3,6 +3,11 @@
 return [
     'queue' => env('NOTIFICATION_QUEUE', 'notifications'),
 
+    'processing_stale_seconds' => (int) env(
+        'NOTIFICATION_PROCESSING_STALE_SECONDS',
+        90
+    ),
+
     'sms_provider' => env('SMS_PROVIDER', 'log'),
     'push_provider' => env('PUSH_PROVIDER', 'log'),
 

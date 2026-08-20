@@ -22,6 +22,7 @@ class Payment extends Model
         'building_id',
         'payer_user_id',
         'payment_number',
+        'idempotency_key',
         'amount',
         'currency',
         'method',

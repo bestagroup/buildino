@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\NotificationChannel;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterNotificationDeviceRequest;
+use App\Http\Requests\UpdateNotificationDeviceRequest;
 use App\Http\Requests\UpdateNotificationPreferencesRequest;
 use App\Models\NotificationLog;
 use App\Models\UserDevice;
@@ -115,6 +116,30 @@ class UserNotificationController extends Controller
             'data' =>
                 $device,
         ], $device->wasRecentlyCreated ? 201 : 200);
+    }
+
+
+    public function updateDevice(
+        UpdateNotificationDeviceRequest $request,
+        UserDevice $userDevice,
+        NotificationDeviceService $devices
+    ): JsonResponse {
+        abort_unless(
+            (int) $userDevice->user_id === (int) $request->user()->getKey(),
+            403
+        );
+
+        $device = $devices->sync(
+            $request->user(),
+            array_merge(
+                ['device_id' => $userDevice->device_id],
+                $request->validated()
+            )
+        );
+
+        return response()->json([
+            'data' => $device,
+        ]);
     }
 
     public function deleteDevice(

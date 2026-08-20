@@ -37,7 +37,7 @@
 
 @section('content')
 <div
-    class="crud-page"
+    class="crud-page buildino-resource-page"
     id="buildinoCrudApp"
     data-resource="{{ $resourceKey }}"
 >
@@ -53,7 +53,7 @@
         <strong>{{ $resource['title'] }}</strong>
     </div>
 
-    <section class="crud-header">
+    <section class="crud-header card mb-4">
         <div class="crud-header__copy">
             <span class="eyebrow">
                 {{ $groups[$resource['group']]['title'] ?? 'Operations' }}
@@ -73,7 +73,7 @@
         <div class="crud-header__actions">
             <a
                 href="{{ route('management.operations.index') }}"
-                class="crud-button crud-button--soft"
+                class="crud-button crud-button--soft btn btn-label-secondary"
             >
                 همه ماژول‌ها
             </a>
@@ -81,7 +81,7 @@
             @if (! empty($resource['create']))
                 <button
                     type="button"
-                    class="crud-button crud-button--primary"
+                    class="crud-button crud-button--primary btn btn-primary"
                     id="crudCreateButton"
                 >
                     + ثبت رکورد جدید
@@ -92,7 +92,7 @@
 
     @if ($siblingResources->count() > 1)
         <nav
-            class="crud-sibling-nav"
+            class="crud-sibling-nav card mb-4"
             aria-label="زیرماژول‌های مرتبط"
         >
             @foreach ($siblingResources as $key => $item)
@@ -116,7 +116,7 @@
     @endif
 
     @if (! empty($resource['context']))
-        <section class="crud-context-card">
+        <section class="crud-context-card card mb-4">
             <div class="crud-context-card__heading">
                 <strong>محدوده عملیات</strong>
                 <span>
@@ -138,6 +138,7 @@
                         </span>
 
                         <select
+                            class="form-select"
                             data-context-name="{{ $context['name'] }}"
                             data-lookup="{{ $context['lookup'] }}"
                             data-required="{{ ($context['required'] ?? false) ? '1' : '0' }}"
@@ -156,7 +157,7 @@
     @endif
 
     @if (($resource['mode'] ?? 'table') === 'singleton')
-        <section class="crud-panel crud-singleton-panel">
+        <section class="crud-panel crud-singleton-panel card">
             <div class="crud-panel__header">
                 <div>
                     <h3>تنظیمات</h3>
@@ -167,7 +168,7 @@
 
                 <button
                     type="button"
-                    class="crud-button crud-button--soft"
+                    class="crud-button crud-button--soft btn btn-label-secondary"
                     id="crudLoadSingleton"
                 >
                     بارگذاری
@@ -187,7 +188,7 @@
                 <div class="crud-form-actions">
                     <button
                         type="submit"
-                        class="crud-button crud-button--primary"
+                        class="crud-button crud-button--primary btn btn-primary"
                     >
                         ذخیره تنظیمات
                     </button>
@@ -195,18 +196,19 @@
             </form>
         </section>
     @else
-        <section class="crud-panel">
+        <section class="crud-panel card">
             <div class="crud-toolbar">
                 <div class="crud-search">
                     <input
                         type="search"
+                        class="form-control"
                         id="crudSearch"
                         placeholder="جستجو در رکوردهای بارگذاری‌شده..."
                     >
                 </div>
 
                 <div class="crud-toolbar__actions">
-                    <select id="crudPageSize">
+                    <select id="crudPageSize" class="form-select">
                         <option value="10">۱۰ رکورد</option>
                         <option value="25" selected>۲۵ رکورد</option>
                         <option value="50">۵۰ رکورد</option>
@@ -215,7 +217,7 @@
 
                     <button
                         type="button"
-                        class="crud-button crud-button--soft"
+                        class="crud-button crud-button--soft btn btn-label-secondary"
                         id="crudRefreshButton"
                     >
                         بروزرسانی
@@ -236,7 +238,7 @@
                 id="crudTableWrap"
                 hidden
             >
-                <table class="crud-table">
+                <table class="crud-table table table-hover align-middle mb-0">
                     <thead>
                         <tr id="crudTableHead"></tr>
                     </thead>
@@ -322,7 +324,7 @@
             <div class="crud-form-actions">
                 <button
                     type="button"
-                    class="crud-button crud-button--soft"
+                    class="crud-button crud-button--soft btn btn-label-secondary"
                     id="crudCancelButton"
                 >
                     انصراف
@@ -330,7 +332,7 @@
 
                 <button
                     type="submit"
-                    class="crud-button crud-button--primary"
+                    class="crud-button crud-button--primary btn btn-primary"
                     id="crudSaveButton"
                 >
                     ذخیره
@@ -382,7 +384,7 @@
             <div class="crud-form-actions">
                 <button
                     type="button"
-                    class="crud-button crud-button--soft"
+                    class="crud-button crud-button--soft btn btn-label-secondary"
                     id="crudActionCancel"
                 >
                     انصراف
@@ -390,7 +392,7 @@
 
                 <button
                     type="submit"
-                    class="crud-button crud-button--primary"
+                    class="crud-button crud-button--primary btn btn-primary"
                     id="crudActionSubmit"
                 >
                     اجرا

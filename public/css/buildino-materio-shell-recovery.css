@@ -1,0 +1,453 @@
+/*
+ * Buildino v3.6 - Materio shell recovery
+ * Canonicalizes the application chrome on Materio's native layout contract.
+ * This file is intentionally loaded last and only resets shell/sidebar/topbar
+ * concerns. Business forms, tables, charts and workflow selectors are untouched.
+ */
+
+:root {
+    --buildino-menu-width: 16.25rem;
+    --buildino-menu-collapsed-width: 5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Native layout ownership
+---------------------------------------------------------------------------- */
+.management-shell.layout-wrapper,
+.portal-shell.layout-wrapper {
+    min-height: 100vh;
+    display: flex;
+    background: var(--buildino-bg);
+}
+
+.management-shell > .layout-container,
+.portal-shell > .layout-container {
+    min-height: 100vh;
+    width: 100%;
+    align-items: stretch;
+}
+
+.management-body .main-area.layout-page,
+.portal-body .portal-main.layout-page {
+    margin: 0 !important;
+    padding: 0;
+    width: 0;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 100vh;
+    flex: 1 1 auto;
+    background: var(--buildino-bg);
+}
+
+/* Disable the legacy shell state model. Materio's html.layout-menu-* classes
+   are the single source of truth from v3.6 onward. */
+body.sidebar-collapsed .main-area,
+body.sidebar-open .main-area,
+body.portal-sidebar-open .portal-main {
+    margin-right: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar: native Materio menu
+---------------------------------------------------------------------------- */
+.management-body .buildino-native-menu.layout-menu,
+.portal-body .buildino-native-menu.layout-menu {
+    position: relative;
+    inset: auto;
+    width: var(--buildino-menu-width);
+    min-width: var(--buildino-menu-width);
+    height: 100vh;
+    min-height: 100vh;
+    padding: 0;
+    overflow: hidden;
+    color: var(--buildino-text);
+    background: var(--buildino-card);
+    border: 0;
+    border-left: 1px solid rgba(76, 78, 100, .08);
+    border-radius: 0;
+    box-shadow: .25rem 0 1.25rem rgba(76, 78, 100, .035);
+    transform: none;
+    transition: width .3s ease, transform .3s ease;
+}
+
+.buildino-native-menu .buildino-menu-brand {
+    min-height: 4.75rem;
+    height: 4.75rem;
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .85rem 1.15rem;
+    border-bottom: 1px solid rgba(76, 78, 100, .06);
+}
+
+.buildino-native-menu .app-brand-link {
+    min-width: 0;
+    gap: .7rem;
+    color: var(--buildino-heading);
+}
+
+.buildino-native-menu .buildino-menu-brand__mark {
+    width: 2.45rem;
+    height: 2.45rem;
+    display: inline-grid;
+    place-items: center;
+    border-radius: .7rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--buildino-primary), #7f84ff);
+    box-shadow: 0 .35rem .9rem rgba(var(--buildino-primary-rgb), .24);
+    font-size: 1.05rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.buildino-native-menu .app-brand-text {
+    color: var(--buildino-heading);
+    font-family: var(--buildino-font);
+    font-size: 1.08rem;
+    letter-spacing: -.02em;
+}
+
+.buildino-native-menu .buildino-menu-collapse {
+    width: 2.2rem;
+    height: 2.2rem;
+    min-width: 2.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-inline-start: auto !important;
+    padding: 0 !important;
+    border-radius: 50%;
+    color: var(--buildino-muted);
+    background: transparent;
+}
+
+.buildino-native-menu .buildino-menu-collapse:hover {
+    color: var(--buildino-primary);
+    background: rgba(var(--buildino-primary-rgb), .08);
+}
+
+[dir="rtl"] .buildino-native-menu .buildino-menu-collapse .ui-icon {
+    transform: rotate(180deg);
+}
+
+.buildino-native-menu .menu-inner {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(76, 78, 100, .18) transparent;
+    padding-bottom: 1rem !important;
+}
+
+.buildino-native-menu .menu-inner::-webkit-scrollbar {
+    width: 4px;
+}
+
+.buildino-native-menu .menu-inner::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(76, 78, 100, .16);
+}
+
+.buildino-native-menu .menu-header {
+    margin-top: .85rem;
+    margin-bottom: .18rem;
+    color: var(--buildino-muted);
+}
+
+.buildino-native-menu .menu-header:first-child {
+    margin-top: .25rem;
+}
+
+.buildino-native-menu .menu-header .menu-header-text {
+    font-family: var(--buildino-font);
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+/* Materio's default collapsed header line expects LTR offsets. Keep RTL
+   headers visually stable with the SVG-based Buildino menu. */
+[dir="rtl"] .buildino-native-menu .menu-inner > .menu-header::before {
+    right: -.7rem;
+}
+
+.buildino-native-menu .menu-item {
+    width: var(--buildino-menu-width);
+    margin-top: .14rem;
+}
+
+.buildino-native-menu .menu-item .menu-link {
+    min-height: 2.75rem;
+    margin-inline: .75rem;
+    padding: .58rem .85rem;
+    gap: .72rem;
+    border: 0;
+    border-radius: .55rem;
+    color: var(--buildino-text);
+    font-family: var(--buildino-font);
+    font-size: .83rem;
+    font-weight: 600;
+    line-height: 1.4;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+}
+
+.buildino-native-menu .menu-item .menu-link:hover,
+.buildino-native-menu .menu-item .menu-link:focus {
+    color: var(--buildino-primary);
+    background: rgba(var(--buildino-primary-rgb), .07);
+    transform: none;
+}
+
+.buildino-native-menu .menu-item.active > .menu-link,
+.buildino-native-menu .menu-item.active > .menu-link:not(.menu-toggle) {
+    color: #fff;
+    background: linear-gradient(270deg, var(--buildino-primary), #777cff);
+    box-shadow: 0 .22rem .62rem rgba(var(--buildino-primary-rgb), .28);
+}
+
+.buildino-native-menu .menu-item.active > .menu-link::before,
+.buildino-native-menu .menu-item.active > .menu-link::after {
+    display: none !important;
+}
+
+.buildino-native-menu .menu-icon {
+    width: 1.35rem;
+    height: 1.35rem;
+    margin: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 1.35rem;
+    color: currentColor;
+}
+
+.buildino-native-menu .menu-icon .ui-icon,
+.buildino-native-menu .menu-icon svg {
+    width: 1.15rem;
+    height: 1.15rem;
+}
+
+.buildino-native-menu .menu-link > div {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.buildino-native-menu .buildino-context-menu-header {
+    margin-top: 1.15rem;
+}
+
+/* Footer belongs to shell, not to scrollable menu content. */
+.buildino-menu-footer {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    min-height: 3.8rem;
+    padding: .72rem 1rem;
+    border-top: 1px solid rgba(76, 78, 100, .07);
+    background: var(--buildino-card);
+}
+
+.buildino-menu-footer > div:not(.buildino-menu-user),
+.buildino-menu-footer .menu-text {
+    min-width: 0;
+}
+
+.buildino-menu-footer strong,
+.buildino-menu-footer small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.buildino-menu-footer strong {
+    color: var(--buildino-heading);
+    font-size: .72rem;
+    font-weight: 800;
+}
+
+.buildino-menu-footer small {
+    margin-top: .08rem;
+    color: var(--buildino-muted);
+    font-size: .63rem;
+}
+
+.buildino-menu-footer--portal {
+    display: block;
+    padding: .7rem .85rem .85rem;
+}
+
+.buildino-menu-user {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    margin-bottom: .65rem;
+    padding: .4rem .35rem;
+}
+
+.buildino-menu-user .portal-avatar {
+    width: 2.2rem;
+    height: 2.2rem;
+    flex: 0 0 2.2rem;
+}
+
+.buildino-menu-footer .portal-logout {
+    min-height: 2.45rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    border: 0;
+    border-radius: .55rem;
+    color: var(--buildino-danger);
+    background: rgba(255, 77, 73, .07);
+    font-family: var(--buildino-font);
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.buildino-menu-footer .portal-logout:hover {
+    background: rgba(255, 77, 73, .12);
+}
+
+/* --------------------------------------------------------------------------
+   Main/topbar alignment
+---------------------------------------------------------------------------- */
+.management-body .topbar.layout-navbar,
+.portal-body .portal-topbar.layout-navbar {
+    width: auto;
+    max-width: none;
+    margin: .8rem 1.5rem 0;
+}
+
+.management-body .page-content.content-wrapper,
+.portal-body .portal-content.content-wrapper {
+    width: 100%;
+    max-width: 1440px;
+    margin-inline: auto;
+}
+
+/* --------------------------------------------------------------------------
+   Native collapsed state - desktop only
+---------------------------------------------------------------------------- */
+@media (min-width: 1200px) {
+    html.layout-menu-collapsed .buildino-native-menu.layout-menu,
+    html.layout-menu-collapsed .buildino-native-menu.menu-vertical,
+    html.layout-menu-collapsed .buildino-native-menu .menu-inner > .menu-item {
+        width: var(--buildino-menu-collapsed-width);
+        min-width: var(--buildino-menu-collapsed-width);
+    }
+
+    html.layout-menu-collapsed .buildino-menu-footer {
+        justify-content: center;
+        padding-inline: .45rem;
+    }
+
+    html.layout-menu-collapsed .buildino-menu-footer .menu-text,
+    html.layout-menu-collapsed .buildino-menu-footer .portal-logout .menu-text,
+    html.layout-menu-collapsed .buildino-menu-user > div:last-child {
+        display: none;
+    }
+
+    html.layout-menu-collapsed .buildino-menu-footer--portal .buildino-menu-user {
+        justify-content: center;
+    }
+
+    html.layout-menu-collapsed .buildino-menu-footer--portal .portal-logout {
+        width: 2.45rem;
+        margin-inline: auto;
+        padding: 0;
+    }
+
+    /* Neutralize legacy body state if an old localStorage value briefly adds it. */
+    body.sidebar-collapsed .buildino-native-menu.layout-menu {
+        min-width: var(--buildino-menu-width);
+    }
+    html.layout-menu-collapsed body.sidebar-collapsed .buildino-native-menu.layout-menu {
+        min-width: var(--buildino-menu-collapsed-width);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Native off-canvas state - tablet/mobile
+---------------------------------------------------------------------------- */
+@media (max-width: 1199.98px) {
+    .management-body .buildino-native-menu.layout-menu,
+    .portal-body .buildino-native-menu.layout-menu {
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        left: auto !important;
+        bottom: 0;
+        width: min(var(--buildino-menu-width), calc(100vw - 2.5rem));
+        min-width: min(var(--buildino-menu-width), calc(100vw - 2.5rem));
+        height: 100vh !important;
+        min-height: 100vh;
+        transform: translate3d(100%, 0, 0);
+        box-shadow: -1rem 0 2.5rem rgba(38, 40, 66, .18);
+        z-index: 1100;
+    }
+
+    html.layout-menu-expanded .buildino-native-menu.layout-menu {
+        transform: translate3d(0, 0, 0) !important;
+    }
+
+    html.layout-menu-expanded body {
+        overflow: hidden;
+    }
+
+    .layout-overlay {
+        z-index: 1099;
+    }
+
+    .management-body .topbar.layout-navbar,
+    .portal-body .portal-topbar.layout-navbar {
+        margin-inline: .9rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .management-body .topbar.layout-navbar,
+    .portal-body .portal-topbar.layout-navbar {
+        margin-top: .55rem;
+        margin-inline: .65rem;
+    }
+
+    .management-body .page-content.content-wrapper,
+    .portal-body .portal-content.content-wrapper {
+        padding-inline: .75rem !important;
+    }
+}
+
+/* Dark shell compatibility without shipping licensed font assets. */
+html[data-theme="dark"] .buildino-native-menu,
+html[data-theme="dark"] .buildino-menu-footer {
+    background: var(--buildino-card);
+    border-color: var(--buildino-border);
+}
+
+/* v3.6 recovery deliberately keeps a deterministic desktop width. */
+@media (min-width: 1200px) {
+    html.layout-menu-collapsed .buildino-native-menu.layout-menu,
+    html.layout-menu-collapsed .buildino-native-menu.menu-vertical,
+    html.layout-menu-collapsed .buildino-native-menu .menu-inner > .menu-item,
+    body.sidebar-collapsed .buildino-native-menu.layout-menu {
+        width: var(--buildino-menu-width) !important;
+        min-width: var(--buildino-menu-width) !important;
+    }
+
+    html.layout-menu-collapsed .buildino-native-menu .menu-inner > .menu-item div,
+    html.layout-menu-collapsed .buildino-native-menu .menu-header-text,
+    html.layout-menu-collapsed .buildino-menu-footer .menu-text {
+        opacity: 1 !important;
+        display: block !important;
+        text-indent: 0 !important;
+    }
+}

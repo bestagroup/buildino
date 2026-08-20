@@ -114,6 +114,75 @@ final class PortalAccessService
             ->get();
     }
 
+    /**
+     * Resolve owner/occupant flags for resident units in two batched queries.
+     *
+     * @param  Collection<int, Unit>  $units
+     * @return array<int, array{owner: bool, occupant: bool}>
+     */
+    public function residentRelationshipFlags(
+        User $user,
+        Collection $units
+    ): array {
+        if (
+            ! $user->is_active
+            || $user->is_blocked
+            || $units->isEmpty()
+        ) {
+            return [];
+        }
+
+        $today = now()->toDateString();
+        $unitIds = $units
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->values()
+            ->all();
+
+        $flags = [];
+
+        foreach ($unitIds as $unitId) {
+            $flags[$unitId] = [
+                'owner' => false,
+                'occupant' => false,
+            ];
+        }
+
+        $ownershipQuery = UnitOwnership::query()
+            ->whereIn('unit_id', $unitIds);
+
+        $this->activeResidentRelation(
+            $ownershipQuery,
+            $user,
+            $today
+        );
+
+        $ownershipUnitIds = $ownershipQuery
+            ->pluck('unit_id');
+
+        foreach ($ownershipUnitIds as $unitId) {
+            $flags[(int) $unitId]['owner'] = true;
+        }
+
+        $occupancyQuery = UnitOccupancy::query()
+            ->whereIn('unit_id', $unitIds);
+
+        $this->activeResidentRelation(
+            $occupancyQuery,
+            $user,
+            $today
+        );
+
+        $occupancyUnitIds = $occupancyQuery
+            ->pluck('unit_id');
+
+        foreach ($occupancyUnitIds as $unitId) {
+            $flags[(int) $unitId]['occupant'] = true;
+        }
+
+        return $flags;
+    }
+
     public function residentRelationship(
         User $user,
         Unit $unit

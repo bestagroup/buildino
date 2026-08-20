@@ -262,6 +262,11 @@
                     )
                     : null;
 
+            shell?.setAttribute(
+                "aria-busy",
+                "true"
+            );
+
             const instance =
                 new window.DataTable(
                     table,
@@ -322,17 +327,26 @@
                                             ?.message
                                         || "دریافت اطلاعات جدول ناموفق بود.";
 
+                                    loading
+                                        ?.setAttribute(
+                                            "hidden",
+                                            "hidden"
+                                        );
+
+                                    shell?.setAttribute(
+                                        "aria-busy",
+                                        "false"
+                                    );
+
                                     if (
-                                        window.Swal
+                                        window.BuildinoUI
+                                        && typeof window.BuildinoUI.toast
+                                            === "function"
                                     ) {
-                                        window.Swal.fire({
-                                            icon:
-                                                "error",
-                                            title:
-                                                "خطای جدول",
-                                            text:
-                                                message,
-                                        });
+                                        window.BuildinoUI.toast(
+                                            `خطای جدول: ${message}`,
+                                            "danger"
+                                        );
                                     }
                                 },
                         },
@@ -349,6 +363,11 @@
                                         "hidden",
                                         "hidden"
                                     );
+
+                                shell?.setAttribute(
+                                    "aria-busy",
+                                    "false"
+                                );
 
                                 if (
                                     countTarget
@@ -382,10 +401,18 @@
                     (field) => {
                         field.addEventListener(
                             "change",
-                            () =>
+                            () => {
+                                loading?.removeAttribute(
+                                    "hidden"
+                                );
+                                shell?.setAttribute(
+                                    "aria-busy",
+                                    "true"
+                                );
                                 instance
                                     .ajax
-                                    .reload()
+                                    .reload();
+                            }
                         );
                     }
                 );
@@ -407,6 +434,14 @@
                                         "";
                                 }
                             );
+
+                        loading?.removeAttribute(
+                            "hidden"
+                        );
+                        shell?.setAttribute(
+                            "aria-busy",
+                            "true"
+                        );
 
                         instance
                             .search(

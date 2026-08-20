@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fa" dir="rtl" data-theme="light">
+<html lang="fa" dir="rtl" class="light-style" data-theme="theme-default" data-assets-path="{{ asset('assets/') }}/">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,6 +7,11 @@
     <meta name="robots" content="noindex,nofollow">
 
     <title>تعیین رمز عبور جدید | Buildino</title>
+    <!-- Materialize RTL theme extracted from the supplied UI reference -->
+    <link id="template-core-css" rel="stylesheet" href="{{ asset('assets/vendor/css/rtl/core.css') }}">
+    <link id="template-theme-css" rel="stylesheet" href="{{ asset('assets/vendor/css/rtl/theme-default.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/materialize-demo.css') }}">
+
 
     <link
         rel="stylesheet"
@@ -20,9 +25,10 @@
         rel="stylesheet"
         href="{{ asset('css/buildino-management.css') }}"
     >
+    <link rel="stylesheet" href="{{ asset('css/buildino-materialize.css') }}">
 </head>
 
-<body class="login-page auth-recovery-page">
+<body class="login-page auth-recovery-page materialize-auth">
 <div class="auth-recovery-shell">
     <main class="auth-recovery-card">
         <a
@@ -191,5 +197,8 @@
 <script
     src="{{ asset('js/buildino-foundation.js') }}"
 ></script>
+
+<script src="{{ asset('js/buildino-materialize.js') }}" defer></script>
+
 </body>
 </html>

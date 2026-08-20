@@ -4,49 +4,30 @@
 @section('page-title', 'خانه من')
 
 @section('sidebar-links')
-    <a href="#units">
-        @include(
-            'management.partials.icon',
-            [
-                'name' => 'building',
-                'size' => 18,
-            ]
-        )
-        <span>واحدهای من</span>
-    </a>
-
-    <a href="#finance">
-        @include(
-            'management.partials.icon',
-            [
-                'name' => 'invoice',
-                'size' => 18,
-            ]
-        )
-        <span>صورتحساب و کیف پول</span>
-    </a>
-
-    <a href="#wallet-history">
-        @include(
-            'management.partials.icon',
-            [
-                'name' => 'wallet',
-                'size' => 18,
-            ]
-        )
-        <span>گردش کیف پول</span>
-    </a>
-
-    <a href="#activity">
-        @include(
-            'management.partials.icon',
-            [
-                'name' => 'calendar',
-                'size' => 18,
-            ]
-        )
-        <span>فعالیت‌های من</span>
-    </a>
+    <li class="menu-item">
+        <a href="#units" class="menu-link">
+            <span class="menu-icon">@include('management.partials.icon', ['name' => 'building', 'size' => 18])</span>
+            <div>واحدهای من</div>
+        </a>
+    </li>
+    <li class="menu-item">
+        <a href="#finance" class="menu-link">
+            <span class="menu-icon">@include('management.partials.icon', ['name' => 'invoice', 'size' => 18])</span>
+            <div>صورتحساب و کیف پول</div>
+        </a>
+    </li>
+    <li class="menu-item">
+        <a href="#wallet-history" class="menu-link">
+            <span class="menu-icon">@include('management.partials.icon', ['name' => 'wallet', 'size' => 18])</span>
+            <div>گردش کیف پول</div>
+        </a>
+    </li>
+    <li class="menu-item">
+        <a href="#activity" class="menu-link">
+            <span class="menu-icon">@include('management.partials.icon', ['name' => 'calendar', 'size' => 18])</span>
+            <div>فعالیت‌های من</div>
+        </a>
+    </li>
 @endsection
 
 @php
@@ -148,7 +129,7 @@
         };
 @endphp
 
-<section class="portal-hero portal-hero--resident">
+<section class="portal-hero portal-hero--resident card">
     <div class="portal-hero__copy">
         <span class="portal-eyebrow">
             RESIDENT HOME
@@ -188,7 +169,7 @@
     <div class="portal-hero__actions">
         <button
             type="button"
-            class="portal-action-button"
+            class="portal-action-button btn btn-outline-primary"
             data-bs-toggle="modal"
             data-bs-target="#guestModal"
         >
@@ -204,7 +185,7 @@
 
         <button
             type="button"
-            class="portal-action-button"
+            class="portal-action-button btn btn-outline-primary"
             data-bs-toggle="modal"
             data-bs-target="#serviceModal"
         >
@@ -220,7 +201,7 @@
 
         <button
             type="button"
-            class="portal-action-button"
+            class="portal-action-button btn btn-outline-primary"
             data-bs-toggle="modal"
             data-bs-target="#supportModal"
         >
@@ -236,7 +217,7 @@
 
         <button
             type="button"
-            class="portal-action-button portal-action-button--primary"
+            class="portal-action-button portal-action-button--primary btn btn-primary"
             data-bs-toggle="modal"
             data-bs-target="#reservationModal"
         >
@@ -253,7 +234,7 @@
 </section>
 
 <section class="portal-stat-grid">
-    <article class="portal-stat-card">
+    <article class="portal-stat-card card">
         <span class="portal-stat-card__icon">
             @include(
                 'management.partials.icon',
@@ -276,7 +257,7 @@
         </div>
     </article>
 
-    <article class="portal-stat-card portal-stat-card--wallet">
+    <article class="portal-stat-card portal-stat-card--wallet card">
         <span class="portal-stat-card__icon">
             @include(
                 'management.partials.icon',
@@ -301,7 +282,7 @@
         </div>
     </article>
 
-    <article class="portal-stat-card portal-stat-card--danger">
+    <article class="portal-stat-card portal-stat-card--danger card">
         <span class="portal-stat-card__icon">
             @include(
                 'management.partials.icon',
@@ -326,7 +307,7 @@
         </div>
     </article>
 
-    <article class="portal-stat-card portal-stat-card--success">
+    <article class="portal-stat-card portal-stat-card--success card">
         <span class="portal-stat-card__icon">
             @include(
                 'management.partials.icon',
@@ -353,7 +334,7 @@
 </section>
 
 <section
-    class="portal-section"
+    class="portal-section card"
     id="units"
 >
     <div class="portal-section__heading">
@@ -370,7 +351,7 @@
     <div class="portal-unit-grid">
         @foreach ($portalData['units'] as $unit)
             <article
-                class="portal-unit-card"
+                class="portal-unit-card card"
                 data-unit-id="{{ $unit['id'] }}"
                 data-building-id="{{ $unit['building_id'] }}"
             >
@@ -462,7 +443,7 @@
 </section>
 
 <section
-    class="portal-section"
+    class="portal-section card"
     id="finance"
 >
     <div class="portal-section__heading">
@@ -503,7 +484,7 @@
         </div>
     </div>
 
-    <div class="portal-datatable-card">
+    <div class="portal-datatable-card card">
         @include(
             'shared.server-datatable',
             [
@@ -533,7 +514,7 @@
 </section>
 
 <section
-    class="portal-section"
+    class="portal-section card"
     id="wallet-history"
 >
     <div class="portal-section__heading">
@@ -569,7 +550,7 @@
     </div>
 
     <div class="portal-wallet-history-grid">
-        <article class="portal-wallet-history-card">
+        <article class="portal-wallet-history-card card">
             <header>
                 <div>
                     @include(
@@ -664,7 +645,7 @@
         </article>
 
         @foreach ($portalData['units'] as $unit)
-            <article class="portal-wallet-history-card">
+            <article class="portal-wallet-history-card card">
                 <header>
                     <div>
                         @include(
@@ -763,7 +744,7 @@
 </section>
 
 <section
-    class="portal-section"
+    class="portal-section card"
     id="activity"
 >
     <div class="portal-section__heading">
@@ -778,7 +759,7 @@
     </div>
 
     <div class="portal-activity-grid">
-        <article class="portal-list-card">
+        <article class="portal-list-card card">
             <header>
                 <div>
                     @include(
@@ -927,7 +908,7 @@
             </div>
         </article>
 
-        <article class="portal-list-card">
+        <article class="portal-list-card card">
             <header>
                 <div>
                     @include(
@@ -1058,7 +1039,7 @@
             </div>
         </article>
 
-        <article class="portal-list-card">
+        <article class="portal-list-card card">
             <header>
                 <div>
                     @include(
@@ -1263,7 +1244,7 @@
             </div>
         </article>
 
-        <article class="portal-list-card">
+        <article class="portal-list-card card">
             <header>
                 <div>
                     @include(
@@ -1426,7 +1407,9 @@
                     <select
                         name="unit_id"
                         required
-                    >
+                    
+                    class="form-select"
+                >
                         @foreach ($portalData['units'] as $unit)
                             <option
                                 value="{{ $unit['id'] }}"
@@ -1449,7 +1432,9 @@
                     <input
                         name="first_name"
                         required
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field">
@@ -1457,7 +1442,9 @@
                     <input
                         name="last_name"
                         required
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field">
@@ -1465,14 +1452,18 @@
                     <input
                         name="mobile"
                         dir="ltr"
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field">
                     <span>پلاک خودرو</span>
                     <input
                         name="vehicle_plate"
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field">
@@ -1480,7 +1471,9 @@
                     <input
                         type="datetime-local"
                         name="expected_entry_at"
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field">
@@ -1488,7 +1481,9 @@
                     <input
                         type="datetime-local"
                         name="expected_exit_at"
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field portal-field--wide">
@@ -1496,7 +1491,9 @@
                     <textarea
                         name="description"
                         rows="3"
-                    ></textarea>
+                    
+                    class="form-control"
+                ></textarea>
                 </label>
             </div>
 
@@ -1511,7 +1508,7 @@
 
                 <button
                     type="submit"
-                    class="portal-primary-button"
+                    class="portal-primary-button btn btn-primary"
                 >
                     ثبت مهمان
                 </button>
@@ -1548,7 +1545,9 @@
                     <select
                         name="unit_id"
                         required
-                    >
+                    
+                    class="form-select"
+                >
                         @foreach ($portalData['units'] as $unit)
                             <option
                                 value="{{ $unit['id'] }}"
@@ -1571,7 +1570,9 @@
                     <select
                         name="type"
                         required
-                    >
+                    
+                    class="form-select"
+                >
                         <option value="electrical">
                             برق
                         </option>
@@ -1598,7 +1599,7 @@
 
                 <label class="portal-field">
                     <span>اولویت</span>
-                    <select name="priority">
+                    <select name="priority" class="form-select">
                         <option value="normal">عادی</option>
                         <option value="low">کم</option>
                         <option value="high">زیاد</option>
@@ -1611,7 +1612,9 @@
                     <input
                         name="title"
                         required
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field portal-field--wide">
@@ -1619,7 +1622,9 @@
                     <textarea
                         name="description"
                         rows="4"
-                    ></textarea>
+                    
+                    class="form-control"
+                ></textarea>
                 </label>
             </div>
 
@@ -1634,7 +1639,7 @@
 
                 <button
                     type="submit"
-                    class="portal-primary-button"
+                    class="portal-primary-button btn btn-primary"
                 >
                     ثبت درخواست
                 </button>
@@ -1671,7 +1676,9 @@
                     <select
                         name="unit_id"
                         required
-                    >
+                    
+                    class="form-select"
+                >
                         @foreach ($portalData['units'] as $unit)
                             <option
                                 value="{{ $unit['id'] }}"
@@ -1691,7 +1698,7 @@
 
                 <label class="portal-field">
                     <span>دسته‌بندی</span>
-                    <select name="support_category_id">
+                    <select name="support_category_id" class="form-select">
                         <option value="">
                             عمومی
                         </option>
@@ -1712,7 +1719,7 @@
 
                 <label class="portal-field">
                     <span>اولویت</span>
-                    <select name="priority">
+                    <select name="priority" class="form-select">
                         <option value="medium">عادی</option>
                         <option value="low">کم</option>
                         <option value="high">زیاد</option>
@@ -1725,7 +1732,9 @@
                     <input
                         name="subject"
                         required
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field portal-field--wide">
@@ -1734,7 +1743,9 @@
                         name="description"
                         rows="4"
                         required
-                    ></textarea>
+                    
+                    class="form-control"
+                ></textarea>
                 </label>
             </div>
 
@@ -1749,7 +1760,7 @@
 
                 <button
                     type="submit"
-                    class="portal-primary-button"
+                    class="portal-primary-button btn btn-primary"
                 >
                     ثبت تیکت
                 </button>
@@ -1786,7 +1797,9 @@
                     <select
                         name="facility_id"
                         required
-                    >
+                    
+                    class="form-select"
+                >
                         @foreach (
                             $portalData[
                                 'facilities'
@@ -1822,7 +1835,9 @@
                     <select
                         name="unit_id"
                         required
-                    >
+                    
+                    class="form-select"
+                >
                         @foreach ($portalData['units'] as $unit)
                             <option
                                 value="{{ $unit['id'] }}"
@@ -1845,7 +1860,9 @@
                     <input
                         type="date"
                         name="reservation_date"
-                        min="{{ now()->toDateString() }}"
+                        min="{{ now()-
+                    class="form-control"
+                >toDateString() }}"
                         required
                     >
                 </label>
@@ -1856,7 +1873,9 @@
                         type="time"
                         name="start_time"
                         required
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field">
@@ -1865,7 +1884,9 @@
                         type="time"
                         name="end_time"
                         required
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field portal-field--wide">
@@ -1873,7 +1894,9 @@
                     <textarea
                         name="description"
                         rows="3"
-                    ></textarea>
+                    
+                    class="form-control"
+                ></textarea>
                 </label>
             </div>
 
@@ -1888,7 +1911,7 @@
 
                 <button
                     type="submit"
-                    class="portal-primary-button"
+                    class="portal-primary-button btn btn-primary"
                     @disabled(
                         $portalData[
                             'facilities'
@@ -1947,7 +1970,9 @@
                     <select
                         name="payer_source"
                         required
-                    >
+                    
+                    class="form-select"
+                >
                         <option value="unit_wallet">
                             کیف پول واحد
                         </option>
@@ -1969,7 +1994,7 @@
 
                 <button
                     type="submit"
-                    class="portal-primary-button"
+                    class="portal-primary-button btn btn-primary"
                 >
                     پرداخت رزرو
                 </button>
@@ -2023,18 +2048,20 @@
                     <input
                         type="hidden"
                         name="ticket_id"
-                    >
+                >
 
                     <textarea
                         name="message"
                         rows="3"
                         placeholder="پیام خود را بنویسید..."
                         required
-                    ></textarea>
+                    
+                    class="form-control"
+                ></textarea>
 
                     <button
                         type="submit"
-                        class="portal-primary-button"
+                        class="portal-primary-button btn btn-primary"
                     >
                         ارسال پیام
                     </button>
@@ -2097,7 +2124,9 @@
                         min="1"
                         required
                         dir="ltr"
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
             </div>
 
@@ -2112,7 +2141,7 @@
 
                 <button
                     type="submit"
-                    class="portal-primary-button"
+                    class="portal-primary-button btn btn-primary"
                 >
                     ادامه پرداخت
                 </button>

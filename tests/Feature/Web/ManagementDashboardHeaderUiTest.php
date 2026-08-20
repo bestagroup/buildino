@@ -215,8 +215,18 @@ class ManagementDashboardHeaderUiTest extends TestCase
                 'کیف پول شخصی'
             )
             ->assertSee(
+                'assets/vendor/css/rtl/core.css',
+                false
+            )
+            ->assertDontSee(
                 config(
                     'management_ui.libraries.bootstrap.css'
+                ),
+                false
+            )
+            ->assertSee(
+                config(
+                    'management_ui.libraries.bootstrap.js'
                 ),
                 false
             )

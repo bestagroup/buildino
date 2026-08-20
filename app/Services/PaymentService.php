@@ -7,12 +7,14 @@ use App\Enums\InvoiceStatus;
 use App\Enums\PaymentStatus;
 use App\Events\PaymentVerified;
 use App\Models\Payment;
+use App\Models\PaymentAllocation;
 use App\Models\PaymentTransaction;
 use App\Models\UnitInvoice;
 use App\Models\User;
 use App\Models\WalletTopUp;
 use App\Services\Payments\GatewayPayloadSanitizer;
 use App\Services\Wallet\WalletTopUpService;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -30,63 +32,216 @@ class PaymentService
         User $payer,
         array $data
     ): Payment {
-        $invoice->loadMissing('building');
-
-        if (! in_array(
-            $invoice->status,
-            [
-                InvoiceStatus::Issued,
-                InvoiceStatus::Partial,
-                InvoiceStatus::Overdue,
-            ],
-            true
-        )) {
-            throw ValidationException::withMessages([
-                'invoice' => 'Only an issued, partial or overdue invoice can be paid.',
-            ]);
-        }
-
         $amount = (int) $data['amount'];
+        $idempotencyKey = $this->normalizeIdempotencyKey(
+            $data['idempotency_key'] ?? null
+        );
+
+        try {
+            return DB::transaction(function () use (
+                $invoice,
+                $payer,
+                $data,
+                $amount,
+                $idempotencyKey
+            ): Payment {
+                $invoice = UnitInvoice::query()
+                    ->with('building')
+                    ->lockForUpdate()
+                    ->findOrFail($invoice->getKey());
+
+                if ($idempotencyKey !== null) {
+                    $existing = Payment::query()
+                        ->where('idempotency_key', $idempotencyKey)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($existing) {
+                        return $this->assertIdempotentInvoicePayment(
+                            $existing,
+                            $invoice,
+                            $payer,
+                            $data,
+                            $amount
+                        );
+                    }
+                }
+
+                if (! in_array(
+                    $invoice->status,
+                    [
+                        InvoiceStatus::Issued,
+                        InvoiceStatus::Partial,
+                        InvoiceStatus::Overdue,
+                    ],
+                    true
+                )) {
+                    throw ValidationException::withMessages([
+                        'invoice' =>
+                            'Only an issued, partial or overdue invoice can be paid.',
+                    ]);
+                }
+
+                $reservedAmount = $this->reservedInvoiceAmount(
+                    $invoice
+                );
+
+                $availableAmount = max(
+                    0,
+                    (int) $invoice->outstanding_amount
+                    - $reservedAmount
+                );
+
+                if (
+                    $amount <= 0
+                    || $amount > $availableAmount
+                ) {
+                    throw ValidationException::withMessages([
+                        'amount' =>
+                            'Payment amount exceeds the currently available invoice outstanding amount.',
+                    ]);
+                }
+
+                $payment = Payment::query()->create([
+                    'uuid' => (string) Str::uuid(),
+                    'building_id' => $invoice->building_id,
+                    'payer_user_id' => $payer->getKey(),
+                    'payment_number' => sprintf(
+                        'PAY-%d-%s',
+                        $invoice->building_id,
+                        strtoupper(Str::random(12))
+                    ),
+                    'idempotency_key' => $idempotencyKey,
+                    'amount' => $amount,
+                    'currency' => $invoice->building?->currency ?: 'IRR',
+                    'method' => $data['method'],
+                    'status' => PaymentStatus::Pending,
+                    'description' => $data['description'] ?? null,
+                ]);
+
+                $payment->paymentAllocations()->create([
+                    'payable_type' => $invoice->getMorphClass(),
+                    'payable_id' => $invoice->getKey(),
+                    'amount' => $amount,
+                ]);
+
+                return $payment->refresh();
+            }, 3);
+        } catch (QueryException $exception) {
+            if ($idempotencyKey === null) {
+                throw $exception;
+            }
+
+            $existing = Payment::query()
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+
+            if (! $existing) {
+                throw $exception;
+            }
+
+            $invoice = UnitInvoice::query()
+                ->with('building')
+                ->findOrFail($invoice->getKey());
+
+            return $this->assertIdempotentInvoicePayment(
+                $existing,
+                $invoice,
+                $payer,
+                $data,
+                $amount
+            );
+        }
+    }
+
+    private function reservedInvoiceAmount(
+        UnitInvoice $invoice
+    ): int {
+        $payableTypes = array_values(array_unique([
+            $invoice->getMorphClass(),
+            UnitInvoice::class,
+        ]));
+
+        return (int) PaymentAllocation::query()
+            ->join(
+                'payments',
+                'payments.id',
+                '=',
+                'payment_allocations.payment_id'
+            )
+            ->whereIn(
+                'payment_allocations.payable_type',
+                $payableTypes
+            )
+            ->where(
+                'payment_allocations.payable_id',
+                $invoice->getKey()
+            )
+            ->whereIn(
+                'payments.status',
+                [
+                    PaymentStatus::Pending->value,
+                    PaymentStatus::Processing->value,
+                    PaymentStatus::Failed->value,
+                ]
+            )
+            ->sum('payment_allocations.amount');
+    }
+
+    private function assertIdempotentInvoicePayment(
+        Payment $payment,
+        UnitInvoice $invoice,
+        User $payer,
+        array $data,
+        int $amount
+    ): Payment {
+        $allocation = $payment
+            ->paymentAllocations()
+            ->whereIn(
+                'payable_type',
+                array_values(array_unique([
+                    $invoice->getMorphClass(),
+                    UnitInvoice::class,
+                ]))
+            )
+            ->where('payable_id', $invoice->getKey())
+            ->first();
+
+        $requestedMethod = $data['method'] instanceof \BackedEnum
+            ? $data['method']->value
+            : (string) $data['method'];
+
+        $storedMethod = $payment->method instanceof \BackedEnum
+            ? $payment->method->value
+            : (string) $payment->method;
 
         if (
-            $amount <= 0
-            || $amount > (int) $invoice->outstanding_amount
+            (int) $payment->building_id !== (int) $invoice->building_id
+            || (int) $payment->payer_user_id !== (int) $payer->getKey()
+            || (int) $payment->amount !== $amount
+            || $storedMethod !== $requestedMethod
+            || ! $allocation
+            || (int) $allocation->amount !== $amount
         ) {
             throw ValidationException::withMessages([
-                'amount' => 'Payment amount must be greater than zero and cannot exceed the invoice outstanding amount.',
+                'idempotency_key' =>
+                    'The idempotency key has already been used for a different payment operation.',
             ]);
         }
 
-        return DB::transaction(function () use (
-            $invoice,
-            $payer,
-            $data,
-            $amount
-        ): Payment {
-            $payment = Payment::query()->create([
-                'uuid' => (string) Str::uuid(),
-                'building_id' => $invoice->building_id,
-                'payer_user_id' => $payer->getKey(),
-                'payment_number' => sprintf(
-                    'PAY-%d-%s',
-                    $invoice->building_id,
-                    strtoupper(Str::random(12))
-                ),
-                'amount' => $amount,
-                'currency' => $invoice->building?->currency ?: 'IRR',
-                'method' => $data['method'],
-                'status' => PaymentStatus::Pending,
-                'description' => $data['description'] ?? null,
-            ]);
+        return $payment->refresh();
+    }
 
-            $payment->paymentAllocations()->create([
-                'payable_type' => $invoice->getMorphClass(),
-                'payable_id' => $invoice->getKey(),
-                'amount' => $amount,
-            ]);
+    private function normalizeIdempotencyKey(
+        mixed $value
+    ): ?string {
+        if (! is_string($value)) {
+            return null;
+        }
 
-            return $payment->refresh();
-        });
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
     }
 
     public function verify(

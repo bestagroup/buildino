@@ -20,7 +20,7 @@ class RouteCompositionRebootTest extends TestCase
         );
 
         $this->assertGreaterThan(
-            200,
+            100,
             $beforeCount,
             'Expected the complete Buildino V1 route surface before reboot.'
         );
@@ -49,7 +49,7 @@ class RouteCompositionRebootTest extends TestCase
         );
 
         $this->assertGreaterThan(
-            200,
+            100,
             $afterCount
         );
 

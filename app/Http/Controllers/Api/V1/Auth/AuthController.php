@@ -282,11 +282,16 @@ class AuthController extends Controller
         Request $request,
         NotificationDeviceService $devices
     ): JsonResponse {
+        $deviceId = trim(
+            (string) (
+                $request->header('X-Device-ID')
+                ?: $request->input('device_id', '')
+            )
+        );
+
         $devices->release(
             $request->user(),
-            $request->string(
-                'device_id'
-            )->toString()
+            $deviceId
         );
 
         $request->user()

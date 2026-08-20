@@ -81,11 +81,17 @@ class UserNotificationService
             return $log;
         }
 
-        $log->forceFill([
-            'status' => NotificationStatus::Processing,
-            'attempts' => $log->attempts + 1,
-            'last_attempt_at' => now(),
-        ])->save();
+        /*
+         * Claim the delivery attempt atomically. A unique idempotency key
+         * prevents duplicate rows; this compare-and-set prevents two queue
+         * workers from delivering the same row concurrently.
+         *
+         * Processing rows may be reclaimed only after a bounded stale window
+         * so a worker crash does not leave notifications permanently stuck.
+         */
+        if (! $this->claimForDelivery($log)) {
+            return $log->fresh();
+        }
 
         try {
             $response = match ($channel) {
@@ -214,7 +220,99 @@ class UserNotificationService
             );
         }
 
-        return $response;
+        return $this->redactPushTokens(
+            $response,
+            $tokens
+        );
+    }
+
+    private function claimForDelivery(
+        NotificationLog $log
+    ): bool {
+        $staleBefore = now()->subSeconds(
+            max(
+                30,
+                (int) config(
+                    'notifications.processing_stale_seconds',
+                    90
+                )
+            )
+        );
+
+        $claimed = NotificationLog::query()
+            ->whereKey($log->getKey())
+            ->where(function ($query) use ($staleBefore): void {
+                $query
+                    ->whereIn('status', [
+                        NotificationStatus::Queued->value,
+                        NotificationStatus::Failed->value,
+                    ])
+                    ->orWhere(function ($processing) use ($staleBefore): void {
+                        $processing
+                            ->where(
+                                'status',
+                                NotificationStatus::Processing->value
+                            )
+                            ->where(function ($stale) use ($staleBefore): void {
+                                $stale
+                                    ->whereNull('last_attempt_at')
+                                    ->orWhere(
+                                        'last_attempt_at',
+                                        '<=',
+                                        $staleBefore
+                                    );
+                            });
+                    });
+            })
+            ->increment(
+                'attempts',
+                1,
+                [
+                    'status' =>
+                        NotificationStatus::Processing->value,
+                    'last_attempt_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+
+        return $claimed === 1;
+    }
+
+    private function redactPushTokens(
+        mixed $value,
+        array $tokens
+    ): mixed {
+        if (is_array($value)) {
+            return collect($value)
+                ->map(
+                    fn ($item) =>
+                        $this->redactPushTokens(
+                            $item,
+                            $tokens
+                        )
+                )
+                ->all();
+        }
+
+        if (! is_string($value) || $value === '') {
+            return $value;
+        }
+
+        $redacted = $value;
+
+        foreach ($tokens as $token) {
+            if (! is_string($token) || $token === '') {
+                continue;
+            }
+
+            $redacted = str_replace(
+                $token,
+                '[REDACTED_DEVICE_TOKEN]',
+                $redacted
+            );
+        }
+
+        return $redacted;
     }
 
     private function providerMessageId(

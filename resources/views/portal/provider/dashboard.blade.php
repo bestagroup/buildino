@@ -4,38 +4,24 @@
 @section('page-title', 'پنل ارائه‌دهنده خدمات')
 
 @section('sidebar-links')
-    <a href="#provider-wallet-history">
-        @include(
-            'management.partials.icon',
-            [
-                'name' => 'wallet',
-                'size' => 18,
-            ]
-        )
-        <span>گردش کیف پول</span>
-    </a>
-
-    <a href="#jobs">
-        @include(
-            'management.partials.icon',
-            [
-                'name' => 'tools',
-                'size' => 18,
-            ]
-        )
-        <span>کارهای من</span>
-    </a>
-
-    <a href="#settlement">
-        @include(
-            'management.partials.icon',
-            [
-                'name' => 'wallet',
-                'size' => 18,
-            ]
-        )
-        <span>تسویه و حساب بانکی</span>
-    </a>
+    <li class="menu-item">
+        <a href="#provider-wallet-history" class="menu-link">
+            <span class="menu-icon">@include('management.partials.icon', ['name' => 'wallet', 'size' => 18])</span>
+            <div>گردش کیف پول</div>
+        </a>
+    </li>
+    <li class="menu-item">
+        <a href="#jobs" class="menu-link">
+            <span class="menu-icon">@include('management.partials.icon', ['name' => 'tools', 'size' => 18])</span>
+            <div>کارهای من</div>
+        </a>
+    </li>
+    <li class="menu-item">
+        <a href="#settlement" class="menu-link">
+            <span class="menu-icon">@include('management.partials.icon', ['name' => 'wallet', 'size' => 18])</span>
+            <div>تسویه و حساب بانکی</div>
+        </a>
+    </li>
 @endsection
 
 @php
@@ -108,7 +94,7 @@
         };
 @endphp
 
-<section class="portal-hero portal-hero--provider">
+<section class="portal-hero portal-hero--provider card">
     <div class="portal-hero__copy">
         <span class="portal-eyebrow">
             SERVICE PROVIDER
@@ -149,7 +135,7 @@
     <div class="portal-hero__actions">
         <button
             type="button"
-            class="portal-action-button"
+            class="portal-action-button btn btn-outline-primary"
             data-bs-toggle="modal"
             data-bs-target="#bankAccountModal"
         >
@@ -165,7 +151,7 @@
 
         <button
             type="button"
-            class="portal-action-button portal-action-button--primary"
+            class="portal-action-button portal-action-button--primary btn btn-primary"
             data-bs-toggle="modal"
             data-bs-target="#payoutModal"
             @disabled(
@@ -192,7 +178,7 @@
 </section>
 
 <section class="portal-stat-grid">
-    <article class="portal-stat-card">
+    <article class="portal-stat-card card">
         <span class="portal-stat-card__icon">
             @include(
                 'management.partials.icon',
@@ -218,7 +204,7 @@
         </div>
     </article>
 
-    <article class="portal-stat-card portal-stat-card--success">
+    <article class="portal-stat-card portal-stat-card--success card">
         <span class="portal-stat-card__icon">
             @include(
                 'management.partials.icon',
@@ -244,7 +230,7 @@
         </div>
     </article>
 
-    <article class="portal-stat-card portal-stat-card--wallet">
+    <article class="portal-stat-card portal-stat-card--wallet card">
         <span class="portal-stat-card__icon">
             @include(
                 'management.partials.icon',
@@ -270,7 +256,7 @@
         </div>
     </article>
 
-    <article class="portal-stat-card portal-stat-card--warning">
+    <article class="portal-stat-card portal-stat-card--warning card">
         <span class="portal-stat-card__icon">
             @include(
                 'management.partials.icon',
@@ -298,7 +284,7 @@
 </section>
 
 <section
-    class="portal-section"
+    class="portal-section card"
     id="provider-wallet-history"
 >
     <div class="portal-section__heading">
@@ -333,7 +319,7 @@
         </div>
     </div>
 
-    <article class="portal-wallet-history-card portal-wallet-history-card--wide">
+    <article class="portal-wallet-history-card portal-wallet-history-card--wide card">
         <header>
             <div>
                 @include(
@@ -440,7 +426,7 @@
 </section>
 
 <section
-    class="portal-section"
+    class="portal-section card"
     id="jobs"
 >
     <div class="portal-section__heading">
@@ -518,7 +504,7 @@
                         : null;
             @endphp
 
-            <article class="portal-job-card">
+            <article class="portal-job-card card">
                 <div class="portal-job-card__header">
                     <div>
                         <span>
@@ -729,7 +715,7 @@
 </section>
 
 <section
-    class="portal-section"
+    class="portal-section card"
     id="settlement"
 >
     <div class="portal-section__heading">
@@ -759,7 +745,7 @@
     </div>
 
     <div class="portal-settlement-grid">
-        <article class="portal-list-card">
+        <article class="portal-list-card card">
             <header>
                 <div>
                     @include(
@@ -837,7 +823,7 @@
             </div>
         </article>
 
-        <article class="portal-list-card">
+        <article class="portal-list-card card">
             <header>
                 <div>
                     @include(
@@ -957,7 +943,9 @@
                         min="1"
                         dir="ltr"
                         required
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field portal-field--wide">
@@ -965,7 +953,9 @@
                     <input
                         type="datetime-local"
                         name="valid_until"
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field portal-field--wide">
@@ -973,7 +963,9 @@
                     <textarea
                         name="notes"
                         rows="4"
-                    ></textarea>
+                    
+                    class="form-control"
+                ></textarea>
                 </label>
             </div>
 
@@ -988,7 +980,7 @@
 
                 <button
                     type="submit"
-                    class="portal-primary-button"
+                    class="portal-primary-button btn btn-primary"
                 >
                     ثبت پیشنهاد
                 </button>
@@ -1022,7 +1014,7 @@
             <div class="modal-body portal-form-grid">
                 <label class="portal-field">
                     <span>نام بانک</span>
-                    <input name="bank_name">
+                    <input name="bank_name" class="form-control">
                 </label>
 
                 <label class="portal-field">
@@ -1030,7 +1022,9 @@
                     <input
                         name="account_holder_name"
                         required
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field portal-field--wide">
@@ -1040,7 +1034,9 @@
                         dir="ltr"
                         placeholder="IR..."
                         required
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field">
@@ -1048,7 +1044,9 @@
                     <input
                         name="account_number"
                         dir="ltr"
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-field">
@@ -1056,7 +1054,9 @@
                     <input
                         name="card_number"
                         dir="ltr"
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
 
                 <label class="portal-check portal-field--wide">
@@ -1064,7 +1064,9 @@
                         type="checkbox"
                         name="is_default"
                         value="1"
-                    >
+                    
+                    class="form-check-input"
+                >
                     <span>
                         حساب پیش‌فرض من باشد
                     </span>
@@ -1082,7 +1084,7 @@
 
                 <button
                     type="submit"
-                    class="portal-primary-button"
+                    class="portal-primary-button btn btn-primary"
                 >
                     ثبت حساب
                 </button>
@@ -1120,7 +1122,9 @@
                     <select
                         name="provider_bank_account_id"
                         required
-                    >
+                    
+                    class="form-select"
+                >
                         @foreach (
                             $portalData[
                                 'bank_accounts'
@@ -1159,7 +1163,9 @@
                         min="1"
                         dir="ltr"
                         required
-                    >
+                    
+                    class="form-control"
+                >
                 </label>
             </div>
 
@@ -1174,7 +1180,7 @@
 
                 <button
                     type="submit"
-                    class="portal-primary-button"
+                    class="portal-primary-button btn btn-primary"
                 >
                     ثبت درخواست تسویه
                 </button>
