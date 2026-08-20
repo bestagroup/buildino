@@ -10,7 +10,11 @@ if (! $.fn.select2 && typeof select2Factory === 'function') {
     select2Factory(window, $);
 }
 
-const disabledSelector = '[data-select2="off"], [data-native-select]';
+const disabledSelector = [
+    '[data-select2="off"]',
+    '[data-native-select]',
+    'jdp-container select',
+].join(', ');
 const pendingSelects = new Set();
 let flushScheduled = false;
 

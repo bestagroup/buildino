@@ -1,0 +1,59 @@
+.buildino-jalali-input {
+    background-image:
+        linear-gradient(45deg, transparent 50%, currentColor 50%),
+        linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position:
+        17px calc(50% - 2px),
+        12px calc(50% - 2px);
+    background-repeat: no-repeat;
+    background-size: 5px 5px, 5px 5px;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    padding-left: 34px !important;
+}
+
+jdp-container {
+    --jdp-day-size: 40px;
+    --jdp-color-0: var(--surface, var(--portal-surface, #fff));
+    --jdp-color-1: var(--surface-soft, var(--portal-soft, #f5f8fc));
+    --jdp-color-2: var(--border, var(--portal-border, #d7e0ea));
+    --jdp-color-3: var(--border-strong, #b9c6d5);
+    --jdp-color-4: var(--muted, var(--portal-muted, #718096));
+    --jdp-color-5: var(--text, var(--portal-text, #172033));
+    --jdp-primary: var(--primary-600, var(--portal-blue, #2a6696));
+    --jdp-red: var(--danger-500, #d84a4a);
+    border: 1px solid var(--jdp-color-2);
+    border-radius: 12px;
+    box-shadow: 0 18px 48px rgba(18, 50, 83, .2);
+    font-family: var(--font-ui, var(--portal-font, sans-serif));
+}
+
+jdp-container .jdp-btn-empty,
+jdp-container .jdp-btn-close,
+jdp-container .jdp-btn-today,
+jdp-container .jdp-btn-select-time {
+    border-radius: 8px;
+    font-family: inherit;
+}
+
+jdp-container .jdp-day,
+jdp-container .jdp-day-name {
+    border-radius: 8px;
+}
+
+html[data-theme="dark"] jdp-container {
+    --jdp-color-0: #172033;
+    --jdp-color-1: #202b3d;
+    --jdp-color-2: #344258;
+    --jdp-color-3: #52627a;
+    --jdp-color-4: #9aa9bd;
+    --jdp-color-5: #edf3fb;
+    --jdp-primary: #4b91c8;
+}
+
+@media (max-width: 481px) {
+    jdp-container {
+        border-radius: 16px 16px 0 0;
+        padding-bottom: max(.75rem, env(safe-area-inset-bottom));
+    }
+}

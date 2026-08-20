@@ -1365,9 +1365,25 @@
                     "input"
                 );
 
-            input.type =
-                field.type
-                || "text";
+            if (
+                [
+                    "date",
+                    "datetime-local",
+                    "time",
+                ].includes(
+                    field.type
+                )
+            ) {
+                input.type =
+                    "text";
+                input.dataset
+                    .buildinoDateType =
+                        field.type;
+            } else {
+                input.type =
+                    field.type
+                    || "text";
+            }
         }
 
         input.name =
@@ -1598,6 +1614,9 @@
         }
 
         window.BuildinoSelect2
+            ?.enhance(container);
+
+        window.BuildinoJalaliDatepicker
             ?.enhance(container);
     };
 

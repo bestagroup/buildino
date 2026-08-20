@@ -51,5 +51,12 @@ return [
             'jquery_version' => '3.7.1',
             'jquery_npm_package' => 'jquery',
         ],
+
+        'jalali_datepicker' => [
+            'version' => '1.0.0',
+            'npm_package' => '@majidh1/jalalidatepicker',
+            'converter_version' => '2.0.1',
+            'converter_npm_package' => 'jalaali-js',
+        ],
     ],
 ];
