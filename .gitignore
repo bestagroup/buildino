@@ -2,8 +2,6 @@
 *.zip
 .DS_Store
 
-/.env
-/.env.*
 !/.env.example
 !/.env.production.example
 
@@ -15,11 +13,6 @@
 
 /auth.json
 /node_modules
-/vendor
 
 /bootstrap/cache/*.php
-/public/build
-/public/hot
-/public/storage
 /storage/*.key
-/storage/api-docs
