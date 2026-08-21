@@ -171,7 +171,7 @@ class ManagementDashboardWebTest extends TestCase
 
         $response =
             $this->get(
-                '/management'
+                '/management?from=2026-08-01&to=2026-08-21'
             );
 
         $response
@@ -187,6 +187,12 @@ class ManagementDashboardWebTest extends TestCase
             )
             ->assertSee(
                 'نمای کل پلتفرم'
+            )
+            ->assertSee(
+                '1405/05/10'
+            )
+            ->assertSee(
+                '1405/05/30'
             );
     }
 

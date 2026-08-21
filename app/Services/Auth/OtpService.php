@@ -6,7 +6,6 @@ use App\Contracts\Auth\OtpSender;
 use App\Models\OtpCode;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class OtpService
@@ -42,7 +41,7 @@ class OtpService
                 'identifier' => $identifier,
                 'channel' => $channel,
                 'purpose' => $purpose,
-                'code_hash' => Hash::make($code),
+                'code' => $code,
                 'expires_at' => now()->addMinutes((int) config('auth_otp.ttl_minutes', 2)),
                 'attempts' => 0,
                 'request_ip' => $ip,
@@ -78,7 +77,7 @@ class OtpService
                 ];
             }
 
-            if (! Hash::check($code, $otp->code_hash)) {
+            if (! hash_equals((string) $otp->code, $code)) {
                 $otp->increment('attempts');
 
                 return [

@@ -85,7 +85,7 @@ return new class extends Migration
             $table->string('identifier', 190);
             $table->string('channel', 20);
             $table->string('purpose', 50);
-            $table->string('code_hash');
+            $table->string('code', 8);
             $table->timestamp('expires_at')->index();
             $table->timestamp('verified_at')->nullable();
             $table->timestamp('consumed_at')->nullable();

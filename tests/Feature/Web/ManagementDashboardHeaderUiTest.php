@@ -232,6 +232,69 @@ class ManagementDashboardHeaderUiTest extends TestCase
                 ),
                 false
             );
+
+        $html = (string) $response->getContent();
+        $walletPosition = strpos(
+            $html,
+            'class="topbar-menu topbar__wallet"'
+        );
+        $searchPosition = strpos(
+            $html,
+            'class="topbar__center"'
+        );
+        $actionsPosition = strpos(
+            $html,
+            'class="topbar__actions"'
+        );
+
+        $this->assertIsInt($walletPosition);
+        $this->assertIsInt($searchPosition);
+        $this->assertIsInt($actionsPosition);
+        $this->assertLessThan(
+            $searchPosition,
+            $walletPosition
+        );
+        $this->assertLessThan(
+            $actionsPosition,
+            $searchPosition
+        );
+
+        preg_match(
+            '/<div class="user-menu-trigger__copy">(.*?)<\/div>/s',
+            $html,
+            $userTrigger
+        );
+
+        $this->assertArrayHasKey(1, $userTrigger);
+        $this->assertStringContainsString(
+            '<strong>',
+            $userTrigger[1]
+        );
+        $this->assertStringNotContainsString(
+            '<span>',
+            $userTrigger[1]
+        );
+
+        $topbarCss = preg_replace(
+            '/\s+/',
+            ' ',
+            (string) file_get_contents(
+                public_path('css/buildino-management.css')
+            )
+        );
+
+        $this->assertStringContainsString(
+            '.quick-create-button { min-width: 112px;',
+            $topbarCss
+        );
+        $this->assertStringContainsString(
+            '.user-menu-trigger { width: 240px; min-width: 220px;',
+            $topbarCss
+        );
+        $this->assertStringContainsString(
+            '.wallet-summary-trigger { width: 100%; min-width: 210px;',
+            $topbarCss
+        );
     }
 
     private function grantPermission(

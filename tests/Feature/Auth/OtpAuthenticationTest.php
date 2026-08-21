@@ -6,6 +6,7 @@ use App\Contracts\Auth\OtpSender;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class OtpAuthenticationTest extends TestCase
@@ -33,7 +34,17 @@ class OtpAuthenticationTest extends TestCase
         ])->assertAccepted();
 
         $this->assertCount(1, $fake->sent);
-        $this->assertDatabaseHas('otp_codes', ['identifier' => '09120000000', 'purpose' => 'login']);
+        $this->assertDatabaseHas('otp_codes', [
+            'identifier' => '09120000000',
+            'purpose' => 'login',
+            'code' => $fake->sent[0]['code'],
+        ]);
+        $this->assertTrue(
+            Schema::hasColumn('otp_codes', 'code')
+        );
+        $this->assertFalse(
+            Schema::hasColumn('otp_codes', 'code_hash')
+        );
     }
 
     public function test_successful_otp_login_uses_the_same_token_contract(): void

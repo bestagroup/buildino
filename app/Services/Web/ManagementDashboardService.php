@@ -28,6 +28,7 @@ use App\Services\Reports\BuildingReportService;
 use App\Services\Reports\PlatformReportService;
 use App\Services\System\SystemHealthService;
 use App\Support\Authorization\PermissionChecker;
+use App\Support\Jalali\JalaliDateFormatter;
 use Carbon\CarbonImmutable;
 use Illuminate\Routing\Route as LaravelRoute;
 use Illuminate\Support\Collection;
@@ -41,7 +42,8 @@ final class ManagementDashboardService
         private readonly BuildingReportService $buildingReports,
         private readonly PlatformReportService $platformReports,
         private readonly SystemHealthService $health,
-        private readonly PermissionChecker $permissions
+        private readonly PermissionChecker $permissions,
+        private readonly JalaliDateFormatter $jalali
     ) {
     }
 
@@ -1049,16 +1051,34 @@ final class ManagementDashboardService
         $today =
             CarbonImmutable::today();
 
-        return [
-            'from' =>
+        $fromDate =
+            CarbonImmutable::parse(
                 $from
                     ?: $today
                         ->startOfMonth()
-                        ->toDateString(),
-            'to' =>
+                        ->toDateString()
+            );
+
+        $toDate =
+            CarbonImmutable::parse(
                 $to
                     ?: $today
-                        ->toDateString(),
+                        ->toDateString()
+            );
+
+        return [
+            'from' =>
+                $fromDate->toDateString(),
+            'to' =>
+                $toDate->toDateString(),
+            'from_jalali' =>
+                $this->jalali->date(
+                    $fromDate
+                ),
+            'to_jalali' =>
+                $this->jalali->date(
+                    $toDate
+                ),
         ];
     }
 

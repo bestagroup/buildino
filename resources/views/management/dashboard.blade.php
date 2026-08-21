@@ -169,9 +169,9 @@
 
         <p>
             داده‌ها برای بازه
-            <strong>{{ $dashboard['period']['from'] }}</strong>
+            <strong>{{ $dashboard['period']['from_jalali'] }}</strong>
             تا
-            <strong>{{ $dashboard['period']['to'] }}</strong>
+            <strong>{{ $dashboard['period']['to_jalali'] }}</strong>
             نمایش داده می‌شوند.
         </p>
     </div>

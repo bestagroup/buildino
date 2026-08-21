@@ -834,6 +834,165 @@
                 </div>
             </div>
 
+            <div
+                class="topbar-menu topbar__wallet"
+                data-popover
+            >
+                <button
+                    type="button"
+                    class="wallet-summary-trigger"
+                    data-popover-trigger
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="bottom"
+                    title="کیف پول شخصی"
+                >
+                    <span class="wallet-summary-trigger__icon">
+                        @include(
+                            'management.partials.icon',
+                            [
+                                'name' => 'wallet',
+                                'size' => 18,
+                            ]
+                        )
+                    </span>
+
+                    <span class="wallet-summary-trigger__copy">
+                        <small>موجودی قابل استفاده</small>
+                        <strong
+                            data-money-value="{{
+                                (int) (
+                                    $personalWallet[
+                                        'available_balance'
+                                    ] ?? 0
+                                )
+                            }}"
+                        >
+                            {{
+                                number_format(
+                                    (int) (
+                                        $personalWallet[
+                                            'available_balance'
+                                        ] ?? 0
+                                    )
+                                )
+                            }}
+                        </strong>
+                    </span>
+
+                    <span class="wallet-summary-trigger__currency">
+                        {{
+                            $personalWallet['currency']
+                            ?? 'IRR'
+                        }}
+                    </span>
+                </button>
+
+                <div
+                    class="popover-menu popover-menu--wallet"
+                    data-popover-menu
+                >
+                    <div class="wallet-popover__hero">
+                        <span>
+                            @include(
+                                'management.partials.icon',
+                                [
+                                    'name' => 'wallet',
+                                    'size' => 22,
+                                ]
+                            )
+                        </span>
+
+                        <div>
+                            <small>
+                                کیف پول شخصی شما
+                            </small>
+
+                            <strong
+                                data-money-value="{{
+                                    (int) (
+                                        $personalWallet[
+                                            'available_balance'
+                                        ] ?? 0
+                                    )
+                                }}"
+                            >
+                                {{
+                                    number_format(
+                                        (int) (
+                                            $personalWallet[
+                                                'available_balance'
+                                            ] ?? 0
+                                        )
+                                    )
+                                }}
+                            </strong>
+
+                            <em>
+                                {{
+                                    $personalWallet[
+                                        'currency'
+                                    ] ?? 'IRR'
+                                }}
+                            </em>
+                        </div>
+                    </div>
+
+                    <div class="wallet-popover__stats">
+                        <div>
+                            <span>مانده کل</span>
+                            <strong
+                                data-money-value="{{
+                                    (int) (
+                                        $personalWallet[
+                                            'balance'
+                                        ] ?? 0
+                                    )
+                                }}"
+                            >
+                                {{
+                                    number_format(
+                                        (int) (
+                                            $personalWallet[
+                                                'balance'
+                                            ] ?? 0
+                                        )
+                                    )
+                                }}
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>مانده قفل‌شده</span>
+                            <strong
+                                data-money-value="{{
+                                    (int) (
+                                        $personalWallet[
+                                            'locked_balance'
+                                        ] ?? 0
+                                    )
+                                }}"
+                            >
+                                {{
+                                    number_format(
+                                        (int) (
+                                            $personalWallet[
+                                                'locked_balance'
+                                            ] ?? 0
+                                        )
+                                    )
+                                }}
+                            </strong>
+                        </div>
+                    </div>
+
+                    @if (! ($personalWallet['exists'] ?? false))
+                        <div class="wallet-popover__note">
+                            کیف پول شخصی برای این حساب هنوز Provision نشده است.
+                        </div>
+                    @endif
+                </div>
+            </div>
+
             <div class="topbar__center">
                 <button
                     type="button"
@@ -857,165 +1016,6 @@
             </div>
 
             <div class="topbar__actions">
-                <div
-                    class="topbar-menu"
-                    data-popover
-                >
-                    <button
-                        type="button"
-                        class="wallet-summary-trigger"
-                        data-popover-trigger
-                        data-bs-toggle="tooltip"
-                        data-bs-placement="bottom"
-                        title="کیف پول شخصی"
-                    >
-                        <span class="wallet-summary-trigger__icon">
-                            @include(
-                                'management.partials.icon',
-                                [
-                                    'name' => 'wallet',
-                                    'size' => 18,
-                                ]
-                            )
-                        </span>
-
-                        <span class="wallet-summary-trigger__copy">
-                            <small>موجودی قابل استفاده</small>
-                            <strong
-                                data-money-value="{{
-                                    (int) (
-                                        $personalWallet[
-                                            'available_balance'
-                                        ] ?? 0
-                                    )
-                                }}"
-                            >
-                                {{
-                                    number_format(
-                                        (int) (
-                                            $personalWallet[
-                                                'available_balance'
-                                            ] ?? 0
-                                        )
-                                    )
-                                }}
-                            </strong>
-                        </span>
-
-                        <span class="wallet-summary-trigger__currency">
-                            {{
-                                $personalWallet['currency']
-                                ?? 'IRR'
-                            }}
-                        </span>
-                    </button>
-
-                    <div
-                        class="popover-menu popover-menu--wallet"
-                        data-popover-menu
-                    >
-                        <div class="wallet-popover__hero">
-                            <span>
-                                @include(
-                                    'management.partials.icon',
-                                    [
-                                        'name' => 'wallet',
-                                        'size' => 22,
-                                    ]
-                                )
-                            </span>
-
-                            <div>
-                                <small>
-                                    کیف پول شخصی شما
-                                </small>
-
-                                <strong
-                                    data-money-value="{{
-                                        (int) (
-                                            $personalWallet[
-                                                'available_balance'
-                                            ] ?? 0
-                                        )
-                                    }}"
-                                >
-                                    {{
-                                        number_format(
-                                            (int) (
-                                                $personalWallet[
-                                                    'available_balance'
-                                                ] ?? 0
-                                            )
-                                        )
-                                    }}
-                                </strong>
-
-                                <em>
-                                    {{
-                                        $personalWallet[
-                                            'currency'
-                                        ] ?? 'IRR'
-                                    }}
-                                </em>
-                            </div>
-                        </div>
-
-                        <div class="wallet-popover__stats">
-                            <div>
-                                <span>مانده کل</span>
-                                <strong
-                                    data-money-value="{{
-                                        (int) (
-                                            $personalWallet[
-                                                'balance'
-                                            ] ?? 0
-                                        )
-                                    }}"
-                                >
-                                    {{
-                                        number_format(
-                                            (int) (
-                                                $personalWallet[
-                                                    'balance'
-                                                ] ?? 0
-                                            )
-                                        )
-                                    }}
-                                </strong>
-                            </div>
-
-                            <div>
-                                <span>مانده قفل‌شده</span>
-                                <strong
-                                    data-money-value="{{
-                                        (int) (
-                                            $personalWallet[
-                                                'locked_balance'
-                                            ] ?? 0
-                                        )
-                                    }}"
-                                >
-                                    {{
-                                        number_format(
-                                            (int) (
-                                                $personalWallet[
-                                                    'locked_balance'
-                                                ] ?? 0
-                                            )
-                                        )
-                                    }}
-                                </strong>
-                            </div>
-                        </div>
-
-                        @if (! ($personalWallet['exists'] ?? false))
-                            <div class="wallet-popover__note">
-                                کیف پول شخصی برای این حساب هنوز Provision نشده است.
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
                 <div
                     class="topbar-menu"
                     data-popover
@@ -1280,16 +1280,6 @@
                                     ?: $user->mobile
                                 }}
                             </strong>
-
-                            <span>
-                                {{
-                                    data_get(
-                                        $ui,
-                                        'primary_role.display_name',
-                                        'کاربر'
-                                    )
-                                }}
-                            </span>
                         </div>
 
                         @include(
