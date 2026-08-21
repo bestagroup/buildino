@@ -14,6 +14,9 @@ const disabledSelector = [
     '[data-select2="off"]',
     '[data-native-select]',
     'jdp-container select',
+    '.swal2-container select',
+    '.swal2-popup select',
+    '[role="alertdialog"] select',
 ].join(', ');
 const pendingSelects = new Set();
 let flushScheduled = false;
@@ -92,14 +95,19 @@ const enhance = (root = document) => {
     }
 
     selectElements(root).forEach((select) => {
-        if (
-            ! select.isConnected
-            || select.matches(disabledSelector)
-        ) {
+        if (! select.isConnected) {
             return;
         }
 
         const element = $(select);
+
+        if (select.matches(disabledSelector)) {
+            if (element.hasClass('select2-hidden-accessible')) {
+                destroy(select);
+            }
+
+            return;
+        }
 
         if (element.hasClass('select2-hidden-accessible')) {
             element.trigger('change.select2');
@@ -143,6 +151,11 @@ const enhance = (root = document) => {
 
 const refresh = (select) => {
     if (! (select instanceof HTMLSelectElement)) {
+        return;
+    }
+
+    if (select.matches(disabledSelector)) {
+        destroy(select);
         return;
     }
 

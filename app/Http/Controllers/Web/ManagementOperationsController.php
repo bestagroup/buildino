@@ -93,6 +93,11 @@ class ManagementOperationsController extends Controller
             Response::HTTP_FORBIDDEN
         );
 
+        $configuration = $ui->resourceForUser(
+            request()->user(),
+            $configuration
+        );
+
         return view(
             'management.operations.resource',
             [

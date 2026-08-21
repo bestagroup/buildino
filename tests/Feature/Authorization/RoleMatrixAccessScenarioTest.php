@@ -58,7 +58,7 @@ class RoleMatrixAccessScenarioTest extends TestCase
             );
 
         $this->assertCount(
-            9,
+            10,
             $matrix
         );
 
@@ -426,7 +426,7 @@ class RoleMatrixAccessScenarioTest extends TestCase
         );
     }
 
-    public function test_building_manager_cannot_open_global_user_management(): void
+    public function test_building_manager_can_open_scoped_user_management_without_global_role_admin(): void
     {
         $this->seed(
             AccessScenarioSeeder::class
@@ -444,6 +444,13 @@ class RoleMatrixAccessScenarioTest extends TestCase
 
         $this->get(
             '/management/operations/users'
+        )
+            ->assertOk()
+            ->assertSee('کاربران')
+            ->assertSee('ثبت رکورد جدید');
+
+        $this->get(
+            '/management/operations/roles'
         )->assertForbidden();
 
         $this->get(
@@ -456,7 +463,7 @@ class RoleMatrixAccessScenarioTest extends TestCase
             ->assertDontSee(
                 'ساختمان بتا'
             )
-            ->assertDontSee(
+            ->assertSee(
                 'کاربران و دسترسی'
             );
     }

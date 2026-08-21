@@ -560,10 +560,15 @@ return [
         ],
         'users' => [
         'permission' => 'users.view',
-        'permission_scope' => 'global',
+        'permission_scope' => 'any',
+            'operation_permissions' => [
+                'create' => 'users.create',
+                'update' => 'users.update',
+                'delete' => 'users.delete',
+            ],
             'group' => 'access',
             'title' => 'کاربران',
-            'description' => 'ایجاد و مدیریت کاربران سامانه',
+            'description' => 'ایجاد و مدیریت کاربران در محدوده دسترسی فعال',
             'list' => [
                 'method' => 'GET',
                 'url' => '/management/data/users?per_page=100'
@@ -758,7 +763,7 @@ return [
         'permission_scope' => 'global',
             'group' => 'access',
             'title' => 'تخصیص نقش و Scope',
-            'description' => 'اتصال Role به کاربر در سطح Global، مجتمع یا ساختمان',
+            'description' => 'اتصال Role به کاربر در سطح Global، مجتمع، ساختمان یا بلوک',
             'list' => [
                 'method' => 'GET',
                 'url' => '/management/data/role-assignments'
@@ -833,6 +838,10 @@ return [
                         [
                             'value' => 'building',
                             'label' => 'ساختمان'
+                        ],
+                        [
+                            'value' => 'block',
+                            'label' => 'بلوک'
                         ]
                     ]
                 ],
@@ -840,7 +849,7 @@ return [
                     'name' => 'scope_id',
                     'label' => 'شناسه Scope',
                     'type' => 'number',
-                    'help' => 'برای Global خالی بماند؛ برای مجتمع/ساختمان ID وارد شود.'
+                    'help' => 'برای Global خالی بماند؛ برای مجتمع/ساختمان/بلوک ID وارد شود.'
                 ],
                 [
                     'name' => 'starts_at',
@@ -2118,45 +2127,9 @@ return [
                     'required' => true
                 ],
                 [
-                    'name' => 'calculation_type',
-                    'label' => 'روش',
-                    'type' => 'select',
-                    'required' => true,
-                    'options' => [
-                        [
-                            'value' => 'fixed',
-                            'label' => 'ثابت'
-                        ],
-                        [
-                            'value' => 'area',
-                            'label' => 'متراژ'
-                        ],
-                        [
-                            'value' => 'persons',
-                            'label' => 'نفرات'
-                        ],
-                        [
-                            'value' => 'equal',
-                            'label' => 'مساوی'
-                        ],
-                        [
-                            'value' => 'custom',
-                            'label' => 'سفارشی'
-                        ]
-                    ]
-                ],
-                [
-                    'name' => 'configuration',
-                    'label' => 'Configuration',
-                    'type' => 'json',
-                    'placeholder' => '{}'
-                ],
-                [
-                    'name' => 'items',
-                    'label' => 'آیتم‌های فرمول',
-                    'type' => 'json',
-                    'required' => true,
-                    'placeholder' => '[{"financial_category_id":null,"title":"شارژ پایه","base_amount":1000000,"configuration":{}}]'
+                    'name' => 'builder',
+                    'label' => 'فرمول‌ساز شارژ',
+                    'type' => 'charge_formula_builder'
                 ],
                 [
                     'name' => 'is_active',

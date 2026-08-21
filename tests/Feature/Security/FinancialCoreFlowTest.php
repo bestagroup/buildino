@@ -74,17 +74,35 @@ class FinancialCoreFlowTest extends TestCase
             "/api/v1/buildings/{$structure['building']->id}/charge-formulas",
             [
                 'title' => 'Monthly charge',
-                'calculation_type' =>
-                    ChargeCalculationType::Area->value,
-                'items' => [
-                    [
-                        'title' => 'Common costs',
-                        'base_amount' => 1000,
+                'builder' => [
+                    'calculation_type' =>
+                        ChargeCalculationType::Area->value,
+                    'items' => [
+                        [
+                            'title' => 'Common costs',
+                            'base_amount' => 1000,
+                        ],
                     ],
                 ],
             ]
         )
             ->assertCreated()
+            ->assertJsonPath(
+                'data.calculation_type',
+                ChargeCalculationType::Area->value
+            )
+            ->assertJsonPath(
+                'data.configuration.generated_by',
+                'guided_builder'
+            )
+            ->assertJsonPath(
+                'data.configuration.builder_version',
+                1
+            )
+            ->assertJsonPath(
+                'data.items.0.title',
+                'Common costs'
+            )
             ->json('data.id');
 
         $periodId = $this->postJson(

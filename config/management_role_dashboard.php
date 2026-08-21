@@ -16,6 +16,7 @@ return [
         'superadmin',
         'complex_manager',
         'building_manager',
+        'block_manager',
         'finance_manager',
         'operator',
         'support_agent',
@@ -206,6 +207,12 @@ return [
                     'icon' => 'users',
                 ],
                 [
+                    'resource' => 'users',
+                    'title' => 'ثبت کاربر',
+                    'icon' => 'user-plus',
+                    'create' => true,
+                ],
+                [
                     'resource' => 'reservations',
                     'title' => 'رزروها',
                     'icon' => 'calendar',
@@ -308,6 +315,12 @@ return [
                     'resource' => 'occupancies',
                     'title' => 'مالک و ساکن',
                     'icon' => 'users',
+                ],
+                [
+                    'resource' => 'users',
+                    'title' => 'ثبت کاربر',
+                    'icon' => 'user-plus',
+                    'create' => true,
                 ],
                 [
                     'resource' => 'guest-visits',

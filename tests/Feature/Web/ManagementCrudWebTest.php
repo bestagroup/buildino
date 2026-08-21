@@ -235,6 +235,40 @@ class ManagementCrudWebTest extends TestCase
         }
     }
 
+    public function test_charge_formula_form_uses_guided_builder_instead_of_raw_json(): void
+    {
+        $fields = collect(
+            config(
+                'management_crud.resources.charge-formulas.fields',
+                []
+            )
+        );
+
+        $this->assertSame(
+            'charge_formula_builder',
+            $fields->firstWhere('name', 'builder')['type'] ?? null
+        );
+        $this->assertFalse(
+            $fields->contains('name', 'configuration')
+        );
+        $this->assertFalse(
+            $fields->contains('name', 'items')
+        );
+
+        $script = (string) file_get_contents(
+            public_path('js/buildino-crud.js')
+        );
+
+        $this->assertStringContainsString(
+            'createChargeFormulaBuilder',
+            $script
+        );
+        $this->assertStringContainsString(
+            'data-formula-expression',
+            $script
+        );
+    }
+
     private function assertOperationRouteExists(
         string $resourceKey,
         string $operationKey,

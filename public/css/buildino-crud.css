@@ -924,6 +924,273 @@ body.crud-overlay-open {
     line-height: 1.7;
 }
 
+.crud-formula-builder {
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface-soft);
+}
+
+.crud-formula-builder [hidden] {
+    display: none !important;
+}
+
+.crud-formula-builder__heading,
+.crud-formula-items-heading,
+.crud-formula-preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.crud-formula-builder__heading strong,
+.crud-formula-items-heading strong {
+    display: block;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.crud-formula-builder__heading p,
+.crud-formula-items-heading small {
+    display: block;
+    margin: 3px 0 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.8;
+}
+
+.crud-formula-builder__advanced-button,
+.crud-formula-items-heading button {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--primary-700);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.crud-formula-methods {
+    display: grid;
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.crud-formula-method {
+    min-width: 0;
+    cursor: pointer;
+}
+
+.crud-formula-method input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.crud-formula-method > span {
+    min-height: 92px;
+    display: grid;
+    align-content: center;
+    gap: 5px;
+    padding: 11px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--surface);
+    transition: all var(--transition);
+}
+
+.crud-formula-method b,
+.crud-formula-method small {
+    display: block;
+}
+
+.crud-formula-method b {
+    color: var(--text);
+    font-size: 11px;
+    line-height: 1.7;
+}
+
+.crud-formula-method small {
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.65;
+}
+
+.crud-formula-method input:checked + span {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--primary-500) 54%,
+            var(--border)
+        );
+    background: var(--primary-50);
+    box-shadow:
+        0 0 0 3px
+        color-mix(
+            in srgb,
+            var(--primary-500) 8%,
+            transparent
+        );
+}
+
+.crud-formula-method input:focus-visible + span {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+}
+
+.crud-formula-items-heading {
+    margin-top: 14px;
+}
+
+.crud-formula-items {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.crud-formula-item {
+    position: relative;
+    display: grid;
+    grid-template-columns:
+        1.2fr 1fr 1fr 30px;
+    align-items: end;
+    gap: 7px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--surface);
+}
+
+.crud-formula-item label,
+.crud-formula-advanced label,
+.crud-formula-preview label {
+    min-width: 0;
+    display: grid;
+    gap: 5px;
+}
+
+.crud-formula-item label > span,
+.crud-formula-advanced label > span,
+.crud-formula-preview label > span {
+    color: var(--text-soft);
+    font-size: 10px;
+    font-weight: 650;
+}
+
+.crud-formula-item input,
+.crud-formula-item select,
+.crud-formula-advanced select,
+.crud-formula-advanced textarea,
+.crud-formula-preview input {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    outline: none;
+    background: var(--surface-soft);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 11px;
+}
+
+.crud-formula-item input,
+.crud-formula-item select,
+.crud-formula-advanced select,
+.crud-formula-preview input {
+    height: 38px;
+    padding: 0 9px;
+}
+
+.crud-formula-item__remove {
+    width: 30px;
+    height: 38px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--danger-soft);
+    color: var(--danger);
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.crud-formula-preview {
+    margin-top: 10px;
+    padding: 11px;
+    border: 1px dashed
+        color-mix(
+            in srgb,
+            var(--primary-500) 42%,
+            var(--border)
+        );
+    border-radius: 11px;
+    background:
+        color-mix(
+            in srgb,
+            var(--primary-50) 68%,
+            var(--surface)
+        );
+}
+
+.crud-formula-preview > div {
+    min-width: 0;
+}
+
+.crud-formula-preview small,
+.crud-formula-preview strong {
+    display: block;
+}
+
+.crud-formula-preview small {
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.crud-formula-preview strong {
+    margin-top: 3px;
+    color: var(--primary-700);
+    font-size: 11px;
+    line-height: 1.7;
+}
+
+.crud-formula-preview label {
+    width: 105px;
+    flex: 0 0 auto;
+}
+
+.crud-formula-advanced {
+    display: grid;
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.crud-formula-advanced > p {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 9px;
+    background: var(--warning-soft);
+    color: var(--text-soft);
+    font-size: 11px;
+    line-height: 1.8;
+}
+
+.crud-formula-advanced textarea {
+    min-height: 115px;
+    padding: 8px;
+    resize: vertical;
+    line-height: 1.7;
+}
+
 .crud-form-actions {
     display: flex;
     align-items: center;
@@ -1099,6 +1366,25 @@ body.crud-overlay-open {
         grid-template-columns: 1fr;
     }
 
+    .crud-formula-methods {
+        grid-template-columns: 1fr;
+    }
+
+    .crud-formula-method > span {
+        min-height: 0;
+    }
+
+    .crud-formula-item {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .crud-formula-item__remove {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+    }
+
     .crud-field--wide {
         grid-column: 1;
     }
@@ -1149,6 +1435,24 @@ body.crud-overlay-open {
     .crud-drawer {
         width: 100%;
         max-width: 100vw;
+    }
+
+    .crud-formula-builder__heading,
+    .crud-formula-items-heading,
+    .crud-formula-preview {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .crud-formula-builder__advanced-button,
+    .crud-formula-items-heading button,
+    .crud-formula-preview label {
+        width: 100%;
+    }
+
+    .crud-formula-item {
+        grid-template-columns: 1fr;
+        padding-top: 42px;
     }
 }
 

@@ -7,7 +7,7 @@ return [
     | Buildino Role Matrix
     |--------------------------------------------------------------------------
     |
-    | Management roles use Global / Complex / Building scoped assignments.
+    | Management roles use Global / Complex / Building / Block assignments.
     | Owner and Tenant are intentionally relation-driven personas:
     | UnitOwnership / UnitOccupancy remains their access source of truth.
     |
@@ -98,6 +98,9 @@ return [
                 'unit-invitations.view',
                 'unit-invitations.create',
                 'unit-invitations.update',
+
+                'users.view',
+                'users.create',
 
                 'guests.view',
                 'guests.create',
@@ -249,6 +252,9 @@ return [
                 'unit-invitations.create',
                 'unit-invitations.update',
 
+                'users.view',
+                'users.create',
+
                 'guests.view',
                 'guests.create',
                 'guests.update',
@@ -339,6 +345,29 @@ return [
 
                 'generated-reports.view',
                 'generated-reports.create',
+            ],
+        ],
+
+        'block_manager' => [
+            'display_name' =>
+                'مدیر بلوک',
+
+            'description' =>
+                'تعریف و مشاهده کاربران فقط در محدوده بلوک تخصیص‌یافته.',
+
+            'is_system' =>
+                true,
+
+            'management_access' =>
+                true,
+
+            'scope' =>
+                'block',
+
+            'permissions' => [
+                'reports.dashboard.view',
+                'users.view',
+                'users.create',
             ],
         ],
 
