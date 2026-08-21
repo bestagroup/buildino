@@ -366,6 +366,7 @@ final class MobileBootstrapService
 
                     'building' => [
                         'id' => $building?->getKey(),
+                        'code' => $building?->code,
                         'title' => $building?->title,
                     ],
 

@@ -37,14 +37,20 @@ class OtpAuthenticationTest extends TestCase
         $this->assertDatabaseHas('otp_codes', [
             'identifier' => '09120000000',
             'purpose' => 'login',
-            'code' => $fake->sent[0]['code'],
         ]);
-        $this->assertTrue(
+        $this->assertFalse(
             Schema::hasColumn('otp_codes', 'code')
         );
-        $this->assertFalse(
+        $this->assertTrue(
             Schema::hasColumn('otp_codes', 'code_hash')
         );
+
+        $storedHash = \App\Models\OtpCode::query()
+            ->where('identifier', '09120000000')
+            ->value('code_hash');
+
+        $this->assertNotSame($fake->sent[0]['code'], $storedHash);
+        $this->assertTrue(Hash::check($fake->sent[0]['code'], $storedHash));
     }
 
     public function test_successful_otp_login_uses_the_same_token_contract(): void

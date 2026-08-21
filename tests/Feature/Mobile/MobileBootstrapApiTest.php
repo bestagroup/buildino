@@ -63,8 +63,45 @@ class MobileBootstrapApiTest extends TestCase
             ->assertJsonPath('data.user.id', $user->getKey())
             ->assertJsonPath('data.personas.0', 'owner')
             ->assertJsonPath('data.contexts.0.id', 'unit-'.$unit->getKey())
+            ->assertJsonPath(
+                'data.contexts.0.building.id',
+                $unit->floor->block->building->getKey()
+            )
+            ->assertJsonPath(
+                'data.contexts.0.building.code',
+                $unit->floor->block->building->code
+            )
+            ->assertJsonPath(
+                'data.contexts.0.building.title',
+                $unit->floor->block->building->title
+            )
+            ->assertJsonPath('data.contexts.0.unit.id', $unit->getKey())
+            ->assertJsonPath('data.contexts.0.unit.unit_number', $unit->unit_number)
+            ->assertJsonPath(
+                'data.contexts.0.unit.title',
+                $unit->title ?: ('واحد '.$unit->unit_number)
+            )
             ->assertJsonPath('data.contexts.0.relationships.owner', true)
-            ->assertJsonPath('data.contexts.0.relationships.occupant', false);
+            ->assertJsonPath('data.contexts.0.relationships.occupant', false)
+            ->assertJsonPath(
+                'data.suggested_context',
+                'unit-'.$unit->getKey()
+            );
+
+        $response->assertJsonStructure([
+            'data' => [
+                'user',
+                'personas',
+                'contexts' => [[
+                    'id',
+                    'building' => ['id', 'code', 'title'],
+                    'unit' => ['id', 'unit_number', 'title'],
+                    'relationships' => ['owner', 'occupant'],
+                    'capabilities' => ['charges.view', 'wallet.view'],
+                ]],
+                'suggested_context',
+            ],
+        ]);
 
         $this->assertSame([
             'charges.view' => true,
