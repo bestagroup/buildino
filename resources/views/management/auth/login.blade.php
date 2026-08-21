@@ -115,9 +115,19 @@
                 <h2>خوش آمدید</h2>
 
                 <p>
-                    برای ورود، شماره موبایل یا ایمیل و رمز عبور خود را وارد کنید.
+                    با رمز عبور یا کد یک‌بارمصرف پیامکی وارد شوید.
                 </p>
             </div>
+
+            @php
+                $managementOtpMobile = session(
+                    'buildino.web_otp.management.mobile'
+                );
+                $activeAuthMethod = old(
+                    'auth_method',
+                    session('auth_method', 'password')
+                );
+            @endphp
 
             @if (session('status'))
                 <div class="alert alert--success login-alert">
@@ -136,13 +146,49 @@
                 </div>
             @endif
 
-            <form
-                method="POST"
-                action="{{ route('management.login.store') }}"
-                class="login-form"
-                data-buildino-submit
+            <div
+                class="auth-method-switch"
+                data-auth-switch
+                data-active-method="{{ $activeAuthMethod }}"
+                role="tablist"
+                aria-label="روش ورود"
             >
-                @csrf
+                <button
+                    type="button"
+                    data-auth-method="password"
+                    role="tab"
+                >
+                    @include(
+                        'management.partials.icon',
+                        ['name' => 'lock', 'size' => 16]
+                    )
+                    <span>رمز عبور</span>
+                </button>
+
+                <button
+                    type="button"
+                    data-auth-method="otp"
+                    role="tab"
+                >
+                    @include(
+                        'management.partials.icon',
+                        ['name' => 'key', 'size' => 16]
+                    )
+                    <span>کد پیامکی</span>
+                </button>
+            </div>
+
+            <div
+                data-auth-panel="password"
+                @hidden($activeAuthMethod === 'otp')
+            >
+                <form
+                    method="POST"
+                    action="{{ route('management.login.store') }}"
+                    class="login-form"
+                    data-buildino-submit
+                >
+                    @csrf
 
                 <label class="auth-field">
                     <span>شماره موبایل یا ایمیل</span>
@@ -220,21 +266,175 @@
                     </a>
                 </div>
 
-                <button
-                    class="login-submit"
-                    type="submit"
-                >
-                    <span>ورود به داشبورد</span>
+                    <button
+                        class="login-submit"
+                        type="submit"
+                    >
+                        <span>ورود به داشبورد</span>
 
-                    @include(
-                        'management.partials.icon',
-                        [
-                            'name' => 'arrow-left',
-                            'size' => 18,
-                        ]
-                    )
-                </button>
-            </form>
+                        @include(
+                            'management.partials.icon',
+                            [
+                                'name' => 'arrow-left',
+                                'size' => 18,
+                            ]
+                        )
+                    </button>
+                </form>
+            </div>
+
+            <div
+                class="otp-login-panel"
+                data-auth-panel="otp"
+                @hidden($activeAuthMethod !== 'otp')
+            >
+                @if (session('otp_status'))
+                    <div class="otp-login-status">
+                        @include(
+                            'management.partials.icon',
+                            ['name' => 'shield', 'size' => 16]
+                        )
+                        <span>{{ session('otp_status') }}</span>
+                    </div>
+                @endif
+
+                @if ($managementOtpMobile)
+                    <div
+                        class="otp-login-verification"
+                        data-otp-verification
+                    >
+                        <div class="otp-login-copy">
+                            <strong>کد پیامک‌شده را وارد کنید</strong>
+                            <span>
+                                کد ورود به شماره
+                                <b dir="ltr">{{ $managementOtpMobile }}</b>
+                                ارسال شده است.
+                            </span>
+                        </div>
+
+                        <form
+                            method="POST"
+                            action="{{ route('management.login.otp.verify') }}"
+                            class="login-form"
+                            data-buildino-submit
+                        >
+                            @csrf
+                            <input
+                                type="hidden"
+                                name="auth_method"
+                                value="otp"
+                            >
+
+                            <label class="auth-field">
+                                <span>کد تأیید</span>
+
+                                <div class="auth-input auth-input--otp">
+                                    @include(
+                                        'management.partials.icon',
+                                        ['name' => 'key', 'size' => 18]
+                                    )
+
+                                    <input
+                                        type="text"
+                                        name="code"
+                                        value="{{ old('code') }}"
+                                        autocomplete="one-time-code"
+                                        inputmode="numeric"
+                                        pattern="[0-9۰-۹٠-٩]{4,8}"
+                                        placeholder="_ _ _ _ _ _"
+                                        dir="ltr"
+                                        maxlength="8"
+                                        required
+                                    >
+                                </div>
+                            </label>
+
+                            <button class="login-submit" type="submit">
+                                <span>تأیید کد و ورود</span>
+                                @include(
+                                    'management.partials.icon',
+                                    ['name' => 'arrow-left', 'size' => 18]
+                                )
+                            </button>
+                        </form>
+
+                        <div class="otp-login-actions">
+                            <form
+                                method="POST"
+                                action="{{ route('management.login.otp.request') }}"
+                                data-buildino-submit
+                            >
+                                @csrf
+                                <input
+                                    type="hidden"
+                                    name="mobile"
+                                    value="{{ $managementOtpMobile }}"
+                                >
+                                <input
+                                    type="hidden"
+                                    name="auth_method"
+                                    value="otp"
+                                >
+                                <button type="submit">ارسال دوباره کد</button>
+                            </form>
+
+                            <button
+                                type="button"
+                                data-otp-change
+                            >
+                                تغییر شماره موبایل
+                            </button>
+                        </div>
+                    </div>
+                @endif
+
+                <form
+                    method="POST"
+                    action="{{ route('management.login.otp.request') }}"
+                    class="login-form otp-request-form"
+                    data-otp-request-form
+                    data-buildino-submit
+                    @hidden((bool) $managementOtpMobile)
+                >
+                    @csrf
+                    <input
+                        type="hidden"
+                        name="auth_method"
+                        value="otp"
+                    >
+
+                    <label class="auth-field">
+                        <span>شماره موبایل حساب</span>
+
+                        <div class="auth-input">
+                            @include(
+                                'management.partials.icon',
+                                ['name' => 'user', 'size' => 18]
+                            )
+
+                            <input
+                                type="tel"
+                                name="mobile"
+                                value="{{ old('mobile', $managementOtpMobile) }}"
+                                autocomplete="tel"
+                                inputmode="numeric"
+                                placeholder="09123456789"
+                                dir="ltr"
+                                maxlength="16"
+                                required
+                            >
+                        </div>
+                    </label>
+
+                    <button class="login-submit" type="submit">
+                        <span>دریافت کد ورود</span>
+                        @include(
+                            'management.partials.icon',
+                            ['name' => 'arrow-left', 'size' => 18]
+                        )
+                    </button>
+                </form>
+            </div>
 
             <div class="login-registration-cta">
                 <div>
@@ -277,6 +477,10 @@
 </div>
 <script
     src="{{ asset('js/buildino-foundation.js') }}"
+></script>
+<script
+    src="{{ asset('js/buildino-auth-login.js') }}"
+    defer
 ></script>
 </body>
 </html>

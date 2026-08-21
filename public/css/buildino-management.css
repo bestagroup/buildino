@@ -101,12 +101,18 @@ html[data-theme="dark"] {
 }
 
 html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
     scroll-behavior: smooth;
+    scrollbar-gutter: stable;
 }
 
 body {
     margin: 0;
     min-width: 320px;
+    max-width: 100%;
     background:
         radial-gradient(
             circle at 90% -10%,
@@ -182,7 +188,11 @@ svg {
 }
 
 .management-shell {
+    width: 100%;
+    max-width: 100%;
     min-height: 100vh;
+    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 /* ------------------------------------------------------------------
@@ -643,6 +653,8 @@ body.sidebar-collapsed .sidebar__version {
 ------------------------------------------------------------------- */
 
 .main-area {
+    min-width: 0;
+    max-width: 100%;
     min-height: 100vh;
     margin-right: var(--sidebar-width);
     transition: margin-right var(--transition);
@@ -1104,6 +1116,8 @@ html[data-theme="dark"] .theme-icon--dark {
 
 .page-content {
     width: min(1600px, 100%);
+    min-width: 0;
+    max-width: 100%;
     margin: 0 auto;
     padding: 24px 27px 40px;
 }
@@ -2549,6 +2563,132 @@ tbody tr:hover td {
     font-size: 10px;
     font-weight: 700;
     white-space: nowrap;
+}
+
+.auth-method-switch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+    margin-bottom: 16px;
+    padding: 4px;
+    border: 1px solid #e0e8f0;
+    border-radius: 12px;
+    background: #f3f6f9;
+}
+
+.auth-method-switch button {
+    min-height: 39px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #718095;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.auth-method-switch button.is-active {
+    background: #fff;
+    color: #245d89;
+    box-shadow: 0 3px 11px rgba(28, 61, 91, .09);
+}
+
+[data-auth-panel][hidden],
+[data-otp-verification][hidden],
+[data-otp-request-form][hidden] {
+    display: none !important;
+}
+
+.otp-login-panel {
+    display: grid;
+    gap: 13px;
+}
+
+.otp-login-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 9px 10px;
+    border: 1px solid #d7e9e5;
+    border-radius: 10px;
+    background: #f3faf8;
+    color: #39766e;
+    font-size: 10px;
+    line-height: 1.75;
+}
+
+.otp-login-status .ui-icon {
+    flex: 0 0 auto;
+    margin-top: 1px;
+}
+
+.otp-login-verification {
+    display: grid;
+    gap: 13px;
+}
+
+.otp-login-copy {
+    padding: 11px 12px;
+    border: 1px solid #dce8f2;
+    border-radius: 11px;
+    background: #f5f9fc;
+}
+
+.otp-login-copy strong,
+.otp-login-copy span {
+    display: block;
+}
+
+.otp-login-copy strong {
+    color: #2b3d52;
+    font-size: 11px;
+}
+
+.otp-login-copy span {
+    margin-top: 3px;
+    color: #758499;
+    font-size: 9.5px;
+    line-height: 1.7;
+}
+
+.otp-login-copy b {
+    color: #28618c;
+}
+
+.auth-input--otp input {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 7px;
+    text-align: center;
+}
+
+.otp-login-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+}
+
+.otp-login-actions button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #29658f;
+    font-family: var(--font-ui);
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.otp-login-actions form + button {
+    padding-right: 13px;
+    border-right: 1px solid #dbe2e9;
 }
 
 /* ------------------------------------------------------------------

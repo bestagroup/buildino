@@ -72,6 +72,67 @@ class UiFoundationWebTest extends TestCase
         );
     }
 
+    public function test_internal_panels_contain_horizontal_overflow_without_disabling_table_scroll(): void
+    {
+        $management = preg_replace(
+            '/\s+/',
+            ' ',
+            (string) file_get_contents(
+                public_path('css/buildino-management.css')
+            )
+        );
+        $portal = preg_replace(
+            '/\s+/',
+            ' ',
+            (string) file_get_contents(
+                public_path('css/buildino-portal.css')
+            )
+        );
+        $crud = preg_replace(
+            '/\s+/',
+            ' ',
+            (string) file_get_contents(
+                public_path('css/buildino-crud.css')
+            )
+        );
+
+        foreach ([$management, $portal] as $layoutCss) {
+            $this->assertStringContainsString(
+                'overflow-x: clip;',
+                $layoutCss
+            );
+            $this->assertStringContainsString(
+                'max-width: 100%;',
+                $layoutCss
+            );
+        }
+
+        $this->assertStringContainsString(
+            '.crud-drawer { position: fixed;',
+            $crud
+        );
+        $this->assertStringContainsString(
+            'max-width: 100vw;',
+            $crud
+        );
+        $this->assertStringContainsString(
+            'visibility: hidden; overflow-x: hidden;',
+            $crud
+        );
+        $this->assertStringContainsString(
+            'pointer-events: none; transform: translate3d(calc(-100% - 2px), 0, 0);',
+            $crud
+        );
+        $this->assertStringContainsString(
+            '.crud-drawer.is-open { visibility: visible; pointer-events: auto;',
+            $crud
+        );
+        $this->assertStringContainsString(
+            '.crud-table-wrap { width: 100%; overflow-x: auto;',
+            $crud
+        );
+    }
+
     public function test_all_web_selects_are_covered_by_the_global_searchable_select_layer(): void
     {
         $package = json_decode(

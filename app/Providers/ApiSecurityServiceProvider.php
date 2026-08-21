@@ -18,7 +18,10 @@ class ApiSecurityServiceProvider extends ServiceProvider
 
         RateLimiter::for('auth', function (Request $request): Limit {
             return Limit::perMinute((int) config('api_security.auth_rate_limit', 10))
-                ->by(strtolower((string) $request->input('login', $request->ip())));
+                ->by(strtolower((string) $request->input(
+                    'login',
+                    $request->input('mobile', $request->ip())
+                )));
         });
 
         RateLimiter::for('otp-request', function (Request $request): array {

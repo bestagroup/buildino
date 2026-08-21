@@ -132,9 +132,19 @@
 
                 <p>
                     مالک، مستأجر، ساکن یا ارائه‌دهنده خدمات می‌تواند
-                    با حساب Buildino خود وارد شود.
+                    با رمز عبور یا کد پیامکی وارد حساب Buildino شود.
                 </p>
             </div>
+
+            @php
+                $portalOtpMobile = session(
+                    'buildino.web_otp.portal.mobile'
+                );
+                $activeAuthMethod = old(
+                    'auth_method',
+                    session('auth_method', 'password')
+                );
+            @endphp
 
             @if ($errors->any())
                 <div class="alert alert-danger portal-login-alert">
@@ -152,13 +162,41 @@
                 </div>
             @endif
 
-            <form
-                method="POST"
-                action="{{ route('portal.login.store') }}"
-                class="portal-login-form"
-                data-buildino-submit
+            <div
+                class="portal-auth-method-switch"
+                data-auth-switch
+                data-active-method="{{ $activeAuthMethod }}"
+                role="tablist"
+                aria-label="روش ورود"
             >
-                @csrf
+                <button
+                    type="button"
+                    data-auth-method="password"
+                    role="tab"
+                >
+                    رمز عبور
+                </button>
+
+                <button
+                    type="button"
+                    data-auth-method="otp"
+                    role="tab"
+                >
+                    کد پیامکی
+                </button>
+            </div>
+
+            <div
+                data-auth-panel="password"
+                @hidden($activeAuthMethod === 'otp')
+            >
+                <form
+                    method="POST"
+                    action="{{ route('portal.login.store') }}"
+                    class="portal-login-form"
+                    data-buildino-submit
+                >
+                    @csrf
 
                 <label>
                     <span>
@@ -216,13 +254,143 @@
                     </a>
                 </div>
 
-                <button
-                    type="submit"
-                    class="portal-primary-button"
+                    <button
+                        type="submit"
+                        class="portal-primary-button"
+                    >
+                        ورود به پرتال
+                    </button>
+                </form>
+            </div>
+
+            <div
+                class="portal-otp-login-panel"
+                data-auth-panel="otp"
+                @hidden($activeAuthMethod !== 'otp')
+            >
+                @if (session('otp_status'))
+                    <div class="portal-otp-status">
+                        {{ session('otp_status') }}
+                    </div>
+                @endif
+
+                @if ($portalOtpMobile)
+                    <div data-otp-verification>
+                        <div class="portal-otp-copy">
+                            <strong>کد پیامک‌شده را وارد کنید</strong>
+                            <span>
+                                کد ورود به شماره
+                                <b dir="ltr">{{ $portalOtpMobile }}</b>
+                                ارسال شده است.
+                            </span>
+                        </div>
+
+                        <form
+                            method="POST"
+                            action="{{ route('portal.login.otp.verify') }}"
+                            class="portal-login-form"
+                            data-buildino-submit
+                        >
+                            @csrf
+                            <input
+                                type="hidden"
+                                name="auth_method"
+                                value="otp"
+                            >
+
+                            <label>
+                                <span>کد تأیید</span>
+                                <input
+                                    class="portal-otp-code"
+                                    type="text"
+                                    name="code"
+                                    value="{{ old('code') }}"
+                                    autocomplete="one-time-code"
+                                    inputmode="numeric"
+                                    pattern="[0-9۰-۹٠-٩]{4,8}"
+                                    placeholder="_ _ _ _ _ _"
+                                    dir="ltr"
+                                    maxlength="8"
+                                    required
+                                >
+                            </label>
+
+                            <button
+                                type="submit"
+                                class="portal-primary-button"
+                            >
+                                تأیید کد و ورود
+                            </button>
+                        </form>
+
+                        <div class="portal-otp-actions">
+                            <form
+                                method="POST"
+                                action="{{ route('portal.login.otp.request') }}"
+                                data-buildino-submit
+                            >
+                                @csrf
+                                <input
+                                    type="hidden"
+                                    name="mobile"
+                                    value="{{ $portalOtpMobile }}"
+                                >
+                                <input
+                                    type="hidden"
+                                    name="auth_method"
+                                    value="otp"
+                                >
+                                <button type="submit">ارسال دوباره کد</button>
+                            </form>
+
+                            <button
+                                type="button"
+                                data-otp-change
+                            >
+                                تغییر شماره موبایل
+                            </button>
+                        </div>
+                    </div>
+                @endif
+
+                <form
+                    method="POST"
+                    action="{{ route('portal.login.otp.request') }}"
+                    class="portal-login-form portal-otp-request-form"
+                    data-otp-request-form
+                    data-buildino-submit
+                    @hidden((bool) $portalOtpMobile)
                 >
-                    ورود به پرتال
-                </button>
-            </form>
+                    @csrf
+                    <input
+                        type="hidden"
+                        name="auth_method"
+                        value="otp"
+                    >
+
+                    <label>
+                        <span>شماره موبایل حساب</span>
+                        <input
+                            type="tel"
+                            name="mobile"
+                            value="{{ old('mobile', $portalOtpMobile) }}"
+                            placeholder="09123456789"
+                            autocomplete="tel"
+                            inputmode="numeric"
+                            dir="ltr"
+                            maxlength="16"
+                            required
+                        >
+                    </label>
+
+                    <button
+                        type="submit"
+                        class="portal-primary-button"
+                    >
+                        دریافت کد ورود
+                    </button>
+                </form>
+            </div>
 
             <div class="portal-login-register">
                 <span>
@@ -248,6 +416,10 @@
 </div>
 <script
     src="{{ asset('js/buildino-foundation.js') }}"
+></script>
+<script
+    src="{{ asset('js/buildino-auth-login.js') }}"
+    defer
 ></script>
 </body>
 </html>

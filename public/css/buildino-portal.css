@@ -46,13 +46,19 @@ html[data-theme="dark"] {
 }
 
 html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
     scroll-behavior: smooth;
+    scrollbar-gutter: stable;
 }
 
 body.portal-body,
 body.portal-login-body {
     margin: 0;
     min-width: 320px;
+    max-width: 100%;
     background:
         radial-gradient(
             circle at 90% -5%,
@@ -80,7 +86,11 @@ a {
 }
 
 .portal-shell {
+    width: 100%;
+    max-width: 100%;
     min-height: 100vh;
+    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 .portal-sidebar {
@@ -252,6 +262,8 @@ a {
 }
 
 .portal-main {
+    min-width: 0;
+    max-width: 100%;
     min-height: 100vh;
     margin-right: var(--portal-sidebar);
 }
@@ -478,6 +490,8 @@ a {
 
 .portal-content {
     width: min(1550px, 100%);
+    min-width: 0;
+    max-width: 100%;
     margin: 0 auto;
     padding: 22px 24px 42px;
 }
@@ -1364,6 +1378,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
 }
 
 .portal-login-form input[type="text"],
+.portal-login-form input[type="tel"],
 .portal-login-form input[type="password"] {
     width: 100%;
     height: 44px;
@@ -1445,6 +1460,103 @@ html[data-theme="dark"] .portal-modal .btn-close {
     background: #e3eff7;
     color: #28638f;
     font-weight: 700;
+}
+
+.portal-auth-method-switch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    margin-bottom: 14px;
+    padding: 4px;
+    border: 1px solid #e0e8ef;
+    border-radius: 11px;
+    background: #f3f6f9;
+}
+
+.portal-auth-method-switch button {
+    min-height: 36px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #748397;
+    font-family: var(--portal-font);
+    font-size: 8.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.portal-auth-method-switch button.is-active {
+    background: #fff;
+    color: #28638f;
+    box-shadow: 0 3px 10px rgba(29, 65, 96, .09);
+}
+
+.portal-otp-login-panel {
+    display: grid;
+    gap: 12px;
+}
+
+.portal-otp-status,
+.portal-otp-copy {
+    padding: 9px 10px;
+    border: 1px solid #d8e8e5;
+    border-radius: 9px;
+    background: #f4faf8;
+    color: #4b746e;
+    font-size: 8px;
+    line-height: 1.75;
+}
+
+.portal-otp-copy {
+    margin-bottom: 12px;
+    border-color: #dce8f1;
+    background: #f5f9fc;
+    color: #748397;
+}
+
+.portal-otp-copy strong,
+.portal-otp-copy span {
+    display: block;
+}
+
+.portal-otp-copy strong {
+    color: #2b3d52;
+    font-size: 8.8px;
+}
+
+.portal-otp-copy span {
+    margin-top: 2px;
+}
+
+.portal-login-form .portal-otp-code {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 7px;
+    text-align: center;
+}
+
+.portal-otp-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    margin-top: 11px;
+}
+
+.portal-otp-actions button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #29658f;
+    font-family: var(--portal-font);
+    font-size: 7.8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.portal-otp-actions form + button {
+    padding-right: 11px;
+    border-right: 1px solid #dbe2e9;
 }
 
 .portal-login-management a {

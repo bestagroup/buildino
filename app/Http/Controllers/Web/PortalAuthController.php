@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\ManagementLoginRequest;
+use App\Http\Requests\Web\RequestWebOtpRequest;
+use App\Http\Requests\Web\VerifyWebOtpRequest;
 use App\Models\User;
 use App\Services\Web\ManagementDashboardAccessService;
 use App\Services\Web\PortalAccessService;
+use App\Services\Web\WebOtpLoginService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -98,8 +101,7 @@ final class PortalAuthController extends Controller
                     )
                 )
                 ->withErrors([
-                    'login' =>
-                        'اطلاعات ورود صحیح نیست.',
+                    'login' => 'اطلاعات ورود صحیح نیست.',
                 ]);
         }
 
@@ -114,8 +116,7 @@ final class PortalAuthController extends Controller
                     )
                 )
                 ->withErrors([
-                    'login' =>
-                        'حساب کاربری غیرفعال یا مسدود است.',
+                    'login' => 'حساب کاربری غیرفعال یا مسدود است.',
                 ]);
         }
 
@@ -134,8 +135,7 @@ final class PortalAuthController extends Controller
                     )
                 )
                 ->withErrors([
-                    'login' =>
-                        'هویت این حساب هنوز تأیید نشده است.',
+                    'login' => 'هویت این حساب هنوز تأیید نشده است.',
                 ]);
         }
 
@@ -152,8 +152,7 @@ final class PortalAuthController extends Controller
                     )
                 )
                 ->withErrors([
-                    'login' =>
-                        'برای این حساب دسترسی پرتال ساکنین یا ارائه‌دهندگان خدمات تعریف نشده است.',
+                    'login' => 'برای این حساب دسترسی پرتال ساکنین یا ارائه‌دهندگان خدمات تعریف نشده است.',
                 ]);
         }
 
@@ -171,10 +170,8 @@ final class PortalAuthController extends Controller
             ->regenerate();
 
         $user->forceFill([
-            'last_login_at' =>
-                now(),
-            'last_login_ip' =>
-                $request->ip(),
+            'last_login_at' => now(),
+            'last_login_ip' => $request->ip(),
         ])->save();
 
         return redirect()
@@ -183,6 +180,69 @@ final class PortalAuthController extends Controller
                     'portal.dashboard'
                 )
             );
+    }
+
+    public function requestOtp(
+        RequestWebOtpRequest $request,
+        WebOtpLoginService $otp
+    ): RedirectResponse {
+        $mobile = (string) $request
+            ->validated('mobile');
+
+        $otp->request(
+            $mobile,
+            WebOtpLoginService::PORTAL,
+            $request->ip()
+        );
+
+        $request->session()->put(
+            $otp->sessionKey(
+                WebOtpLoginService::PORTAL
+            ),
+            $mobile
+        );
+
+        return redirect()
+            ->route('portal.login')
+            ->with('auth_method', 'otp')
+            ->with(
+                'otp_status',
+                'اگر حساب پرتال واجد شرایط باشد، کد ورود برای شماره واردشده پیامک شد.'
+            );
+    }
+
+    public function verifyOtp(
+        VerifyWebOtpRequest $request,
+        WebOtpLoginService $otp
+    ): RedirectResponse {
+        $sessionKey = $otp->sessionKey(
+            WebOtpLoginService::PORTAL
+        );
+        $mobile = (string) $request
+            ->session()
+            ->get($sessionKey, '');
+
+        if ($mobile === '') {
+            return redirect()
+                ->route('portal.login')
+                ->with('auth_method', 'otp')
+                ->withErrors([
+                    'mobile' => 'ابتدا شماره موبایل را وارد و کد ورود را درخواست کنید.',
+                ]);
+        }
+
+        $user = $otp->verify(
+            $mobile,
+            (string) $request->validated('code'),
+            WebOtpLoginService::PORTAL
+        );
+
+        $request->session()->forget($sessionKey);
+        $otp->login($request, $user);
+
+        return redirect()->intended(
+            route('portal.dashboard')
+        );
     }
 
     public function destroy(): RedirectResponse

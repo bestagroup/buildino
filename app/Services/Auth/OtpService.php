@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Auth;
 
 use App\Contracts\Auth\OtpSender;
@@ -53,7 +54,7 @@ class OtpService
 
     public function verify(string $identifier, string $channel, string $purpose, string $code): OtpCode
     {
-        return DB::transaction(function () use ($identifier, $channel, $purpose, $code): OtpCode {
+        $result = DB::transaction(function () use ($identifier, $channel, $purpose, $code): array {
             $otp = OtpCode::query()
                 ->where('identifier', $identifier)
                 ->where('channel', $channel)
@@ -64,21 +65,49 @@ class OtpService
                 ->first();
 
             if (! $otp || $otp->expires_at->isPast()) {
-                throw ValidationException::withMessages(['code' => 'OTP is invalid or expired.']);
+                return [
+                    'status' => 'invalid',
+                    'otp' => null,
+                ];
             }
 
             if ($otp->attempts >= (int) config('auth_otp.max_attempts', 5)) {
-                throw ValidationException::withMessages(['code' => 'Maximum OTP attempts exceeded.']);
+                return [
+                    'status' => 'maximum_attempts',
+                    'otp' => null,
+                ];
             }
 
             if (! Hash::check($code, $otp->code_hash)) {
                 $otp->increment('attempts');
-                throw ValidationException::withMessages(['code' => 'OTP is invalid or expired.']);
+
+                return [
+                    'status' => 'invalid',
+                    'otp' => null,
+                ];
             }
 
             $otp->update(['verified_at' => now(), 'consumed_at' => now()]);
-            return $otp->refresh();
+
+            return [
+                'status' => 'verified',
+                'otp' => $otp->refresh(),
+            ];
         }, 3);
+
+        if ($result['status'] === 'maximum_attempts') {
+            throw ValidationException::withMessages([
+                'code' => 'Maximum OTP attempts exceeded.',
+            ]);
+        }
+
+        if ($result['status'] !== 'verified') {
+            throw ValidationException::withMessages([
+                'code' => 'OTP is invalid or expired.',
+            ]);
+        }
+
+        return $result['otp'];
     }
 
     private function findUser(string $identifier, string $channel): ?User
@@ -101,6 +130,7 @@ class OtpService
     {
         $digits = max(4, min((int) config('auth_otp.digits', 6), 8));
         $max = (10 ** $digits) - 1;
+
         return str_pad((string) random_int(0, $max), $digits, '0', STR_PAD_LEFT);
     }
 }

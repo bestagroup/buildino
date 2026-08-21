@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\ManagementLoginRequest;
+use App\Http\Requests\Web\RequestWebOtpRequest;
+use App\Http\Requests\Web\VerifyWebOtpRequest;
 use App\Models\User;
 use App\Services\Web\ManagementDashboardAccessService;
+use App\Services\Web\WebOtpLoginService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -60,8 +63,7 @@ class ManagementAuthController extends Controller
                     $request->only('login')
                 )
                 ->withErrors([
-                    'login' =>
-                        'اطلاعات ورود صحیح نیست.',
+                    'login' => 'اطلاعات ورود صحیح نیست.',
                 ]);
         }
 
@@ -74,8 +76,7 @@ class ManagementAuthController extends Controller
                     $request->only('login')
                 )
                 ->withErrors([
-                    'login' =>
-                        'حساب کاربری غیرفعال یا مسدود است.',
+                    'login' => 'حساب کاربری غیرفعال یا مسدود است.',
                 ]);
         }
 
@@ -92,8 +93,7 @@ class ManagementAuthController extends Controller
                     $request->only('login')
                 )
                 ->withErrors([
-                    'login' =>
-                        'هویت این حساب هنوز تأیید نشده است.',
+                    'login' => 'هویت این حساب هنوز تأیید نشده است.',
                 ]);
         }
 
@@ -103,8 +103,7 @@ class ManagementAuthController extends Controller
                     $request->only('login')
                 )
                 ->withErrors([
-                    'login' =>
-                        'برای این حساب دسترسی داشبورد مدیریتی تعریف نشده است.',
+                    'login' => 'برای این حساب دسترسی داشبورد مدیریتی تعریف نشده است.',
                 ]);
         }
 
@@ -128,6 +127,69 @@ class ManagementAuthController extends Controller
                     'management.dashboard'
                 )
             );
+    }
+
+    public function requestOtp(
+        RequestWebOtpRequest $request,
+        WebOtpLoginService $otp
+    ): RedirectResponse {
+        $mobile = (string) $request
+            ->validated('mobile');
+
+        $otp->request(
+            $mobile,
+            WebOtpLoginService::MANAGEMENT,
+            $request->ip()
+        );
+
+        $request->session()->put(
+            $otp->sessionKey(
+                WebOtpLoginService::MANAGEMENT
+            ),
+            $mobile
+        );
+
+        return redirect()
+            ->route('login')
+            ->with('auth_method', 'otp')
+            ->with(
+                'otp_status',
+                'اگر حساب مدیریتی واجد شرایط باشد، کد ورود برای شماره واردشده پیامک شد.'
+            );
+    }
+
+    public function verifyOtp(
+        VerifyWebOtpRequest $request,
+        WebOtpLoginService $otp
+    ): RedirectResponse {
+        $sessionKey = $otp->sessionKey(
+            WebOtpLoginService::MANAGEMENT
+        );
+        $mobile = (string) $request
+            ->session()
+            ->get($sessionKey, '');
+
+        if ($mobile === '') {
+            return redirect()
+                ->route('login')
+                ->with('auth_method', 'otp')
+                ->withErrors([
+                    'mobile' => 'ابتدا شماره موبایل را وارد و کد ورود را درخواست کنید.',
+                ]);
+        }
+
+        $user = $otp->verify(
+            $mobile,
+            (string) $request->validated('code'),
+            WebOtpLoginService::MANAGEMENT
+        );
+
+        $request->session()->forget($sessionKey);
+        $otp->login($request, $user);
+
+        return redirect()->intended(
+            route('management.dashboard')
+        );
     }
 
     public function destroy(): RedirectResponse

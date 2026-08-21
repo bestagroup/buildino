@@ -101,6 +101,30 @@ Route::middleware('guest')
                 'management.login.store'
             );
 
+        Route::post(
+            '/management/login/otp/request',
+            [
+                ManagementAuthController::class,
+                'requestOtp',
+            ]
+        )
+            ->middleware('throttle:otp-request')
+            ->name(
+                'management.login.otp.request'
+            );
+
+        Route::post(
+            '/management/login/otp/verify',
+            [
+                ManagementAuthController::class,
+                'verifyOtp',
+            ]
+        )
+            ->middleware('throttle:auth')
+            ->name(
+                'management.login.otp.verify'
+            );
+
         /*
         |--------------------------------------------------------------------------
         | Management Password Reset
@@ -353,6 +377,32 @@ Route::post(
 )
     ->middleware('throttle:auth')
     ->name('portal.login.store');
+
+Route::post(
+    '/portal/login/otp/request',
+    [
+        PortalAuthController::class,
+        'requestOtp',
+    ]
+)
+    ->middleware([
+        'guest',
+        'throttle:otp-request',
+    ])
+    ->name('portal.login.otp.request');
+
+Route::post(
+    '/portal/login/otp/verify',
+    [
+        PortalAuthController::class,
+        'verifyOtp',
+    ]
+)
+    ->middleware([
+        'guest',
+        'throttle:auth',
+    ])
+    ->name('portal.login.otp.verify');
 
 Route::prefix('portal')
     ->name('portal.')
