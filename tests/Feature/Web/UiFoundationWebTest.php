@@ -173,6 +173,26 @@ class UiFoundationWebTest extends TestCase
             'window.BuildinoSelect2',
             $enhancer
         );
+        $this->assertStringContainsString(
+            "'.swal2-container select'",
+            $enhancer
+        );
+        $this->assertStringContainsString(
+            "'.swal2-popup select'",
+            $enhancer
+        );
+        $this->assertStringContainsString(
+            "'[role=\"alertdialog\"] select'",
+            $enhancer
+        );
+        $this->assertStringContainsString(
+            'if (select.matches(disabledSelector))',
+            $enhancer
+        );
+        $this->assertStringContainsString(
+            'destroy(select);',
+            $enhancer
+        );
 
         $bladeFiles = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator(

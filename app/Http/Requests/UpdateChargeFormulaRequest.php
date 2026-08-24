@@ -22,6 +22,24 @@ class UpdateChargeFormulaRequest extends FormRequest
             'items.*.title'=>['required_with:items','string','max:255'],
             'items.*.base_amount'=>['required_with:items','integer','min:0'],
             'items.*.configuration'=>['nullable','array'],
+            'builder'=>[
+                'sometimes','array',
+                'required_array_keys:calculation_type,items',
+            ],
+            'builder.calculation_type'=>[
+                'required_with:builder',
+                Rule::in(['fixed','area','persons']),
+            ],
+            'builder.items'=>['required_with:builder','array','min:1','max:20'],
+            'builder.items.*.financial_category_id'=>[
+                'nullable','integer','exists:financial_categories,id',
+            ],
+            'builder.items.*.title'=>[
+                'required_with:builder.items','string','max:255',
+            ],
+            'builder.items.*.base_amount'=>[
+                'required_with:builder.items','integer','min:0',
+            ],
         ];
     }
 }

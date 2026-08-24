@@ -21,6 +21,7 @@ use App\Models\Unit;
 use App\Models\UnitInvoice;
 use App\Models\User;
 use App\Services\Web\ManagementDashboardAccessService;
+use App\Services\Web\ScopedUserManagementService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -31,7 +32,8 @@ class ManagementLookupController extends Controller
 {
     public function __construct(
         private readonly ManagementDashboardAccessService $access,
-        private readonly PermissionChecker $permissions
+        private readonly PermissionChecker $permissions,
+        private readonly ScopedUserManagementService $scopedUsers
     ) {
     }
 
@@ -551,25 +553,38 @@ class ManagementLookupController extends Controller
             );
 
         if (! $platform) {
-            $query->where(function (Builder $query) use ($buildingIds): void {
-                $query
-                    ->whereHas(
-                        'unitOwnershipsAsUser.unit.floor.block',
-                        fn (Builder $builder) =>
-                            $builder->whereIn(
-                                'building_id',
-                                $buildingIds->all()
-                            )
-                    )
-                    ->orWhereHas(
-                        'unitOccupanciesAsUser.unit.floor.block',
-                        fn (Builder $builder) =>
-                            $builder->whereIn(
-                                'building_id',
-                                $buildingIds->all()
-                            )
-                    );
-            });
+            if (
+                $this->permissions->allowsAnyScope(
+                    $request->user(),
+                    'users.view'
+                )
+            ) {
+                $this->scopedUsers->applyVisibleUsers(
+                    $query,
+                    $request->user(),
+                    'users.view'
+                );
+            } else {
+                $query->where(function (Builder $query) use ($buildingIds): void {
+                    $query
+                        ->whereHas(
+                            'unitOwnershipsAsUser.unit.floor.block',
+                            fn (Builder $builder) =>
+                                $builder->whereIn(
+                                    'building_id',
+                                    $buildingIds->all()
+                                )
+                        )
+                        ->orWhereHas(
+                            'unitOccupanciesAsUser.unit.floor.block',
+                            fn (Builder $builder) =>
+                                $builder->whereIn(
+                                    'building_id',
+                                    $buildingIds->all()
+                                )
+                        );
+                });
+            }
         }
 
         if (

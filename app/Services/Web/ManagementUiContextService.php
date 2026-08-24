@@ -2,6 +2,7 @@
 
 namespace App\Services\Web;
 
+use App\Models\Block;
 use App\Models\Building;
 use App\Models\Complex;
 use App\Models\User;
@@ -241,6 +242,28 @@ final class ManagementUiContextService
         );
     }
 
+    public function resourceForUser(
+        User $user,
+        array $resource
+    ): array {
+        $permissions = collect(
+            $this->context($user)['permissions']
+            ?? []
+        );
+
+        foreach (
+            $resource['operation_permissions']
+            ?? []
+            as $operation => $permission
+        ) {
+            if (! $permissions->contains($permission)) {
+                unset($resource[$operation]);
+            }
+        }
+
+        return $resource;
+    }
+
     /**
      * @return array<int, string>
      */
@@ -303,10 +326,10 @@ final class ManagementUiContextService
                 );
         };
 
-        $globalUserAdmin =
+        $userAdministration =
             $isSuperAdmin
             || $has(
-                $globalPermissions,
+                $permissions,
                 [
                     'users.view',
                 ]
@@ -426,7 +449,7 @@ final class ManagementUiContextService
                 ),
 
             'access' =>
-                $globalUserAdmin,
+                $userAdministration,
 
             'system' =>
                 $isSuperAdmin
@@ -490,6 +513,31 @@ final class ManagementUiContextService
             $this->scopeAlias(
                 $assignment
                     ->scope_type
+            ) === 'block'
+        ) {
+            $block =
+                Block::query()
+                    ->select([
+                        'id',
+                        'title',
+                    ])
+                    ->find(
+                        $assignment
+                            ->scope_id
+                    );
+
+            return $block
+                ? 'بلوک '
+                    . $block->title
+                : 'بلوک #'
+                    . $assignment
+                        ->scope_id;
+        }
+
+        if (
+            $this->scopeAlias(
+                $assignment
+                    ->scope_type
             ) === 'building'
         ) {
             $building =
@@ -546,6 +594,20 @@ final class ManagementUiContextService
     ): string {
         if ($scopeType === null) {
             return 'global';
+        }
+
+        if (
+            in_array(
+                $scopeType,
+                [
+                    Block::class,
+                    (new Block())
+                        ->getMorphClass(),
+                ],
+                true
+            )
+        ) {
+            return 'block';
         }
 
         if (

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\Block;
 use App\Models\Building;
 use App\Models\Complex;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserRoleAssignment;
+use App\Services\Web\ScopedUserManagementService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,19 +21,25 @@ use Illuminate\Validation\Rule;
 class ManagementUserDataController extends Controller
 {
     public function __construct(
-        private readonly PermissionChecker $permissions
+        private readonly PermissionChecker $permissions,
+        private readonly ScopedUserManagementService $scopedUsers
     ) {
     }
 
     public function users(
         Request $request
     ): JsonResponse {
-        $this->requirePermission(
+        $this->requireAnyScopePermission(
             $request,
             'users.view'
         );
 
-        $query = User::query()
+        $query = $this->scopedUsers
+            ->applyVisibleUsers(
+                User::query(),
+                $request->user(),
+                'users.view'
+            )
             ->with([
                 'userRoleAssignments.role:id,name,display_name',
             ])
@@ -94,7 +102,7 @@ class ManagementUserDataController extends Controller
     public function storeUser(
         Request $request
     ): JsonResponse {
-        $this->requirePermission(
+        $this->requireAnyScopePermission(
             $request,
             'users.create'
         );
@@ -139,8 +147,11 @@ class ManagementUserDataController extends Controller
         ]);
 
         $user = DB::transaction(
-            function () use ($data): User {
-                return User::query()->create([
+            function () use (
+                $data,
+                $request
+            ): User {
+                $user = User::query()->create([
                     'first_name' =>
                         $data['first_name'],
                     'last_name' =>
@@ -183,6 +194,14 @@ class ManagementUserDataController extends Controller
                         $data['is_blocked']
                         ?? false,
                 ]);
+
+                $this->scopedUsers
+                    ->attachCreatedUser(
+                        $request->user(),
+                        $user
+                    );
+
+                return $user;
             }
         );
 
@@ -197,9 +216,18 @@ class ManagementUserDataController extends Controller
         Request $request,
         User $user
     ): JsonResponse {
-        $this->requirePermission(
+        $this->requireAnyScopePermission(
             $request,
             'users.update'
+        );
+
+        abort_unless(
+            $this->scopedUsers->canManage(
+                $request->user(),
+                $user,
+                'users.update'
+            ),
+            403
         );
 
         $data = $request->validate([
@@ -344,9 +372,18 @@ class ManagementUserDataController extends Controller
         Request $request,
         User $user
     ): JsonResponse {
-        $this->requirePermission(
+        $this->requireAnyScopePermission(
             $request,
             'users.delete'
+        );
+
+        abort_unless(
+            $this->scopedUsers->canManage(
+                $request->user(),
+                $user,
+                'users.delete'
+            ),
+            403
         );
 
         abort_if(
@@ -714,6 +751,19 @@ class ManagementUserDataController extends Controller
         );
     }
 
+    private function requireAnyScopePermission(
+        Request $request,
+        string $permission
+    ): void {
+        abort_unless(
+            $this->permissions->allowsAnyScope(
+                $request->user(),
+                $permission
+            ),
+            403
+        );
+    }
+
     private function userPayload(
         User $user
     ): array {
@@ -855,6 +905,7 @@ class ManagementUserDataController extends Controller
                     'global',
                     'complex',
                     'building',
+                    'block',
                 ]),
             ],
             'scope_id' => [
@@ -955,12 +1006,17 @@ class ManagementUserDataController extends Controller
             'برای دسترسی Scoped انتخاب محدوده الزامی است.'
         );
 
-        $model =
-            $type === 'building'
-                ? Building::query()
-                    ->findOrFail($id)
-                : Complex::query()
-                    ->findOrFail($id);
+        $model = match ($type) {
+            'building' =>
+                Building::query()
+                    ->findOrFail($id),
+            'block' =>
+                Block::query()
+                    ->findOrFail($id),
+            default =>
+                Complex::query()
+                    ->findOrFail($id),
+        };
 
         return [
             $model->getMorphClass(),
@@ -973,6 +1029,20 @@ class ManagementUserDataController extends Controller
     ): string {
         if ($storedType === null) {
             return 'global';
+        }
+
+        if (
+            in_array(
+                $storedType,
+                [
+                    Block::class,
+                    (new Block())
+                        ->getMorphClass(),
+                ],
+                true
+            )
+        ) {
+            return 'block';
         }
 
         if (

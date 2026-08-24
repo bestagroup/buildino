@@ -9,6 +9,7 @@ use App\Http\Resources\V1\ChargeFormulaResource;
 use App\Models\Building;
 use App\Models\ChargeFormula;
 use App\Models\FinancialCategory;
+use App\Services\ChargeFormulaBuilder;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -45,7 +46,8 @@ class ChargeFormulaController extends Controller
     public function store(
         StoreChargeFormulaRequest $request,
         Building $building,
-        PermissionChecker $permissions
+        PermissionChecker $permissions,
+        ChargeFormulaBuilder $builder
     ) {
         abort_unless(
             $permissions->allows(
@@ -56,7 +58,7 @@ class ChargeFormulaController extends Controller
             403
         );
 
-        $data = $request->validated();
+        $data = $builder->normalize($request->validated());
         $this->validateCategories($building, $data['items']);
 
         $formula = DB::transaction(function () use ($building,$data): ChargeFormula {
@@ -90,11 +92,12 @@ class ChargeFormulaController extends Controller
 
     public function update(
         UpdateChargeFormulaRequest $request,
-        ChargeFormula $chargeFormula
+        ChargeFormula $chargeFormula,
+        ChargeFormulaBuilder $builder
     ): ChargeFormulaResource {
         $this->authorize('update',$chargeFormula);
 
-        $data = $request->validated();
+        $data = $builder->normalize($request->validated());
 
         if (isset($data['items'])) {
             $this->validateCategories(

@@ -310,6 +310,17 @@ final class ManagementRoleDashboardService
 
                     return [
                         ...$module,
+                        ...(
+                            $module['key'] === 'security'
+                            && $target === 'users'
+                            && ! $visibleResources->contains('roles')
+                                ? [
+                                    'title' => 'کاربران محدوده',
+                                    'description' =>
+                                        'تعریف کاربران فقط در محدوده دسترسی فعال',
+                                ]
+                                : []
+                        ),
                         'target_resource' =>
                             $target,
                     ];

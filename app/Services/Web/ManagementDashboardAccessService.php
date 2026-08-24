@@ -33,7 +33,11 @@ final class ManagementDashboardAccessService
 
         return $this->accessibleBuildings(
             $user
-        )->isNotEmpty();
+        )->isNotEmpty()
+            || $this->permissions->allowsAnyScope(
+                $user,
+                'reports.dashboard.view'
+            );
     }
 
     public function allowsBuilding(

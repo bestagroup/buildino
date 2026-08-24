@@ -85,6 +85,19 @@ class User extends Authenticatable
         return $this->hasMany(UserRoleAssignment::class, 'assigned_by');
     }
 
+    public function managedUserScopes(): HasMany
+    {
+        return $this->hasMany(ManagedUserScope::class);
+    }
+
+    public function managedUserScopesAsAssignedBy(): HasMany
+    {
+        return $this->hasMany(
+            ManagedUserScope::class,
+            'assigned_by'
+        );
+    }
+
     public function unitOwnershipsAsUser(): HasMany
     {
         return $this->hasMany(UnitOwnership::class, 'user_id');

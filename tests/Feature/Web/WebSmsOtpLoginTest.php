@@ -3,6 +3,7 @@
 namespace Tests\Feature\Web;
 
 use App\Contracts\Auth\OtpSender;
+use App\Models\Block;
 use App\Models\Building;
 use App\Models\Complex;
 use App\Models\Role;
@@ -90,6 +91,7 @@ final class WebSmsOtpLoginTest extends TestCase
         $scope = match ($scopeClass) {
             Complex::class => $structure['complex'],
             Building::class => $structure['building'],
+            Block::class => $structure['block'],
             default => null,
         };
 
@@ -156,6 +158,11 @@ final class WebSmsOtpLoginTest extends TestCase
                 'building_manager',
                 '09121100102',
                 Building::class,
+            ],
+            'block manager' => [
+                'block_manager',
+                '09121100106',
+                Block::class,
             ],
             'finance manager' => [
                 'finance_manager',
@@ -355,7 +362,7 @@ final class WebSmsOtpLoginTest extends TestCase
     private function assignRole(
         User $user,
         string $roleName,
-        Complex|Building|null $scope
+        Complex|Building|Block|null $scope
     ): void {
         $role = Role::query()
             ->where('name', $roleName)
