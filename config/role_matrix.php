@@ -353,7 +353,7 @@ return [
                 'مدیر بلوک',
 
             'description' =>
-                'تعریف و مشاهده کاربران فقط در محدوده بلوک تخصیص‌یافته.',
+                'تعریف کاربران و مدیریت هزینه‌های عمومی فقط در محدوده بلوک تخصیص‌یافته.',
 
             'is_system' =>
                 true,
@@ -368,6 +368,10 @@ return [
                 'reports.dashboard.view',
                 'users.view',
                 'users.create',
+
+                'expenses.view',
+                'expenses.create',
+                'expenses.update',
             ],
         ],
 

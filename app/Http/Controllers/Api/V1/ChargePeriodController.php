@@ -33,7 +33,7 @@ class ChargePeriodController extends Controller
 
         return ChargePeriodResource::collection(
             $building->chargePeriods()
-                ->withCount(['chargeCalculations','unitInvoices'])
+                ->withCount(['chargeCalculations','chargeExpenseAllocations','unitInvoices'])
                 ->latest('period_start')
                 ->paginate(
                     min(
@@ -94,6 +94,7 @@ class ChargePeriodController extends Controller
 
         $chargePeriod->loadCount([
             'chargeCalculations',
+            'chargeExpenseAllocations',
             'unitInvoices',
         ]);
 
@@ -136,6 +137,7 @@ class ChargePeriodController extends Controller
 
         $chargePeriod->loadCount([
             'chargeCalculations',
+            'chargeExpenseAllocations',
             'unitInvoices',
         ]);
 
@@ -164,6 +166,7 @@ class ChargePeriodController extends Controller
 
         $chargePeriod->loadCount([
             'chargeCalculations',
+            'chargeExpenseAllocations',
             'unitInvoices',
         ]);
 

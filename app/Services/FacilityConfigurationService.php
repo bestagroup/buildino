@@ -9,6 +9,7 @@ use App\Models\FacilitySchedule;
 use App\Models\FacilityTimeSlot;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -21,6 +22,45 @@ final class FacilityConfigurationService
             $this->assertScheduleDoesNotOverlap($facility, $data);
 
             return $facility->facilitySchedules()->create($data);
+        });
+    }
+
+    /**
+     * Create the same schedule for multiple weekdays as one atomic operation.
+     *
+     * @return EloquentCollection<int, FacilitySchedule>
+     */
+    public function createSchedules(BuildingFacility $facility, array $data): EloquentCollection
+    {
+        return DB::transaction(function () use ($facility, $data): EloquentCollection {
+            $days = collect($data['days_of_week'])
+                ->map(fn (mixed $day): int => (int) $day)
+                ->unique()
+                ->values();
+
+            unset($data['days_of_week']);
+
+            $schedules = new EloquentCollection;
+
+            foreach ($days as $day) {
+                $scheduleData = [
+                    ...$data,
+                    'day_of_week' => $day,
+                ];
+
+                $this->assertTimeOrder(
+                    $scheduleData['start_time'],
+                    $scheduleData['end_time'],
+                    'end_time'
+                );
+                $this->assertScheduleDoesNotOverlap($facility, $scheduleData);
+
+                $schedules->add(
+                    $facility->facilitySchedules()->create($scheduleData)
+                );
+            }
+
+            return $schedules;
         });
     }
 

@@ -29,6 +29,11 @@ final class InvoiceAccessService
             return true;
         }
 
+        if ($invoice->payer_user_id !== null) {
+            return (int) $invoice->payer_user_id
+                === (int) $user->getKey();
+        }
+
         return $invoice->unit
             ? $this->residentAccess->allows($user, $invoice->unit)
             : false;
@@ -47,6 +52,11 @@ final class InvoiceAccessService
             )
         ) {
             return true;
+        }
+
+        if ($invoice->payer_user_id !== null) {
+            return (int) $invoice->payer_user_id
+                === (int) $user->getKey();
         }
 
         return $invoice->unit

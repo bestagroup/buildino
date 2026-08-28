@@ -9,6 +9,14 @@ class UnitInvoiceResource extends JsonResource
         return [
             'id'=>$this->id,'building_id'=>$this->building_id,'unit_id'=>$this->unit_id,
             'charge_period_id'=>$this->charge_period_id,'invoice_number'=>$this->invoice_number,
+            'payer_responsibility'=>is_object($this->payer_responsibility)
+                ? $this->payer_responsibility->value
+                : $this->payer_responsibility,
+            'payer_user_id'=>$this->payer_user_id,
+            'payer'=>$this->whenLoaded('payer',fn()=> $this->payer ? [
+                'id'=>$this->payer->id,
+                'name'=>trim("{$this->payer->first_name} {$this->payer->last_name}"),
+            ] : null),
             'issue_date'=>$this->issue_date?->toDateString(),'due_date'=>$this->due_date?->toDateString(),
             'period_start'=>$this->period_start?->toDateString(),'period_end'=>$this->period_end?->toDateString(),
             'subtotal'=>(int)$this->subtotal,'discount_amount'=>(int)$this->discount_amount,

@@ -9,8 +9,9 @@ use App\Http\Requests\StoreBuildingExpenseRequest;
 use App\Http\Requests\UpdateBuildingExpenseRequest;
 use App\Models\Building;
 use App\Models\BuildingExpense;
+use App\Models\Block;
 use App\Models\User;
-use App\Services\Security\BuildingResourceScopeService;
+use App\Services\Security\BuildingExpenseScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,7 +19,7 @@ class BuildingExpenseController extends Controller
 {
     public function index(
         Request $request,
-        BuildingResourceScopeService $scope
+        BuildingExpenseScopeService $scope
     ): JsonResponse {
         $this->authorize('viewAny', BuildingExpense::class);
 
@@ -42,10 +43,13 @@ class BuildingExpenseController extends Controller
         $building = Building::query()->findOrFail(
             $data['building_id']
         );
+        $block = isset($data['block_id'])
+            ? Block::query()->findOrFail($data['block_id'])
+            : null;
 
         $this->authorize(
             'create',
-            [BuildingExpense::class, $building]
+            [BuildingExpense::class, $building, $block]
         );
 
         /** @var User $user */
@@ -64,7 +68,31 @@ class BuildingExpenseController extends Controller
     public function update(UpdateBuildingExpenseRequest $request, BuildingExpense $expense, UpdateBuildingExpense $action): JsonResponse
     {
         $this->authorize('update', $expense);
-        return response()->json(['data' => $action->execute($expense, $request->validated())]);
+        $data = $request->validated();
+
+        if (array_key_exists('block_id', $data)) {
+            $expense->loadMissing('building');
+            $targetBlock = $data['block_id'] !== null
+                ? Block::query()->findOrFail($data['block_id'])
+                : null;
+
+            $this->authorize(
+                'create',
+                [
+                    BuildingExpense::class,
+                    $expense->building,
+                    $targetBlock,
+                ]
+            );
+        }
+
+        return response()->json([
+            'data' => $action->execute(
+                $expense,
+                $data,
+                $request->user()
+            ),
+        ]);
     }
 
     public function destroy(BuildingExpense $expense): JsonResponse

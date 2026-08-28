@@ -9,10 +9,13 @@ use App\Http\Requests\StoreUnitInvitationRequest;
 use App\Http\Resources\V1\UnitInvitationResource;
 use App\Models\Unit;
 use App\Models\UnitInvitation;
+use App\Models\User;
 use App\Services\UnitInvitationService;
+use App\Services\Web\ScopedUserManagementService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\ValidationException;
 
 class UnitInvitationController extends Controller
 {
@@ -38,6 +41,7 @@ class UnitInvitationController extends Controller
         $query = $unit->unitInvitations()
             ->with([
                 'invitedBy:id,first_name,last_name',
+                'invitedUser:id,first_name,last_name,mobile,email',
                 'acceptedUser:id,first_name,last_name,mobile,email',
             ]);
 
@@ -72,7 +76,8 @@ class UnitInvitationController extends Controller
         StoreUnitInvitationRequest $request,
         Unit $unit,
         UnitInvitationService $service,
-        PermissionChecker $permissions
+        PermissionChecker $permissions,
+        ScopedUserManagementService $scopedUsers
     ) {
         $building = $this->resolveBuilding(
             $unit
@@ -88,49 +93,76 @@ class UnitInvitationController extends Controller
             403
         );
 
-        $result = $service->create(
-            $unit,
+        $data = $request->validated();
+
+        $requestedIds = collect($data['user_ids'])
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+        $query = User::query()
+            ->whereIn('id', $requestedIds->all())
+            ->whereKeyNot($request->user()->getKey())
+            ->where('is_active', true)
+            ->where('is_blocked', false);
+
+        $scopedUsers->applyVisibleUsers(
+            $query,
             $request->user(),
-            $request->validated()
+            'users.view'
         );
 
-        $invitation = $result['invitation'];
+        $users = $query->get();
 
-        $invitation->load([
-            'unit:id,floor_id,unit_number,title',
-            'invitedBy:id,first_name,last_name',
-            'acceptedUser:id,first_name,last_name,mobile,email',
-        ]);
-
-        $response = (
-            new UnitInvitationResource($invitation)
-        )
-            ->response()
-            ->setStatusCode(201);
-
-        /*
-         * Raw token is exposed only in local/testing so Postman and
-         * automated tests can complete the invitation flow.
-         * Production receives the token only via SMS/email delivery.
-         */
-        if (
-            app()->environment([
-                'local',
-                'testing',
-            ])
-        ) {
-            $response->setData([
-                'data' => (
-                    new UnitInvitationResource($invitation)
-                )->resolve($request),
-
-                'meta' => [
-                    'accept_token' => $result['raw_token'],
+        if ($users->count() !== $requestedIds->count()) {
+            throw ValidationException::withMessages([
+                'user_ids' => [
+                    'یک یا چند کاربر انتخاب‌شده خارج از محدوده دسترسی شما هستند.',
                 ],
             ]);
         }
 
-        return $response;
+        $results = $service->createForUsers(
+            $unit,
+            $request->user(),
+            $users,
+            $data
+        );
+        $invitations = collect($results)
+            ->pluck('invitation');
+
+        $invitations->each(
+            fn (UnitInvitation $invitation) => $invitation->load([
+                'unit:id,floor_id,unit_number,title',
+                'invitedBy:id,first_name,last_name',
+                'invitedUser:id,first_name,last_name,mobile,email',
+                'acceptedUser:id,first_name,last_name,mobile,email',
+            ])
+        );
+
+        $response = [
+            'data' => $invitations
+                ->map(
+                    fn (UnitInvitation $invitation): array => (
+                        new UnitInvitationResource($invitation)
+                    )->resolve($request)
+                )
+                ->values(),
+            'meta' => [
+                'sent_count' => $invitations->count(),
+            ],
+        ];
+
+        if (app()->environment(['local', 'testing'])) {
+            $response['meta']['accept_tokens'] = collect($results)
+                ->mapWithKeys(
+                    fn (array $result): array => [
+                        (string) $result['invitation']->invited_user_id =>
+                            $result['raw_token'],
+                    ]
+                );
+        }
+
+        return response()->json($response, 201);
     }
 
     public function show(
@@ -144,6 +176,7 @@ class UnitInvitationController extends Controller
         $unitInvitation->load([
             'unit:id,floor_id,unit_number,title',
             'invitedBy:id,first_name,last_name',
+            'invitedUser:id,first_name,last_name,mobile,email',
             'acceptedUser:id,first_name,last_name,mobile,email',
         ]);
 
@@ -171,6 +204,7 @@ class UnitInvitationController extends Controller
         $invitation->load([
             'unit:id,floor_id,unit_number,title',
             'invitedBy:id,first_name,last_name',
+            'invitedUser:id,first_name,last_name,mobile,email',
             'acceptedUser:id,first_name,last_name,mobile,email',
         ]);
 
@@ -214,6 +248,7 @@ class UnitInvitationController extends Controller
         $unitInvitation->load([
             'unit:id,floor_id,unit_number,title',
             'invitedBy:id,first_name,last_name',
+            'invitedUser:id,first_name,last_name,mobile,email',
             'acceptedUser:id,first_name,last_name,mobile,email',
         ]);
 
@@ -234,6 +269,7 @@ class UnitInvitationController extends Controller
         $invitation->load([
             'unit:id,floor_id,unit_number,title',
             'invitedBy:id,first_name,last_name',
+            'invitedUser:id,first_name,last_name,mobile,email',
             'acceptedUser:id,first_name,last_name,mobile,email',
         ]);
 
@@ -254,6 +290,7 @@ class UnitInvitationController extends Controller
         $invitation->load([
             'unit:id,floor_id,unit_number,title',
             'invitedBy:id,first_name,last_name',
+            'invitedUser:id,first_name,last_name,mobile,email',
             'acceptedUser:id,first_name,last_name,mobile,email',
         ]);
 

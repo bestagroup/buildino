@@ -1124,7 +1124,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'access',
             'title' => 'دعوت کاربران',
-            'description' => 'دعوت کاربر برای اتصال به واحد',
+            'description' => 'دعوت گروهی کاربران ثبت‌شده برای اتصال به واحد',
             'context' => [
                 [
                     'name' => 'unit_id',
@@ -1145,6 +1145,10 @@ return [
                 [
                     'key' => 'id',
                     'label' => 'ID'
+                ],
+                [
+                    'key' => 'invited_user',
+                    'label' => 'کاربر دعوت‌شده'
                 ],
                 [
                     'key' => 'relation_type',
@@ -1172,6 +1176,14 @@ return [
                 ]
             ],
             'fields' => [
+                [
+                    'name' => 'user_ids',
+                    'label' => 'کاربران دریافت‌کننده',
+                    'type' => 'multiselect',
+                    'lookup' => 'invitable_users',
+                    'required' => true,
+                    'help' => 'یک یا چند کاربر ثبت‌شده در محدوده مجتمع یا ساختمان خود را انتخاب کنید.'
+                ],
                 [
                     'name' => 'relation_type',
                     'label' => 'نوع ارتباط',
@@ -1213,14 +1225,12 @@ return [
                     ]
                 ],
                 [
-                    'name' => 'mobile',
-                    'label' => 'موبایل',
-                    'type' => 'text'
-                ],
-                [
-                    'name' => 'email',
-                    'label' => 'ایمیل',
-                    'type' => 'email'
+                    'name' => 'message',
+                    'label' => 'متن دعوت‌نامه',
+                    'type' => 'textarea',
+                    'required' => true,
+                    'placeholder' => 'متن دلخواهی که برای کاربران ارسال می‌شود را بنویسید.',
+                    'help' => 'لینک امن پذیرش دعوت به‌صورت خودکار در انتهای این متن افزوده می‌شود.'
                 ],
                 [
                     'name' => 'expires_in_hours',
@@ -1608,10 +1618,49 @@ return [
             ],
             'fields' => [
                 [
+                    'name' => 'days_of_week',
+                    'label' => 'روزهای هفته',
+                    'type' => 'multiselect',
+                    'required' => true,
+                    'create_only' => true,
+                    'help' => 'یک یا چند روز را انتخاب کنید؛ برای هر روز یک برنامه جداگانه ثبت می‌شود.',
+                    'options' => [
+                        [
+                            'value' => 6,
+                            'label' => 'شنبه'
+                        ],
+                        [
+                            'value' => 0,
+                            'label' => 'یکشنبه'
+                        ],
+                        [
+                            'value' => 1,
+                            'label' => 'دوشنبه'
+                        ],
+                        [
+                            'value' => 2,
+                            'label' => 'سه‌شنبه'
+                        ],
+                        [
+                            'value' => 3,
+                            'label' => 'چهارشنبه'
+                        ],
+                        [
+                            'value' => 4,
+                            'label' => 'پنجشنبه'
+                        ],
+                        [
+                            'value' => 5,
+                            'label' => 'جمعه'
+                        ]
+                    ]
+                ],
+                [
                     'name' => 'day_of_week',
                     'label' => 'روز هفته',
                     'type' => 'select',
                     'required' => true,
+                    'edit_only' => true,
                     'options' => [
                         [
                             'value' => 0,
@@ -2275,6 +2324,14 @@ return [
                     'label' => 'شماره'
                 ],
                 [
+                    'key' => 'payer.name',
+                    'label' => 'پرداخت‌کننده'
+                ],
+                [
+                    'key' => 'payer_responsibility',
+                    'label' => 'نوع مسئولیت'
+                ],
+                [
                     'key' => 'issue_date',
                     'label' => 'صدور'
                 ],
@@ -2453,7 +2510,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'finance',
             'title' => 'هزینه‌های ساختمان',
-            'description' => 'ثبت هزینه‌های عملیاتی',
+            'description' => 'ثبت هزینه عمومی، تعیین روش تقسیم و مشخص‌کردن مسئول پرداخت مالک یا ساکن',
             'list' => [
                 'method' => 'GET',
                 'url' => '/api/v1/expenses?per_page=100'
@@ -2484,12 +2541,24 @@ return [
                     'label' => 'ساختمان'
                 ],
                 [
+                    'key' => 'block_id',
+                    'label' => 'بلوک'
+                ],
+                [
                     'key' => 'amount',
                     'label' => 'مبلغ'
                 ],
                 [
                     'key' => 'expense_date',
                     'label' => 'تاریخ'
+                ],
+                [
+                    'key' => 'allocation_method',
+                    'label' => 'روش تقسیم'
+                ],
+                [
+                    'key' => 'payer_responsibility',
+                    'label' => 'مسئول پرداخت'
                 ],
                 [
                     'key' => 'status',
@@ -2505,16 +2574,27 @@ return [
                     'required' => true
                 ],
                 [
+                    'name' => 'block_id',
+                    'label' => 'دامنه بلوک',
+                    'type' => 'select',
+                    'lookup' => 'expense_blocks',
+                    'depends_on' => 'building_id',
+                    'help' => 'اگر خالی بماند، هزینه بین تمام واحدهای ساختمان تقسیم می‌شود.'
+                ],
+                [
                     'name' => 'fund_id',
                     'label' => 'صندوق',
                     'type' => 'select',
-                    'lookup' => 'funds'
+                    'lookup' => 'funds',
+                    'depends_on' => 'building_id'
                 ],
                 [
                     'name' => 'financial_category_id',
                     'label' => 'دسته مالی',
                     'type' => 'select',
-                    'lookup' => 'financial_categories'
+                    'lookup' => 'expense_categories',
+                    'depends_on' => 'building_id',
+                    'help' => 'در صورت عدم انتخاب، دسته «هزینه‌های عمومی» به‌صورت خودکار ساخته می‌شود.'
                 ],
                 [
                     'name' => 'title',
@@ -2527,6 +2607,50 @@ return [
                     'label' => 'مبلغ',
                     'type' => 'number',
                     'required' => true
+                ],
+                [
+                    'name' => 'allocation_method',
+                    'label' => 'روش تقسیم هزینه',
+                    'type' => 'select',
+                    'required' => true,
+                    'default' => 'equal',
+                    'options' => [
+                        [
+                            'value' => 'equal',
+                            'label' => 'مساوی بین واحدها'
+                        ],
+                        [
+                            'value' => 'area',
+                            'label' => 'بر اساس متراژ واحد'
+                        ],
+                        [
+                            'value' => 'persons',
+                            'label' => 'بر اساس تعداد ساکنین'
+                        ]
+                    ],
+                    'help' => 'مبلغ کل با همین روش و با کنترل جمع دقیق، بین واحدهای دامنه انتخاب‌شده تقسیم می‌شود.'
+                ],
+                [
+                    'name' => 'payer_responsibility',
+                    'label' => 'مسئول پرداخت',
+                    'type' => 'select',
+                    'required' => true,
+                    'default' => 'resident',
+                    'options' => [
+                        [
+                            'value' => 'resident',
+                            'label' => 'ساکن / مستأجر'
+                        ],
+                        [
+                            'value' => 'owner',
+                            'label' => 'مالک'
+                        ],
+                        [
+                            'value' => 'unit',
+                            'label' => 'کیف پول واحد (مالک یا ساکن)'
+                        ]
+                    ],
+                    'help' => 'برای واحد بدون ساکن فعال، هزینه ساکن به مالک اصلی همان واحد تخصیص داده می‌شود.'
                 ],
                 [
                     'name' => 'expense_date',
@@ -2543,6 +2667,8 @@ return [
                     'name' => 'status',
                     'label' => 'وضعیت',
                     'type' => 'select',
+                    'default' => 'posted',
+                    'help' => 'فقط هزینه‌های ثبت‌شده در محاسبه دوره شارژ وارد می‌شوند.',
                     'options' => [
                         [
                             'value' => 'draft',

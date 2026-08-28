@@ -42,7 +42,7 @@ class OtpService
                 'identifier' => $identifier,
                 'channel' => $channel,
                 'purpose' => $purpose,
-                'code_hash' => Hash::make($code),
+                'code' => $code,
                 'expires_at' => now()->addMinutes((int) config('auth_otp.ttl_minutes', 2)),
                 'attempts' => 0,
                 'request_ip' => $ip,
@@ -78,7 +78,7 @@ class OtpService
                 ];
             }
 
-            if (! Hash::check($code, $otp->code_hash)) {
+            if (! $code == $otp->code) {
                 $otp->increment('attempts');
 
                 return [

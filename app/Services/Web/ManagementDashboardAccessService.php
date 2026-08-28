@@ -4,13 +4,15 @@ namespace App\Services\Web;
 
 use App\Models\Building;
 use App\Models\User;
+use App\Services\Security\BuildingPermissionScopeService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Support\Collection;
 
 final class ManagementDashboardAccessService
 {
     public function __construct(
-        private readonly PermissionChecker $permissions
+        private readonly PermissionChecker $permissions,
+        private readonly BuildingPermissionScopeService $buildingScopes
     ) {
     }
 
@@ -48,11 +50,13 @@ final class ManagementDashboardAccessService
             return true;
         }
 
-        return $this->permissions->allows(
+        $ids = $this->buildingScopes->buildingIds(
             $user,
-            'reports.dashboard.view',
-            $building
+            'reports.dashboard.view'
         );
+
+        return $ids === null
+            || in_array((int) $building->getKey(), $ids, true);
     }
 
     /**
@@ -70,16 +74,21 @@ final class ManagementDashboardAccessService
             return $query->get();
         }
 
+        $ids = $this->buildingScopes->buildingIds(
+            $user,
+            'reports.dashboard.view'
+        );
+
+        if ($ids === null) {
+            return $query->get();
+        }
+
+        if ($ids === []) {
+            return collect();
+        }
+
         return $query
-            ->get()
-            ->filter(
-                fn (Building $building): bool =>
-                    $this->permissions->allows(
-                        $user,
-                        'reports.dashboard.view',
-                        $building
-                    )
-            )
-            ->values();
+            ->whereIn('id', $ids)
+            ->get();
     }
 }

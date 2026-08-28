@@ -269,6 +269,83 @@ class ManagementCrudWebTest extends TestCase
         );
     }
 
+    public function test_invitation_form_uses_scoped_multi_user_selection_and_custom_message(): void
+    {
+        $fields = collect(
+            config(
+                'management_crud.resources.invitations.fields',
+                []
+            )
+        );
+        $recipients = $fields->firstWhere('name', 'user_ids');
+        $message = $fields->firstWhere('name', 'message');
+
+        $this->assertSame('multiselect', $recipients['type'] ?? null);
+        $this->assertSame(
+            'invitable_users',
+            $recipients['lookup'] ?? null
+        );
+        $this->assertTrue($recipients['required'] ?? false);
+        $this->assertSame('textarea', $message['type'] ?? null);
+        $this->assertTrue($message['required'] ?? false);
+        $this->assertFalse($fields->contains('name', 'mobile'));
+        $this->assertFalse($fields->contains('name', 'email'));
+    }
+
+    public function test_facility_schedule_create_form_uses_multi_day_selection(): void
+    {
+        $fields = collect(
+            config(
+                'management_crud.resources.facility-schedules.fields',
+                []
+            )
+        );
+        $createDays = $fields->firstWhere('name', 'days_of_week');
+        $editDay = $fields->firstWhere('name', 'day_of_week');
+
+        $this->assertSame('multiselect', $createDays['type'] ?? null);
+        $this->assertTrue($createDays['required'] ?? false);
+        $this->assertTrue($createDays['create_only'] ?? false);
+        $this->assertCount(7, $createDays['options'] ?? []);
+        $this->assertSame('select', $editDay['type'] ?? null);
+        $this->assertTrue($editDay['edit_only'] ?? false);
+
+        $script = (string) file_get_contents(
+            public_path('js/buildino-crud.js')
+        );
+
+        $this->assertStringContainsString('field.edit_only', $script);
+        $this->assertStringContainsString('savedPayload?.meta?.created_count', $script);
+    }
+
+    public function test_expense_form_collects_scope_allocation_and_payer_responsibility(): void
+    {
+        $fields = collect(
+            config(
+                'management_crud.resources.expenses.fields',
+                []
+            )
+        );
+        $block = $fields->firstWhere('name', 'block_id');
+        $method = $fields->firstWhere('name', 'allocation_method');
+        $payer = $fields->firstWhere('name', 'payer_responsibility');
+        $status = $fields->firstWhere('name', 'status');
+
+        $this->assertSame('expense_blocks', $block['lookup'] ?? null);
+        $this->assertSame('building_id', $block['depends_on'] ?? null);
+        $this->assertSame('select', $method['type'] ?? null);
+        $this->assertSame(
+            ['equal', 'area', 'persons'],
+            collect($method['options'] ?? [])->pluck('value')->all()
+        );
+        $this->assertSame('select', $payer['type'] ?? null);
+        $this->assertSame(
+            ['resident', 'owner', 'unit'],
+            collect($payer['options'] ?? [])->pluck('value')->all()
+        );
+        $this->assertSame('posted', $status['default'] ?? null);
+    }
+
     private function assertOperationRouteExists(
         string $resourceKey,
         string $operationKey,

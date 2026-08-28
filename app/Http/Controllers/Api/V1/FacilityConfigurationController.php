@@ -63,9 +63,29 @@ class FacilityConfigurationController extends Controller
             $access
         );
 
+        $validated = $request->validated();
+
+        if (isset($validated['days_of_week'])) {
+            $schedules = $service->createSchedules(
+                $buildingFacility,
+                $validated
+            );
+
+            $schedules->load('facilityTimeSlots');
+
+            return FacilityScheduleResource::collection($schedules)
+                ->additional([
+                    'meta' => [
+                        'created_count' => $schedules->count(),
+                    ],
+                ])
+                ->response()
+                ->setStatusCode(201);
+        }
+
         $schedule = $service->createSchedule(
             $buildingFacility,
-            $request->validated()
+            $validated
         );
 
         $schedule->load('facilityTimeSlots');

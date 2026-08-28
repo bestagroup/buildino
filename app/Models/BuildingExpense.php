@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ExpenseAllocationMethod;
+use App\Enums\ExpensePayerResponsibility;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,8 +15,12 @@ class BuildingExpense extends Model
 
     protected $fillable = [
         'building_id',
+        'block_id',
         'fund_id',
         'financial_category_id',
+        'allocation_method',
+        'allocation_configuration',
+        'payer_responsibility',
         'title',
         'amount',
         'expense_date',
@@ -32,6 +38,9 @@ class BuildingExpense extends Model
         return [
             'amount' => 'integer',
             'expense_date' => 'date',
+            'allocation_method' => ExpenseAllocationMethod::class,
+            'allocation_configuration' => 'array',
+            'payer_responsibility' => ExpensePayerResponsibility::class,
             'approved_at' => 'datetime',
             'posted_at' => 'datetime',
         ];
@@ -40,6 +49,11 @@ class BuildingExpense extends Model
     public function building(): BelongsTo
     {
         return $this->belongsTo(Building::class);
+    }
+
+    public function block(): BelongsTo
+    {
+        return $this->belongsTo(Block::class);
     }
 
     public function fund(): BelongsTo

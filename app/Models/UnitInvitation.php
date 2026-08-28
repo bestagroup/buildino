@@ -18,10 +18,12 @@ class UnitInvitation extends Model
     protected $fillable = [
         'unit_id',
         'invited_by',
+        'invited_user_id',
         'mobile',
         'email',
         'relation_type',
         'channel',
+        'message',
         'token',
         'status',
         'sent_at',
@@ -58,6 +60,14 @@ class UnitInvitation extends Model
         return $this->belongsTo(
             User::class,
             'invited_by'
+        );
+    }
+
+    public function invitedUser(): BelongsTo
+    {
+        return $this->belongsTo(
+            User::class,
+            'invited_user_id'
         );
     }
 

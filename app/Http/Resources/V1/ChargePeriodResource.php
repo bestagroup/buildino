@@ -14,6 +14,7 @@ class ChargePeriodResource extends JsonResource
             'status'=>is_object($this->status)?$this->status->value:$this->status,
             'created_by'=>$this->created_by,
             'calculations_count'=>$this->whenCounted('chargeCalculations'),
+            'expense_allocations_count'=>$this->whenCounted('chargeExpenseAllocations'),
             'invoices_count'=>$this->whenCounted('unitInvoices'),
             'created_at'=>$this->created_at?->toISOString(),
             'updated_at'=>$this->updated_at?->toISOString(),

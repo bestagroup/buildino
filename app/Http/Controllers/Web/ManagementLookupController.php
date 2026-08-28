@@ -136,6 +136,47 @@ class ManagementLookupController extends Controller
                         ]
                     ),
 
+            'expense_blocks' =>
+                Block::query()
+                    ->with('building:id,complex_id')
+                    ->whereIn('building_id', $buildingIds->all())
+                    ->when(
+                        $request->filled('building_id'),
+                        fn (Builder $query) => $query->where(
+                            'building_id',
+                            $request->integer('building_id')
+                        )
+                    )
+                    ->orderBy('building_id')
+                    ->orderBy('sort_order')
+                    ->get([
+                        'id',
+                        'building_id',
+                        'title',
+                    ])
+                    ->filter(
+                        fn (Block $item): bool => $this->permissions->allows(
+                            $user,
+                            'expenses.create',
+                            $item
+                        ) || (
+                            $item->building
+                            && $this->permissions->allows(
+                                $user,
+                                'expenses.create',
+                                $item->building
+                            )
+                        )
+                    )
+                    ->map(
+                        fn (Block $item): array => [
+                            'id' => $item->id,
+                            'label' => $item->title,
+                            'building_id' => $item->building_id,
+                        ]
+                    )
+                    ->values(),
+
             'floors' =>
                 Floor::query()
                     ->whereHas(
@@ -218,6 +259,13 @@ class ManagementLookupController extends Controller
 
             'users' =>
                 $this->userLookup(
+                    $request,
+                    $buildingIds,
+                    $platform
+                ),
+
+            'invitable_users' =>
+                $this->invitableUserLookup(
                     $request,
                     $buildingIds,
                     $platform
@@ -365,6 +413,36 @@ class ManagementLookupController extends Controller
                                 "{$item->title} ({$item->type->value})",
                             'building_id' =>
                                 $item->building_id,
+                        ]
+                    ),
+
+            'expense_categories' =>
+                FinancialCategory::query()
+                    ->whereIn(
+                        'building_id',
+                        $buildingIds->all()
+                    )
+                    ->where('type', 'expense')
+                    ->where('is_active', true)
+                    ->when(
+                        $request->filled('building_id'),
+                        fn (Builder $query) =>
+                            $query->where(
+                                'building_id',
+                                $request->integer('building_id')
+                            )
+                    )
+                    ->orderBy('title')
+                    ->get([
+                        'id',
+                        'building_id',
+                        'title',
+                    ])
+                    ->map(
+                        fn (FinancialCategory $item): array => [
+                            'id' => $item->id,
+                            'label' => $item->title,
+                            'building_id' => $item->building_id,
                         ]
                     ),
 
@@ -621,17 +699,54 @@ class ManagementLookupController extends Controller
                 'first_name',
                 'last_name',
                 'mobile',
+                'email',
             ])
             ->map(
-                fn (User $item): array => [
-                    'id' => $item->id,
-                    'label' =>
-                        trim(
+                function (User $item): array {
+                    $contact = collect([
+                        $item->mobile,
+                        $item->email,
+                    ])->filter()->implode(' / ');
+
+                    return [
+                        'id' => $item->id,
+                        'label' => trim(
                             "{$item->first_name} {$item->last_name}"
-                        )
-                        . " — {$item->mobile}",
-                ]
+                        ).($contact !== '' ? " — {$contact}" : ''),
+                    ];
+                }
             );
+    }
+
+    private function invitableUserLookup(
+        Request $request,
+        $buildingIds,
+        bool $platform
+    ) {
+        $unit = Unit::query()
+            ->with('floor.block.building')
+            ->find($request->integer('unit_id'));
+        $building = $unit?->floor?->block?->building;
+
+        abort_unless(
+            $building
+            && $this->permissions->allows(
+                $request->user(),
+                'unit-invitations.create',
+                $building
+            ),
+            403
+        );
+
+        return $this->userLookup(
+            $request,
+            $buildingIds,
+            $platform
+        )->reject(
+            fn (array $item): bool =>
+                (int) $item['id']
+                === (int) $request->user()->getKey()
+        )->values();
     }
 
     private function globalUserAdminLookup(

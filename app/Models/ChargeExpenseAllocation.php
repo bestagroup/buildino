@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ExpensePayerResponsibility;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,8 @@ class ChargeExpenseAllocation extends Model
         'building_expense_id',
         'unit_id',
         'building_expense_allocation_rule_id',
+        'payer_responsibility',
+        'payer_user_id',
         'base_value',
         'allocated_amount',
         'calculation_snapshot',
@@ -25,6 +28,7 @@ class ChargeExpenseAllocation extends Model
         return [
             'base_value' => 'decimal:4',
             'allocated_amount' => 'integer',
+            'payer_responsibility' => ExpensePayerResponsibility::class,
             'calculation_snapshot' => 'array',
         ];
     }
@@ -42,6 +46,11 @@ class ChargeExpenseAllocation extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function payer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'payer_user_id');
     }
 
     public function rule(): BelongsTo

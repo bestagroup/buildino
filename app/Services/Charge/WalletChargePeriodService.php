@@ -3,6 +3,7 @@
 namespace App\Services\Charge;
 
 use App\Enums\ChargePolicyMode;
+use App\Enums\ExpensePayerResponsibility;
 use App\Enums\InvoiceStatus;
 use App\Enums\UnitChargePayerSource;
 use App\Enums\WalletTransferType;
@@ -429,6 +430,8 @@ final class WalletChargePeriodService
             'building_id' => $period->building_id,
             'unit_id' => $unit->getKey(),
             'charge_period_id' => $period->getKey(),
+            'payer_responsibility' => ExpensePayerResponsibility::Unit->value,
+            'payer_user_id' => null,
         ]);
 
         if (

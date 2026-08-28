@@ -17,6 +17,19 @@ class StoreUnitInvitationRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'user_ids' => [
+                'required',
+                'array',
+                'min:1',
+                'max:50',
+            ],
+
+            'user_ids.*' => [
+                'integer',
+                'distinct',
+                'exists:users,id',
+            ],
+
             'relation_type' => [
                 'required',
                 Rule::enum(OccupancyType::class),
@@ -28,23 +41,17 @@ class StoreUnitInvitationRequest extends FormRequest
             ],
 
             'mobile' => [
-                'nullable',
-                'string',
-                'max:20',
-                Rule::requiredIf(
-                    fn (): bool => $this->input('channel')
-                        === InvitationChannel::Sms->value
-                ),
+                'prohibited',
             ],
 
             'email' => [
-                'nullable',
-                'email',
-                'max:255',
-                Rule::requiredIf(
-                    fn (): bool => $this->input('channel')
-                        === InvitationChannel::Email->value
-                ),
+                'prohibited',
+            ],
+
+            'message' => [
+                'required',
+                'string',
+                'max:1600',
             ],
 
             'expires_in_hours' => [

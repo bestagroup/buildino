@@ -23,25 +23,12 @@ use Yajra\DataTables\Facades\DataTables;
 
 final class WebDataTableController extends Controller
 {
-    public function management(
-        Request $request,
-        string $table,
-        ManagementDashboardAccessService $access,
-        WebDataTablePresenter $presenter
-    ): JsonResponse {
-        $user =
-            $request->user();
+    public function management(Request $request, string $table, ManagementDashboardAccessService $access, WebDataTablePresenter $presenter): JsonResponse {
+        $user = $request->user();
 
-        $buildings =
-            $access->accessibleBuildings(
-                $user
-            );
+        $buildings = $access->accessibleBuildings( $user);
 
-        $buildingIds =
-            $this->managementBuildingIds(
-                $request,
-                $buildings
-            );
+        $buildingIds = $this->managementBuildingIds($request, $buildings);
 
         abort_unless(
             in_array(
@@ -129,6 +116,7 @@ final class WebDataTableController extends Controller
             'invoices' =>
                 $this->residentInvoices(
                     $request,
+                    $user->getKey(),
                     $unitIds,
                     $presenter
                 ),
@@ -598,6 +586,7 @@ final class WebDataTableController extends Controller
 
     private function residentInvoices(
         Request $request,
+        int $userId,
         Collection $unitIds,
         WebDataTablePresenter $presenter
     ): JsonResponse {
@@ -606,11 +595,17 @@ final class WebDataTableController extends Controller
                 ->with([
                     'unit:id,unit_number,title',
                     'building:id,title,currency',
+                    'payer:id,first_name,last_name',
                 ])
                 ->whereIn(
                     'unit_id',
                     $unitIds->all()
-                );
+                )
+                ->where(function (Builder $payer) use ($userId): void {
+                    $payer
+                        ->whereNull('payer_user_id')
+                        ->orWhere('payer_user_id', $userId);
+                });
 
         $this->applyStatusFilter(
             $query,
@@ -634,6 +629,14 @@ final class WebDataTableController extends Controller
                     $presenter->unit(
                         $invoice->unit
                     )
+            )
+            ->addColumn(
+                'payer_label',
+                fn (UnitInvoice $invoice): string => $invoice->payer
+                    ? trim(
+                        "{$invoice->payer->first_name} {$invoice->payer->last_name}"
+                    )
+                    : 'کیف پول واحد'
             )
             ->addColumn(
                 'total_amount_formatted',

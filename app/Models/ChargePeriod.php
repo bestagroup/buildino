@@ -53,4 +53,12 @@ class ChargePeriod extends Model
     {
         return $this->hasMany(UnitInvoice::class, 'charge_period_id');
     }
+
+    public function chargeExpenseAllocations(): HasMany
+    {
+        return $this->hasMany(
+            ChargeExpenseAllocation::class,
+            'charge_period_id'
+        );
+    }
 }

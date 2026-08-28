@@ -2,6 +2,7 @@
 
 namespace App\Services\Web;
 
+use App\Enums\ExpensePayerResponsibility;
 use App\Models\FacilityReservation;
 use App\Models\GuestVisit;
 use App\Models\ProviderPayoutRequest;
@@ -36,6 +37,7 @@ final class PortalOperationDetailService
         return match ($resource) {
             'invoices' =>
                 $this->residentInvoice(
+                    $user,
                     $unitIds,
                     $id
                 ),
@@ -113,6 +115,7 @@ final class PortalOperationDetailService
     }
 
     private function residentInvoice(
+        User $user,
         array $unitIds,
         int $id
     ): array {
@@ -121,6 +124,7 @@ final class PortalOperationDetailService
                 ->with([
                     'unit:id,unit_number,title',
                     'building:id,title,currency',
+                    'payer:id,first_name,last_name',
                     'invoiceItems',
                     'invoiceInstallments',
                     'paymentAllocations.payment:id,payment_number,amount,status,paid_at',
@@ -129,6 +133,11 @@ final class PortalOperationDetailService
                     'unit_id',
                     $unitIds
                 )
+                ->where(function ($payer) use ($user): void {
+                    $payer
+                        ->whereNull('payer_user_id')
+                        ->orWhere('payer_user_id', $user->getKey());
+                })
                 ->findOrFail(
                     $id
                 );
@@ -172,6 +181,18 @@ final class PortalOperationDetailService
                     $this->presenter
                         ->unit(
                             $invoice->unit
+                        ),
+
+                'مسئول پرداخت' =>
+                    $invoice->payer
+                        ? trim(
+                            "{$invoice->payer->first_name} {$invoice->payer->last_name}"
+                        )
+                        : (
+                            $invoice->payer_responsibility
+                                instanceof ExpensePayerResponsibility
+                                    ? $invoice->payer_responsibility->label()
+                                    : 'واحد'
                         ),
 
                 'تاریخ صدور' =>

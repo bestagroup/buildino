@@ -2,14 +2,17 @@
 
 namespace Tests\Feature\Security;
 
+use App\Contracts\Notifications\SmsSender;
 use App\Enums\InvitationChannel;
 use App\Enums\InvitationStatus;
 use App\Enums\OccupancyType;
 use App\Enums\UnitUsageType;
+use App\Mail\UnitInvitationMail;
 use App\Models\Block;
 use App\Models\Building;
 use App\Models\Complex;
 use App\Models\Floor;
+use App\Models\ManagedUserScope;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Unit;
@@ -19,12 +22,177 @@ use App\Models\UnitOwnership;
 use App\Models\User;
 use App\Models\UserRoleAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class UnitInvitationFlowTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_manager_can_send_scoped_bulk_invitations_with_custom_text(): void
+    {
+        $manager = $this->createUser(
+            '09121100001',
+            'bulk-manager@example.test'
+        );
+        $first = $this->createUser(
+            '09121100002',
+            'bulk-first@example.test'
+        );
+        $second = $this->createUser(
+            '09121100003',
+            'bulk-second@example.test'
+        );
+        $outsider = $this->createUser(
+            '09121100004',
+            'bulk-outsider@example.test'
+        );
+        $inside = $this->createStructure('BULK-IN');
+        $outside = $this->createStructure('BULK-OUT');
+        $role = $this->createRoleWithPermissions(
+            'bulk-invitation-manager',
+            [
+                'reports.dashboard.view',
+                'users.view',
+                'unit-invitations.view',
+                'unit-invitations.create',
+            ]
+        );
+
+        $this->assignRole($manager, $role, $inside['building']);
+
+        foreach ([$first, $second] as $user) {
+            ManagedUserScope::query()->create([
+                'user_id' => $user->id,
+                'scope_type' => $inside['building']->getMorphClass(),
+                'scope_id' => $inside['building']->id,
+                'assigned_by' => $manager->id,
+            ]);
+        }
+
+        ManagedUserScope::query()->create([
+            'user_id' => $outsider->id,
+            'scope_type' => $outside['building']->getMorphClass(),
+            'scope_id' => $outside['building']->id,
+            'assigned_by' => $manager->id,
+        ]);
+
+        $sms = new class implements SmsSender
+        {
+            public array $messages = [];
+
+            public function send(string $mobile, string $message): array
+            {
+                $this->messages[$mobile] = $message;
+
+                return ['accepted' => true];
+            }
+        };
+
+        $this->app->instance(SmsSender::class, $sms);
+        Mail::fake();
+
+        $this->actingAs($manager, 'web')
+            ->getJson(
+                "/management/lookups/invitable_users?unit_id={$inside['unit']->id}"
+            )
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment(['id' => $first->id])
+            ->assertJsonFragment(['id' => $second->id])
+            ->assertJsonMissing(['id' => $outsider->id]);
+
+        Sanctum::actingAs($manager);
+
+        $smsResponse = $this->postJson(
+            "/api/v1/units/{$inside['unit']->id}/invitations",
+            [
+                'user_ids' => [$first->id, $second->id],
+                'relation_type' => OccupancyType::Tenant->value,
+                'channel' => InvitationChannel::Sms->value,
+                'message' => 'لطفاً دعوت عضویت در واحد را بررسی کنید.',
+                'expires_in_hours' => 48,
+            ]
+        );
+
+        $smsResponse
+            ->assertCreated()
+            ->assertJsonPath('meta.sent_count', 2)
+            ->assertJsonPath('data.0.invited_user_id', $first->id)
+            ->assertJsonPath(
+                'data.0.message',
+                'لطفاً دعوت عضویت در واحد را بررسی کنید.'
+            );
+
+        $this->assertCount(2, $sms->messages);
+        $this->assertStringContainsString(
+            'لطفاً دعوت عضویت در واحد را بررسی کنید.',
+            $sms->messages[$first->mobile]
+        );
+        $this->assertStringContainsString(
+            '/invitations/accept?token=',
+            $sms->messages[$first->mobile]
+        );
+
+        $this->postJson(
+            "/api/v1/units/{$inside['unit']->id}/invitations",
+            [
+                'user_ids' => [$first->id, $second->id],
+                'relation_type' => OccupancyType::FamilyMember->value,
+                'channel' => InvitationChannel::Email->value,
+                'message' => 'متن اختصاصی دعوت ایمیلی',
+            ]
+        )
+            ->assertCreated()
+            ->assertJsonPath('meta.sent_count', 2);
+
+        Mail::assertSent(
+            UnitInvitationMail::class,
+            2
+        );
+        Mail::assertSent(
+            UnitInvitationMail::class,
+            fn (UnitInvitationMail $mail): bool =>
+                str_contains(
+                    $mail->bodyText,
+                    'متن اختصاصی دعوت ایمیلی'
+                )
+                && str_contains(
+                    $mail->bodyText,
+                    '/invitations/accept?token='
+                )
+        );
+
+        $this->postJson(
+            "/api/v1/units/{$inside['unit']->id}/invitations",
+            [
+                'user_ids' => [$first->id, $outsider->id],
+                'relation_type' => OccupancyType::Owner->value,
+                'channel' => InvitationChannel::Sms->value,
+                'message' => 'این درخواست نباید ارسال شود.',
+            ]
+        )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('user_ids');
+
+        $this->assertDatabaseCount('unit_invitations', 4);
+
+        $this->postJson(
+            "/api/v1/units/{$inside['unit']->id}/invitations",
+            [
+                'mobile' => '09129999999',
+                'relation_type' => OccupancyType::Resident->value,
+                'channel' => InvitationChannel::Sms->value,
+                'message' => 'دعوت با شماره خام مجاز نیست.',
+            ]
+        )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'user_ids',
+                'mobile',
+            ]);
+    }
 
     public function test_manager_can_invite_only_inside_assigned_building(): void
     {
@@ -44,6 +212,7 @@ class UnitInvitationFlowTest extends TestCase
         $role = $this->createRoleWithPermissions(
             'unit-invitation-manager',
             [
+                'users.view',
                 'unit-invitations.view',
                 'unit-invitations.create',
                 'unit-invitations.update',
@@ -55,15 +224,21 @@ class UnitInvitationFlowTest extends TestCase
             $role,
             $structureA['building']
         );
+        $this->attachManagedUser(
+            $invitee,
+            $structureA['building'],
+            $manager
+        );
 
         Sanctum::actingAs($manager);
 
         $response = $this->postJson(
             "/api/v1/units/{$structureA['unit']->id}/invitations",
             [
-                'mobile' => $invitee->mobile,
+                'user_ids' => [$invitee->id],
                 'relation_type' => OccupancyType::Tenant->value,
                 'channel' => InvitationChannel::Sms->value,
+                'message' => 'دعوت عضویت در واحد',
                 'expires_in_hours' => 72,
 
                 // Must be ignored because unit comes from route.
@@ -74,24 +249,27 @@ class UnitInvitationFlowTest extends TestCase
         $response
             ->assertCreated()
             ->assertJsonPath(
-                'data.unit_id',
+                'data.0.unit_id',
                 $structureA['unit']->id
             )
             ->assertJsonPath(
-                'data.status',
+                'data.0.status',
                 InvitationStatus::Sent->value
             );
 
         $this->assertNotEmpty(
-            $response->json('meta.accept_token')
+            $response->json(
+                "meta.accept_tokens.{$invitee->id}"
+            )
         );
 
         $this->postJson(
             "/api/v1/units/{$structureB['unit']->id}/invitations",
             [
-                'mobile' => $invitee->mobile,
+                'user_ids' => [$invitee->id],
                 'relation_type' => OccupancyType::Tenant->value,
                 'channel' => InvitationChannel::Sms->value,
+                'message' => 'دعوت خارج از محدوده',
             ]
         )->assertForbidden();
     }
@@ -113,6 +291,7 @@ class UnitInvitationFlowTest extends TestCase
         $role = $this->createRoleWithPermissions(
             'invitation-creator',
             [
+                'users.view',
                 'unit-invitations.create',
             ]
         );
@@ -122,20 +301,26 @@ class UnitInvitationFlowTest extends TestCase
             $role,
             $structure['building']
         );
+        $this->attachManagedUser(
+            $invitee,
+            $structure['building'],
+            $manager
+        );
 
         Sanctum::actingAs($manager);
 
         $create = $this->postJson(
             "/api/v1/units/{$structure['unit']->id}/invitations",
             [
-                'mobile' => $invitee->mobile,
+                'user_ids' => [$invitee->id],
                 'relation_type' => OccupancyType::Tenant->value,
                 'channel' => InvitationChannel::Sms->value,
+                'message' => 'دعوت برای سکونت در واحد',
             ]
         )->assertCreated();
 
         $token = $create->json(
-            'meta.accept_token'
+            "meta.accept_tokens.{$invitee->id}"
         );
 
         Sanctum::actingAs($invitee);
@@ -200,6 +385,7 @@ class UnitInvitationFlowTest extends TestCase
         $role = $this->createRoleWithPermissions(
             'invitation-security-manager',
             [
+                'users.view',
                 'unit-invitations.create',
             ]
         );
@@ -209,20 +395,26 @@ class UnitInvitationFlowTest extends TestCase
             $role,
             $structure['building']
         );
+        $this->attachManagedUser(
+            $invitee,
+            $structure['building'],
+            $manager
+        );
 
         Sanctum::actingAs($manager);
 
         $create = $this->postJson(
             "/api/v1/units/{$structure['unit']->id}/invitations",
             [
-                'mobile' => $invitee->mobile,
+                'user_ids' => [$invitee->id],
                 'relation_type' => OccupancyType::Resident->value,
                 'channel' => InvitationChannel::Sms->value,
+                'message' => 'دعوت امن واحد',
             ]
         )->assertCreated();
 
         $token = $create->json(
-            'meta.accept_token'
+            "meta.accept_tokens.{$invitee->id}"
         );
 
         Sanctum::actingAs($attacker);
@@ -311,6 +503,7 @@ class UnitInvitationFlowTest extends TestCase
         $role = $this->createRoleWithPermissions(
             'invitation-resend-manager',
             [
+                'users.view',
                 'unit-invitations.create',
                 'unit-invitations.update',
             ]
@@ -321,24 +514,30 @@ class UnitInvitationFlowTest extends TestCase
             $role,
             $structure['building']
         );
+        $this->attachManagedUser(
+            $invitee,
+            $structure['building'],
+            $manager
+        );
 
         Sanctum::actingAs($manager);
 
         $create = $this->postJson(
             "/api/v1/units/{$structure['unit']->id}/invitations",
             [
-                'mobile' => $invitee->mobile,
+                'user_ids' => [$invitee->id],
                 'relation_type' => OccupancyType::FamilyMember->value,
                 'channel' => InvitationChannel::Sms->value,
+                'message' => 'دعوت عضو خانواده',
             ]
         )->assertCreated();
 
         $invitationId = $create->json(
-            'data.id'
+            'data.0.id'
         );
 
         $oldToken = $create->json(
-            'meta.accept_token'
+            "meta.accept_tokens.{$invitee->id}"
         );
 
         $resend = $this->postJson(
@@ -489,6 +688,19 @@ class UnitInvitationFlowTest extends TestCase
         }
 
         return $role;
+    }
+
+    private function attachManagedUser(
+        User $user,
+        mixed $scope,
+        User $actor
+    ): ManagedUserScope {
+        return ManagedUserScope::query()->create([
+            'user_id' => $user->id,
+            'scope_type' => $scope->getMorphClass(),
+            'scope_id' => $scope->getKey(),
+            'assigned_by' => $actor->id,
+        ]);
     }
 
     private function assignRole(

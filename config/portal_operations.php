@@ -11,6 +11,7 @@ return [
             'columns' => [
                 ['data' => 'invoice_number', 'title' => 'شماره'],
                 ['data' => 'unit_title', 'title' => 'واحد', 'orderable' => false],
+                ['data' => 'payer_label', 'title' => 'مسئول پرداخت', 'orderable' => false],
                 ['data' => 'total_amount_formatted', 'title' => 'مبلغ کل', 'orderable' => false],
                 ['data' => 'outstanding_amount_formatted', 'title' => 'مانده', 'orderable' => false],
                 ['data' => 'due_date_jalali', 'title' => 'سررسید', 'orderable' => false],

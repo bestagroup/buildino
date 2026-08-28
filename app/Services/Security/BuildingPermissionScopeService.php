@@ -2,6 +2,7 @@
 
 namespace App\Services\Security;
 
+use App\Models\Block;
 use App\Models\Building;
 use App\Models\Complex;
 use App\Models\User;
@@ -11,7 +12,7 @@ final class BuildingPermissionScopeService
 {
     /**
      * Return null for global access, otherwise the explicit Building ids that
-     * are covered by active Building/Complex assignments for the permission.
+     * are covered by active Building/Complex/Block assignments for the permission.
      *
      * @return array<int>|null
      */
@@ -55,6 +56,7 @@ final class BuildingPermissionScopeService
 
         $buildingMorph = (new Building())->getMorphClass();
         $complexMorph = (new Complex())->getMorphClass();
+        $blockMorph = (new Block())->getMorphClass();
 
         $buildingIds = $assignments
             ->where('scope_type', $buildingMorph)
@@ -74,6 +76,21 @@ final class BuildingPermissionScopeService
                 Building::query()
                     ->whereIn('complex_id', $complexIds)
                     ->pluck('id')
+            );
+        }
+
+        $blockIds = $assignments
+            ->where('scope_type', $blockMorph)
+            ->pluck('scope_id')
+            ->filter()
+            ->map(fn ($id): int => (int) $id)
+            ->values();
+
+        if ($blockIds->isNotEmpty()) {
+            $buildingIds = $buildingIds->merge(
+                Block::query()
+                    ->whereIn('id', $blockIds)
+                    ->pluck('building_id')
             );
         }
 

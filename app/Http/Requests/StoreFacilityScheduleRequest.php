@@ -14,7 +14,22 @@ class StoreFacilityScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'day_of_week' => ['required', 'integer', 'between:0,6'],
+            'day_of_week' => [
+                'required_without:days_of_week',
+                'integer',
+                'between:0,6',
+            ],
+            'days_of_week' => [
+                'required_without:day_of_week',
+                'array',
+                'min:1',
+                'max:7',
+            ],
+            'days_of_week.*' => [
+                'integer',
+                'distinct',
+                'between:0,6',
+            ],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'is_active' => ['sometimes', 'boolean'],

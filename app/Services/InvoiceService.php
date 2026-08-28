@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ExpensePayerResponsibility;
 use App\Enums\InvoiceStatus;
 use App\Events\InvoiceIssued;
 use App\Models\Unit;
@@ -202,13 +203,26 @@ class InvoiceService
     public function periodInvoiceNumber(
         int $buildingId,
         int $periodId,
-        int $unitId
+        int $unitId,
+        ExpensePayerResponsibility $responsibility = ExpensePayerResponsibility::Unit,
+        ?int $payerUserId = null
     ): string {
-        return sprintf(
+        $base = sprintf(
             'INV-%d-%d-%d',
             $buildingId,
             $periodId,
             $unitId
+        );
+
+        if ($responsibility === ExpensePayerResponsibility::Unit) {
+            return $base;
+        }
+
+        return sprintf(
+            '%s-%s-%d',
+            $base,
+            strtoupper($responsibility->value),
+            $payerUserId
         );
     }
 }

@@ -34,7 +34,10 @@ class UnitInvoiceController extends Controller
         );
 
         $query = $building->unitInvoices()
-            ->with('unit:id,floor_id,unit_number,title');
+            ->with([
+                'unit:id,floor_id,unit_number,title',
+                'payer:id,first_name,last_name',
+            ]);
 
         if ($status = $request->query('status')) {
             $query->where('status', $status);
@@ -60,24 +63,37 @@ class UnitInvoiceController extends Controller
     ): AnonymousResourceCollection {
         $unit->loadMissing('floor.block.building');
         $building = $unit->floor?->block?->building;
+        $managementAllowed = $building && $permissions->allows(
+            $request->user(),
+            'invoices.view',
+            $building
+        );
+        $residentAllowed = $residentAccess->allows(
+            $request->user(),
+            $unit
+        );
 
         abort_unless(
-            $building && (
-                $permissions->allows(
-                    $request->user(),
-                    'invoices.view',
-                    $building
-                )
-                || $residentAccess->allows(
-                    $request->user(),
-                    $unit
-                )
-            ),
+            $building && ($managementAllowed || $residentAllowed),
             403
         );
 
+        $query = $unit->unitInvoices()
+            ->with('payer:id,first_name,last_name');
+
+        if (! $managementAllowed) {
+            $query->where(function ($payer) use ($request): void {
+                $payer
+                    ->whereNull('payer_user_id')
+                    ->orWhere(
+                        'payer_user_id',
+                        $request->user()->getKey()
+                    );
+            });
+        }
+
         return UnitInvoiceResource::collection(
-            $unit->unitInvoices()
+            $query
                 ->latest('id')
                 ->paginate(
                     min(
@@ -117,6 +133,7 @@ class UnitInvoiceController extends Controller
             'unit:id,floor_id,unit_number,title',
             'invoiceItems',
             'invoiceInstallments',
+            'payer:id,first_name,last_name',
         ]);
 
         return (new UnitInvoiceResource($invoice))
@@ -141,6 +158,7 @@ class UnitInvoiceController extends Controller
             'unit:id,floor_id,unit_number,title',
             'invoiceItems',
             'invoiceInstallments',
+            'payer:id,first_name,last_name',
         ]);
 
         return new UnitInvoiceResource($unitInvoice);

@@ -10,11 +10,11 @@ class OtpCode extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'identifier', 'channel', 'purpose', 'code_hash',
+        'user_id', 'identifier', 'channel', 'purpose', 'code',
         'expires_at', 'verified_at', 'consumed_at', 'attempts', 'request_ip',
     ];
 
-    protected $hidden = ['code_hash'];
+    protected $hidden = ['code'];
 
     protected function casts(): array
     {

@@ -13,9 +13,11 @@ class UnitInvitationResource extends JsonResource
             'id' => $this->id,
             'unit_id' => $this->unit_id,
             'invited_by' => $this->invited_by,
+            'invited_user_id' => $this->invited_user_id,
 
             'mobile' => $this->mobile,
             'email' => $this->email,
+            'message' => $this->message,
 
             'relation_type' => is_object($this->relation_type)
                 ? $this->relation_type->value
@@ -56,6 +58,20 @@ class UnitInvitationResource extends JsonResource
                     'first_name' => $this->invitedBy->first_name,
                     'last_name' => $this->invitedBy->last_name,
                 ]
+            ),
+
+            'invited_user' => $this->whenLoaded(
+                'invitedUser',
+                fn (): ?array => $this->invitedUser
+                    ? [
+                        'id' => $this->invitedUser->id,
+                        'display_name' => trim(
+                            "{$this->invitedUser->first_name} {$this->invitedUser->last_name}"
+                        ),
+                        'mobile' => $this->invitedUser->mobile,
+                        'email' => $this->invitedUser->email,
+                    ]
+                    : null
             ),
 
             'accepted_user' => $this->whenLoaded(

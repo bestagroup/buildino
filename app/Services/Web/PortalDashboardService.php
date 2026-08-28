@@ -164,7 +164,15 @@ final class PortalDashboardService
                 ->whereIn(
                     'unit_id',
                     $unitIds
-                );
+                )
+                ->where(function (Builder $payer) use ($user): void {
+                    $payer
+                        ->whereNull('payer_user_id')
+                        ->orWhere(
+                            'payer_user_id',
+                            $user->getKey()
+                        );
+                });
 
         $outstandingTotal =
             (int) (

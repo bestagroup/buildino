@@ -140,6 +140,91 @@ class FacilityReservationFlowTest extends TestCase
         )->assertForbidden();
     }
 
+    public function test_manager_can_create_multiple_weekday_schedules_atomically(): void
+    {
+        $manager = $this->createUser(
+            '09123330002',
+            'bulk-schedule-manager@example.test'
+        );
+        $structure = $this->createStructure('FAC-BULK');
+        $role = $this->createRoleWithPermissions(
+            'bulk-schedule-manager',
+            [
+                'facilities.view',
+                'facilities.update',
+            ]
+        );
+
+        $this->assignRole($manager, $role, $structure['building']);
+        Sanctum::actingAs($manager);
+
+        $facility = $this->createFacility(
+            $structure['building'],
+            'BULK-GYM',
+            false
+        );
+
+        $this->postJson(
+            "/api/v1/facilities/{$facility->id}/schedules",
+            [
+                'days_of_week' => [6, 0, 1],
+                'start_time' => '08:00',
+                'end_time' => '12:00',
+                'is_active' => true,
+            ]
+        )
+            ->assertCreated()
+            ->assertJsonCount(3, 'data')
+            ->assertJsonPath('data.0.day_of_week', 6)
+            ->assertJsonPath('data.1.day_of_week', 0)
+            ->assertJsonPath('data.2.day_of_week', 1)
+            ->assertJsonPath('meta.created_count', 3);
+
+        foreach ([6, 0, 1] as $day) {
+            $this->assertDatabaseHas('facility_schedules', [
+                'building_facility_id' => $facility->id,
+                'day_of_week' => $day,
+                'start_time' => '08:00',
+                'end_time' => '12:00',
+            ]);
+        }
+
+        $rollbackFacility = $this->createFacility(
+            $structure['building'],
+            'ROLLBACK-GYM',
+            false
+        );
+
+        $rollbackFacility->facilitySchedules()->create([
+            'day_of_week' => 0,
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+            'is_active' => true,
+        ]);
+
+        $this->postJson(
+            "/api/v1/facilities/{$rollbackFacility->id}/schedules",
+            [
+                'days_of_week' => [6, 0, 1],
+                'start_time' => '10:00',
+                'end_time' => '12:00',
+                'is_active' => true,
+            ]
+        )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('start_time');
+
+        $this->assertDatabaseCount('facility_schedules', 4);
+        $this->assertDatabaseMissing('facility_schedules', [
+            'building_facility_id' => $rollbackFacility->id,
+            'day_of_week' => 6,
+        ]);
+        $this->assertDatabaseMissing('facility_schedules', [
+            'building_facility_id' => $rollbackFacility->id,
+            'day_of_week' => 1,
+        ]);
+    }
+
     public function test_resident_can_view_active_facility_and_reserve_only_own_unit_with_server_price(): void
     {
         $resident = $this->createUser(

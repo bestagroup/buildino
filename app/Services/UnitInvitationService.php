@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\Notifications\SmsSender;
 use App\Enums\InvitationChannel;
 use App\Enums\InvitationStatus;
+use App\Mail\UnitInvitationMail;
 use App\Models\Unit;
 use App\Models\UnitInvitation;
 use App\Models\UnitOccupancy;
@@ -12,6 +13,7 @@ use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -43,17 +45,83 @@ final class UnitInvitationService
             $data
         );
 
+        return $this->createPrepared(
+            $unit,
+            $actor,
+            $data
+        );
+    }
+
+    /**
+     * @param  Collection<int, User>  $users
+     * @return array<int, array{
+     *     invitation: UnitInvitation,
+     *     raw_token: string
+     * }>
+     */
+    public function createForUsers(
+        Unit $unit,
+        User $actor,
+        Collection $users,
+        array $data
+    ): array {
+        unset($data['user_ids']);
+
+        $payloads = $users
+            ->map(
+                fn (User $user): array => $this->recipientData(
+                    $user,
+                    $data
+                )
+            );
+
+        /*
+         * Validate every recipient before the first external message is sent.
+         * This prevents a duplicate or missing contact from producing a
+         * partially delivered batch.
+         */
+        $payloads->each(function (array $payload) use ($unit): void {
+            $this->assertContactMatchesChannel($payload);
+            $this->assertNoActiveDuplicate($unit, $payload);
+        });
+
+        return $payloads
+            ->map(
+                fn (array $payload): array => $this->createPrepared(
+                    $unit,
+                    $actor,
+                    $payload
+                )
+            )
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array{
+     *     invitation: UnitInvitation,
+     *     raw_token: string
+     * }
+     */
+    private function createPrepared(
+        Unit $unit,
+        User $actor,
+        array $data
+    ): array {
+
         $rawToken = $this->newRawToken();
 
         $invitation = UnitInvitation::query()->create([
             'unit_id' => $unit->getKey(),
             'invited_by' => $actor->getKey(),
+            'invited_user_id' => $data['invited_user_id'] ?? null,
 
             'mobile' => $data['mobile'] ?? null,
             'email' => $data['email'] ?? null,
 
             'relation_type' => $data['relation_type'],
             'channel' => $data['channel'],
+            'message' => $data['message'] ?? null,
 
             /*
              * Never store the bearer token itself.
@@ -323,11 +391,17 @@ final class UnitInvitationService
             $rawToken
         );
 
-        $message = sprintf(
-            'You have been invited to unit %s. Accept invitation: %s',
+        $invitationText = trim(
+            (string) $invitation->message
+        );
+        $actionText = sprintf(
+            'برای مشاهده و پذیرش دعوت واحد %s از لینک زیر استفاده کنید: %s',
             $invitation->unit?->unit_number ?? $invitation->unit_id,
             $link
         );
+        $message = $invitationText !== ''
+            ? $invitationText."\n\n".$actionText
+            : $actionText;
 
         if (
             $invitation->channel === InvitationChannel::Sms
@@ -337,11 +411,10 @@ final class UnitInvitationService
                 $message
             );
         } else {
-            Mail::raw(
-                $message,
-                fn ($mail) => $mail
-                    ->to((string) $invitation->email)
-                    ->subject('Unit invitation')
+            Mail::to(
+                (string) $invitation->email
+            )->send(
+                new UnitInvitationMail($message)
             );
         }
 
@@ -389,6 +462,19 @@ final class UnitInvitationService
         UnitInvitation $invitation,
         User $user
     ): void {
+        if ($invitation->invited_user_id !== null) {
+            if (
+                (int) $invitation->invited_user_id
+                !== (int) $user->getKey()
+            ) {
+                throw new AuthorizationException(
+                    'This invitation does not belong to the authenticated user.'
+                );
+            }
+
+            return;
+        }
+
         $mobileMatches = filled($invitation->mobile)
             && filled($user->mobile)
             && $this->normalizeMobile($invitation->mobile)
@@ -459,7 +545,12 @@ final class UnitInvitationService
                     );
             });
 
-        if (
+        if (isset($data['invited_user_id'])) {
+            $query->where(
+                'invited_user_id',
+                $data['invited_user_id']
+            );
+        } elseif (
             $data['channel'] === InvitationChannel::Sms->value
         ) {
             $query->where(
@@ -498,6 +589,49 @@ final class UnitInvitationService
         }
 
         return $data;
+    }
+
+    private function recipientData(
+        User $user,
+        array $data
+    ): array {
+        $payload = $this->normalizeContactData([
+            ...$data,
+            'invited_user_id' => $user->getKey(),
+            'mobile' => $user->mobile,
+            'email' => $user->email,
+            'message' => trim((string) ($data['message'] ?? '')),
+        ]);
+
+        if (
+            $payload['channel'] === InvitationChannel::Sms->value
+            && blank($payload['mobile'])
+        ) {
+            throw ValidationException::withMessages([
+                'user_ids' => [
+                    sprintf(
+                        'برای کاربر %s شماره موبایل ثبت نشده است.',
+                        trim("{$user->first_name} {$user->last_name}")
+                    ),
+                ],
+            ]);
+        }
+
+        if (
+            $payload['channel'] === InvitationChannel::Email->value
+            && blank($payload['email'])
+        ) {
+            throw ValidationException::withMessages([
+                'user_ids' => [
+                    sprintf(
+                        'برای کاربر %s ایمیل ثبت نشده است.',
+                        trim("{$user->first_name} {$user->last_name}")
+                    ),
+                ],
+            ]);
+        }
+
+        return $payload;
     }
 
     private function normalizeMobile(

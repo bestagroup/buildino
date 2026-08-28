@@ -1898,8 +1898,14 @@
         row = null
     ) => {
         if (
-            mode === "edit"
-            && field.create_only
+            (
+                mode === "edit"
+                && field.create_only
+            )
+            || (
+                mode === "create"
+                && field.edit_only
+            )
         ) {
             return null;
         }
@@ -2008,17 +2014,21 @@
                                 option.value
                             );
 
+                        const selectedValue =
+                            value
+                            ?? field.default
+                            ?? "";
+
                         const values =
                             Array.isArray(
-                                value
+                                selectedValue
                             )
-                                ? value.map(
+                                ? selectedValue.map(
                                     String
                                 )
                                 : [
                                     String(
-                                        value
-                                        ?? ""
+                                        selectedValue
                                     ),
                                 ];
 
@@ -2320,10 +2330,16 @@
 
         for (const field of fields || []) {
             if (
-                mode === "edit"
-                && (
-                    field.create_only
-                    || field.readonly_on_edit
+                (
+                    mode === "edit"
+                    && (
+                        field.create_only
+                        || field.readonly_on_edit
+                    )
+                )
+                || (
+                    mode === "create"
+                    && field.edit_only
                 )
             ) {
                 continue;
@@ -2589,7 +2605,7 @@
             elements.saveButton.textContent =
                 "در حال ذخیره...";
 
-            await apiFetch(
+            const { payload: savedPayload } = await apiFetch(
                 endpoint,
                 {
                     method:
@@ -2607,7 +2623,15 @@
             );
 
             toast(
-                mode === "edit"
+                bootstrap.resourceKey === "invitations"
+                && mode === "create"
+                && savedPayload?.meta?.sent_count
+                    ? `دعوت‌نامه برای ${formulaNumber(savedPayload.meta.sent_count)} کاربر ارسال شد.`
+                    : bootstrap.resourceKey === "facility-schedules"
+                    && mode === "create"
+                    && savedPayload?.meta?.created_count
+                    ? `${formulaNumber(savedPayload.meta.created_count)} برنامه زمان‌بندی با موفقیت ثبت شد.`
+                    : mode === "edit"
                     ? "تغییرات با موفقیت ذخیره شد."
                     : "رکورد با موفقیت ثبت شد."
             );
