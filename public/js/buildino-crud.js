@@ -65,7 +65,18 @@
         action: null,
         actionRow: null,
         loading: false,
+        drawerRenderId: 0,
+        drawerTrigger: null,
     };
+
+    const lookupCache = new Map();
+
+    const nextPaint = () =>
+        new Promise((resolve) => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(resolve);
+            });
+        });
 
     const escapeHtml = (value) => {
         const div = document.createElement("div");
@@ -805,6 +816,25 @@
             ?.refresh(select);
     };
 
+    const lookupRows = (url) => {
+        if (lookupCache.has(url)) {
+            return lookupCache.get(url);
+        }
+
+        const request = apiFetch(url)
+            .then(({ payload }) =>
+                rowsFromPayload(payload)
+            )
+            .catch((error) => {
+                lookupCache.delete(url);
+                throw error;
+            });
+
+        lookupCache.set(url, request);
+
+        return request;
+    };
+
     const loadLookupOptions = async (
         select,
         field,
@@ -820,6 +850,29 @@
                     ? ""
                     : `<option value="">انتخاب کنید</option>`;
 
+        const requestId = String(
+            Number(
+                select.dataset.lookupRequestId
+                || 0
+            ) + 1
+        );
+
+        if (
+            select.dataset.lookupOriginalDisabled
+            === undefined
+        ) {
+            select.dataset.lookupOriginalDisabled =
+                String(select.disabled);
+        }
+
+        const wasDisabled =
+            select.dataset.lookupOriginalDisabled
+            === "true";
+
+        select.dataset.lookupRequestId =
+            requestId;
+        select.disabled = true;
+
         select.innerHTML =
             placeholder
             + `<option value="" disabled>در حال بارگذاری...</option>`;
@@ -829,18 +882,19 @@
         );
 
         try {
-            const { payload } =
-                await apiFetch(
-                    lookupUrl(
-                        field.lookup,
-                        field
-                    )
-                );
+            const rows = await lookupRows(
+                lookupUrl(
+                    field.lookup,
+                    field
+                )
+            );
 
-            const rows =
-                rowsFromPayload(
-                    payload
-                );
+            if (
+                select.dataset.lookupRequestId
+                !== requestId
+            ) {
+                return;
+            }
 
             select.innerHTML =
                 placeholder;
@@ -889,6 +943,13 @@
                 select
             );
         } catch (error) {
+            if (
+                select.dataset.lookupRequestId
+                !== requestId
+            ) {
+                return;
+            }
+
             select.innerHTML =
                 placeholder
                 + `<option value="" disabled>خطا در دریافت گزینه‌ها</option>`;
@@ -896,6 +957,20 @@
             refreshLookupSelect(
                 select
             );
+        } finally {
+            if (
+                select.dataset.lookupRequestId
+                === requestId
+            ) {
+                select.disabled =
+                    wasDisabled;
+                delete select.dataset
+                    .lookupOriginalDisabled;
+
+                refreshLookupSelect(
+                    select
+                );
+            }
         }
     };
 
@@ -1895,7 +1970,8 @@
         field,
         value = null,
         mode = "create",
-        row = null
+        row = null,
+        loadLookup = true
     ) => {
         if (
             (
@@ -2261,6 +2337,8 @@
         }
 
         if (
+            loadLookup
+            &&
             field.lookup
             && (
                 field.type === "select"
@@ -2290,6 +2368,8 @@
         container.innerHTML =
             "";
 
+        const renderedFields = [];
+
         for (const field of fields || []) {
             const value =
                 row
@@ -2304,21 +2384,159 @@
                     field,
                     value,
                     mode,
-                    row
+                    row,
+                    false
                 );
 
             if (element) {
                 container.appendChild(
                     element
                 );
+
+                renderedFields.push({
+                    field,
+                    value,
+                    input: element.querySelector(
+                        `[name="${CSS.escape(field.name)}"]`
+                    ),
+                });
             }
         }
+
+        window.BuildinoJalaliDatepicker
+            ?.enhance(container);
+
+        const lookupFields = new Map(
+            renderedFields
+                .filter(({ field, input }) =>
+                    Boolean(
+                        input
+                        && field.lookup
+                        && (
+                            field.type === "select"
+                            || field.type === "multiselect"
+                        )
+                    )
+                )
+                .map((item) => [
+                    item.field.name,
+                    item,
+                ])
+        );
+
+        const lookupTasks = new Map();
+
+        const loadFieldLookup = (item) => {
+            if (! item) {
+                return Promise.resolve();
+            }
+
+            if (
+                lookupTasks.has(
+                    item.field.name
+                )
+            ) {
+                return lookupTasks.get(
+                    item.field.name
+                );
+            }
+
+            const dependency =
+                lookupFields.get(
+                    item.field.depends_on
+                );
+
+            const task = (dependency
+                ? loadFieldLookup(dependency)
+                : Promise.resolve()
+            ).then(() =>
+                loadLookupOptions(
+                    item.input,
+                    item.field,
+                    item.value
+                )
+            );
+
+            lookupTasks.set(
+                item.field.name,
+                task
+            );
+
+            return task;
+        };
+
+        await Promise.all(
+            [...lookupFields.values()]
+                .map(loadFieldLookup)
+        );
 
         window.BuildinoSelect2
             ?.enhance(container);
 
-        window.BuildinoJalaliDatepicker
-            ?.enhance(container);
+        const dependentsByField =
+            new Map();
+
+        lookupFields.forEach((item) => {
+            if (! item.field.depends_on) {
+                return;
+            }
+
+            const dependents =
+                dependentsByField.get(
+                    item.field.depends_on
+                ) || [];
+
+            dependents.push(item);
+            dependentsByField.set(
+                item.field.depends_on,
+                dependents
+            );
+        });
+
+        const reloadDependents = async (
+            fieldName
+        ) => {
+            const dependents =
+                dependentsByField.get(
+                    fieldName
+                ) || [];
+
+            await Promise.all(
+                dependents.map(
+                    async (item) => {
+                        await loadLookupOptions(
+                            item.input,
+                            item.field,
+                            null
+                        );
+
+                        await reloadDependents(
+                            item.field.name
+                        );
+                    }
+                )
+            );
+        };
+
+        renderedFields.forEach(({ field, input }) => {
+            if (
+                ! input
+                || ! dependentsByField.has(
+                    field.name
+                )
+            ) {
+                return;
+            }
+
+            input.addEventListener(
+                "change",
+                () => {
+                    reloadDependents(
+                        field.name
+                    );
+                }
+            );
+        });
     };
 
     const collectPayload = (
@@ -2486,10 +2704,79 @@
         return payload;
     };
 
+    const renderDrawerSkeleton = () => {
+        window.BuildinoSelect2
+            ?.destroy(
+                elements.formFields
+            );
+
+        elements.formFields.innerHTML =
+            Array.from(
+                { length: 6 },
+                (_, index) => `
+                    <div
+                        class="crud-field-skeleton${index > 3 ? " crud-field-skeleton--wide" : ""}"
+                        aria-hidden="true"
+                    >
+                        <span></span>
+                        <i></i>
+                    </div>
+                `
+            ).join("");
+    };
+
+    const setDrawerLoading = (
+        loading
+    ) => {
+        elements.drawer.classList.toggle(
+            "is-loading",
+            loading
+        );
+        elements.formFields.setAttribute(
+            "aria-busy",
+            String(loading)
+        );
+        elements.saveButton.disabled =
+            loading;
+    };
+
+    const lockPageScroll = () => {
+        const scrollbarWidth =
+            window.innerWidth
+            - document.documentElement
+                .clientWidth;
+
+        document.body.style.setProperty(
+            "--crud-scrollbar-compensation",
+            `${Math.max(0, scrollbarWidth)}px`
+        );
+        document.body.classList.add(
+            "crud-overlay-open"
+        );
+    };
+
+    const unlockPageScroll = () => {
+        document.body.classList.remove(
+            "crud-overlay-open"
+        );
+        document.body.style.removeProperty(
+            "--crud-scrollbar-compensation"
+        );
+    };
+
     const openDrawer = async (
         mode,
         row = null
     ) => {
+        const renderId =
+            ++state.drawerRenderId;
+
+        state.drawerTrigger =
+            document.activeElement
+                instanceof HTMLElement
+                ? document.activeElement
+                : null;
+
         state.editRow =
             row;
 
@@ -2517,12 +2804,8 @@
         elements.formError.textContent =
             "";
 
-        await renderFields(
-            elements.formFields,
-            resource.fields || [],
-            row,
-            mode
-        );
+        renderDrawerSkeleton();
+        setDrawerLoading(true);
 
         elements.drawer.classList.add(
             "is-open"
@@ -2538,12 +2821,62 @@
             "false"
         );
 
-        document.body.classList.add(
-            "crud-overlay-open"
-        );
+        lockPageScroll();
+
+        elements.drawerClose.focus({
+            preventScroll: true,
+        });
+
+        await nextPaint();
+
+        try {
+            await renderFields(
+                elements.formFields,
+                resource.fields || [],
+                row,
+                mode
+            );
+
+            if (
+                renderId
+                !== state.drawerRenderId
+                || ! elements.drawer
+                    .classList
+                    .contains("is-open")
+            ) {
+                return;
+            }
+
+            const firstField =
+                elements.formFields
+                    .querySelector(
+                        "input:not([disabled]), select:not([disabled]), textarea:not([disabled])"
+                    );
+
+            firstField?.focus({
+                preventScroll: true,
+            });
+        } catch (error) {
+            if (
+                renderId
+                === state.drawerRenderId
+            ) {
+                elements.formError.textContent =
+                    error.message;
+            }
+        } finally {
+            if (
+                renderId
+                === state.drawerRenderId
+            ) {
+                setDrawerLoading(false);
+            }
+        }
     };
 
     const closeDrawer = () => {
+        state.drawerRenderId += 1;
+
         elements.drawer
             ?.classList
             .remove("is-open");
@@ -2561,9 +2894,20 @@
         state.editRow =
             null;
 
-        document.body.classList.remove(
-            "crud-overlay-open"
-        );
+        setDrawerLoading(false);
+        unlockPageScroll();
+
+        if (
+            state.drawerTrigger
+                ?.isConnected
+        ) {
+            state.drawerTrigger.focus({
+                preventScroll: true,
+            });
+        }
+
+        state.drawerTrigger =
+            null;
     };
 
     const saveForm = async (
@@ -2621,6 +2965,8 @@
                         ),
                 }
             );
+
+            lookupCache.clear();
 
             toast(
                 bootstrap.resourceKey === "invitations"
@@ -2692,6 +3038,8 @@
                         || "DELETE",
                 }
             );
+
+            lookupCache.clear();
 
             toast(
                 "رکورد حذف شد."
@@ -2886,6 +3234,8 @@
                             ),
                 }
             );
+
+            lookupCache.clear();
 
             toast(
                 `عملیات «${action.title}» با موفقیت انجام شد.`
@@ -3299,6 +3649,56 @@
                 ) {
                     closeDrawer();
                     closeAction();
+                }
+
+                if (
+                    event.key !== "Tab"
+                    || ! elements.drawer
+                        ?.classList
+                        .contains("is-open")
+                ) {
+                    return;
+                }
+
+                const focusable = $$([
+                    "button:not([disabled])",
+                    "input:not([disabled])",
+                    "select:not([disabled])",
+                    "textarea:not([disabled])",
+                    "a[href]",
+                    "[tabindex]:not([tabindex='-1'])",
+                ].join(","), elements.drawer)
+                    .filter((element) =>
+                        element.offsetParent
+                        !== null
+                    );
+
+                if (! focusable.length) {
+                    event.preventDefault();
+                    elements.drawer.focus();
+                    return;
+                }
+
+                const first = focusable[0];
+                const last =
+                    focusable[
+                        focusable.length - 1
+                    ];
+
+                if (
+                    event.shiftKey
+                    && document.activeElement
+                        === first
+                ) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (
+                    ! event.shiftKey
+                    && document.activeElement
+                        === last
+                ) {
+                    event.preventDefault();
+                    first.focus();
                 }
             }
         );

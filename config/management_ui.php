@@ -1,6 +1,16 @@
 <?php
 
 return [
+    /*
+     * Resources move to Vue/Inertia one at a time. Keeping this list explicit
+     * prevents an unfinished frontend component from changing an existing
+     * Blade route or API workflow.
+     */
+    'inertia_resources' => [
+        'complexes',
+        'buildings',
+    ],
+
     'libraries' => [
         'bootstrap' => [
             'version' => '5.3.8',
@@ -25,7 +35,6 @@ return [
             'version_constraint' => '^3.5',
             'composer_package' => 'morilog/jalali',
         ],
-
 
         /*
         |--------------------------------------------------------------------------

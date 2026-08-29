@@ -9,6 +9,7 @@ use App\Models\UserRoleAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class ManagementCrudWebTest extends TestCase
@@ -61,6 +62,29 @@ class ManagementCrudWebTest extends TestCase
             ->assertSee(
                 'ثبت رکورد جدید'
             );
+
+        $this->get(
+            '/management/operations/buildings'
+        )
+            ->assertOk()
+            ->assertInertia(
+                fn (Assert $page): Assert => $page
+                    ->component(
+                        'management/operations/Resource'
+                    )
+                    ->where(
+                        'resourceKey',
+                        'buildings'
+                    )
+                    ->where(
+                        'resource.list.url',
+                        '/api/v1/buildings?per_page=100'
+                    )
+                    ->where(
+                        'resource.fields.0.lookup',
+                        'complexes'
+                    )
+            );
     }
 
     public function test_authenticated_management_session_can_call_same_origin_protected_api(): void
@@ -74,20 +98,18 @@ class ManagementCrudWebTest extends TestCase
         );
 
         $this->withHeaders([
-            'Origin' =>
+            'Origin' => config(
+                'app.url',
+                'http://localhost'
+            ),
+            'Referer' => rtrim(
                 config(
                     'app.url',
                     'http://localhost'
                 ),
-            'Referer' =>
-                rtrim(
-                    config(
-                        'app.url',
-                        'http://localhost'
-                    ),
-                    '/'
-                )
-                . '/management/operations/complexes',
+                '/'
+            )
+                .'/management/operations/complexes',
         ])
             ->getJson(
                 '/api/v1/complexes'
@@ -109,24 +131,15 @@ class ManagementCrudWebTest extends TestCase
             $this->postJson(
                 '/management/data/users',
                 [
-                    'first_name' =>
-                        'کاربر',
-                    'last_name' =>
-                        'آزمایشی',
-                    'national_code' =>
-                        '0012345678',
-                    'mobile' =>
-                        '09121112233',
-                    'email' =>
-                        'crud-user@buildino.local',
-                    'password' =>
-                        'Password@123',
-                    'verify_mobile' =>
-                        true,
-                    'is_active' =>
-                        true,
-                    'is_blocked' =>
-                        false,
+                    'first_name' => 'کاربر',
+                    'last_name' => 'آزمایشی',
+                    'national_code' => '0012345678',
+                    'mobile' => '09121112233',
+                    'email' => 'crud-user@buildino.local',
+                    'password' => 'Password@123',
+                    'verify_mobile' => true,
+                    'is_active' => true,
+                    'is_blocked' => false,
                 ]
             );
 
@@ -146,10 +159,8 @@ class ManagementCrudWebTest extends TestCase
         $this->patchJson(
             "/management/data/users/{$userId}",
             [
-                'first_name' =>
-                    'ویرایش',
-                'is_blocked' =>
-                    true,
+                'first_name' => 'ویرایش',
+                'is_blocked' => true,
             ]
         )
             ->assertOk()
@@ -189,8 +200,7 @@ class ManagementCrudWebTest extends TestCase
         );
 
         foreach (
-            $resources
-            as $resourceKey => $resource
+            $resources as $resourceKey => $resource
         ) {
             foreach (
                 [
@@ -199,8 +209,7 @@ class ManagementCrudWebTest extends TestCase
                     'create',
                     'update',
                     'delete',
-                ]
-                as $operationKey
+                ] as $operationKey
             ) {
                 $operation =
                     $resource[
@@ -219,13 +228,12 @@ class ManagementCrudWebTest extends TestCase
             }
 
             foreach (
-                $resource['actions'] ?? []
-                as $action
+                $resource['actions'] ?? [] as $action
             ) {
                 $this->assertOperationRouteExists(
                     $resourceKey,
                     'action:'
-                    . (
+                    .(
                         $action['key']
                         ?? 'unknown'
                     ),
@@ -265,6 +273,105 @@ class ManagementCrudWebTest extends TestCase
         );
         $this->assertStringContainsString(
             'data-formula-expression',
+            $script
+        );
+    }
+
+    public function test_crud_drawer_uses_non_blocking_loading_and_accessible_dialog_contract(): void
+    {
+        $user =
+            $this->createManagementUser();
+
+        $this->actingAs(
+            $user,
+            'web'
+        );
+
+        $this->get(
+            '/management/operations/complexes'
+        )
+            ->assertOk()
+            ->assertInertia(
+                fn (Assert $page): Assert => $page
+                    ->component(
+                        'management/operations/Resource'
+                    )
+                    ->where(
+                        'resourceKey',
+                        'complexes'
+                    )
+                    ->where(
+                        'resource.create.url',
+                        '/api/v1/complexes'
+                    )
+                    ->where(
+                        'resource.update.url',
+                        '/api/v1/complexes/{id}'
+                    )
+                    ->where(
+                        'resource.delete.url',
+                        '/api/v1/complexes/{id}'
+                    )
+            );
+
+        $this->get(
+            '/management/operations/users'
+        )
+            ->assertOk()
+            ->assertSee(
+                'role="dialog"',
+                false
+            )
+            ->assertSee(
+                'aria-modal="true"',
+                false
+            )
+            ->assertSee(
+                'aria-labelledby="crudDrawerTitle"',
+                false
+            )
+            ->assertSee(
+                'aria-busy="false"',
+                false
+            );
+
+        $drawer = (string) file_get_contents(
+            resource_path(
+                'js/components/management/UiDrawer.vue'
+            )
+        );
+
+        $this->assertStringContainsString(
+            'role="dialog"',
+            $drawer
+        );
+        $this->assertStringContainsString(
+            'aria-modal="true"',
+            $drawer
+        );
+        $this->assertStringContainsString(
+            'focusableSelector',
+            $drawer
+        );
+
+        $script = (string) file_get_contents(
+            public_path('js/buildino-crud.js')
+        );
+
+        $this->assertStringContainsString(
+            'renderDrawerSkeleton();',
+            $script
+        );
+        $this->assertStringContainsString(
+            'await nextPaint();',
+            $script
+        );
+        $this->assertStringContainsString(
+            'const lookupCache = new Map();',
+            $script
+        );
+        $this->assertStringContainsString(
+            'await Promise.all(',
             $script
         );
     }
@@ -415,24 +522,18 @@ class ManagementCrudWebTest extends TestCase
         $user =
             User::factory()
                 ->create([
-                    'mobile_verified_at' =>
-                        now(),
-                    'is_active' =>
-                        true,
-                    'is_blocked' =>
-                        false,
+                    'mobile_verified_at' => now(),
+                    'is_active' => true,
+                    'is_blocked' => false,
                 ]);
 
         $role =
             Role::query()
                 ->create([
-                    'name' =>
-                        'crud-manager-'
-                        . uniqid(),
-                    'display_name' =>
-                        'CRUD Manager',
-                    'is_system' =>
-                        false,
+                    'name' => 'crud-manager-'
+                        .uniqid(),
+                    'display_name' => 'CRUD Manager',
+                    'is_system' => false,
                 ]);
 
         $permissionNames = [
@@ -442,6 +543,7 @@ class ManagementCrudWebTest extends TestCase
             'users.update',
             'users.delete',
             'complexes.view',
+            'buildings.view',
         ];
 
         $permissionIds =
@@ -455,18 +557,15 @@ class ManagementCrudWebTest extends TestCase
                         return Permission::query()
                             ->firstOrCreate(
                                 [
-                                    'name' =>
-                                        $name,
+                                    'name' => $name,
                                 ],
                                 [
-                                    'display_name' =>
-                                        $name,
-                                    'module' =>
-                                        str(
-                                            $name
-                                        )
-                                            ->before('.')
-                                            ->toString(),
+                                    'display_name' => $name,
+                                    'module' => str(
+                                        $name
+                                    )
+                                        ->before('.')
+                                        ->toString(),
                                 ]
                             )
                             ->getKey();
@@ -482,22 +581,14 @@ class ManagementCrudWebTest extends TestCase
 
         UserRoleAssignment::query()
             ->create([
-                'user_id' =>
-                    $user->getKey(),
-                'role_id' =>
-                    $role->getKey(),
-                'scope_type' =>
-                    null,
-                'scope_id' =>
-                    null,
-                'starts_at' =>
-                    now()->subMinute(),
-                'ends_at' =>
-                    null,
-                'is_active' =>
-                    true,
-                'assigned_by' =>
-                    null,
+                'user_id' => $user->getKey(),
+                'role_id' => $role->getKey(),
+                'scope_type' => null,
+                'scope_id' => null,
+                'starts_at' => now()->subMinute(),
+                'ends_at' => null,
+                'is_active' => true,
+                'assigned_by' => null,
             ]);
 
         return $user;

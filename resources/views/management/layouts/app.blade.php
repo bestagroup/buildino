@@ -28,6 +28,8 @@
 
     @vite('resources/js/app.js')
 
+    @stack('head')
+
     <link
         rel="stylesheet"
         href="{{ asset('css/buildino-datatables.css') }}"

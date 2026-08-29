@@ -694,7 +694,6 @@
     visibility: hidden;
     opacity: 0;
     background: rgba(7, 18, 32, .52);
-    backdrop-filter: blur(4px);
     transition:
         opacity var(--transition),
         visibility var(--transition);
@@ -716,7 +715,9 @@
     max-height: 100dvh;
     visibility: hidden;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: column;
     overscroll-behavior: contain;
     padding: 19px;
     pointer-events: none;
@@ -740,9 +741,9 @@
 }
 
 .crud-drawer__header {
-    position: sticky;
+    position: relative;
     z-index: 5;
-    top: -19px;
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -794,6 +795,11 @@
 body.crud-overlay-open {
     overflow: hidden;
     overscroll-behavior: none;
+    padding-inline-end:
+        var(
+            --crud-scrollbar-compensation,
+            0
+        );
 }
 
 .crud-form {
@@ -810,6 +816,81 @@ body.crud-overlay-open {
     grid-template-columns:
         repeat(2, minmax(0, 1fr));
     gap: 11px;
+}
+
+.crud-drawer > .crud-form {
+    min-height: 0;
+    flex: 1 1 auto;
+    grid-template-rows:
+        minmax(0, 1fr)
+        auto
+        auto;
+    overflow: hidden;
+}
+
+.crud-drawer > .crud-form > .crud-form-grid {
+    min-height: 0;
+    align-content: start;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-inline-end: 4px;
+}
+
+.crud-field-skeleton {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+}
+
+.crud-field-skeleton--wide {
+    grid-column: 1 / -1;
+}
+
+.crud-field-skeleton span,
+.crud-field-skeleton i {
+    position: relative;
+    overflow: hidden;
+    display: block;
+    border-radius: 8px;
+    background: var(--surface-strong);
+}
+
+.crud-field-skeleton span {
+    width: 38%;
+    height: 12px;
+}
+
+.crud-field-skeleton i {
+    width: 100%;
+    height: 41px;
+}
+
+.crud-field-skeleton span::after,
+.crud-field-skeleton i::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(100%);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        color-mix(
+            in srgb,
+            var(--surface) 74%,
+            transparent
+        ),
+        transparent
+    );
+    animation:
+        crud-skeleton-shimmer
+        1.1s ease-in-out infinite;
+}
+
+@keyframes crud-skeleton-shimmer {
+    to {
+        transform: translateX(-100%);
+    }
 }
 
 .crud-field {
@@ -846,7 +927,10 @@ body.crud-overlay-open {
     color: var(--text);
     font-family: var(--font-ui);
     font-size: 12px;
-    transition: all var(--transition);
+    transition:
+        border-color var(--transition),
+        background-color var(--transition),
+        box-shadow var(--transition);
 }
 
 .crud-field input:not([type="checkbox"]),
@@ -1435,6 +1519,7 @@ body.crud-overlay-open {
     .crud-drawer {
         width: 100%;
         max-width: 100vw;
+        border-right: 0;
     }
 
     .crud-formula-builder__heading,
@@ -1453,6 +1538,20 @@ body.crud-overlay-open {
     .crud-formula-item {
         grid-template-columns: 1fr;
         padding-top: 42px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .crud-drawer,
+    .crud-drawer-backdrop,
+    .crud-modal,
+    .crud-modal-backdrop {
+        transition-duration: .01ms !important;
+    }
+
+    .crud-field-skeleton span::after,
+    .crud-field-skeleton i::after {
+        animation: none;
     }
 }
 

@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureBuildingAccess;
 use App\Http\Middleware\EnsureSubscriptionIsActive;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureVerifiedIdentity;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ResolveBuildingContext;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -43,6 +44,17 @@ return Application::configure(basePath: dirname(__DIR__))
          * reused safely by same-origin API requests.
          */
         $middleware->statefulApi();
+
+        /*
+         * Inertia is additive during the UI migration. It only changes
+         * responses returned through Inertia::render; existing Blade and API
+         * routes keep their current contracts.
+         */
+        $middleware->web(
+            append: [
+                HandleInertiaRequests::class,
+            ]
+        );
 
         $middleware->api(
             prepend: [

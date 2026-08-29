@@ -2,12 +2,12 @@
 
 namespace App\Providers;
 
-use App\Observers\ProvisionWalletObserver;
-use App\Services\Web\ManagementUiContextService;
-use App\Services\Web\ManagementHeaderContextService;
-use App\Models\User;
-use App\Models\Unit;
 use App\Models\Building;
+use App\Models\Unit;
+use App\Models\User;
+use App\Observers\ProvisionWalletObserver;
+use App\Services\Web\ManagementHeaderContextService;
+use App\Services\Web\ManagementUiContextService;
 use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
@@ -52,9 +52,8 @@ class AppServiceProvider extends ServiceProvider
                     'password.reset',
                     [
                         'token' => $token,
-                        'email' =>
-                            $user
-                                ->getEmailForPasswordReset(),
+                        'email' => $user
+                            ->getEmailForPasswordReset(),
                     ]
                 );
             }
@@ -70,6 +69,11 @@ class AppServiceProvider extends ServiceProvider
                 if (! $user) {
                     return;
                 }
+
+                $view->with(
+                    'user',
+                    $user
+                );
 
                 $view->with(
                     'managementUi',

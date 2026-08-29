@@ -243,12 +243,17 @@
     <div
         class="crud-drawer-backdrop"
         id="crudDrawerBackdrop"
+        aria-hidden="true"
     ></div>
 
     <aside
         class="crud-drawer"
         id="crudDrawer"
+        role="dialog"
+        aria-modal="true"
         aria-hidden="true"
+        aria-labelledby="crudDrawerTitle"
+        tabindex="-1"
     >
         <div class="crud-drawer__header">
             <div>
@@ -283,6 +288,7 @@
             <div
                 class="crud-form-grid"
                 id="crudFormFields"
+                aria-busy="false"
             ></div>
 
             <div class="crud-form-error" id="crudFormError"></div>
