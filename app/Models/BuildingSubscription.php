@@ -19,9 +19,12 @@ class BuildingSubscription extends Model
         'plan_id',
         'starts_at',
         'expires_at',
+        'grace_ends_at',
         'status',
+        'cancelled_at',
         'limits',
         'created_by',
+        'updated_by',
     ];
 
     protected function casts(): array
@@ -29,6 +32,8 @@ class BuildingSubscription extends Model
         return [
             'starts_at' => 'datetime',
             'expires_at' => 'datetime',
+            'grace_ends_at' => 'datetime',
+            'cancelled_at' => 'datetime',
             'limits' => 'array',
             'status' => SubscriptionStatus::class,
         ];
@@ -47,5 +52,18 @@ class BuildingSubscription extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(
+            BuildingSubscriptionEvent::class,
+            'building_subscription_id'
+        );
     }
 }
