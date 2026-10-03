@@ -53,9 +53,10 @@ Route::prefix('v1')
                 PaymentGatewayController::class,
                 'initiate',
             ]
-        )->middleware(
-            'throttle:payments'
-        );
+        )->middleware([
+            'throttle:payments',
+            'subscription.feature:payments',
+        ]);
 
         Route::get(
             'admin/payment-gateway-events',
