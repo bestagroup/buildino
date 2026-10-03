@@ -73,7 +73,9 @@ final class SubscriptionEntitlementService
             return false;
         }
 
-        return $this->truthy($planFeature->pivot->value);
+        return $this->truthy(
+            $this->decodeValue($planFeature->pivot->value)
+        );
     }
 
     public function limit(
@@ -113,10 +115,25 @@ final class SubscriptionEntitlementService
                 ->features
                 ->firstWhere('id', $feature->getKey());
 
-            $value = $planFeature?->pivot?->value;
+            $value = $this->decodeValue(
+                $planFeature?->pivot?->value
+            );
         }
 
         return is_numeric($value) ? (int) $value : null;
+    }
+
+    private function decodeValue(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        $decoded = json_decode($value, true);
+
+        return json_last_error() === JSON_ERROR_NONE
+            ? $decoded
+            : $value;
     }
 
     private function truthy(mixed $value): bool
