@@ -524,13 +524,13 @@
                     </strong>
                 </div>
                 <div>
-                    <span>درآمد Facility</span>
+                    <span>درآمد امکانات</span>
                     <strong>
                         {{ $money($financialKpis['facility_paid_amount'] ?? 0) }}
                     </strong>
                 </div>
                 <div>
-                    <span>GMV خدمات</span>
+                    <span>ارزش ناخالص خدمات</span>
                     <strong>
                         {{ $money($financialKpis['service_gmv'] ?? 0) }}
                     </strong>
@@ -539,7 +539,7 @@
         @elseif ($platformSummary)
             <div class="mini-stat-grid mini-stat-grid--platform">
                 <div>
-                    <span>GMV بازار خدمات</span>
+                    <span>ارزش ناخالص بازار خدمات</span>
                     <strong>
                         {{ $money(
                             data_get(
@@ -563,7 +563,7 @@
                     </strong>
                 </div>
                 <div>
-                    <span>تسویه Provider</span>
+                    <span>تسویه ارائه‌دهندگان</span>
                     <strong>
                         {{ $money(
                             data_get(
@@ -575,7 +575,7 @@
                     </strong>
                 </div>
                 <div>
-                    <span>مغایرت Reconciliation</span>
+                    <span>مغایرت تطبیق مالی</span>
                     <strong>
                         {{ number_format(
                             data_get(
@@ -640,7 +640,7 @@
             </div>
         @else
             <div class="empty-state">
-                Aging مطالبات پس از انتخاب یک ساختمان نمایش داده می‌شود.
+                گزارش سررسید مطالبات پس از انتخاب یک ساختمان نمایش داده می‌شود.
             </div>
         @endif
     </article>
@@ -1065,7 +1065,7 @@
 
         <div class="health-summary">
             <div>
-                <span>Readiness</span>
+                <span>آمادگی</span>
                 <strong>
                     {{ ($dashboard['health']['ready'] ?? false) ? 'Ready' : 'Not Ready' }}
                 </strong>
@@ -1097,7 +1097,7 @@
             @else
                 <div>
                     <span>سطح نمایش</span>
-                    <strong>Readiness عمومی</strong>
+                    <strong>آمادگی عمومی</strong>
                 </div>
             @endif
         </div>
@@ -1123,15 +1123,15 @@
                 <strong>v{{ $dashboard['api']['version'] }}</strong>
             </div>
             <div>
-                <span>Path</span>
+                <span>مسیر</span>
                 <strong>{{ number_format($dashboard['api']['paths']) }}</strong>
             </div>
             <div>
-                <span>Contract</span>
+                <span>قرارداد</span>
                 <strong>{{ number_format($dashboard['api']['contracts']) }}</strong>
             </div>
             <div>
-                <span>Protected</span>
+                <span>محافظت‌شده</span>
                 <strong>{{ number_format($dashboard['api']['protected_paths']) }}</strong>
             </div>
         </div>
@@ -1147,7 +1147,7 @@
 
 <footer class="dashboard-footer">
     <div>
-        Buildino Management Dashboard
+        داشبورد مدیریتی Buildino
         <span>•</span>
         Backend/API v{{ $dashboard['api']['version'] }}
     </div>
