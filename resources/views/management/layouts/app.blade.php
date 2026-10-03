@@ -157,7 +157,8 @@
             ->values();
 @endphp
 
-<body class="management-body">\n<a class="buildino-skip-link" href="#mainContent">پرش به محتوای اصلی</a>
+<body class="management-body">
+<a class="buildino-skip-link" href="#mainContent">پرش به محتوای اصلی</a>
 <div class="management-shell">
     <aside
         class="sidebar"
