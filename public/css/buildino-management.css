@@ -1,5 +1,5 @@
 :root {
-    --font-ui: "Yekan Bakh", Tahoma, "Segoe UI", sans-serif;
+    --font-ui: var(--buildino-font-persian, Tahoma, "Segoe UI", sans-serif);
 
     --bg: #f4f7fb;
     --bg-accent: #edf3f9;
