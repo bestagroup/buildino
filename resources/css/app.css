@@ -1,12 +1,16 @@
-/*
- * Vite entry point.
- *
- * The browser-facing Bootstrap theme is currently served from the versioned
- * public Buildino assets. Keeping this entry point valid makes the standard
- * Laravel build pipeline deterministic while those assets are migrated into
- * the bundle in a later phase.
- */
+@import "tailwindcss";
+
+@source "../views/**/*.blade.php";
+@source "../js/**/*.{js,ts,vue}";
 
 :root {
-    color-scheme: light dark;
+    color-scheme: light;
+}
+
+html {
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+    margin: 0;
 }

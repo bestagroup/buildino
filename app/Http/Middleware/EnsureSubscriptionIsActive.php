@@ -2,36 +2,49 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Security\BuildingContextResolver;
+use App\Services\Subscriptions\SubscriptionService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureSubscriptionIsActive
 {
+    public function __construct(
+        private readonly SubscriptionService $subscriptions,
+        private readonly BuildingContextResolver $resolver
+    ) {
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
-        $building = $request->attributes->get('building_context');
+        $building = $request->attributes->get('building_context')
+            ?? $this->resolver->resolve($request);
 
+        /*
+         * Global API routes have no building context and remain available.
+         * Building-scoped operations are entitlement-gated here.
+         */
         if (! $building) {
-            return response()->json([
-                'message' => 'Building context is required.',
-            ], 422);
+            return $next($request);
         }
 
-        $active = $building->buildingSubscriptions()
-            ->where('status', 'active')
-            ->where('starts_at', '<=', now())
-            ->where(function ($query): void {
-                $query->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
-            })
-            ->exists();
+        $request->attributes->set('building_context', $building);
 
-        if (! $active) {
+        $subscription = $this->subscriptions->usable($building);
+
+        if (! $subscription) {
             return response()->json([
-                'message' => 'The building subscription is inactive or expired.',
+                'success' => false,
+                'code' => 'SUBSCRIPTION_INACTIVE',
+                'message' => 'The building subscription is inactive, suspended or expired.',
             ], 403);
         }
+
+        $request->attributes->set(
+            'building_subscription',
+            $subscription
+        );
 
         return $next($request);
     }

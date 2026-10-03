@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,11 +11,21 @@ class OtpCode extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'identifier', 'channel', 'purpose', 'code',
-        'expires_at', 'verified_at', 'consumed_at', 'attempts', 'request_ip',
+        'user_id',
+        'identifier',
+        'channel',
+        'purpose',
+        'code_hash',
+        'expires_at',
+        'verified_at',
+        'consumed_at',
+        'attempts',
+        'request_ip',
     ];
 
-    protected $hidden = ['code'];
+    protected $hidden = [
+        'code_hash',
+    ];
 
     protected function casts(): array
     {
