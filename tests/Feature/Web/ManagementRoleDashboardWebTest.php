@@ -211,7 +211,7 @@ class ManagementRoleDashboardWebTest extends TestCase
         )
             ->assertOk()
             ->assertSee(
-                'مرکز پشتیبانی و SLA'
+                'مرکز پشتیبانی و سطح خدمت'
             )
             ->assertSee(
                 'تیکت فعال'
