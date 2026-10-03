@@ -2,17 +2,29 @@
 *.zip
 .DS_Store
 
+# Environment and secrets
+/.env
+/.env.*
 !/.env.example
 !/.env.production.example
 
+# IDE / local tooling
 /.fleet
 /.idea
 /.phpunit.cache
 /.phpunit.result.cache
 /.vscode
 
+# Dependencies and generated assets
 /auth.json
 /node_modules
+/vendor
+/public/build
 
+# Laravel runtime
 /bootstrap/cache/*.php
 /storage/*.key
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
