@@ -82,7 +82,7 @@
                 <button
                     type="button"
                     class="crud-button crud-button--primary"
-                    id="crudCreateButton"
+                    id="crudثبت رکوردButton"
                 >
                     + ثبت رکورد جدید
                 </button>
@@ -258,7 +258,7 @@
         <div class="crud-drawer__header">
             <div>
                 <span class="eyebrow" id="crudDrawerEyebrow">
-                    Create
+                    ثبت رکورد
                 </span>
                 <h3 id="crudDrawerTitle">
                     ثبت رکورد
@@ -326,7 +326,7 @@
         <div class="crud-modal__header">
             <div>
                 <span class="eyebrow">
-                    Workflow Action
+                    اجرای عملیات
                 </span>
                 <h3 id="crudActionTitle">
                     عملیات
