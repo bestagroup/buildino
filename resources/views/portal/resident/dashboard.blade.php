@@ -162,7 +162,7 @@
 <section class="portal-hero portal-hero--resident">
     <div class="portal-hero__copy">
         <span class="portal-eyebrow">
-            RESIDENT HOME
+            خانه و امور ساختمان
         </span>
 
         <h2>
@@ -186,7 +186,7 @@
             </span>
 
             <span>
-                بروزرسانی:
+                به‌روزرسانی:
                 {{
                     $portalData[
                         'generated_at_jalali'
@@ -370,7 +370,7 @@
     <div class="portal-section__heading">
         <div>
             <span class="portal-eyebrow">
-                MY UNITS
+                واحدهای من
             </span>
             <h3>
                 واحدهای من
@@ -479,7 +479,7 @@
     <div class="portal-section__heading">
         <div>
             <span class="portal-eyebrow">
-                SERVER-SIDE FINANCE
+                امور مالی
             </span>
             <h3>
                 صورتحساب‌ها
@@ -546,7 +546,7 @@
 <section class="portal-section" id="loyalty">
     <div class="portal-section__heading">
         <div>
-            <span class="portal-eyebrow">LOYALTY</span>
+            <span class="portal-eyebrow">باشگاه وفاداری</span>
             <h3>باشگاه وفاداری</h3>
         </div>
 
@@ -618,7 +618,7 @@
     <div class="portal-section__heading">
         <div>
             <span class="portal-eyebrow">
-                WALLET HISTORY
+                تاریخچه کیف پول
             </span>
             <h3>
                 تاریخچه کیف پول
@@ -848,7 +848,7 @@
     <div class="portal-section__heading">
         <div>
             <span class="portal-eyebrow">
-                ACTIVITY
+                فعالیت‌های من
             </span>
             <h3>
                 عملیات و درخواست‌های من
@@ -2068,7 +2068,7 @@
             <div class="modal-header">
                 <div>
                     <span class="portal-eyebrow">
-                        SUPPORT CHAT
+                        گفت‌وگوی پشتیبانی
                     </span>
                     <h5
                         class="modal-title"
