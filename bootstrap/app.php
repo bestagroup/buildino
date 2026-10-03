@@ -60,9 +60,6 @@ return Application::configure(basePath: dirname(__DIR__))
             prepend: [
                 AssignRequestId::class,
                 ApplyApiSecurityHeaders::class,
-            ],
-            append: [
-                EnsureSubscriptionIsActive::class,
             ]
         );
     })
