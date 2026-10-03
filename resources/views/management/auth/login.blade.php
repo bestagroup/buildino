@@ -15,11 +15,20 @@
     >
     <link
         rel="stylesheet"
+        href="{{ config('management_ui.libraries.bootstrap.css') }}"
+        crossorigin="anonymous"
+    >
+    <link
+        rel="stylesheet"
         href="{{ asset('css/buildino-foundation.css') }}"
     >
     <link
         rel="stylesheet"
         href="{{ asset('css/buildino-management.css') }}"
+    >
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/buildino-design-system.css') }}"
     >
 </head>
 
