@@ -5,6 +5,7 @@ use App\Http\Middleware\ApplyApiSecurityHeaders;
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\EnsureBuildingAccess;
 use App\Http\Middleware\EnsureSubscriptionIsActive;
+use App\Http\Middleware\EnsureSubscriptionFeature;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureVerifiedIdentity;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'building.context' => ResolveBuildingContext::class,
             'building.access' => EnsureBuildingAccess::class,
             'subscription.active' => EnsureSubscriptionIsActive::class,
+            'subscription.feature' => EnsureSubscriptionFeature::class,
         ]);
         /*
          * The management CRUD pages are first-party browser clients of the
