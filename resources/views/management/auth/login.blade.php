@@ -45,7 +45,7 @@
 
                 <div>
                     <strong>Buildino</strong>
-                    <span>Smart Building Management</span>
+                    <span>سامانه مدیریت هوشمند ساختمان</span>
                 </div>
             </div>
 
@@ -85,7 +85,7 @@
                         )
                     </div>
                     <strong>شفافیت مالی</strong>
-                    <span>Wallet، Invoice، Payment و Ledger</span>
+                    <span>کیف پول، صورتحساب، پرداخت و دفتر مالی</span>
                 </article>
 
                 <article>
@@ -96,14 +96,14 @@
                         )
                     </div>
                     <strong>دسترسی کنترل‌شده</strong>
-                    <span>Role، Permission و Scope واقعی</span>
+                    <span>نقش، مجوز و محدوده دسترسی</span>
                 </article>
             </div>
         </div>
 
         <div class="login-visual__footer">
-            <span>Buildino Backend/API v1.0</span>
-            <span>Secure • Scoped • Auditable</span>
+            <span>Buildino · پنل مدیریت</span>
+            <span>امن • کنترل‌شده • قابل‌ردیابی</span>
         </div>
     </section>
 
