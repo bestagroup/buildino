@@ -24,7 +24,9 @@ class OtpService
             ->exists();
 
         if ($recent) {
-            throw ValidationException::withMessages(['identifier' => 'Please wait before requesting another code.']);
+            throw ValidationException::withMessages([
+                'identifier' => 'Please wait before requesting another code.',
+            ]);
         }
 
         $user = $this->findUser($identifier, $channel);
@@ -42,7 +44,7 @@ class OtpService
                 'identifier' => $identifier,
                 'channel' => $channel,
                 'purpose' => $purpose,
-                'code' => $code,
+                'code_hash' => Hash::make($code),
                 'expires_at' => now()->addMinutes((int) config('auth_otp.ttl_minutes', 2)),
                 'attempts' => 0,
                 'request_ip' => $ip,
@@ -78,7 +80,7 @@ class OtpService
                 ];
             }
 
-            if (! $code == $otp->code) {
+            if (! Hash::check($code, $otp->code_hash)) {
                 $otp->increment('attempts');
 
                 return [
@@ -87,7 +89,10 @@ class OtpService
                 ];
             }
 
-            $otp->update(['verified_at' => now(), 'consumed_at' => now()]);
+            $otp->update([
+                'verified_at' => now(),
+                'consumed_at' => now(),
+            ]);
 
             return [
                 'status' => 'verified',
@@ -112,17 +117,23 @@ class OtpService
 
     private function findUser(string $identifier, string $channel): ?User
     {
-        return User::query()->where($channel === 'email' ? 'email' : 'mobile', $identifier)->first();
+        return User::query()
+            ->where($channel === 'email' ? 'email' : 'mobile', $identifier)
+            ->first();
     }
 
     private function validateChannelIdentifier(string $identifier, string $channel): void
     {
         if (! in_array($channel, ['sms', 'email'], true)) {
-            throw ValidationException::withMessages(['channel' => 'Unsupported OTP channel.']);
+            throw ValidationException::withMessages([
+                'channel' => 'Unsupported OTP channel.',
+            ]);
         }
 
         if ($channel === 'email' && ! filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            throw ValidationException::withMessages(['identifier' => 'A valid email address is required.']);
+            throw ValidationException::withMessages([
+                'identifier' => 'A valid email address is required.',
+            ]);
         }
     }
 
@@ -131,6 +142,11 @@ class OtpService
         $digits = max(4, min((int) config('auth_otp.digits', 6), 8));
         $max = (10 ** $digits) - 1;
 
-        return str_pad((string) random_int(0, $max), $digits, '0', STR_PAD_LEFT);
+        return str_pad(
+            (string) random_int(0, $max),
+            $digits,
+            '0',
+            STR_PAD_LEFT
+        );
     }
 }
