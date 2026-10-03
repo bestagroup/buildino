@@ -2785,8 +2785,8 @@
 
         elements.drawerEyebrow.textContent =
             mode === "edit"
-                ? "Edit"
-                : "Create";
+                ? "ویرایش رکورد"
+                : "ثبت رکورد";
 
         elements.drawerTitle.textContent =
             mode === "edit"
