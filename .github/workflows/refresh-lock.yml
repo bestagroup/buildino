@@ -27,6 +27,7 @@ jobs:
           composer update laravel/framework league/commonmark league/flysystem
           --with-all-dependencies
           --no-install
+          --no-scripts
           --no-interaction
           --prefer-dist
 
