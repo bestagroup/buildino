@@ -27,7 +27,7 @@
         local("IRANSans Medium"),
         url("/fonts/iransans/IRANSansX-Medium.woff2") format("woff2");
     font-style: normal;
-    font-weight: 500 600;
+    font-weight: 500;
     font-display: swap;
 }
 
@@ -38,7 +38,7 @@
         local("IRANSans Bold"),
         url("/fonts/iransans/IRANSansX-Bold.woff2") format("woff2");
     font-style: normal;
-    font-weight: 700 900;
+    font-weight: 700;
     font-display: swap;
 }
 
