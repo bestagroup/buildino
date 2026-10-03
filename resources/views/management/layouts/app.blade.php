@@ -157,7 +157,7 @@
             ->values();
 @endphp
 
-<body class="management-body">
+<body class="management-body">\n<a class="buildino-skip-link" href="#mainContent">پرش به محتوای اصلی</a>
 <div class="management-shell">
     <aside
         class="sidebar"
@@ -804,7 +804,7 @@
         aria-label="بستن منو"
     ></button>
 
-    <main class="main-area">
+    <main class="main-area" id="mainContent" tabindex="-1">
         <header class="topbar">
             <div class="topbar__start">
                 <button
