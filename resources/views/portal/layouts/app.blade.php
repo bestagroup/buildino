@@ -314,7 +314,7 @@
 
                 <div>
                     <span>
-                        BUILDINO PORTAL
+                        پرتال BUILDINO
                     </span>
 
                     <h1>
