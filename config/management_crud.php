@@ -2901,11 +2901,11 @@ return [
                         ],
                         [
                             'value' => 'pos',
-                            'label' => 'POS'
+                            'label' => 'کارت‌خوان (POS)'
                         ],
                         [
                             'value' => 'qr',
-                            'label' => 'QR'
+                            'label' => 'کد QR'
                         ],
                         [
                             'value' => 'bill',
@@ -2933,7 +2933,7 @@ return [
                 ],
                 [
                     'key' => 'receipt',
-                    'title' => 'رسید PDF',
+                    'title' => 'رسید پرداخت (PDF)',
                     'method' => 'GET',
                     'url' => '/api/v1/payments/{id}/receipt',
                     'tone' => 'info',
@@ -3831,7 +3831,7 @@ return [
         'permission' => 'support-config.view',
         'permission_scope' => 'any',
             'group' => 'support',
-            'title' => 'SLA پشتیبانی',
+            'title' => 'سطح خدمت پشتیبانی',
             'description' => 'زمان هدف پاسخ و حل تیکت',
             'list' => [
                 'method' => 'GET',
@@ -4352,15 +4352,15 @@ return [
                 'options' => [
                     [
                         'value' => 'csv',
-                        'label' => 'CSV'
+                        'label' => 'فایل CSV'
                     ],
                     [
                         'value' => 'excel',
-                        'label' => 'Excel'
+                        'label' => 'فایل Excel'
                     ],
                     [
                         'value' => 'pdf',
-                        'label' => 'PDF'
+                        'label' => 'فایل PDF'
                     ]
                 ]
             ],
