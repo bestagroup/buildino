@@ -121,6 +121,12 @@
     };
 
     const enhanceField = (field) => {
+        if (field.dataset.buildinoEnhanced === 'true') {
+            return;
+        }
+
+        field.dataset.buildinoEnhanced = 'true';
+
         if (field.required) {
             field.setAttribute('aria-required', 'true');
         }
@@ -189,12 +195,17 @@
 
             markInvalidState(field);
 
-            window.requestAnimationFrame(() => {
-                field.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center',
+            if (
+                field.form?.querySelector(':invalid')
+                === field
+            ) {
+                window.requestAnimationFrame(() => {
+                    field.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                    });
                 });
-            });
+            }
         },
         true
     );
