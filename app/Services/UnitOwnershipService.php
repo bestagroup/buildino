@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Unit;
 use App\Models\UnitOwnership;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,11 @@ final class UnitOwnershipService
         User $actor
     ): UnitOwnership {
         return DB::transaction(function () use ($data, $actor): UnitOwnership {
+            Unit::query()
+                ->whereKey((int) $data['unit_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
+
             $this->validateOwnershipPercentage(
                 unitId: (int) $data['unit_id'],
                 percentage: $data['ownership_percentage'] ?? null
@@ -36,6 +42,11 @@ final class UnitOwnershipService
         array $data
     ): UnitOwnership {
         return DB::transaction(function () use ($ownership, $data): UnitOwnership {
+            Unit::query()
+                ->whereKey((int) $ownership->unit_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             if (array_key_exists('ownership_percentage', $data)) {
                 $this->validateOwnershipPercentage(
                     unitId: (int) $ownership->unit_id,
@@ -67,6 +78,11 @@ final class UnitOwnershipService
             $actor,
             $endsAt
         ): UnitOwnership {
+            Unit::query()
+                ->whereKey((int) $ownership->unit_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             if (! $ownership->is_active) {
                 return $ownership->refresh();
             }
