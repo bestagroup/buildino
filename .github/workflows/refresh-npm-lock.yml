@@ -20,8 +20,8 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Refresh package lock
-        run: npm install --package-lock-only --ignore-scripts
+      - name: Refresh package lock and remediate audited runtime dependency
+        run: npm install axios@latest --save --package-lock-only --ignore-scripts
 
       - name: Validate clean install
         run: npm ci --ignore-scripts
@@ -29,11 +29,11 @@ jobs:
       - name: Audit frontend dependencies
         run: npm audit --audit-level=high
 
-      - name: Commit refreshed package-lock.json
+      - name: Commit refreshed frontend dependency manifests
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
+          git add package.json package-lock.json
           if git diff --cached --quiet; then
             echo "package-lock.json is already current"
             exit 0
