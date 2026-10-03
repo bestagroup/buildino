@@ -94,7 +94,7 @@
 <section class="portal-detail-hero">
     <div>
         <span class="portal-eyebrow">
-            OPERATION DETAIL
+            جزئیات عملیات
         </span>
 
         <h2>
@@ -147,7 +147,7 @@
         <div class="portal-section__heading">
             <div>
                 <span class="portal-eyebrow">
-                    DETAIL
+                    اطلاعات تکمیلی
                 </span>
                 <h3>
                     {{ $section['title'] }}
