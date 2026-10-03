@@ -5,6 +5,7 @@ use App\Http\Controllers\Web\ManagementDashboardController;
 use App\Http\Controllers\Web\ManagementLookupController;
 use App\Http\Controllers\Web\ManagementOperationsController;
 use App\Http\Controllers\Web\ManagementPasswordResetController;
+use App\Http\Controllers\Web\ManagementSubscriptionController;
 use App\Http\Controllers\Web\ManagementUserDataController;
 use App\Http\Controllers\Web\PortalAuthController;
 use App\Http\Controllers\Web\PortalDashboardController;
@@ -15,10 +16,10 @@ use App\Http\Middleware\EnsureManagementWebAccess;
 use App\Http\Middleware\EnsurePortalWebAccess;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect(
+Route::view(
     '/',
-    '/management'
-);
+    'public.home'
+)->name('public.home');
 
 Route::get(
     '/invitations/accept',
@@ -338,6 +339,31 @@ Route::middleware([
                     ]
                 );
             });
+
+        Route::get(
+            '/subscriptions',
+            [ManagementSubscriptionController::class, 'index']
+        )->name('subscriptions.index');
+
+        Route::post(
+            '/subscriptions/buildings/{building}/activate',
+            [ManagementSubscriptionController::class, 'activate']
+        )->name('subscriptions.activate');
+
+        Route::post(
+            '/subscriptions/{buildingSubscription}/renew',
+            [ManagementSubscriptionController::class, 'renew']
+        )->name('subscriptions.renew');
+
+        Route::post(
+            '/subscriptions/{buildingSubscription}/suspend',
+            [ManagementSubscriptionController::class, 'suspend']
+        )->name('subscriptions.suspend');
+
+        Route::post(
+            '/subscriptions/{buildingSubscription}/cancel',
+            [ManagementSubscriptionController::class, 'cancel']
+        )->name('subscriptions.cancel');
 
         Route::post(
             '/logout',

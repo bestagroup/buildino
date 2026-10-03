@@ -24,6 +24,8 @@
 | 17 | وفاداری | تکمیل | ledger idempotent، FIFO allocation، expiry، reversal، rule versioning و claim workflow |
 | 18 | مشاهده‌پذیری | تکمیل کد | readiness/admin health، scheduler/queue heartbeat، integrity/accounting/gateway audits |
 | 19 | QA و انتشار | تکمیل repository | PHPUnit/contract/build/audit/CI، Docker production، backup/restore/rollback runbook؛ restore drill و UAT باید روی staging اجرا شود |
+| 20 | اشتراک و لایسنس | تکمیل کد | پلن Trial/Basic/Pro/Enterprise، چرخه فعال‌سازی/تمدید/تعلیق/لغو، Grace Period، Feature override و UI مدیریتی |
+| 21 | وب‌سایت عمومی | تکمیل | صفحه عمومی responsive با مسیرهای ثبت‌نام، پرتال کاربران و پنل مدیریت |
 
 ## دروازه تحویل
 
@@ -58,5 +60,6 @@ php artisan release:gate --production
 - بازنویسی تاریخچه Git و rotation کلیدهای قبلی بدون تأیید مالک
 - UAT مرورگر/دستگاه واقعی، تست sandbox PSP و restore drill staging
 - ایجاد scaffolding نهایی Android/iOS و ساخت/امضای binary native بدون Flutter SDK، keystore و Apple/Google accounts
+- IoT در این Release بنا بر تصمیم محصول عمداً خارج از Scope نهایی‌سازی است
 
 راهنمای اجرای این موارد در `docs/production/DEPLOYMENT_RUNBOOK.md` و `docs/production/SECURITY_ROTATION_CHECKLIST.md` قرار دارد.

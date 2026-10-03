@@ -154,6 +154,7 @@ class RoleMatrixSeeder extends Seeder
             PaymentGatewayPermissionSeeder::class,
             SystemHealthPermissionSeeder::class,
             FinalCompletionPermissionSeeder::class,
+            SubscriptionPermissionSeeder::class,
         ]);
     }
 }

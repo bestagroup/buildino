@@ -2,36 +2,44 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Subscriptions\SubscriptionService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureSubscriptionIsActive
 {
+    public function __construct(
+        private readonly SubscriptionService $subscriptions
+    ) {
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
         $building = $request->attributes->get('building_context');
 
         if (! $building) {
             return response()->json([
+                'success' => false,
+                'code' => 'BUILDING_CONTEXT_REQUIRED',
                 'message' => 'Building context is required.',
             ], 422);
         }
 
-        $active = $building->buildingSubscriptions()
-            ->where('status', 'active')
-            ->where('starts_at', '<=', now())
-            ->where(function ($query): void {
-                $query->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
-            })
-            ->exists();
+        $subscription = $this->subscriptions->usable($building);
 
-        if (! $active) {
+        if (! $subscription) {
             return response()->json([
-                'message' => 'The building subscription is inactive or expired.',
+                'success' => false,
+                'code' => 'SUBSCRIPTION_INACTIVE',
+                'message' => 'The building subscription is inactive, suspended or expired.',
             ], 403);
         }
+
+        $request->attributes->set(
+            'building_subscription',
+            $subscription
+        );
 
         return $next($request);
     }
