@@ -8,7 +8,24 @@
 }
 
 html {
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    direction: rtl;
+    font-family: "IRANSansX", "IRANSans", Tahoma, "Segoe UI", Arial, sans-serif;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+}
+
+[dir="ltr"],
+input[type="email"],
+input[type="url"],
+input[type="tel"],
+input[inputmode="numeric"] {
+    font-variant-numeric: tabular-nums;
 }
 
 body {
