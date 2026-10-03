@@ -821,7 +821,7 @@
 
                 <div class="page-heading">
                     <span class="page-heading__eyebrow">
-                        BUILDINO MANAGEMENT
+                        مدیریت BUILDINO
                     </span>
 
                     <h1>
