@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Unit;
 use App\Models\UnitOccupancy;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,11 @@ class OccupancyService
             $data,
             $actor
         ): UnitOccupancy {
+            Unit::query()
+                ->whereKey((int) $data['unit_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
+
             $duplicateExists = UnitOccupancy::query()
                 ->where('unit_id', $data['unit_id'])
                 ->where('user_id', $data['user_id'])
@@ -60,6 +66,11 @@ class OccupancyService
             $occupancy,
             $data
         ): UnitOccupancy {
+            Unit::query()
+                ->whereKey((int) $occupancy->unit_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             if (($data['is_primary'] ?? false) === true) {
                 UnitOccupancy::query()
                     ->where('unit_id', $occupancy->unit_id)
@@ -87,6 +98,11 @@ class OccupancyService
             $actor,
             $endsAt
         ): UnitOccupancy {
+            Unit::query()
+                ->whereKey((int) $occupancy->unit_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             if (! $occupancy->is_active) {
                 return $occupancy->refresh();
             }
