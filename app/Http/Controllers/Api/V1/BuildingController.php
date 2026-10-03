@@ -281,7 +281,8 @@ class BuildingController extends Controller
         */
 
         $building = $action->execute(
-            $validated
+            $validated,
+            $request->user()
         );
 
         $building->load(
