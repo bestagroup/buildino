@@ -154,7 +154,7 @@
 <section class="hero-panel" id="overview">
     <div class="hero-panel__copy">
         <span class="eyebrow">
-            {{ $roleProfile['eyebrow'] ?? 'MANAGEMENT WORKSPACE' }}
+            {{ $roleProfile['eyebrow'] ?? 'فضای مدیریت' }}
         </span>
 
         <h2>
@@ -393,7 +393,7 @@
 <section class="section-block" id="modules">
     <div class="section-heading">
         <div>
-            <span class="eyebrow">System Capabilities</span>
+            <span class="eyebrow">قابلیت‌های سامانه</span>
             <h3>ماژول‌های سامانه</h3>
             <p>
                 نمای یکپارچه امکانات پیاده‌سازی‌شده در هسته Buildino.
@@ -462,7 +462,7 @@
     <article class="panel">
         <div class="panel__header">
             <div>
-                <span class="eyebrow">Finance</span>
+                <span class="eyebrow">مالی</span>
                 <h3>
                     {{ $selectedBuilding ? 'تصویر مالی ساختمان' : 'تصویر مالی پلتفرم' }}
                 </h3>
@@ -599,7 +599,7 @@
     <article class="panel">
         <div class="panel__header">
             <div>
-                <span class="eyebrow">Receivables</span>
+                <span class="eyebrow">مطالبات</span>
                 <h3>سن مطالبات</h3>
             </div>
 
@@ -652,7 +652,7 @@
 <section class="section-block" id="operations">
     <div class="section-heading">
         <div>
-            <span class="eyebrow">Operations</span>
+            <span class="eyebrow">عملیات</span>
             <h3>وضعیت عملیات جاری</h3>
             <p>
                 توزیع وضعیت رزروها، خدمات، پشتیبانی و صورتحساب‌ها.
@@ -963,7 +963,7 @@
     <div class="section-heading">
         <div>
             <span class="eyebrow">
-                Server-side Activity
+                فعالیت‌های سامانه
             </span>
             <h3>
                 آخرین فعالیت‌ها
@@ -1048,7 +1048,7 @@
     <article class="panel">
         <div class="panel__header">
             <div>
-                <span class="eyebrow">System Health</span>
+                <span class="eyebrow">سلامت سامانه</span>
                 <h3>سلامت سامانه</h3>
             </div>
 
@@ -1108,7 +1108,7 @@
     <article class="panel api-card">
         <div class="panel__header">
             <div>
-                <span class="eyebrow">API Contract</span>
+                <span class="eyebrow">قرارداد API</span>
                 <h3>وضعیت رابط برنامه‌نویسی</h3>
             </div>
 
