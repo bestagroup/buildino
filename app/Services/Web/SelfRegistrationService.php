@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\UnitInvitation;
 use App\Models\User;
 use App\Models\UserRoleAssignment;
+use App\Services\Subscription\TrialSubscriptionProvisioner;
 use App\Services\UnitInvitationService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
@@ -20,7 +21,8 @@ use Illuminate\Validation\ValidationException;
 final class SelfRegistrationService
 {
     public function __construct(
-        private readonly UnitInvitationService $invitations
+        private readonly UnitInvitationService $invitations,
+        private readonly TrialSubscriptionProvisioner $trials
     ) {}
 
     public function assertRegistrationCanProceed(
@@ -79,7 +81,8 @@ final class SelfRegistrationService
 
                 if ($kind === 'management') {
                     $scope = $this->createWorkspace(
-                        $data
+                        $data,
+                        $user
                     );
 
                     $this->assignRole(
@@ -154,7 +157,8 @@ final class SelfRegistrationService
     }
 
     private function createWorkspace(
-        array $data
+        array $data,
+        User $actor
     ): Model {
         $complex = Complex::query()->create([
             'code' => $this->uniqueCode(
@@ -187,6 +191,11 @@ final class SelfRegistrationService
             'storage_count' => 0,
             'is_active' => true,
         ]);
+
+        $this->trials->provision(
+            $building,
+            $actor
+        );
 
         $scope = $this->personaConfiguration(
             (string) $data['persona']
