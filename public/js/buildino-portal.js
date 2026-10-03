@@ -1095,7 +1095,7 @@
                                     idempotency_key:
                                         `portal-topup:${stamp}`,
                                     description:
-                                        "Resident portal wallet top-up",
+                                        "افزایش موجودی کیف پول از پرتال ساکن",
                                 }),
                         }
                     );
