@@ -13,6 +13,7 @@ use App\Models\FinancialCategory;
 use App\Models\Floor;
 use App\Models\Fund;
 use App\Models\Permission;
+use App\Models\Plan;
 use App\Models\ProviderBankAccount;
 use App\Models\ReportDefinition;
 use App\Models\Role;
@@ -581,6 +582,23 @@ class ManagementLookupController extends Controller
                                 trim(
                                     "{$item->bank_name} — {$item->account_holder_name} — {$item->iban}"
                                 ),
+                        ]
+                    ),
+
+            'subscription_plans' =>
+                Plan::query()
+                    ->where('is_active', true)
+                    ->orderBy('price')
+                    ->orderBy('title')
+                    ->get([
+                        'id',
+                        'code',
+                        'title',
+                    ])
+                    ->map(
+                        fn (Plan $item): array => [
+                            'id' => $item->id,
+                            'label' => "{$item->title} ({$item->code})",
                         ]
                     ),
 
