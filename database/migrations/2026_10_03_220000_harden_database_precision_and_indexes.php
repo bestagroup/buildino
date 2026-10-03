@@ -151,6 +151,24 @@ return new class extends Migration
                     'otp_lookup_idx',
                 ],
             ],
+            'activity_logs' => [
+                [
+                    ['created_at'],
+                    'activity_logs_created_idx',
+                ],
+            ],
+            'user_access_logs' => [
+                [
+                    ['created_at'],
+                    'user_access_logs_created_idx',
+                ],
+            ],
+            'guest_access_logs' => [
+                [
+                    ['guest_visit_id', 'occurred_at'],
+                    'gal_visit_occurred_idx',
+                ],
+            ],
             'user_role_assignments' => [
                 [
                     ['user_id', 'is_active', 'starts_at', 'ends_at'],
