@@ -57,7 +57,7 @@
 
                 <div>
                     <strong>Buildino</strong>
-                    <span>Start your smart workspace</span>
+                    <span>شروع فضای کاری هوشمند</span>
                 </div>
             </div>
 
@@ -84,7 +84,7 @@
                         'management.partials.icon',
                         ['name' => 'shield', 'size' => 18]
                     )
-                    <span>دسترسی کاملاً محدود به Scope حساب</span>
+                    <span>دسترسی کاملاً محدود به محدوده حساب</span>
                 </div>
 
                 <div>
@@ -107,7 +107,7 @@
 
         <div class="registration-showcase__footer">
             <span>ثبت‌نام امن با تأیید موبایل</span>
-            <span>Role • Permission • Scope</span>
+            <span>نقش • مجوز • محدوده دسترسی</span>
         </div>
     </section>
 
