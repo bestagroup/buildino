@@ -58,7 +58,7 @@
 <section class="portal-operation-hero">
     <div>
         <span class="portal-eyebrow">
-            SERVER-SIDE DATATABLE
+            فهرست و جستجوی اطلاعات
         </span>
 
         <h2>
@@ -175,7 +175,7 @@
             class="portal-dt-reset"
             data-dt-reset
         >
-            پاک‌کردن فیلتر
+            پاک کردن فیلتر
         </button>
     </div>
 
