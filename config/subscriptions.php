@@ -9,7 +9,10 @@ return [
     | Local/test environments may keep this disabled to avoid coupling
     | developer fixtures to commercial plans. Production must enable it.
     */
-    'enforce' => (bool) env('SUBSCRIPTION_ENFORCEMENT', false),
+    'enforce' => (bool) env(
+        'SUBSCRIPTION_ENFORCEMENT',
+        env('APP_ENV') === 'production'
+    ),
 
     'grace_days' => (int) env('SUBSCRIPTION_GRACE_DAYS', 7),
 
