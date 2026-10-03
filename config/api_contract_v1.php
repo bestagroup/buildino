@@ -4,6 +4,19 @@ return [
     'version' => '1.0.0',
 
     /*
+     * Generated API artifacts are committed and verified in CI. These values
+     * are intentionally deterministic so export output does not drift by
+     * machine URL, current time or random UUIDs.
+     */
+    'artifact_base_url' => env(
+        'API_CONTRACT_BASE_URL',
+        'http://localhost:8000'
+    ),
+    'artifact_generated_at' => '2026-08-20T20:03:53.916327Z',
+    'postman_collection_id' => '84339641-9787-4fde-9174-fb3033f3451b',
+    'postman_environment_id' => '6fd484d1-cb11-4ef6-9988-ae4e97cb9346',
+
+    /*
      * Routes without auth:sanctum are treated as a security boundary.
      * Any unexpected public V1 route makes api:contract:audit fail.
      */
