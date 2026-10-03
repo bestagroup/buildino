@@ -48,6 +48,16 @@ jobs:
       - name: Validate dependency manifests
         run: composer validate --strict
 
+      - name: Refresh security-sensitive PHP dependencies
+        run: composer update laravel/framework league/commonmark league/flysystem --with-all-dependencies --no-install --no-interaction
+
+      - name: Export refreshed lock file
+        uses: actions/upload-artifact@v4
+        with:
+          name: refreshed-composer-lock
+          path: composer.lock
+          retention-days: 1
+
       - name: Audit PHP dependencies
         run: composer audit --locked --no-interaction
 
