@@ -41,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
          */
         User::observe(ProvisionWalletObserver::class);
         Unit::observe(ProvisionWalletObserver::class);
-        Building::observe(ProvisionWalletObserver::class);
+        Building::observe(ProvisionWalletObserver::class);\n        Building::observe(ProvisionSubscriptionObserver::class);
 
         ResetPasswordNotification::createUrlUsing(
             function (
