@@ -1,6 +1,6 @@
 
 :root {
-    --portal-font: "Yekan Bakh", Tahoma, "Segoe UI", sans-serif;
+    --portal-font: var(--buildino-font-persian, Tahoma, "Segoe UI", sans-serif);
     --portal-bg: #f4f7fb;
     --portal-surface: #ffffff;
     --portal-soft: #f7f9fc;
