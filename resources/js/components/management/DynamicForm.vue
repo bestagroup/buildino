@@ -74,6 +74,15 @@ const inputDirection = (field: CrudField): 'ltr' | undefined => {
         : undefined;
 };
 
+const fieldDomId = (field: CrudField): string =>
+    `management-${props.mode}-${field.name.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+
+const fieldMessageId = (field: CrudField): string =>
+    `${fieldDomId(field)}-message`;
+
+const hasFieldError = (field: CrudField): boolean =>
+    Boolean(props.errors?.[field.name]?.length);
+
 const fieldValue = (field: CrudField): unknown =>
     props.modelValue[field.name]
         ?? field.default
@@ -238,7 +247,10 @@ watch(
 
             <textarea
                 v-if="field.type === 'textarea' || field.type === 'json'"
+                :id="fieldDomId(field)"
                 :name="field.name"
+                :aria-invalid="hasFieldError(field)"
+                :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
                 :rows="field.type === 'json' ? 8 : 5"
                 :required="field.required || (mode === 'create' && field.required_on_create)"
                 :disabled="mode === 'edit' && field.readonly_on_edit"
@@ -250,7 +262,11 @@ watch(
 
             <select
                 v-else-if="field.type === 'select' || field.type === 'multiselect'"
+                :id="fieldDomId(field)"
                 :name="field.name"
+                :aria-invalid="hasFieldError(field)"
+                :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
+                :aria-busy="loadingFields.has(field.name)"
                 :multiple="field.type === 'multiselect'"
                 :required="field.required || (mode === 'create' && field.required_on_create)"
                 :disabled="loadingFields.has(field.name) || (mode === 'edit' && field.readonly_on_edit)"
@@ -276,7 +292,10 @@ watch(
                 class="ui-checkbox"
             >
                 <input
+                    :id="fieldDomId(field)"
                     :name="field.name"
+                    :aria-invalid="hasFieldError(field)"
+                    :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
                     type="checkbox"
                     :checked="Boolean(fieldValue(field))"
                     :disabled="mode === 'edit' && field.readonly_on_edit"
@@ -287,7 +306,10 @@ watch(
 
             <input
                 v-else
+                :id="fieldDomId(field)"
                 :name="field.name"
+                :aria-invalid="hasFieldError(field)"
+                :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
                 :type="['date', 'datetime-local', 'time'].includes(field.type ?? '') ? field.type : (field.type ?? 'text')"
                 :required="field.required || (mode === 'create' && field.required_on_create)"
                 :disabled="mode === 'edit' && field.readonly_on_edit"
@@ -301,10 +323,13 @@ watch(
 
             <small
                 v-if="errors?.[field.name]?.length"
+                :id="fieldMessageId(field)"
                 class="ui-field__error"
+                role="alert"
             >{{ errors[field.name][0] }}</small>
             <small
                 v-else-if="field.help"
+                :id="fieldMessageId(field)"
                 class="ui-field__help"
             >{{ field.help }}</small>
         </label>
