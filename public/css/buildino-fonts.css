@@ -3,20 +3,42 @@
 | Buildino Persian Typography
 |--------------------------------------------------------------------------
 |
-| IRANSans / IRANSansX is a licensed typeface. The application references
-| locally installed/licensed copies only and deliberately does not bundle or
-| download font binaries from untrusted public CDNs.
+| IRANSans / IRANSansX is a licensed typeface. Font binaries are intentionally
+| not committed by the application. Production deployments should place their
+| licensed WOFF2 files in public/fonts/iransans using the documented names.
 |
 */
 
 @font-face {
     font-family: "IRANSansX";
     src:
-        local("IRANSansX"),
-        local("IRANSans X"),
-        local("IRANSans");
+        local("IRANSansX Regular"),
+        local("IRANSans Regular"),
+        url("/fonts/iransans/IRANSansX-Regular.woff2") format("woff2");
     font-style: normal;
-    font-weight: 100 900;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "IRANSansX";
+    src:
+        local("IRANSansX Medium"),
+        local("IRANSans Medium"),
+        url("/fonts/iransans/IRANSansX-Medium.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 500 600;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "IRANSansX";
+    src:
+        local("IRANSansX Bold"),
+        local("IRANSans Bold"),
+        url("/fonts/iransans/IRANSansX-Bold.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 700 900;
     font-display: swap;
 }
 
