@@ -167,7 +167,7 @@ class WalletChargeArchitectureTest extends TestCase
             'is_active' => true,
         ]);
 
-        BuildingExpense::query()->create([
+        $waterExpense = BuildingExpense::query()->create([
             'building_id' => $graph['building']->id,
             'financial_category_id' => $water->id,
             'title' => 'Shared water bill',
@@ -180,7 +180,7 @@ class WalletChargeArchitectureTest extends TestCase
             'posted_at' => now(),
         ]);
 
-        BuildingExpense::query()->create([
+        $gasExpense = BuildingExpense::query()->create([
             'building_id' => $graph['building']->id,
             'financial_category_id' => $gas->id,
             'title' => 'Shared gas bill',
@@ -245,7 +245,7 @@ class WalletChargeArchitectureTest extends TestCase
         $this->assertDatabaseHas(
             'charge_expense_allocations',
             [
-                'building_expense_id' => 1,
+                'building_expense_id' => $waterExpense->id,
                 'unit_id' => $unitA->id,
                 'allocated_amount' => 300_000,
             ]
@@ -254,7 +254,7 @@ class WalletChargeArchitectureTest extends TestCase
         $this->assertDatabaseHas(
             'charge_expense_allocations',
             [
-                'building_expense_id' => 2,
+                'building_expense_id' => $gasExpense->id,
                 'unit_id' => $unitA->id,
                 'allocated_amount' => 200_000,
             ]
