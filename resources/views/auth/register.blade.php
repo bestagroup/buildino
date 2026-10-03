@@ -15,6 +15,11 @@
     >
     <link
         rel="stylesheet"
+        href="{{ config('management_ui.libraries.bootstrap.css') }}"
+        crossorigin="anonymous"
+    >
+    <link
+        rel="stylesheet"
         href="{{ asset('css/buildino-foundation.css') }}"
     >
     <link
@@ -23,6 +28,10 @@
     >
 
     @vite('resources/js/app.js')
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/buildino-design-system.css') }}"
+    >
 </head>
 
 @php
