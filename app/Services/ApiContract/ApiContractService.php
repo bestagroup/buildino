@@ -562,8 +562,8 @@ final class ApiContractService
                     'url' =>
                         rtrim(
                             (string) config(
-                                'app.url',
-                                'http://127.0.0.1:8000'
+                                'api_contract_v1.artifact_base_url',
+                                'http://localhost:8000'
                             ),
                             '/'
                         )
@@ -750,7 +750,9 @@ final class ApiContractService
         return [
             'info' => [
                 '_postman_id' =>
-                    (string) Str::uuid(),
+                    (string) config(
+                        'api_contract_v1.postman_collection_id'
+                    ),
                 'name' =>
                     'Buildino API V1',
                 'description' =>
@@ -822,7 +824,9 @@ final class ApiContractService
 
         return [
             'id' =>
-                (string) Str::uuid(),
+                (string) config(
+                    'api_contract_v1.postman_environment_id'
+                ),
             'name' =>
                 'Buildino Local',
             'values' => array_map(
@@ -852,7 +856,9 @@ final class ApiContractService
             'version' =>
                 $audit['version'],
             'generated_at' =>
-                now()->toISOString(),
+                (string) config(
+                    'api_contract_v1.artifact_generated_at'
+                ),
             'route_count' =>
                 $audit['route_count'],
             'contract_hash' =>
