@@ -623,7 +623,7 @@
                                     )
                                 </span>
                                 <span class="nav-link__label">
-                                    پشتیبانی و SLA
+                                    پشتیبانی و سطح خدمت
                                 </span>
                             </a>
                         @endif
@@ -993,7 +993,7 @@
 
                     @if (! ($personalWallet['exists'] ?? false))
                         <div class="wallet-popover__note">
-                            کیف پول شخصی برای این حساب هنوز Provision نشده است.
+                            کیف پول شخصی برای این حساب هنوز ایجاد نشده است.
                         </div>
                     @endif
                 </div>
