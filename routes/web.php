@@ -15,10 +15,14 @@ use App\Http\Middleware\EnsureManagementWebAccess;
 use App\Http\Middleware\EnsurePortalWebAccess;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect(
-    '/',
-    '/management'
-);
+Route::view('/', 'public.home')
+    ->name('public.home');
+
+Route::view('/privacy', 'public.privacy')
+    ->name('public.privacy');
+
+Route::view('/terms', 'public.terms')
+    ->name('public.terms');
 
 Route::get(
     '/invitations/accept',
