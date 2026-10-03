@@ -575,7 +575,7 @@ return [
 
         'support_agent' => [
             'title' =>
-                'مرکز پشتیبانی و SLA',
+                'مرکز پشتیبانی و سطح خدمت',
 
             'short_title' =>
                 'داشبورد پشتیبانی',
@@ -646,7 +646,7 @@ return [
                 ],
                 [
                     'resource' => 'support-sla',
-                    'title' => 'SLA',
+                    'title' => 'سطح خدمت',
                     'icon' => 'health',
                 ],
             ],
