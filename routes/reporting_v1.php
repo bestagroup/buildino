@@ -10,6 +10,7 @@ Route::prefix('v1')
         'user.active',
         'identity.verified',
         'subscription.active',
+        'subscription.feature:reports',
     ])
     ->group(function (): void {
         Route::get(
