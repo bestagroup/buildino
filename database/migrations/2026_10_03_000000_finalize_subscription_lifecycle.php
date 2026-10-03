@@ -61,6 +61,7 @@ return new class extends Migration
 
         Schema::table('building_subscriptions', function (Blueprint $table): void {
             $table->dropIndex('building_subscriptions_period_idx');
+            $table->dropIndex(['grace_ends_at']);
             $table->dropConstrainedForeignId('updated_by');
             $table->dropColumn([
                 'grace_ends_at',
