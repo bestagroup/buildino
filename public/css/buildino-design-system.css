@@ -696,3 +696,143 @@ html[data-theme="light"] {
     font-size: 12px !important;
     font-weight: 750 !important;
 }
+
+
+/* ---------- Subscription management ---------- */
+
+.subscription-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+    gap: 16px;
+}
+
+.subscription-card {
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--ui-card-radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-xs, 0 8px 28px rgba(4, 19, 35, .05));
+}
+
+.subscription-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.subscription-card h3 {
+    margin: 0;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.subscription-card p {
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.subscription-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--text-soft);
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.subscription-status.is-active {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.subscription-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.subscription-form label {
+    display: grid;
+    gap: 6px;
+}
+
+.subscription-form .wide {
+    grid-column: 1 / -1;
+}
+
+.subscription-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.subscription-actions form {
+    margin: 0;
+}
+
+.subscription-button {
+    padding-inline: 13px;
+    border: 1px solid var(--border);
+    background: var(--surface-soft);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.subscription-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.subscription-meta div {
+    min-width: 0;
+    padding: 10px 11px;
+    border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+    border-radius: 11px;
+    background: var(--surface-soft);
+}
+
+.subscription-meta span,
+.subscription-meta strong {
+    display: block;
+}
+
+.subscription-meta span {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.subscription-meta strong {
+    margin-top: 3px;
+    overflow-wrap: anywhere;
+    color: var(--text);
+    font-size: 12px;
+}
+
+.subscription-alert,
+.subscription-errors {
+    margin-bottom: 14px;
+    padding: 11px 13px;
+}
+
+@media (max-width: 720px) {
+    .subscription-form,
+    .subscription-meta {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .subscription-actions form,
+    .subscription-actions .subscription-button {
+        width: 100%;
+    }
+}
