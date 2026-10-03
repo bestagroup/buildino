@@ -14,6 +14,7 @@ Route::prefix('v1')
         'auth:sanctum',
         'user.active',
         'identity.verified',
+        'subscription.active',
     ])
     ->group(function (): void {
 
