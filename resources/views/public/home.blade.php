@@ -59,8 +59,8 @@
         <section class="border-y border-white/10 bg-white/[.025]">
             <div class="mx-auto grid max-w-7xl gap-6 px-6 py-16 md:grid-cols-3 lg:px-8">
                 <div><strong class="text-2xl font-black text-emerald-300">امن و مبتنی بر محدوده دسترسی</strong><p class="mt-2 text-sm leading-7 text-slate-400">کنترل دسترسی در سطح پلتفرم، مجتمع، ساختمان و روابط واحد.</p></div>
-                <div><strong class="text-2xl font-black text-emerald-300">معماری API محور</strong><p class="mt-2 text-sm leading-7 text-slate-400">Laravel REST API، Sanctum، کلاینت وب و موبایل با قرارداد نسخه‌بندی‌شده.</p></div>
-                <div><strong class="text-2xl font-black text-emerald-300">آماده رشد</strong><p class="mt-2 text-sm leading-7 text-slate-400">Queue، Redis، گزارش صفی، health check و معماری ماژولار برای توسعه تدریجی.</p></div>
+                <div><strong class="text-2xl font-black text-emerald-300">معماری API محور</strong><p class="mt-2 text-sm leading-7 text-slate-400">رابط برنامه‌نویسی REST بر بستر Laravel و Sanctum، همراه با کلاینت وب و موبایل و قرارداد نسخه‌بندی‌شده.</p></div>
+                <div><strong class="text-2xl font-black text-emerald-300">آماده رشد</strong><p class="mt-2 text-sm leading-7 text-slate-400">صف پردازش، Redis، گزارش‌های صفی، پایش سلامت و معماری ماژولار برای توسعه تدریجی.</p></div>
             </div>
         </section>
     </main>
