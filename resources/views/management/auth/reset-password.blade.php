@@ -60,7 +60,7 @@
 
         <div class="auth-recovery-heading">
             <span class="eyebrow">
-                NEW PASSWORD
+                رمز عبور جدید
             </span>
 
             <h1>رمز عبور جدید</h1>
