@@ -142,6 +142,7 @@
     class="portal-body"
     data-portal-user-id="{{ $portalUser?->getKey() }}"
 >
+<a class="buildino-skip-link" href="#mainContent">پرش به محتوای اصلی</a>
 <div class="portal-shell">
     <aside
         class="portal-sidebar"
