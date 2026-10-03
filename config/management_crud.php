@@ -46,6 +46,11 @@ return [
             'title' => 'گزارش و کنترل',
             'description' => 'Export، گزارش و کنترل عملیاتی',
             'icon' => 'chart'
+        ],
+        'subscription' => [
+            'title' => 'اشتراک و مجوز',
+            'description' => 'پلن، دوره فعال، تمدید و تعلیق اشتراک ساختمان',
+            'icon' => 'wallet'
         ]
     ],
     'resources' => [
@@ -4293,6 +4298,128 @@ return [
                 ]
             ]
         ],
+        'building-subscriptions' => [
+            'permission' => 'reports.platform.view',
+            'permission_scope' => 'global',
+            'group' => 'subscription',
+            'title' => 'اشتراک ساختمان‌ها',
+            'description' => 'مدیریت دوره فعال، تمدید، تعلیق و لغو اشتراک هر ساختمان',
+            'context' => [
+                [
+                    'name' => 'building_id',
+                    'label' => 'ساختمان',
+                    'lookup' => 'buildings',
+                    'required' => true
+                ]
+            ],
+            'list' => [
+                'method' => 'GET',
+                'url' => '/api/v1/buildings/{building_id}/subscriptions?per_page=100'
+            ],
+            'create' => [
+                'method' => 'POST',
+                'url' => '/api/v1/buildings/{building_id}/subscriptions'
+            ],
+            'columns' => [
+                [
+                    'key' => 'id',
+                    'label' => 'ID'
+                ],
+                [
+                    'key' => 'plan.title',
+                    'label' => 'پلن'
+                ],
+                [
+                    'key' => 'status',
+                    'label' => 'وضعیت'
+                ],
+                [
+                    'key' => 'starts_at',
+                    'label' => 'شروع'
+                ],
+                [
+                    'key' => 'expires_at',
+                    'label' => 'انقضا'
+                ],
+                [
+                    'key' => 'grace_ends_at',
+                    'label' => 'پایان مهلت'
+                ]
+            ],
+            'fields' => [
+                [
+                    'name' => 'plan_id',
+                    'label' => 'پلن',
+                    'type' => 'select',
+                    'lookup' => 'subscription_plans',
+                    'required' => true
+                ],
+                [
+                    'name' => 'starts_at',
+                    'label' => 'شروع',
+                    'type' => 'datetime-local'
+                ],
+                [
+                    'name' => 'expires_at',
+                    'label' => 'انقضا',
+                    'type' => 'datetime-local'
+                ],
+                [
+                    'name' => 'grace_ends_at',
+                    'label' => 'پایان مهلت تمدید',
+                    'type' => 'datetime-local'
+                ],
+                [
+                    'name' => 'status',
+                    'label' => 'وضعیت',
+                    'type' => 'select',
+                    'default' => 'active',
+                    'options' => [
+                        [
+                            'value' => 'active',
+                            'label' => 'فعال'
+                        ],
+                        [
+                            'value' => 'pending',
+                            'label' => 'در انتظار'
+                        ]
+                    ]
+                ]
+            ],
+            'actions' => [
+                [
+                    'key' => 'renew',
+                    'title' => 'تمدید',
+                    'method' => 'POST',
+                    'url' => '/api/v1/building-subscriptions/{id}/renew',
+                    'tone' => 'primary'
+                ],
+                [
+                    'key' => 'suspend',
+                    'title' => 'تعلیق',
+                    'method' => 'POST',
+                    'url' => '/api/v1/building-subscriptions/{id}/suspend',
+                    'tone' => 'warning',
+                    'confirm' => 'اشتراک ساختمان تعلیق شود؟'
+                ],
+                [
+                    'key' => 'resume',
+                    'title' => 'فعال‌سازی',
+                    'method' => 'POST',
+                    'url' => '/api/v1/building-subscriptions/{id}/resume',
+                    'tone' => 'success'
+                ],
+                [
+                    'key' => 'cancel',
+                    'title' => 'لغو',
+                    'method' => 'POST',
+                    'url' => '/api/v1/building-subscriptions/{id}/cancel',
+                    'tone' => 'danger',
+                    'confirm' => 'اشتراک ساختمان لغو شود؟'
+                ]
+            ]
+        ],
+
         'report-exports' => [
         'permission' => 'reports.view',
         'permission_scope' => 'any',
