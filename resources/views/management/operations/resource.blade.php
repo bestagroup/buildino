@@ -56,7 +56,7 @@
     <section class="crud-header">
         <div class="crud-header__copy">
             <span class="eyebrow">
-                {{ $groups[$resource['group']]['title'] ?? 'Operations' }}
+                {{ $groups[$resource['group']]['title'] ?? 'عملیات' }}
             </span>
             <h2>{{ $resource['title'] }}</h2>
             <p>
