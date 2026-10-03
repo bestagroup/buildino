@@ -483,3 +483,56 @@ table.buildino-datatable tbody td {
         transform: none !important;
     }
 }
+
+
+/* ---------- Persian typography scale ---------- */
+
+.sidebar__identity-copy strong,
+.portal-user-card strong {
+    font-size: 13px;
+}
+
+.sidebar__identity-copy span,
+.portal-user-card span,
+.brand-copy span,
+.portal-brand__copy small,
+.sidebar__scope,
+.portal-sidebar__security,
+.sidebar__version span {
+    font-size: 11px;
+}
+
+.nav-group__title {
+    font-size: 12px;
+}
+
+.nav-link__label,
+.portal-nav a {
+    font-size: 12.5px;
+    line-height: 1.7;
+}
+
+.sidebar__version strong,
+.portal-logout {
+    font-size: 12px;
+}
+
+.page-heading h1,
+.portal-topbar__title h1 {
+    letter-spacing: -.2px;
+}
+
+.eyebrow {
+    letter-spacing: 0;
+}
+
+/* Numeric identifiers remain visually stable inside RTL layouts. */
+[data-number],
+.money,
+.amount,
+.invoice-number,
+.payment-number,
+code,
+kbd {
+    font-variant-numeric: tabular-nums;
+}
