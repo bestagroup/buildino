@@ -536,3 +536,36 @@ code,
 kbd {
     font-variant-numeric: tabular-nums;
 }
+
+
+/* ---------- Keyboard navigation ---------- */
+
+.buildino-skip-link {
+    position: fixed;
+    z-index: 9999;
+    inset-block-start: 10px;
+    inset-inline-start: 10px;
+    padding: 9px 13px;
+    border: 1px solid var(--border, var(--portal-border, #dfe6ef));
+    border-radius: 10px;
+    background: var(--surface, var(--portal-surface, #fff));
+    color: var(--text, var(--portal-text, #172033));
+    box-shadow: 0 10px 30px rgba(15, 35, 55, .16);
+    font-size: 12px;
+    font-weight: 800;
+    transform: translateY(-160%);
+    transition: transform 150ms ease;
+}
+
+.buildino-skip-link:focus {
+    transform: translateY(0);
+    outline: 3px solid color-mix(in srgb, var(--primary-500, #3b7dae) 30%, transparent);
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+html[data-theme="light"] {
+    color-scheme: light;
+}
