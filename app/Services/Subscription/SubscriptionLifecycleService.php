@@ -8,6 +8,7 @@ use App\Models\BuildingSubscription;
 use App\Models\BuildingSubscriptionEvent;
 use App\Models\Plan;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 final class SubscriptionLifecycleService
@@ -28,14 +29,14 @@ final class SubscriptionLifecycleService
             $expiresAt = $attributes['expires_at']
                 ?? (
                     $plan->duration_days
-                        ? now()->parse($startsAt)->addDays($plan->duration_days)
+                        ? CarbonImmutable::parse($startsAt)->addDays($plan->duration_days)
                         : null
                 );
 
             $graceEndsAt = $attributes['grace_ends_at']
                 ?? (
                     $expiresAt
-                        ? now()->parse($expiresAt)->addDays(
+                        ? CarbonImmutable::parse($expiresAt)->addDays(
                             max(0, (int) config('subscriptions.grace_days', 7))
                         )
                         : null
@@ -90,14 +91,14 @@ final class SubscriptionLifecycleService
             $expiresAt = $attributes['expires_at']
                 ?? (
                     $plan->duration_days
-                        ? now()->parse($startsAt)->addDays($plan->duration_days)
+                        ? CarbonImmutable::parse($startsAt)->addDays($plan->duration_days)
                         : null
                 );
 
             $graceEndsAt = $attributes['grace_ends_at']
                 ?? (
                     $expiresAt
-                        ? now()->parse($expiresAt)->addDays(
+                        ? CarbonImmutable::parse($expiresAt)->addDays(
                             max(0, (int) config('subscriptions.grace_days', 7))
                         )
                         : null
