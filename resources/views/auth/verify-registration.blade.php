@@ -12,6 +12,10 @@
     <link rel="stylesheet" href="{{ asset('css/buildino-fonts.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-foundation.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-management.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/buildino-design-system.css') }}"
+    >
 </head>
 
 <body class="login-page registration-verify-page">
