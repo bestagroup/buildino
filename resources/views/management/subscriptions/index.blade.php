@@ -73,7 +73,7 @@
                             <strong>{{ $subscription->expires_at?->format('Y-m-d H:i') ?? 'نامحدود' }}</strong>
                         </div>
                         <div>
-                            <span>پایان Grace</span>
+                            <span>پایان مهلت تنفس</span>
                             <strong>{{ $subscription->grace_ends_at?->format('Y-m-d H:i') ?? '—' }}</strong>
                         </div>
                         <div>
@@ -129,7 +129,7 @@
                     </label>
 
                     <label>
-                        <span>Grace (روز)</span>
+                        <span>مهلت تنفس (روز)</span>
                         <input type="number" name="grace_days" min="0" max="90" value="7">
                     </label>
 
