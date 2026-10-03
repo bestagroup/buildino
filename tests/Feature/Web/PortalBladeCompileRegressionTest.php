@@ -32,7 +32,7 @@ class PortalBladeCompileRegressionTest extends TestCase
         )
             ->assertOk()
             ->assertSee(
-                'BUILDINO PORTAL'
+                'پرتال BUILDINO'
             )
             ->assertSee(
                 'خانه من'
@@ -60,7 +60,7 @@ class PortalBladeCompileRegressionTest extends TestCase
         )
             ->assertOk()
             ->assertSee(
-                'BUILDINO PORTAL'
+                'پرتال BUILDINO'
             )
             ->assertSee(
                 'پنل ارائه‌دهنده خدمات'
