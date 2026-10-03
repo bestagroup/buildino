@@ -2,34 +2,45 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Security\BuildingContextResolver;
+use App\Services\Subscription\SubscriptionEntitlementService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureSubscriptionIsActive
 {
+    public function __construct(
+        private readonly BuildingContextResolver $resolver,
+        private readonly SubscriptionEntitlementService $entitlements,
+    ) {
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
-        $building = $request->attributes->get('building_context');
-
-        if (! $building) {
-            return response()->json([
-                'message' => 'Building context is required.',
-            ], 422);
+        if (! config('subscriptions.enforce', false)) {
+            return $next($request);
         }
 
-        $active = $building->buildingSubscriptions()
-            ->where('status', 'active')
-            ->where('starts_at', '<=', now())
-            ->where(function ($query): void {
-                $query->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
-            })
-            ->exists();
+        $building = $request->attributes->get('building_context')
+            ?? $this->resolver->resolve($request);
 
-        if (! $active) {
+        /*
+         * Subscription enforcement is intentionally contextual. Endpoints that
+         * are not tied to a building (auth, global catalog, health, etc.) keep
+         * working while building-scoped operations are gated.
+         */
+        if (! $building) {
+            return $next($request);
+        }
+
+        $request->attributes->set('building_context', $building);
+
+        if (! $this->entitlements->isUsable($building)) {
             return response()->json([
-                'message' => 'The building subscription is inactive or expired.',
+                'success' => false,
+                'message' => 'اشتراک ساختمان غیرفعال یا منقضی شده است.',
+                'code' => 'SUBSCRIPTION_INACTIVE',
             ], 403);
         }
 
