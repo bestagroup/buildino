@@ -31,7 +31,6 @@
     <link
         rel="stylesheet"
         href="{{ config('management_ui.libraries.bootstrap.css') }}"
-        integrity="{{ config('management_ui.libraries.bootstrap.css_integrity') }}"
         crossorigin="anonymous"
     >
 
@@ -58,6 +57,11 @@
     >
 
     @stack('styles')
+
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/buildino-design-system.css') }}"
+    >
 </head>
 
 @php
