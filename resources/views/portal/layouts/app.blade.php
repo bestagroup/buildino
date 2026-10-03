@@ -294,7 +294,7 @@
         aria-label="بستن منو"
     ></button>
 
-    <main class="portal-main">
+    <main class="portal-main" id="mainContent" tabindex="-1">
         <header class="portal-topbar">
             <div class="portal-topbar__title">
                 <button
