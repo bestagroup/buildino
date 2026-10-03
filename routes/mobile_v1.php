@@ -10,6 +10,7 @@ Route::prefix('v1/app')
         'user.active',
         'identity.verified',
         'subscription.active',
+        'subscription.feature:mobile',
     ])
     ->group(function (): void {
         Route::get(
