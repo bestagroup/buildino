@@ -346,7 +346,7 @@
 
                 <div>
                     <strong>
-                        کیف پول Provider
+                        کیف پول ارائه‌دهنده
                     </strong>
 
                     <span>
@@ -432,7 +432,7 @@
                 </div>
             @empty
                 <div class="portal-empty-mini">
-                    هنوز تراکنشی در کیف پول Provider ثبت نشده است.
+                    هنوز تراکنشی در کیف پول ارائه‌دهنده ثبت نشده است.
                 </div>
             @endforelse
         </div>
@@ -455,7 +455,7 @@
 
         <div class="portal-section__actions">
             <span class="portal-section__note">
-                Workflow هر کار از API اصلی Service Marketplace اجرا می‌شود.
+                فرایند هر کار از API اصلی بازار خدمات اجرا می‌شود.
             </span>
 
             <a
