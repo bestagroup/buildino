@@ -1,0 +1,485 @@
+/*
+|--------------------------------------------------------------------------
+| Buildino Design System
+|--------------------------------------------------------------------------
+| Shared RTL-first visual language across management, portal and auth pages.
+| Bootstrap remains the layout/utility foundation; product components use
+| logical CSS properties so the interface stays correct in RTL and responsive
+| breakpoints.
+*/
+
+:root {
+    --ui-font: var(--buildino-font-persian, Tahoma, sans-serif);
+    --ui-control-height: 46px;
+    --ui-control-radius: 12px;
+    --ui-card-radius: 18px;
+    --ui-focus-ring: 0 0 0 4px rgba(47, 111, 237, .12);
+    --ui-disabled-opacity: .58;
+}
+
+html {
+    direction: rtl;
+    text-size-adjust: 100%;
+}
+
+body {
+    font-family: var(--ui-font);
+}
+
+button,
+input,
+select,
+textarea {
+    font-family: var(--ui-font);
+}
+
+input,
+textarea,
+select {
+    caret-color: currentColor;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--muted, var(--portal-muted, #8391a5));
+    opacity: .82;
+}
+
+input[dir="ltr"],
+textarea[dir="ltr"],
+select[dir="ltr"],
+[data-ltr] {
+    direction: ltr;
+    text-align: left;
+}
+
+input[dir="rtl"],
+textarea[dir="rtl"],
+select[dir="rtl"] {
+    text-align: right;
+}
+
+/* ---------- Bootstrap RTL normalization ---------- */
+
+.dropdown-menu {
+    --bs-dropdown-link-active-bg: var(--primary-700, var(--portal-blue, #1f527f));
+    --bs-dropdown-link-hover-bg: var(--surface-soft, var(--portal-soft, #f7f9fc));
+    direction: rtl;
+    text-align: right;
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+    min-height: var(--ui-control-height);
+    border-radius: var(--ui-control-radius);
+    font-family: var(--ui-font);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-500, var(--portal-blue, #3b7dae));
+    box-shadow: var(--ui-focus-ring);
+}
+
+.form-check {
+    padding-right: 1.5em;
+    padding-left: 0;
+}
+
+.form-check .form-check-input {
+    float: right;
+    margin-right: -1.5em;
+    margin-left: 0;
+}
+
+.modal,
+.offcanvas,
+.toast,
+.tooltip,
+.popover {
+    direction: rtl;
+}
+
+/* ---------- Unified native/custom form controls ---------- */
+
+.auth-field,
+.portal-field,
+.crud-field,
+.ui-field,
+.subscription-form label {
+    min-width: 0;
+}
+
+.auth-field > span:first-child,
+.portal-field > span:first-child,
+.crud-field > span:first-child,
+.ui-field__label,
+.subscription-form label > span:first-child {
+    color: var(--text-soft, var(--portal-text, #34445d));
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.7;
+}
+
+.auth-input,
+.portal-input,
+.crud-field input:not([type="checkbox"]),
+.crud-field select,
+.crud-field textarea,
+.ui-field input:not([type="checkbox"]),
+.ui-field select,
+.ui-field textarea,
+.subscription-form input,
+.subscription-form select {
+    min-height: var(--ui-control-height);
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--border, var(--portal-border, #dfe6ef));
+    border-radius: var(--ui-control-radius);
+    background: var(--surface-soft, var(--portal-soft, #f8fafc));
+    color: var(--text, var(--portal-text, #172033));
+    font-size: 13px;
+    line-height: 1.6;
+    transition:
+        border-color var(--buildino-motion-fast, 160ms) ease,
+        box-shadow var(--buildino-motion-fast, 160ms) ease,
+        background-color var(--buildino-motion-fast, 160ms) ease,
+        opacity var(--buildino-motion-fast, 160ms) ease;
+}
+
+.crud-field input:not([type="checkbox"]),
+.crud-field select,
+.ui-field input:not([type="checkbox"]),
+.ui-field select,
+.subscription-form input,
+.subscription-form select {
+    padding-inline: 12px;
+}
+
+.crud-field textarea,
+.ui-field textarea {
+    min-height: 120px;
+    padding: 11px 12px;
+    resize: vertical;
+}
+
+.auth-input:focus-within,
+.portal-input:focus-within,
+.crud-field input:not([type="checkbox"]):focus,
+.crud-field select:focus,
+.crud-field textarea:focus,
+.ui-field input:not([type="checkbox"]):focus,
+.ui-field select:focus,
+.ui-field textarea:focus,
+.subscription-form input:focus,
+.subscription-form select:focus {
+    border-color: var(--primary-500, var(--portal-blue, #3b7dae));
+    background: var(--surface, var(--portal-surface, #fff));
+    box-shadow: var(--ui-focus-ring);
+    outline: 0;
+}
+
+.has-error input:not([type="checkbox"]),
+.has-error select,
+.has-error textarea,
+[aria-invalid="true"] {
+    border-color: var(--danger, var(--portal-danger, #bd3340)) !important;
+    box-shadow: 0 0 0 3px rgba(189, 51, 64, .09);
+}
+
+.ui-field__error,
+.crud-field-error,
+.invalid-feedback {
+    display: block;
+    margin-top: 1px;
+    color: var(--danger, var(--portal-danger, #bd3340));
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.65;
+}
+
+.ui-field__help,
+.crud-field-help,
+.form-text {
+    color: var(--muted, var(--portal-muted, #718096));
+    font-size: 11px;
+    line-height: 1.7;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled,
+button:disabled,
+[aria-disabled="true"] {
+    cursor: not-allowed !important;
+    opacity: var(--ui-disabled-opacity);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--primary-700, var(--portal-blue, #1f527f));
+}
+
+/* ---------- Buttons ---------- */
+
+.btn,
+.crud-button,
+.login-submit,
+.portal-primary-button,
+.subscription-button,
+.portal-logout,
+.crud-row-action,
+.ui-icon-button,
+.portal-icon-button {
+    min-height: 42px;
+    border-radius: 11px;
+    font-family: var(--ui-font);
+    font-size: 13px;
+    font-weight: 750;
+    letter-spacing: 0;
+    transition:
+        transform var(--buildino-motion-fast, 160ms) ease,
+        box-shadow var(--buildino-motion-fast, 160ms) ease,
+        border-color var(--buildino-motion-fast, 160ms) ease,
+        background-color var(--buildino-motion-fast, 160ms) ease,
+        color var(--buildino-motion-fast, 160ms) ease,
+        opacity var(--buildino-motion-fast, 160ms) ease;
+}
+
+.crud-button--primary,
+.login-submit,
+.subscription-button.primary,
+.btn-primary {
+    border-color: var(--primary-700, var(--portal-blue, #1f527f));
+    background: var(--primary-700, var(--portal-blue, #1f527f));
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(31, 82, 127, .14);
+}
+
+.crud-button--primary:hover:not(:disabled),
+.login-submit:hover:not(:disabled),
+.subscription-button.primary:hover:not(:disabled),
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.04);
+    box-shadow: 0 10px 24px rgba(31, 82, 127, .2);
+}
+
+.crud-button--soft,
+.subscription-button,
+.btn-outline-secondary {
+    border-color: var(--border, var(--portal-border, #dfe6ef));
+    background: var(--surface-soft, var(--portal-soft, #f8fafc));
+    color: var(--text-soft, var(--portal-text, #34445d));
+}
+
+.crud-button--soft:hover:not(:disabled),
+.subscription-button:hover:not(:disabled) {
+    border-color: var(--border-strong, var(--portal-border, #ccd6e2));
+    background: var(--surface, var(--portal-surface, #fff));
+}
+
+.crud-row-action--danger,
+.ui-button--danger,
+.subscription-button.danger {
+    border-color: color-mix(in srgb, var(--danger, #bd3340) 28%, transparent);
+    background: var(--danger-soft, #fdecef);
+    color: var(--danger, #bd3340);
+}
+
+/* ---------- Cards / surfaces ---------- */
+
+.crud-panel,
+.crud-group,
+.subscription-card,
+.portal-section,
+.portal-card,
+.dashboard-card,
+.auth-recovery-card,
+.login-card {
+    border-color: var(--border, var(--portal-border, #e2e8f0));
+    border-radius: var(--ui-card-radius);
+}
+
+.alert,
+.login-alert,
+.subscription-alert,
+.subscription-errors,
+.crud-inline-note,
+.otp-login-status {
+    border-radius: 12px;
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+.alert--success,
+.subscription-alert {
+    border: 1px solid color-mix(in srgb, var(--success, #17845a) 18%, transparent);
+    background: var(--success-soft, #e7f7ef);
+    color: var(--success, #17845a);
+}
+
+.alert--danger,
+.subscription-errors,
+.crud-form-error {
+    border: 1px solid color-mix(in srgb, var(--danger, #bd3340) 18%, transparent);
+    background: var(--danger-soft, #fdecef);
+    color: var(--danger, #bd3340);
+}
+
+/* ---------- Tables ---------- */
+
+.table,
+.crud-table,
+.buildino-datatable {
+    direction: rtl;
+    font-variant-numeric: tabular-nums;
+}
+
+.table > :not(caption) > * > *,
+.crud-table th,
+.crud-table td {
+    vertical-align: middle;
+}
+
+.crud-table thead th,
+table.buildino-datatable thead th {
+    color: var(--muted, var(--portal-muted, #718096));
+    font-size: 12px !important;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.crud-table tbody td,
+table.buildino-datatable tbody td {
+    font-size: 12px !important;
+}
+
+.table-responsive,
+.crud-table-wrap,
+.ui-table-wrap {
+    scrollbar-width: thin;
+}
+
+/* ---------- Accessibility / states ---------- */
+
+:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--primary-500, #3b7dae) 26%, transparent);
+    outline-offset: 2px;
+}
+
+[aria-busy="true"] {
+    cursor: progress;
+}
+
+.buildino-empty-state,
+.ui-empty-state,
+.crud-empty,
+.portal-empty-mini {
+    color: var(--muted, var(--portal-muted, #718096));
+}
+
+.ui-toast,
+.crud-toast {
+    font-size: 12px;
+    line-height: 1.75;
+}
+
+/* ---------- RTL details ---------- */
+
+.breadcrumb,
+.crud-breadcrumb,
+.pagination,
+.input-group {
+    direction: rtl;
+}
+
+.input-group > .form-control:not(:last-child),
+.input-group > .form-select:not(:last-child) {
+    border-radius: 0 var(--ui-control-radius) var(--ui-control-radius) 0;
+}
+
+.input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+    margin-right: -1px;
+    margin-left: 0;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 991.98px) {
+    .crud-header,
+    .crud-hero,
+    .portal-operation-hero,
+    .portal-detail-hero {
+        align-items: stretch;
+    }
+
+    .crud-header__actions,
+    .crud-toolbar,
+    .portal-section__actions {
+        gap: 8px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    :root {
+        --ui-control-height: 48px;
+    }
+
+    .crud-header,
+    .crud-hero {
+        padding: 18px;
+        border-radius: 16px;
+    }
+
+    .crud-header__actions,
+    .crud-toolbar,
+    .crud-toolbar__actions,
+    .portal-section__actions {
+        width: 100%;
+    }
+
+    .crud-header__actions .crud-button,
+    .crud-toolbar__actions .crud-button {
+        flex: 1 1 auto;
+    }
+
+    .table-responsive,
+    .crud-table-wrap,
+    .ui-table-wrap {
+        margin-inline: -12px;
+        padding-inline: 12px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .ui-form-grid,
+    .crud-form-grid,
+    .subscription-form,
+    .subscription-meta {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .ui-field--wide,
+    .crud-field--wide,
+    .subscription-form .wide {
+        grid-column: 1 !important;
+    }
+
+    .crud-button,
+    .login-submit,
+    .subscription-button {
+        min-height: 46px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn,
+    .crud-button,
+    .login-submit,
+    .subscription-button,
+    .portal-icon-button {
+        transform: none !important;
+    }
+}
