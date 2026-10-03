@@ -58,7 +58,7 @@
                     </strong>
 
                     <small>
-                        Resident & Provider Portal
+                        پرتال ساکنین و ارائه‌دهندگان
                     </small>
                 </div>
             </div>
