@@ -49,7 +49,7 @@ jobs:
         run: composer validate --strict
 
       - name: Audit PHP dependencies
-        run: composer audit --no-interaction --abandoned=report
+        run: composer audit --locked --no-interaction --abandoned=report
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
