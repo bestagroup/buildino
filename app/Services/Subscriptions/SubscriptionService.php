@@ -34,10 +34,41 @@ final class SubscriptionService
             ->first();
     }
 
+    public function ensureTrial(
+        Building $building,
+        ?User $actor = null
+    ): BuildingSubscription {
+        $usable = $this->usable($building);
+
+        if ($usable) {
+            return $usable;
+        }
+
+        $plan = Plan::query()->firstOrCreate(
+            ['code' => 'trial'],
+            [
+                'title' => 'آزمایشی',
+                'description' => 'پلن آزمایشی پیش‌فرض Buildino',
+                'price' => 0,
+                'duration_days' => 14,
+                'is_active' => true,
+            ]
+        );
+
+        return $this->activate(
+            $building,
+            $plan,
+            $actor,
+            now(),
+            $plan->duration_days ?? 14,
+            7
+        );
+    }
+
     public function activate(
         Building $building,
         Plan $plan,
-        User $actor,
+        ?User $actor = null,
         ?CarbonInterface $startsAt = null,
         ?int $durationDays = null,
         int $graceDays = 7,
@@ -86,7 +117,7 @@ final class SubscriptionService
                 'status' => SubscriptionStatus::Active,
                 'limits' => $limits,
                 'metadata' => $metadata,
-                'created_by' => $actor->getKey(),
+                'created_by' => $actor?->getKey(),
             ]);
 
             return $subscription->load('plan.features');
