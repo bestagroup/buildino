@@ -9,7 +9,7 @@ return [
         ],
         'access' => [
             'title' => 'کاربران و دسترسی',
-            'description' => 'کاربر، نقش، Scope، مالکیت و سکونت',
+            'description' => 'کاربر، نقش، محدوده دسترسی، مالکیت و سکونت',
             'icon' => 'users'
         ],
         'guest' => [
@@ -19,7 +19,7 @@ return [
         ],
         'facility' => [
             'title' => 'امکانات و رزرو',
-            'description' => 'Facility، برنامه زمانی، Rule و Reservation',
+            'description' => 'امکانات، برنامه زمانی، قوانین و رزرو',
             'icon' => 'calendar'
         ],
         'finance' => [
@@ -29,22 +29,22 @@ return [
         ],
         'services' => [
             'title' => 'خدمات',
-            'description' => 'درخواست خدمت و Workflow مالی',
+            'description' => 'درخواست خدمت و فرایند مالی',
             'icon' => 'tools'
         ],
         'support' => [
             'title' => 'پشتیبانی',
-            'description' => 'تیکت، دسته‌بندی، SLA و پیام',
+            'description' => 'تیکت، دسته‌بندی، سطح خدمت و پیام',
             'icon' => 'support'
         ],
         'content' => [
             'title' => 'اطلاع‌رسانی و اسناد',
-            'description' => 'اعلان، اسناد، صورتجلسه و Notification',
+            'description' => 'اعلان، اسناد، صورتجلسه و اطلاع‌رسانی',
             'icon' => 'bell'
         ],
         'reports' => [
             'title' => 'گزارش و کنترل',
-            'description' => 'Export، گزارش و کنترل عملیاتی',
+            'description' => 'خروجی، گزارش و کنترل عملیاتی',
             'icon' => 'chart'
         ]
     ],
@@ -74,7 +74,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'code',
@@ -183,7 +183,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'code',
@@ -255,13 +255,13 @@ return [
                 ],
                 [
                     'name' => 'timezone',
-                    'label' => 'Timezone',
+                    'label' => 'منطقه زمانی',
                     'type' => 'text',
                     'default' => 'Asia/Tehran'
                 ],
                 [
                     'name' => 'currency',
-                    'label' => 'Currency',
+                    'label' => 'واحد پول',
                     'type' => 'text',
                     'default' => 'IRR'
                 ],
@@ -335,7 +335,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'title',
@@ -408,7 +408,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'floor_number',
@@ -480,7 +480,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'unit_number',
@@ -588,7 +588,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'full_name',
@@ -681,7 +681,7 @@ return [
         'permission_scope' => 'global',
             'group' => 'access',
             'title' => 'نقش‌ها و مجوزها',
-            'description' => 'تعریف Role و تخصیص Permission',
+            'description' => 'تعریف نقش و تخصیص مجوز',
             'list' => [
                 'method' => 'GET',
                 'url' => '/management/data/roles'
@@ -701,7 +701,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'name',
@@ -762,8 +762,8 @@ return [
         'permission' => 'users.view',
         'permission_scope' => 'global',
             'group' => 'access',
-            'title' => 'تخصیص نقش و Scope',
-            'description' => 'اتصال Role به کاربر در سطح Global، مجتمع، ساختمان یا بلوک',
+            'title' => 'تخصیص نقش و محدوده',
+            'description' => 'اتصال نقش به کاربر در سطح سراسری، مجتمع، ساختمان یا بلوک',
             'list' => [
                 'method' => 'GET',
                 'url' => '/management/data/role-assignments'
@@ -783,7 +783,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'user_name',
@@ -795,11 +795,11 @@ return [
                 ],
                 [
                     'key' => 'scope_type',
-                    'label' => 'نوع Scope'
+                    'label' => 'نوع محدوده'
                 ],
                 [
                     'key' => 'scope_id',
-                    'label' => 'Scope ID'
+                    'label' => 'شناسه محدوده'
                 ],
                 [
                     'key' => 'is_active',
@@ -823,7 +823,7 @@ return [
                 ],
                 [
                     'name' => 'scope_type',
-                    'label' => 'نوع Scope',
+                    'label' => 'نوع محدوده',
                     'type' => 'select',
                     'required' => true,
                     'options' => [
@@ -847,9 +847,9 @@ return [
                 ],
                 [
                     'name' => 'scope_id',
-                    'label' => 'شناسه Scope',
+                    'label' => 'شناسه محدوده',
                     'type' => 'number',
-                    'help' => 'برای Global خالی بماند؛ برای مجتمع/ساختمان/بلوک ID وارد شود.'
+                    'help' => 'برای سطح سراسری خالی بماند؛ برای مجتمع، ساختمان یا بلوک شناسه وارد شود.'
                 ],
                 [
                     'name' => 'starts_at',
@@ -898,11 +898,11 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'user.id',
-                    'label' => 'User ID'
+                    'label' => 'شناسه کاربر'
                 ],
                 [
                     'key' => 'ownership_percentage',
@@ -1014,11 +1014,11 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'user.id',
-                    'label' => 'User ID'
+                    'label' => 'شناسه کاربر'
                 ],
                 [
                     'key' => 'occupancy_type',
@@ -1144,7 +1144,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'invited_user',
@@ -1262,7 +1262,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'guest',
             'title' => 'مهمان‌ها و بازدید',
-            'description' => 'ثبت Visit و کنترل ورود و خروج',
+            'description' => 'ثبت بازدید مهمان و کنترل ورود و خروج',
             'context' => [
                 [
                     'name' => 'unit_id',
@@ -1286,7 +1286,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'guest.first_name',
@@ -1414,7 +1414,7 @@ return [
                 ],
                 [
                     'key' => 'cancel',
-                    'title' => 'لغو Visit',
+                    'title' => 'لغو ورود مهمان',
                     'method' => 'POST',
                     'url' => '/api/v1/guest-visits/{id}/cancel',
                     'tone' => 'danger',
@@ -1427,7 +1427,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'facility',
             'title' => 'امکانات مشاع',
-            'description' => 'تعریف سالن، استخر، باشگاه و سایر Facilities',
+            'description' => 'تعریف سالن، استخر، باشگاه و سایر امکانات',
             'context' => [
                 [
                     'name' => 'building_id',
@@ -1455,7 +1455,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'code',
@@ -1568,12 +1568,12 @@ return [
         'permission' => 'facilities.view',
         'permission_scope' => 'any',
             'group' => 'facility',
-            'title' => 'برنامه زمانی Facility',
-            'description' => 'روزها و ساعات فعال هر Facility',
+            'title' => 'برنامه زمانی امکان',
+            'description' => 'روزها و ساعات فعال هر امکان',
             'context' => [
                 [
                     'name' => 'building_facility_id',
-                    'label' => 'Facility',
+                    'label' => 'امکان',
                     'lookup' => 'facilities',
                     'required' => true
                 ]
@@ -1597,7 +1597,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'day_of_week',
@@ -1716,19 +1716,19 @@ return [
         'permission' => 'facilities.view',
         'permission_scope' => 'any',
             'group' => 'facility',
-            'title' => 'بازه‌های زمانی Facility',
-            'description' => 'تعریف Slotهای قابل رزرو',
+            'title' => 'بازه‌های زمانی امکان',
+            'description' => 'تعریف بازه‌های زمانی قابل رزرو',
         'list_transform' => 'schedule_time_slots',
             'context' => [
                 [
                     'name' => 'building_facility_id',
-                    'label' => 'Facility',
+                    'label' => 'امکان',
                     'lookup' => 'facilities',
                     'required' => true
                 ],
                 [
                     'name' => 'facility_schedule_id',
-                    'label' => 'Schedule',
+                    'label' => 'برنامه زمانی',
                     'lookup' => 'facility_schedules',
                     'required' => true,
                     'depends_on' => 'building_facility_id'
@@ -1753,11 +1753,11 @@ return [
             'columns' => [
             [
                 'key' => 'id',
-                'label' => 'ID'
+                'label' => 'شناسه'
             ],
             [
                 'key' => 'facility_schedule_id',
-                'label' => 'Schedule'
+                'label' => 'برنامه زمانی'
             ],
             [
                 'key' => 'start_time',
@@ -1783,13 +1783,13 @@ return [
         'fields' => [
                 [
                     'name' => 'start_time',
-                    'label' => 'شروع Slot',
+                    'label' => 'شروع بازه',
                     'type' => 'time',
                     'required' => true
                 ],
                 [
                     'name' => 'end_time',
-                    'label' => 'پایان Slot',
+                    'label' => 'پایان بازه',
                     'type' => 'time',
                     'required' => true
                 ],
@@ -1817,13 +1817,13 @@ return [
         'permission' => 'facilities.view',
         'permission_scope' => 'any',
             'group' => 'facility',
-            'title' => 'قوانین رزرو Facility',
+            'title' => 'قوانین رزرو امکان',
             'description' => 'محدودیت مدت، ظرفیت رزرو و لغو',
             'mode' => 'singleton',
             'context' => [
                 [
                     'name' => 'building_facility_id',
-                    'label' => 'Facility',
+                    'label' => 'امکان',
                     'lookup' => 'facilities',
                     'required' => true
                 ]
@@ -1910,12 +1910,12 @@ return [
         'permission' => 'facilities.view',
         'permission_scope' => 'any',
             'group' => 'facility',
-            'title' => 'Blackout Facility',
+            'title' => 'محدودیت زمانی امکان',
             'description' => 'مسدودسازی زمان‌های غیرقابل رزرو',
             'context' => [
                 [
                     'name' => 'building_facility_id',
-                    'label' => 'Facility',
+                    'label' => 'امکان',
                     'lookup' => 'facilities',
                     'required' => true
                 ]
@@ -1935,7 +1935,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'starts_at',
@@ -1975,11 +1975,11 @@ return [
         'permission_scope' => 'any',
             'group' => 'facility',
             'title' => 'رزرو امکانات',
-            'description' => 'ثبت رزرو و مدیریت Workflow',
+            'description' => 'ثبت رزرو و مدیریت فرایند',
             'context' => [
                 [
                     'name' => 'building_facility_id',
-                    'label' => 'Facility برای ثبت رزرو',
+                    'label' => 'امکان برای ثبت رزرو',
                     'lookup' => 'facilities',
                     'required' => false
                 ]
@@ -1995,11 +1995,11 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'building_facility.title',
-                    'label' => 'Facility'
+                    'label' => 'امکان'
                 ],
                 [
                     'key' => 'unit.unit_number',
@@ -2036,7 +2036,7 @@ return [
                 ],
                 [
                     'name' => 'facility_time_slot_id',
-                    'label' => 'Time Slot ID',
+                    'label' => 'شناسه بازه زمانی',
                     'type' => 'number'
                 ],
                 [
@@ -2153,7 +2153,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'title',
@@ -2217,7 +2217,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'title',
@@ -2289,7 +2289,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'finance',
             'title' => 'صورتحساب واحد',
-            'description' => 'ثبت و مدیریت Invoice واحد',
+            'description' => 'ثبت و مدیریت صورتحساب واحد',
             'context' => [
                 [
                     'name' => 'unit_id',
@@ -2317,7 +2317,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'invoice_number',
@@ -2403,7 +2403,7 @@ return [
             'actions' => [
                 [
                     'key' => 'issue',
-                    'title' => 'صدور Invoice',
+                    'title' => 'صدور صورتحساب',
                     'method' => 'POST',
                     'url' => '/api/v1/invoices/{id}/issue',
                     'tone' => 'success'
@@ -2530,7 +2530,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'title',
@@ -2720,7 +2720,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'title',
@@ -2821,7 +2821,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'finance',
             'title' => 'پرداخت‌ها',
-            'description' => 'ثبت پرداخت Invoice و Verify',
+            'description' => 'ثبت پرداخت صورتحساب و تأیید آن',
             'context' => [
                 [
                     'name' => 'building_id',
@@ -2831,7 +2831,7 @@ return [
                 ],
                 [
                     'name' => 'unit_invoice_id',
-                    'label' => 'Invoice برای ثبت',
+                    'label' => 'صورتحساب برای ثبت',
                     'lookup' => 'invoices',
                     'required' => false
                 ]
@@ -2847,7 +2847,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'payment_number',
@@ -2926,7 +2926,7 @@ return [
             'actions' => [
                 [
                     'key' => 'verify',
-                    'title' => 'Verify پرداخت',
+                    'title' => 'تأیید پرداخت',
                     'method' => 'POST',
                     'url' => '/api/v1/payments/{id}/verify',
                     'tone' => 'success'
@@ -2964,7 +2964,7 @@ return [
                 'url' => '/api/v1/buildings/{building_id}/loyalty-rules'
             ],
             'columns' => [
-                ['key' => 'id', 'label' => 'ID'],
+                ['key' => 'id', 'label' => 'شناسه'],
                 ['key' => 'event_type', 'label' => 'رویداد'],
                 ['key' => 'version', 'label' => 'نسخه'],
                 ['key' => 'points', 'label' => 'امتیاز'],
@@ -3017,7 +3017,7 @@ return [
                 'url' => '/api/v1/buildings/{building_id}/loyalty-rewards'
             ],
             'columns' => [
-                ['key' => 'id', 'label' => 'ID'],
+                ['key' => 'id', 'label' => 'شناسه'],
                 ['key' => 'title', 'label' => 'عنوان'],
                 ['key' => 'required_points', 'label' => 'امتیاز لازم'],
                 ['key' => 'is_active', 'label' => 'فعال'],
@@ -3049,7 +3049,7 @@ return [
                 'url' => '/api/v1/buildings/{building_id}/loyalty-claims?per_page=100'
             ],
             'columns' => [
-                ['key' => 'id', 'label' => 'ID'],
+                ['key' => 'id', 'label' => 'شناسه'],
                 ['key' => 'user_name', 'label' => 'کاربر'],
                 ['key' => 'reward.title', 'label' => 'جایزه'],
                 ['key' => 'status', 'label' => 'وضعیت'],
@@ -3104,7 +3104,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'bank_name',
@@ -3197,7 +3197,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'amount',
@@ -3274,7 +3274,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'finance',
             'title' => 'پرداخت قبوض',
-            'description' => 'کسر قبض از Wallet ساختمان',
+            'description' => 'کسر مبلغ قبض از کیف پول ساختمان',
             'context' => [
                 [
                     'name' => 'building_id',
@@ -3294,7 +3294,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'bill_type',
@@ -3408,7 +3408,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'services',
             'title' => 'درخواست خدمات',
-            'description' => 'ثبت و مدیریت Service Request تا تسویه',
+            'description' => 'ثبت و مدیریت درخواست خدمت تا تسویه',
             'list' => [
                 'method' => 'GET',
                 'url' => '/api/v1/service-requests?per_page=100'
@@ -3428,7 +3428,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'request_number',
@@ -3513,7 +3513,7 @@ return [
             'actions' => [
                 [
                     'key' => 'assign',
-                    'title' => 'تخصیص Provider',
+                    'title' => 'تخصیص ارائه‌دهنده',
                     'method' => 'POST',
                     'url' => '/api/v1/service-requests/{id}/assign',
                     'tone' => 'primary',
@@ -3529,7 +3529,7 @@ return [
                 ],
                 [
                     'key' => 'quote',
-                    'title' => 'ثبت Quote',
+                    'title' => 'ثبت پیشنهاد قیمت',
                     'method' => 'POST',
                     'url' => '/api/v1/service-requests/{id}/quotes',
                     'tone' => 'primary',
@@ -3594,7 +3594,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'support',
             'title' => 'تیکت‌های پشتیبانی',
-            'description' => 'ثبت، تخصیص و چرخه SLA',
+            'description' => 'ثبت، تخصیص و چرخه سطح خدمت',
             'list' => [
                 'method' => 'GET',
                 'url' => '/api/v1/support-tickets?per_page=100'
@@ -3614,7 +3614,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'ticket_number',
@@ -3780,7 +3780,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'support',
             'title' => 'دسته‌بندی پشتیبانی',
-            'description' => 'تعریف Categoryهای تیکت',
+            'description' => 'تعریف دسته‌بندی‌های تیکت',
             'list' => [
                 'method' => 'GET',
                 'url' => '/api/v1/support-config/categories'
@@ -3796,7 +3796,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'title',
@@ -3848,7 +3848,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'support_category_id',
@@ -3947,7 +3947,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'title',
@@ -4057,7 +4057,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'content',
             'title' => 'اسناد',
-            'description' => 'ثبت Document Record روی موجودیت‌های سامانه',
+            'description' => 'ثبت سند روی موجودیت‌های سامانه',
             'list' => [
                 'method' => 'GET',
                 'url' => '/api/v1/documents?per_page=100'
@@ -4077,7 +4077,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'title',
@@ -4218,7 +4218,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'title',
@@ -4286,7 +4286,7 @@ return [
             'fields' => [
                 [
                     'name' => 'preferences',
-                    'label' => 'Preferences',
+                    'label' => 'تنظیمات',
                     'type' => 'json',
                     'required' => true,
                     'placeholder' => '[{"notification_type":"charge_due","channel":"database","is_enabled":true}]'
@@ -4298,7 +4298,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'reports',
             'title' => 'خروجی گزارش',
-            'description' => 'تولید و مشاهده CSV/Excel/PDF',
+            'description' => 'تولید و مشاهده خروجی‌های CSV، Excel و PDF',
             'list' => [
                 'method' => 'GET',
                 'url' => '/api/v1/report-exports'
@@ -4318,7 +4318,7 @@ return [
             'columns' => [
                 [
                     'key' => 'id',
-                    'label' => 'ID'
+                    'label' => 'شناسه'
                 ],
                 [
                     'key' => 'format',
