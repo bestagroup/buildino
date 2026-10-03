@@ -11,7 +11,7 @@
 @section('content')
 <section class="crud-hero">
     <div>
-        <span class="eyebrow">Operational Web UI</span>
+        <span class="eyebrow">مرکز عملیات سامانه</span>
         <h2>مرکز عملیات Buildino</h2>
         <p>
             از این بخش می‌توانید اطلاعات پایه و فرآیندهای عملیاتی سامانه را
