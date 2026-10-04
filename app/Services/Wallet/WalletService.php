@@ -9,7 +9,9 @@ use App\Enums\WalletTransferType;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransfer;
+use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -50,7 +52,14 @@ final class WalletService
             ]);
         }
 
-        return DB::transaction(function () use (
+        return $this->executeIdempotentTransfer(
+            $idempotencyKey,
+            null,
+            $wallet,
+            $amount,
+            $type,
+            $reference,
+            fn (): WalletTransfer => DB::transaction(function () use (
             $wallet,
             $amount,
             $type,
@@ -104,7 +113,8 @@ final class WalletService
             return $this->completeTransfer(
                 $transfer
             );
-        }, 3);
+        }, 3)
+        );
     }
 
     public function transfer(
@@ -129,7 +139,14 @@ final class WalletService
             ]);
         }
 
-        return DB::transaction(function () use (
+        return $this->executeIdempotentTransfer(
+            $idempotencyKey,
+            $source,
+            $destination,
+            $amount,
+            $type,
+            $reference,
+            fn (): WalletTransfer => DB::transaction(function () use (
             $source,
             $destination,
             $amount,
@@ -225,7 +242,8 @@ final class WalletService
             return $this->completeTransfer(
                 $transfer
             );
-        }, 3);
+        }, 3)
+        );
     }
 
 
@@ -296,7 +314,14 @@ final class WalletService
             ]);
         }
 
-        return DB::transaction(function () use (
+        return $this->executeIdempotentTransfer(
+            $idempotencyKey,
+            $wallet,
+            null,
+            $amount,
+            $type,
+            $reference,
+            fn (): WalletTransfer => DB::transaction(function () use (
             $wallet,
             $amount,
             $type,
@@ -360,7 +385,8 @@ final class WalletService
             return $this->completeTransfer(
                 $transfer
             );
-        }, 3);
+        }, 3)
+        );
     }
 
 
@@ -386,7 +412,14 @@ final class WalletService
             ]);
         }
 
-        return DB::transaction(function () use (
+        return $this->executeIdempotentTransfer(
+            $idempotencyKey,
+            $source,
+            $destination,
+            $amount,
+            $type,
+            $reference,
+            fn (): WalletTransfer => DB::transaction(function () use (
             $source,
             $destination,
             $amount,
@@ -502,9 +535,50 @@ final class WalletService
             return $this->completeTransfer(
                 $transfer
             );
-        }, 3);
+        }, 3)
+        );
     }
 
+
+    private function executeIdempotentTransfer(
+        string $idempotencyKey,
+        ?Wallet $source,
+        ?Wallet $destination,
+        int $amount,
+        WalletTransferType $type,
+        ?Model $reference,
+        Closure $operation
+    ): WalletTransfer {
+        try {
+            return $operation();
+        } catch (QueryException $exception) {
+            /*
+             * Concurrent first-use requests on different wallet rows can
+             * race on UNIQUE(idempotency_key). Recover only when the winner
+             * now exists, then validate that the key represents exactly the
+             * same semantic operation.
+             */
+            $existing = WalletTransfer::query()
+                ->where(
+                    'idempotency_key',
+                    $idempotencyKey
+                )
+                ->first();
+
+            if (! $existing) {
+                throw $exception;
+            }
+
+            return $this->assertIdempotentTransfer(
+                $existing,
+                $source,
+                $destination,
+                $amount,
+                $type,
+                $reference
+            );
+        }
+    }
 
     private function assertIdempotentTransfer(
         WalletTransfer $transfer,
