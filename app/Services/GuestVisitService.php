@@ -56,19 +56,30 @@ final class GuestVisitService
         GuestVisit $visit,
         array $data
     ): GuestVisit {
-        if (
-            $visit->status !== GuestVisitStatus::Invited
-        ) {
-            throw ValidationException::withMessages([
-                'visit' => [
-                    'Only an invited visit can be edited.',
-                ],
-            ]);
-        }
+        return DB::transaction(function () use (
+            $visit,
+            $data
+        ): GuestVisit {
+            $visit = GuestVisit::query()
+                ->lockForUpdate()
+                ->findOrFail(
+                    $visit->getKey()
+                );
 
-        $visit->update($data);
+            if (
+                $visit->status !== GuestVisitStatus::Invited
+            ) {
+                throw ValidationException::withMessages([
+                    'visit' => [
+                        'Only an invited visit can be edited.',
+                    ],
+                ]);
+            }
 
-        return $visit->refresh();
+            $visit->update($data);
+
+            return $visit->refresh();
+        }, 3);
     }
 
     public function cancel(
