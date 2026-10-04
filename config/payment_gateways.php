@@ -25,6 +25,11 @@ return [
         90
     ),
 
+    'event_processing_lock_seconds' => (int) env(
+        'PAYMENT_GATEWAY_EVENT_LOCK_SECONDS',
+        90
+    ),
+
     'gateways' => [
         /*
          * Provider-neutral HTTPS JSON adapter.
