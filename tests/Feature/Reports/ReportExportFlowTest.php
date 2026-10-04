@@ -16,6 +16,7 @@ use App\Services\Reports\GeneratedReportService;
 use App\Services\Reports\ReportDataResolver;
 use App\Services\Reports\Export\ReportExportWriterFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -71,6 +72,19 @@ class ReportExportFlowTest extends TestCase
         $this->assertSame(
             now()->toDateString(),
             $report->filters['to']
+        );
+    }
+
+    public function test_report_job_has_overlap_protection(): void
+    {
+        $job = new GenerateReportJob(123);
+
+        $middleware = $job->middleware();
+
+        $this->assertCount(1, $middleware);
+        $this->assertInstanceOf(
+            WithoutOverlapping::class,
+            $middleware[0]
         );
     }
 
