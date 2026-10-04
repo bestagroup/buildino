@@ -112,7 +112,17 @@ class ManagedFileFlowTest extends TestCase
         $this->assertDatabaseMissing('file_relations', [
             'file_id' => $file->id,
         ]);
-        Storage::disk('private')->assertMissing($file->path);
+        /*
+         * Production uses an asynchronous queue for physical blob cleanup.
+         * The reconciliation command is intentionally idempotent and is the
+         * deterministic assertion boundary in every queue mode.
+         */
+        $this->artisan(
+            'files:purge-deleted'
+        )->assertSuccessful();
+
+        Storage::disk('private')
+            ->assertMissing($file->path);
     }
 
     public function test_cross_building_file_access_and_unsafe_upload_are_rejected(): void
