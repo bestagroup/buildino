@@ -149,6 +149,7 @@ class DatabaseHardeningTest extends TestCase
             ['unit_invoices', 'ui_building_issue_status_idx'],
             ['invoice_installments', 'ii_invoice_status_due_idx'],
             ['service_requests', 'sr_building_created_idx'],
+            ['facility_reservations', 'fr_booking_conflict_idx'],
         ] as [$table, $index]) {
             $this->assertTrue(
                 Schema::hasIndex($table, $index),
