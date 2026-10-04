@@ -415,6 +415,23 @@ class UiFoundationWebTest extends TestCase
             $foundation
         );
 
+        $legacyCrud = (string) file_get_contents(
+            public_path('js/buildino-crud.js')
+        );
+
+        $this->assertStringContainsString(
+            'buildino:form-mounted',
+            $legacyCrud
+        );
+        $this->assertStringContainsString(
+            'aria-required',
+            $legacyCrud
+        );
+        $this->assertStringContainsString(
+            'input.inputMode',
+            $legacyCrud
+        );
+
         foreach (
             [
                 '/management/login',
