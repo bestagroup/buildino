@@ -335,14 +335,20 @@ final class PaymentGatewayCallbackService
 
             return $event->refresh();
         } catch (\Throwable $exception) {
+            /*
+             * Persist a non-sensitive operational error only. Provider
+             * responses and exception messages can contain merchant data,
+             * tokens or upstream internals; the full exception belongs in
+             * protected application logs, not in an admin-queryable table.
+             */
+            report($exception);
+
             $event->update([
                 'status' =>
                     PaymentGatewayEventStatus::Failed,
                 'error_message' =>
-                    mb_substr(
-                        $exception->getMessage(),
-                        0,
-                        5000
+                    $this->safeFailureMessage(
+                        $exception
                     ),
             ]);
 
@@ -351,6 +357,16 @@ final class PaymentGatewayCallbackService
         } finally {
             $lock->release();
         }
+    }
+
+
+    private function safeFailureMessage(
+        \Throwable $exception
+    ): string {
+        return sprintf(
+            'Gateway verification failed [%s].',
+            class_basename($exception)
+        );
     }
 
     private function event(
