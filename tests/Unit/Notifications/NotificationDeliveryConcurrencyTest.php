@@ -10,6 +10,7 @@ use App\Models\NotificationLog;
 use App\Models\User;
 use App\Services\Notifications\UserNotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class NotificationDeliveryConcurrencyTest extends TestCase
@@ -98,10 +99,70 @@ class NotificationDeliveryConcurrencyTest extends TestCase
         $this->assertSame(2, $result->attempts);
     }
 
-    private function activeUser(): User
+    public function test_idempotency_key_cannot_be_reused_for_another_recipient(): void
     {
+        $firstUser = $this->activeUser(
+            '09129990111'
+        );
+        $secondUser = $this->activeUser(
+            '09129990112'
+        );
+        $sms = $this->bindSenders();
+        $service = app(
+            UserNotificationService::class
+        );
+
+        $message = new NotificationMessage(
+            'test.sms',
+            'Buildino',
+            'Idempotency binding'
+        );
+
+        $first = $service->send(
+            $firstUser,
+            $message,
+            'sms',
+            'notification-recipient-binding'
+        );
+
+        $this->assertNotNull($first);
+        $this->assertSame(1, $sms->calls);
+
+        try {
+            $service->send(
+                $secondUser,
+                $message,
+                'sms',
+                'notification-recipient-binding'
+            );
+
+            $this->fail(
+                'Notification idempotency key collision was accepted.'
+            );
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey(
+                'idempotency_key',
+                $exception->errors()
+            );
+        }
+
+        $this->assertSame(1, $sms->calls);
+        $this->assertSame(
+            $firstUser->id,
+            (int) NotificationLog::query()
+                ->where(
+                    'idempotency_key',
+                    'notification-recipient-binding'
+                )
+                ->value('notifiable_id')
+        );
+    }
+
+    private function activeUser(
+        string $mobile = '09129990111'
+    ): User {
         return User::factory()->create([
-            'mobile' => '09129990111',
+            'mobile' => $mobile,
             'mobile_verified_at' => now(),
             'is_active' => true,
             'is_blocked' => false,
