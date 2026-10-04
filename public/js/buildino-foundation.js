@@ -157,10 +157,38 @@
         );
     };
 
+    const enhanceFeedback = (root = document) => {
+        root
+            .querySelectorAll(
+                '.alert--success, .subscription-alert, .otp-login-status, [data-ui-status]'
+            )
+            .forEach((element) => {
+                if (! element.hasAttribute('role')) {
+                    element.setAttribute('role', 'status');
+                }
+
+                element.setAttribute('aria-live', 'polite');
+            });
+
+        root
+            .querySelectorAll(
+                '.alert--danger, .subscription-errors, .crud-form-error, .ui-field__error, .invalid-feedback, [data-ui-error]'
+            )
+            .forEach((element) => {
+                if (! element.hasAttribute('role')) {
+                    element.setAttribute('role', 'alert');
+                }
+
+                element.setAttribute('aria-live', 'assertive');
+            });
+    };
+
     const enhanceForms = (root = document) => {
         root
             .querySelectorAll(fieldSelector)
             .forEach(enhanceField);
+
+        enhanceFeedback(root);
     };
 
     window.BuildinoUI = Object.freeze({
