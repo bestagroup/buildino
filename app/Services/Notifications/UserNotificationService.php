@@ -10,7 +10,9 @@ use App\Enums\NotificationStatus;
 use App\Models\NotificationLog;
 use App\Models\UserDevice;
 use App\Models\User;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class UserNotificationService
@@ -73,6 +75,15 @@ class UserNotificationService
             ],
         );
 
+        if (! $log->wasRecentlyCreated) {
+            $this->assertIdempotentNotification(
+                $log,
+                $user,
+                $notification,
+                $channel
+            );
+        }
+
         if (! $log->wasRecentlyCreated && in_array(
             $log->status,
             [NotificationStatus::Sent, NotificationStatus::Delivered],
@@ -129,6 +140,46 @@ class UserNotificationService
             ])->save();
 
             throw $e;
+        }
+    }
+
+    private function assertIdempotentNotification(
+        NotificationLog $log,
+        User $user,
+        NotificationMessage $notification,
+        string $channel
+    ): void {
+        $storedData = Arr::sortRecursive(
+            (array) data_get(
+                $log->response,
+                'data',
+                []
+            )
+        );
+
+        $requestedData = Arr::sortRecursive(
+            $notification->data
+        );
+
+        if (
+            $log->notifiable_type
+                !== $user->getMorphClass()
+            || (int) $log->notifiable_id
+                !== (int) $user->getKey()
+            || (string) $log->notification_type
+                !== $notification->type
+            || (string) $log->channel
+                !== $channel
+            || (string) $log->title
+                !== $notification->title
+            || (string) $log->message
+                !== $notification->message
+            || $storedData !== $requestedData
+        ) {
+            throw ValidationException::withMessages([
+                'idempotency_key' =>
+                    'The idempotency key has already been used for a different notification operation.',
+            ]);
         }
     }
 
