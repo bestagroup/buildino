@@ -64,11 +64,14 @@ final class WalletService
                 ->first();
 
             if ($existing) {
-                $this->dispatchAccountingIfCompleted(
-                    $existing
+                return $this->assertIdempotentTransfer(
+                    $existing,
+                    null,
+                    $wallet,
+                    $amount,
+                    $type,
+                    $reference
                 );
-
-                return $existing;
             }
 
             $wallet = Wallet::query()
@@ -141,11 +144,14 @@ final class WalletService
                 ->first();
 
             if ($existing) {
-                $this->dispatchAccountingIfCompleted(
-                    $existing
+                return $this->assertIdempotentTransfer(
+                    $existing,
+                    $source,
+                    $destination,
+                    $amount,
+                    $type,
+                    $reference
                 );
-
-                return $existing;
             }
 
             $wallets = Wallet::query()
@@ -304,11 +310,14 @@ final class WalletService
                 ->first();
 
             if ($existing) {
-                $this->dispatchAccountingIfCompleted(
-                    $existing
+                return $this->assertIdempotentTransfer(
+                    $existing,
+                    $wallet,
+                    null,
+                    $amount,
+                    $type,
+                    $reference
                 );
-
-                return $existing;
             }
 
             $wallet = Wallet::query()
@@ -392,11 +401,14 @@ final class WalletService
                 ->first();
 
             if ($existing) {
-                $this->dispatchAccountingIfCompleted(
-                    $existing
+                return $this->assertIdempotentTransfer(
+                    $existing,
+                    $source,
+                    $destination,
+                    $amount,
+                    $type,
+                    $reference
                 );
-
-                return $existing;
             }
 
             $wallets = Wallet::query()
@@ -493,6 +505,59 @@ final class WalletService
         }, 3);
     }
 
+
+    private function assertIdempotentTransfer(
+        WalletTransfer $transfer,
+        ?Wallet $source,
+        ?Wallet $destination,
+        int $amount,
+        WalletTransferType $type,
+        ?Model $reference
+    ): WalletTransfer {
+        $storedType = $transfer->type instanceof \BackedEnum
+            ? $transfer->type->value
+            : (string) $transfer->type;
+
+        $expectedReferenceType =
+            $reference?->getMorphClass();
+
+        $expectedReferenceId =
+            $reference?->getKey();
+
+        $expectedCurrency = strtoupper(
+            (string) (
+                $source?->currency
+                ?? $destination?->currency
+                ?? 'IRR'
+            )
+        );
+
+        if (
+            $transfer->source_wallet_id !==
+                $source?->getKey()
+            || $transfer->destination_wallet_id !==
+                $destination?->getKey()
+            || (int) $transfer->amount !== $amount
+            || $storedType !== $type->value
+            || strtoupper((string) $transfer->currency)
+                !== $expectedCurrency
+            || $transfer->reference_type
+                !== $expectedReferenceType
+            || $transfer->reference_id
+                !== $expectedReferenceId
+        ) {
+            throw ValidationException::withMessages([
+                'idempotency_key' =>
+                    'The idempotency key has already been used for a different wallet operation.',
+            ]);
+        }
+
+        $this->dispatchAccountingIfCompleted(
+            $transfer
+        );
+
+        return $transfer->refresh();
+    }
 
     private function completeTransfer(
         WalletTransfer $transfer
