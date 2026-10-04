@@ -5,6 +5,7 @@ namespace App\Services\Files;
 use App\Contracts\FileScanner;
 use App\Enums\FileScanStatus;
 use App\Enums\FileVisibility;
+use App\Jobs\Files\DeleteManagedFileBlobJob;
 use App\Models\File as ManagedFile;
 use App\Models\FileRelation;
 use App\Models\User;
@@ -167,16 +168,33 @@ final class FileStorageService
 
     public function delete(ManagedFile $file): void
     {
-        $disk = $file->disk;
-        $path = $file->path;
+        $disk = (string) $file->disk;
+        $path = (string) $file->path;
 
-        DB::transaction(function () use ($file): void {
-            $file->fileRelations()->delete();
-            $file->delete();
-        });
+        DB::transaction(
+            function () use (
+                $file,
+                $disk,
+                $path
+            ): void {
+                $file->fileRelations()->delete();
+                $file->delete();
 
-        if (Storage::disk($disk)->exists($path)) {
-            Storage::disk($disk)->delete($path);
-        }
+                /*
+                 * Physical storage is an external system and cannot join the
+                 * database transaction. Delete the blob after commit through
+                 * a retryable idempotent job; the reconciliation command is
+                 * the final safety net if queue delivery itself is disrupted.
+                 */
+                DB::afterCommit(
+                    static fn () =>
+                        DeleteManagedFileBlobJob::dispatch(
+                            $disk,
+                            $path
+                        )
+                );
+            },
+            3
+        );
     }
 }
