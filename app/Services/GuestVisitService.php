@@ -56,19 +56,30 @@ final class GuestVisitService
         GuestVisit $visit,
         array $data
     ): GuestVisit {
-        if (
-            $visit->status !== GuestVisitStatus::Invited
-        ) {
-            throw ValidationException::withMessages([
-                'visit' => [
-                    'Only an invited visit can be edited.',
-                ],
-            ]);
-        }
+        return DB::transaction(function () use (
+            $visit,
+            $data
+        ): GuestVisit {
+            $visit = GuestVisit::query()
+                ->lockForUpdate()
+                ->findOrFail(
+                    $visit->getKey()
+                );
 
-        $visit->update($data);
+            if (
+                $visit->status !== GuestVisitStatus::Invited
+            ) {
+                throw ValidationException::withMessages([
+                    'visit' => [
+                        'Only an invited visit can be edited.',
+                    ],
+                ]);
+            }
 
-        return $visit->refresh();
+            $visit->update($data);
+
+            return $visit->refresh();
+        }, 3);
     }
 
     public function cancel(
@@ -112,33 +123,11 @@ final class GuestVisitService
         User $actor,
         array $data
     ): GuestAccessLog {
-        $visit->refresh();
-
-        /*
-         * Expiration is persisted before opening the transaction so
-         * the state change is not rolled back by the validation error.
-         */
-        if (
-            $visit->status === GuestVisitStatus::Invited
-            && $visit->expected_exit_at
-            && $visit->expected_exit_at->isPast()
-        ) {
-            $visit->update([
-                'status' => GuestVisitStatus::Expired,
-            ]);
-
-            throw ValidationException::withMessages([
-                'visit' => [
-                    'This guest visit has expired.',
-                ],
-            ]);
-        }
-
-        return DB::transaction(function () use (
+        $result = DB::transaction(function () use (
             $visit,
             $actor,
             $data
-        ): GuestAccessLog {
+        ): GuestAccessLog|GuestVisit {
             $visit = GuestVisit::query()
                 ->with('guest')
                 ->lockForUpdate()
@@ -156,6 +145,21 @@ final class GuestVisitService
                 ]);
             }
 
+            if (
+                $visit->expected_exit_at
+                && $visit->expected_exit_at->isPast()
+            ) {
+                $visit->update([
+                    'status' => GuestVisitStatus::Expired,
+                ]);
+
+                /*
+                 * Return the expired visit so the state transition commits.
+                 * Throwing inside the transaction would roll it back.
+                 */
+                return $visit->refresh();
+            }
+
             $log = $this->createAccessLog(
                 $visit,
                 $actor,
@@ -169,6 +173,16 @@ final class GuestVisitService
 
             return $log;
         });
+
+        if ($result instanceof GuestVisit) {
+            throw ValidationException::withMessages([
+                'visit' => [
+                    'This guest visit has expired.',
+                ],
+            ]);
+        }
+
+        return $result;
     }
 
     public function recordExit(

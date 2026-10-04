@@ -449,6 +449,64 @@ class GuestVisitFlowTest extends TestCase
         );
     }
 
+
+    public function test_expired_visit_is_persisted_as_expired_when_entry_is_attempted(): void
+    {
+        $security = $this->createUser(
+            '09122225501',
+            'security-expired-entry@example.test'
+        );
+
+        $structure = $this->createStructure('EXP-ENTRY');
+
+        $role = $this->createRoleWithPermissions(
+            'expired-entry-security',
+            [
+                'guest-visits.update',
+            ]
+        );
+
+        $this->assignRole(
+            $security,
+            $role,
+            $structure['building']
+        );
+
+        $guest = \App\Models\Guest::query()->create([
+            'first_name' => 'Expired',
+            'last_name' => 'Entry',
+        ]);
+
+        $visit = GuestVisit::query()->create([
+            'guest_id' => $guest->id,
+            'unit_id' => $structure['unit']->id,
+            'registered_by' => $security->id,
+            'expected_exit_at' => now()->subSecond(),
+            'status' => GuestVisitStatus::Invited->value,
+        ]);
+
+        Sanctum::actingAs($security);
+
+        $this->postJson(
+            "/api/v1/guest-visits/{$visit->id}/entry"
+        )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('visit');
+
+        $this->assertDatabaseHas(
+            'guest_visits',
+            [
+                'id' => $visit->id,
+                'status' => GuestVisitStatus::Expired->value,
+            ]
+        );
+
+        $this->assertDatabaseCount(
+            'guest_access_logs',
+            0
+        );
+    }
+
     public function test_expiration_command_expires_only_invited_visits_past_expected_exit(): void
     {
         $user = $this->createUser(

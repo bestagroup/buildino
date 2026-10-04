@@ -298,6 +298,10 @@ class GenerateReportJob implements ShouldQueue
     public function failed(
         ?\Throwable $exception
     ): void {
+        if ($exception) {
+            report($exception);
+        }
+
         GeneratedReport::query()
             ->whereKey(
                 $this->generatedReportId
@@ -314,13 +318,18 @@ class GenerateReportJob implements ShouldQueue
                 'failed_at' =>
                     now(),
 
+                /*
+                 * Do not persist raw exception text. Writer/storage/database
+                 * exceptions may contain filesystem paths, SQL details or
+                 * provider data. The full exception is kept in protected logs.
+                 */
                 'error_message' =>
-                    mb_substr(
-                        $exception?->getMessage()
-                            ?? 'Report export job failed.',
-                        0,
-                        5000
-                    ),
+                    $exception
+                        ? sprintf(
+                            'Report generation failed [%s].',
+                            class_basename($exception)
+                        )
+                        : 'Report generation failed.',
             ]);
     }
 

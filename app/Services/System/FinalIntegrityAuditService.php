@@ -21,6 +21,40 @@ final class FinalIntegrityAuditService
                 ->count()
         );
 
+
+        if (
+            Schema::hasTable('financial_transactions')
+            && Schema::hasTable('financial_ledger_entries')
+        ) {
+            $imbalanced = DB::table(
+                DB::table('financial_ledger_entries as fle')
+                    ->select([
+                        'fle.financial_transaction_id',
+                        'fle.currency',
+                    ])
+                    ->selectRaw(
+                        "SUM(CASE WHEN fle.entry_type = 'debit' THEN fle.amount ELSE 0 END) AS debit_total"
+                    )
+                    ->selectRaw(
+                        "SUM(CASE WHEN fle.entry_type = 'credit' THEN fle.amount ELSE 0 END) AS credit_total"
+                    )
+                    ->groupBy(
+                        'fle.financial_transaction_id',
+                        'fle.currency'
+                    )
+                    ->havingRaw(
+                        "SUM(CASE WHEN fle.entry_type = 'debit' THEN fle.amount ELSE 0 END) <> SUM(CASE WHEN fle.entry_type = 'credit' THEN fle.amount ELSE 0 END)"
+                    ),
+                'imbalanced_ledger'
+            )->count();
+
+            $checks[] = [
+                'name' => 'financial_ledger_unbalanced',
+                'severity' => 'critical',
+                'count' => (int) $imbalanced,
+            ];
+        }
+
         $this->check(
             $checks,
             'completed_transfer_without_completed_at',

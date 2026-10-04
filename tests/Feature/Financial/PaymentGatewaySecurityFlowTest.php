@@ -573,6 +573,16 @@ class PaymentGatewaySecurityFlowTest extends TestCase
         );
 
         $this->assertSame(
+            'Gateway verification failed [ValidationException].',
+            $event->error_message
+        );
+
+        $this->assertStringNotContainsString(
+            '899999',
+            (string) $event->error_message
+        );
+
+        $this->assertSame(
             PaymentStatus::Processing,
             $payment->fresh()->status
         );

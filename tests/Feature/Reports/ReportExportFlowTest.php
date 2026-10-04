@@ -185,6 +185,56 @@ class ReportExportFlowTest extends TestCase
         );
     }
 
+
+    public function test_failed_report_does_not_persist_raw_exception_details(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $user = $this->createUser();
+
+        $report = GeneratedReport::query()->create([
+            'report_definition_id' =>
+                $this->definition(
+                    'building.financial_summary'
+                )->id,
+            'building_id' =>
+                $graph['building']->id,
+            'generated_by' =>
+                $user->id,
+            'format' =>
+                ReportFormat::Csv,
+            'status' =>
+                ReportStatus::Processing,
+            'started_at' => now(),
+        ]);
+
+        $job = new GenerateReportJob(
+            $report->id
+        );
+
+        $job->failed(
+            new \RuntimeException(
+                'secret-path=/srv/private/report.csv'
+            )
+        );
+
+        $report->refresh();
+
+        $this->assertSame(
+            ReportStatus::Failed,
+            $report->status
+        );
+
+        $this->assertSame(
+            'Report generation failed [RuntimeException].',
+            $report->error_message
+        );
+
+        $this->assertStringNotContainsString(
+            'secret-path',
+            (string) $report->error_message
+        );
+    }
+
     public function test_excel_and_pdf_writers_generate_real_file_signatures(): void
     {
         $sample = [

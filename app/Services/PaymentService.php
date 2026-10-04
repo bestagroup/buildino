@@ -183,7 +183,6 @@ class PaymentService
                 [
                     PaymentStatus::Pending->value,
                     PaymentStatus::Processing->value,
-                    PaymentStatus::Failed->value,
                 ]
             )
             ->sum('payment_allocations.amount');

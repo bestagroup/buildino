@@ -87,6 +87,42 @@ class ProductionReadinessFlowTest extends TestCase
         );
     }
 
+
+    public function test_health_failure_diagnostics_do_not_expose_raw_infrastructure_errors(): void
+    {
+        config([
+            'cache.default' => 'array',
+            'production_readiness.health.storage_disk' =>
+                'missing-health-disk',
+        ]);
+
+        $result = app(
+            SystemHealthService::class
+        )->inspect(false);
+
+        $this->assertSame(
+            'fail',
+            $result['checks']['storage']['status']
+        );
+
+        $message = (string) (
+            $result['checks']['storage']['error']
+            ?? ''
+        );
+
+        $this->assertNotSame('', $message);
+
+        $this->assertStringNotContainsString(
+            'missing-health-disk',
+            $message
+        );
+
+        $this->assertStringContainsString(
+            'health check failed.',
+            $message
+        );
+    }
+
     public function test_fresh_scheduler_and_queue_heartbeats_move_runtime_health_to_ok(): void
     {
         $heartbeats = app(

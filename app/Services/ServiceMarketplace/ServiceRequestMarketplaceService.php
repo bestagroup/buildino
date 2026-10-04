@@ -40,89 +40,95 @@ final class ServiceRequestMarketplaceService
             ]);
         }
 
-        $request->loadMissing([
-            'building',
-            'assignedTo',
-        ]);
-
-        if (! $request->assignedTo) {
-            throw ValidationException::withMessages([
-                'assigned_to' =>
-                    'A service provider must be assigned before quoting.',
-            ]);
-        }
-
-        if (in_array(
-            $request->status,
-            [
-                ServiceRequestStatus::Completed,
-                ServiceRequestStatus::Cancelled,
-            ],
-            true
-        )) {
-            throw ValidationException::withMessages([
-                'status' =>
-                    'A completed or cancelled service request cannot be quoted.',
-            ]);
-        }
-
-        $activePaymentExists = ServiceRequestWalletPayment::query()
-            ->where(
-                'service_request_id',
-                $request->getKey()
-            )
-            ->whereIn(
-                'status',
-                [
-                    ServiceRequestWalletPaymentStatus::Locked->value,
-                    ServiceRequestWalletPaymentStatus::Settled->value,
-                ]
-            )
-            ->exists();
-
-        if ($activePaymentExists) {
-            throw ValidationException::withMessages([
-                'payment' =>
-                    'An active service payment already exists for this request.',
-            ]);
-        }
-
-        $setting = $this->settings->forBuilding(
-            $request->building
-        );
-
-        if (! $setting->is_active) {
-            throw ValidationException::withMessages([
-                'service_finance' =>
-                    'Service financial operations are disabled for this building.',
-            ]);
-        }
-
-        $rate = (int) $setting->platform_commission_bps;
-
-        if ($rate < 0 || $rate > 10000) {
-            throw ValidationException::withMessages([
-                'platform_commission_bps' =>
-                    'Platform commission must be between 0 and 10000 basis points.',
-            ]);
-        }
-
-        $commission = intdiv(
-            $amount * $rate,
-            10000
-        );
-
-        $providerAmount = $amount - $commission;
-
         return DB::transaction(function () use (
             $request,
             $amount,
             $notes,
-            $validUntil,
-            $rate,
-            $commission,
-            $providerAmount
+            $validUntil
         ): ServiceRequestQuote {
+            /*
+             * Serialize quote creation by service request. Without locking the
+             * request row, two concurrent providers/admin retries can both
+             * observe "no active payment" and create competing pending quotes.
+             */
+            $request = ServiceRequest::query()
+                ->with([
+                    'building',
+                    'assignedTo',
+                ])
+                ->lockForUpdate()
+                ->findOrFail($request->getKey());
+
+            if (! $request->assignedTo) {
+                throw ValidationException::withMessages([
+                    'assigned_to' =>
+                        'A service provider must be assigned before quoting.',
+                ]);
+            }
+
+            if (in_array(
+                $request->status,
+                [
+                    ServiceRequestStatus::Completed,
+                    ServiceRequestStatus::Cancelled,
+                ],
+                true
+            )) {
+                throw ValidationException::withMessages([
+                    'status' =>
+                        'A completed or cancelled service request cannot be quoted.',
+                ]);
+            }
+
+            $activePaymentExists = ServiceRequestWalletPayment::query()
+                ->where(
+                    'service_request_id',
+                    $request->getKey()
+                )
+                ->whereIn(
+                    'status',
+                    [
+                        ServiceRequestWalletPaymentStatus::Locked->value,
+                        ServiceRequestWalletPaymentStatus::Settled->value,
+                    ]
+                )
+                ->lockForUpdate()
+                ->exists();
+
+            if ($activePaymentExists) {
+                throw ValidationException::withMessages([
+                    'payment' =>
+                        'An active service payment already exists for this request.',
+                ]);
+            }
+
+            $setting = $this->settings->forBuilding(
+                $request->building
+            );
+
+            if (! $setting->is_active) {
+                throw ValidationException::withMessages([
+                    'service_finance' =>
+                        'Service financial operations are disabled for this building.',
+                ]);
+            }
+
+            $rate = (int) $setting->platform_commission_bps;
+
+            if ($rate < 0 || $rate > 10000) {
+                throw ValidationException::withMessages([
+                    'platform_commission_bps' =>
+                        'Platform commission must be between 0 and 10000 basis points.',
+                ]);
+            }
+
+            $commission = intdiv(
+                $amount * $rate,
+                10000
+            );
+
+            $providerAmount = $amount - $commission;
+
             ServiceRequestQuote::query()
                 ->where(
                     'service_request_id',
@@ -175,7 +181,16 @@ final class ServiceRequestMarketplaceService
                 ->lockForUpdate()
                 ->findOrFail($quote->getKey());
 
-            $request = $quote->serviceRequest;
+            $request = ServiceRequest::query()
+                ->with([
+                    'building',
+                    'unit.floor.block.building',
+                    'requestedBy',
+                ])
+                ->lockForUpdate()
+                ->findOrFail(
+                    $quote->service_request_id
+                );
 
             if (
                 (int) $request->requested_by
@@ -350,50 +365,72 @@ final class ServiceRequestMarketplaceService
     public function start(
         ServiceRequest $request
     ): ServiceRequest {
-        $this->assertLockedPayment($request);
+        return DB::transaction(function () use (
+            $request
+        ): ServiceRequest {
+            $request = ServiceRequest::query()
+                ->lockForUpdate()
+                ->findOrFail($request->getKey());
 
-        if (! in_array(
-            $request->status,
-            [
-                ServiceRequestStatus::Assigned,
-                ServiceRequestStatus::Open,
-            ],
-            true
-        )) {
-            throw ValidationException::withMessages([
-                'status' =>
-                    'Service request cannot be started in its current status.',
+            $this->assertLockedPayment(
+                $request,
+                lock: true
+            );
+
+            if (! in_array(
+                $request->status,
+                [
+                    ServiceRequestStatus::Assigned,
+                    ServiceRequestStatus::Open,
+                ],
+                true
+            )) {
+                throw ValidationException::withMessages([
+                    'status' =>
+                        'Service request cannot be started in its current status.',
+                ]);
+            }
+
+            $request->update([
+                'status' => ServiceRequestStatus::InProgress,
             ]);
-        }
 
-        $request->update([
-            'status' => ServiceRequestStatus::InProgress,
-        ]);
-
-        return $request->refresh();
+            return $request->refresh();
+        }, 3);
     }
 
     public function finish(
         ServiceRequest $request
     ): ServiceRequest {
-        $this->assertLockedPayment($request);
+        return DB::transaction(function () use (
+            $request
+        ): ServiceRequest {
+            $request = ServiceRequest::query()
+                ->lockForUpdate()
+                ->findOrFail($request->getKey());
 
-        if (
-            $request->status
-            !== ServiceRequestStatus::InProgress
-        ) {
-            throw ValidationException::withMessages([
+            $this->assertLockedPayment(
+                $request,
+                lock: true
+            );
+
+            if (
+                $request->status
+                !== ServiceRequestStatus::InProgress
+            ) {
+                throw ValidationException::withMessages([
+                    'status' =>
+                        'Only an in-progress service request can be submitted for confirmation.',
+                ]);
+            }
+
+            $request->update([
                 'status' =>
-                    'Only an in-progress service request can be submitted for confirmation.',
+                    ServiceRequestStatus::AwaitingConfirmation,
             ]);
-        }
 
-        $request->update([
-            'status' =>
-                ServiceRequestStatus::AwaitingConfirmation,
-        ]);
-
-        return $request->refresh();
+            return $request->refresh();
+        }, 3);
     }
 
     public function confirmCompletion(
@@ -626,15 +663,21 @@ final class ServiceRequestMarketplaceService
     }
 
     private function assertLockedPayment(
-        ServiceRequest $request
+        ServiceRequest $request,
+        bool $lock = false
     ): ServiceRequestWalletPayment {
-        $payment = ServiceRequestWalletPayment::query()
+        $query = ServiceRequestWalletPayment::query()
             ->where(
                 'service_request_id',
                 $request->getKey()
             )
-            ->latest('id')
-            ->first();
+            ->latest('id');
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        $payment = $query->first();
 
         if (
             ! $payment

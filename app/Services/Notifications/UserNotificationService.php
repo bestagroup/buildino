@@ -113,11 +113,19 @@ class UserNotificationService
                 default => throw new \InvalidArgumentException("Unsupported channel [$channel]."),
             };
 
+            $safeResponse = $this->redactSensitiveProviderData(
+                $response,
+                array_values(array_filter([
+                    $user->mobile,
+                    $user->email,
+                ]))
+            );
+
             $log->forceFill([
                 'status' => NotificationStatus::Sent,
                 'provider_message_id' =>
                     $this->providerMessageId(
-                        $response
+                        $safeResponse
                     ),
                 'sent_at' => now(),
                 'failure_reason' => null,
@@ -126,17 +134,22 @@ class UserNotificationService
                     $log->response ?? [],
                     [
                         'provider_response' =>
-                            $response,
+                            $safeResponse,
                     ]
                 ),
             ])->save();
 
             return $log->refresh();
         } catch (Throwable $e) {
+            report($e);
+
             $log->forceFill([
                 'status' => NotificationStatus::Failed,
                 'failed_at' => now(),
-                'failure_reason' => mb_substr($e->getMessage(), 0, 2000),
+                'failure_reason' => sprintf(
+                    'Notification delivery failed [%s].',
+                    class_basename($e)
+                ),
             ])->save();
 
             throw $e;
@@ -363,6 +376,44 @@ class UserNotificationService
             $redacted = str_replace(
                 $token,
                 '[REDACTED_DEVICE_TOKEN]',
+                $redacted
+            );
+        }
+
+        return $redacted;
+    }
+
+
+    private function redactSensitiveProviderData(
+        mixed $value,
+        array $secrets
+    ): mixed {
+        if (is_array($value)) {
+            return collect($value)
+                ->map(
+                    fn ($item) =>
+                        $this->redactSensitiveProviderData(
+                            $item,
+                            $secrets
+                        )
+                )
+                ->all();
+        }
+
+        if (! is_string($value) || $value === '') {
+            return $value;
+        }
+
+        $redacted = $value;
+
+        foreach ($secrets as $secret) {
+            if (! is_string($secret) || $secret === '') {
+                continue;
+            }
+
+            $redacted = str_replace(
+                $secret,
+                '[REDACTED]',
                 $redacted
             );
         }

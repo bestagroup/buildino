@@ -69,6 +69,59 @@ class SubscriptionLifecycleTest extends TestCase
         $this->assertTrue($subscription->isUsable());
     }
 
+
+    public function test_ensure_trial_never_reissues_trial_after_subscription_history_exists(): void
+    {
+        $complex = Complex::query()->create([
+            'code' => 'C-TRIAL-LOCK',
+            'title' => 'Trial Lock Complex',
+            'province' => 'Tehran',
+            'city' => 'Tehran',
+            'is_active' => true,
+        ]);
+
+        $building = Building::query()->create([
+            'complex_id' => $complex->getKey(),
+            'code' => 'B-TRIAL-LOCK',
+            'title' => 'Trial Lock Building',
+            'timezone' => 'Asia/Tehran',
+            'currency' => 'IRR',
+            'is_active' => true,
+        ]);
+
+        $service = app(SubscriptionService::class);
+
+        $initial = $service->current($building);
+        $this->assertNotNull($initial);
+
+        $initial->forceFill([
+            'status' => SubscriptionStatus::Expired,
+            'expires_at' => now()->subDay(),
+            'grace_ends_at' => now()->subHour(),
+        ])->save();
+
+        $again = $service->ensureTrial(
+            $building->fresh()
+        );
+
+        $this->assertSame(
+            $initial->id,
+            $again->id
+        );
+
+        $this->assertSame(
+            SubscriptionStatus::Expired,
+            $again->status
+        );
+
+        $this->assertSame(
+            1,
+            BuildingSubscription::query()
+                ->where('building_id', $building->id)
+                ->count()
+        );
+    }
+
     public function test_suspended_subscription_is_not_usable(): void
     {
         $user = User::factory()->create();
