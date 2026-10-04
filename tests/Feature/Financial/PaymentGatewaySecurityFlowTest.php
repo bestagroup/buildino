@@ -14,6 +14,7 @@ use App\Services\Payments\PaymentGatewayCallbackService;
 use App\Services\Payments\PaymentGatewayInitiationService;
 use App\Services\Wallet\WalletTopUpService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Support\CreatesBuildingDomainData;
@@ -733,6 +734,123 @@ class PaymentGatewaySecurityFlowTest extends TestCase
         $this->assertSame(
             PaymentStatus::Processing,
             $payment->fresh()->status
+        );
+    }
+
+    public function test_gateway_event_lock_blocks_concurrent_verification(): void
+    {
+        [
+            $topUp,
+            $payer,
+        ] = $this->pendingTopUp(
+            520_000,
+            'gateway-event-lock-key'
+        );
+
+        $payment = $topUp->payment()
+            ->firstOrFail();
+
+        $transaction = app(
+            PaymentGatewayInitiationService::class
+        )->initiate(
+            $payment,
+            'fake',
+            'gateway-event-lock-key',
+            $payer
+        );
+
+        config([
+            'payment_gateways.gateways.fake.verification.amount'
+                => 519_999,
+        ]);
+
+        $service = app(
+            PaymentGatewayCallbackService::class
+        );
+
+        $payload = [
+            'authority' => $transaction->authority,
+        ];
+
+        try {
+            $service->callback(
+                'fake',
+                $payload,
+                '127.0.0.1',
+                'PHPUnit'
+            );
+        } catch (ValidationException) {
+            // Expected: create a retryable failed event.
+        }
+
+        $event = PaymentGatewayEvent::query()
+            ->where(
+                'event_type',
+                'callback'
+            )
+            ->latest('id')
+            ->firstOrFail();
+
+        config([
+            'payment_gateways.gateways.fake.verification.amount'
+                => 520_000,
+        ]);
+
+        $lock = Cache::lock(
+            'payment-gateway-event:'.$event->id,
+            90
+        );
+
+        $this->assertTrue(
+            $lock->get()
+        );
+
+        try {
+            $service->callback(
+                'fake',
+                $payload,
+                '127.0.0.1',
+                'PHPUnit'
+            );
+
+            $this->fail(
+                'Concurrent gateway event verification was accepted.'
+            );
+        } catch (HttpException $exception) {
+            $this->assertSame(
+                409,
+                $exception->getStatusCode()
+            );
+        } finally {
+            $lock->release();
+        }
+
+        $this->assertSame(
+            0,
+            (int) $topUp
+                ->wallet
+                ->fresh()
+                ->balance
+        );
+
+        $processed = $service->callback(
+            'fake',
+            $payload,
+            '127.0.0.1',
+            'PHPUnit'
+        );
+
+        $this->assertSame(
+            PaymentGatewayEventStatus::Processed,
+            $processed->status
+        );
+
+        $this->assertSame(
+            520_000,
+            (int) $topUp
+                ->wallet
+                ->fresh()
+                ->balance
         );
     }
 
