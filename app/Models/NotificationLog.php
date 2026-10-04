@@ -14,6 +14,23 @@ class NotificationLog extends Model
 
     protected $table = 'notification_logs';
 
+    /**
+     * Delivery diagnostics are operational data and must never be serialized
+     * through resident-facing notification endpoints.
+     */
+    protected $hidden = [
+        'idempotency_key',
+        'notifiable_type',
+        'notifiable_id',
+        'provider',
+        'provider_message_id',
+        'attempts',
+        'last_attempt_at',
+        'failed_at',
+        'failure_reason',
+        'response',
+    ];
+
     protected $fillable = [
         'idempotency_key',
         'notifiable_type',
