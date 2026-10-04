@@ -25,21 +25,39 @@ final class WalletPayoutService
         User $actor,
         int $amount
     ): WalletPayoutRequest {
-        if (
-            (int) $bankAccount->building_id !== (int) $building->getKey()
-            || ! $bankAccount->is_active
-            || ! $bankAccount->is_verified
-        ) {
+        if ($amount <= 0) {
             throw ValidationException::withMessages([
-                'building_bank_account_id' => 'A verified active bank account of this building is required.',
+                'amount' => 'Payout amount must be greater than zero.',
             ]);
         }
 
-        $wallet = $this->wallets->walletFor($building);
+        return DB::transaction(function () use (
+            $building,
+            $bankAccount,
+            $actor,
+            $amount
+        ): WalletPayoutRequest {
+            $bankAccount = BuildingBankAccount::query()
+                ->lockForUpdate()
+                ->findOrFail($bankAccount->getKey());
 
-        $this->wallets->lockFunds($wallet, $amount);
+            if (
+                (int) $bankAccount->building_id !== (int) $building->getKey()
+                || ! $bankAccount->is_active
+                || ! $bankAccount->is_verified
+            ) {
+                throw ValidationException::withMessages([
+                    'building_bank_account_id' => 'A verified active bank account of this building is required.',
+                ]);
+            }
 
-        try {
+            $wallet = $this->wallets->walletFor($building);
+
+            $this->wallets->lockFunds(
+                $wallet,
+                $amount
+            );
+
             return WalletPayoutRequest::query()->create([
                 'uuid' => (string) Str::uuid(),
                 'building_id' => $building->getKey(),
@@ -51,20 +69,18 @@ final class WalletPayoutService
                 'status' => WalletPayoutStatus::Pending,
                 'requested_by' => $actor->getKey(),
             ]);
-        } catch (\Throwable $e) {
-            $this->wallets->unlockFunds($wallet, $amount);
-            throw $e;
-        }
+        }, 3);
     }
 
     public function approve(
         WalletPayoutRequest $request,
         User $actor
     ): WalletPayoutRequest {
-        return DB::transaction(function () use ($request, $actor): WalletPayoutRequest {
-            $request = WalletPayoutRequest::query()
-                ->lockForUpdate()
-                ->findOrFail($request->getKey());
+        return DB::transaction(function () use (
+            $request,
+            $actor
+        ): WalletPayoutRequest {
+            $request = $this->lockRequest($request);
 
             if ($request->status !== WalletPayoutStatus::Pending) {
                 throw ValidationException::withMessages([
@@ -79,7 +95,7 @@ final class WalletPayoutService
             ]);
 
             return $request->refresh();
-        });
+        }, 3);
     }
 
     public function reject(
@@ -87,31 +103,40 @@ final class WalletPayoutService
         User $actor,
         ?string $reason = null
     ): WalletPayoutRequest {
-        $request->refresh();
+        return DB::transaction(function () use (
+            $request,
+            $actor,
+            $reason
+        ): WalletPayoutRequest {
+            $request = $this->lockRequest($request);
 
-        if (! in_array(
-            $request->status,
-            [WalletPayoutStatus::Pending, WalletPayoutStatus::Approved],
-            true
-        )) {
-            throw ValidationException::withMessages([
-                'status' => 'Payout request cannot be rejected in its current status.',
+            if (! in_array(
+                $request->status,
+                [
+                    WalletPayoutStatus::Pending,
+                    WalletPayoutStatus::Approved,
+                ],
+                true
+            )) {
+                throw ValidationException::withMessages([
+                    'status' => 'Payout request cannot be rejected in its current status.',
+                ]);
+            }
+
+            $this->wallets->unlockFunds(
+                $request->wallet,
+                (int) $request->amount
+            );
+
+            $request->update([
+                'status' => WalletPayoutStatus::Rejected,
+                'approved_by' => $request->approved_by ?: $actor->getKey(),
+                'rejection_reason' => $reason,
+                'rejected_at' => now(),
             ]);
-        }
 
-        $this->wallets->unlockFunds(
-            $request->wallet,
-            (int) $request->amount
-        );
-
-        $request->update([
-            'status' => WalletPayoutStatus::Rejected,
-            'approved_by' => $request->approved_by ?: $actor->getKey(),
-            'rejection_reason' => $reason,
-            'rejected_at' => now(),
-        ]);
-
-        return $request->refresh();
+            return $request->refresh();
+        }, 3);
     }
 
     public function markPaid(
@@ -119,36 +144,51 @@ final class WalletPayoutService
         User $actor,
         string $bankReference
     ): WalletPayoutRequest {
-        $request->refresh();
-
-        if ($request->status === WalletPayoutStatus::Paid) {
-            return $request;
-        }
-
-        if ($request->status !== WalletPayoutStatus::Approved) {
-            throw ValidationException::withMessages([
-                'status' => 'Only approved payout requests can be marked as paid.',
-            ]);
-        }
-
-        $transfer = $this->wallets->debitLocked(
-            $request->wallet,
-            (int) $request->amount,
-            WalletTransferType::Payout,
-            'wallet-payout:'.$request->getKey().':paid',
+        return DB::transaction(function () use (
             $request,
             $actor,
-            'Building wallet payout'
-        );
+            $bankReference
+        ): WalletPayoutRequest {
+            $request = $this->lockRequest($request);
 
-        $request->update([
-            'status' => WalletPayoutStatus::Paid,
-            'wallet_transfer_id' => $transfer->getKey(),
-            'paid_by' => $actor->getKey(),
-            'bank_reference' => $bankReference,
-            'paid_at' => now(),
-        ]);
+            if ($request->status === WalletPayoutStatus::Paid) {
+                return $request;
+            }
 
-        return $request->refresh();
+            if ($request->status !== WalletPayoutStatus::Approved) {
+                throw ValidationException::withMessages([
+                    'status' => 'Only approved payout requests can be marked as paid.',
+                ]);
+            }
+
+            $transfer = $this->wallets->debitLocked(
+                $request->wallet,
+                (int) $request->amount,
+                WalletTransferType::Payout,
+                'wallet-payout:'.$request->getKey().':paid',
+                $request,
+                $actor,
+                'Building wallet payout'
+            );
+
+            $request->update([
+                'status' => WalletPayoutStatus::Paid,
+                'wallet_transfer_id' => $transfer->getKey(),
+                'paid_by' => $actor->getKey(),
+                'bank_reference' => $bankReference,
+                'paid_at' => now(),
+            ]);
+
+            return $request->refresh();
+        }, 3);
+    }
+
+    private function lockRequest(
+        WalletPayoutRequest $request
+    ): WalletPayoutRequest {
+        return WalletPayoutRequest::query()
+            ->with('wallet')
+            ->lockForUpdate()
+            ->findOrFail($request->getKey());
     }
 }

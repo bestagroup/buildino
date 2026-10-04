@@ -8,6 +8,7 @@ use App\Enums\WalletTransferType;
 use App\Models\Building;
 use App\Models\BuildingBillPayment;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -25,11 +26,26 @@ final class BuildingBillPaymentService
         int $amount,
         array $data = []
     ): BuildingBillPayment {
-        $wallet = $this->wallets->walletFor($building);
+        if ($amount <= 0) {
+            throw ValidationException::withMessages([
+                'amount' => 'Bill payment amount must be greater than zero.',
+            ]);
+        }
 
-        $this->wallets->lockFunds($wallet, $amount);
+        return DB::transaction(function () use (
+            $building,
+            $actor,
+            $type,
+            $amount,
+            $data
+        ): BuildingBillPayment {
+            $wallet = $this->wallets->walletFor($building);
 
-        try {
+            $this->wallets->lockFunds(
+                $wallet,
+                $amount
+            );
+
             return BuildingBillPayment::query()->create([
                 'uuid' => (string) Str::uuid(),
                 'building_id' => $building->getKey(),
@@ -42,10 +58,7 @@ final class BuildingBillPaymentService
                 'requested_by' => $actor->getKey(),
                 'provider' => $data['provider'] ?? null,
             ]);
-        } catch (\Throwable $e) {
-            $this->wallets->unlockFunds($wallet, $amount);
-            throw $e;
-        }
+        }, 3);
     }
 
     public function complete(
@@ -54,38 +67,45 @@ final class BuildingBillPaymentService
         ?string $providerReference = null,
         ?array $providerPayload = null
     ): BuildingBillPayment {
-        $bill->refresh();
-
-        if ($bill->status === BuildingBillPaymentStatus::Paid) {
-            return $bill;
-        }
-
-        if ($bill->status !== BuildingBillPaymentStatus::Pending) {
-            throw ValidationException::withMessages([
-                'status' => 'Only pending bill payments can be completed.',
-            ]);
-        }
-
-        $transfer = $this->wallets->debitLocked(
-            $bill->wallet,
-            (int) $bill->amount,
-            WalletTransferType::BillPayment,
-            'building-bill:'.$bill->getKey().':paid',
+        return DB::transaction(function () use (
             $bill,
             $actor,
-            'Building utility bill payment'
-        );
+            $providerReference,
+            $providerPayload
+        ): BuildingBillPayment {
+            $bill = $this->lockBill($bill);
 
-        $bill->update([
-            'status' => BuildingBillPaymentStatus::Paid,
-            'wallet_transfer_id' => $transfer->getKey(),
-            'completed_by' => $actor->getKey(),
-            'provider_reference' => $providerReference,
-            'provider_payload' => $providerPayload,
-            'completed_at' => now(),
-        ]);
+            if ($bill->status === BuildingBillPaymentStatus::Paid) {
+                return $bill;
+            }
 
-        return $bill->refresh();
+            if ($bill->status !== BuildingBillPaymentStatus::Pending) {
+                throw ValidationException::withMessages([
+                    'status' => 'Only pending bill payments can be completed.',
+                ]);
+            }
+
+            $transfer = $this->wallets->debitLocked(
+                $bill->wallet,
+                (int) $bill->amount,
+                WalletTransferType::BillPayment,
+                'building-bill:'.$bill->getKey().':paid',
+                $bill,
+                $actor,
+                'Building utility bill payment'
+            );
+
+            $bill->update([
+                'status' => BuildingBillPaymentStatus::Paid,
+                'wallet_transfer_id' => $transfer->getKey(),
+                'completed_by' => $actor->getKey(),
+                'provider_reference' => $providerReference,
+                'provider_payload' => $providerPayload,
+                'completed_at' => now(),
+            ]);
+
+            return $bill->refresh();
+        }, 3);
     }
 
     public function fail(
@@ -93,26 +113,41 @@ final class BuildingBillPaymentService
         User $actor,
         ?string $reason = null
     ): BuildingBillPayment {
-        $bill->refresh();
+        return DB::transaction(function () use (
+            $bill,
+            $actor,
+            $reason
+        ): BuildingBillPayment {
+            $bill = $this->lockBill($bill);
 
-        if ($bill->status !== BuildingBillPaymentStatus::Pending) {
-            throw ValidationException::withMessages([
-                'status' => 'Only pending bill payments can fail.',
+            if ($bill->status !== BuildingBillPaymentStatus::Pending) {
+                throw ValidationException::withMessages([
+                    'status' => 'Only pending bill payments can fail.',
+                ]);
+            }
+
+            $this->wallets->unlockFunds(
+                $bill->wallet,
+                (int) $bill->amount
+            );
+
+            $bill->update([
+                'status' => BuildingBillPaymentStatus::Failed,
+                'completed_by' => $actor->getKey(),
+                'failure_reason' => $reason,
+                'failed_at' => now(),
             ]);
-        }
 
-        $this->wallets->unlockFunds(
-            $bill->wallet,
-            (int) $bill->amount
-        );
+            return $bill->refresh();
+        }, 3);
+    }
 
-        $bill->update([
-            'status' => BuildingBillPaymentStatus::Failed,
-            'completed_by' => $actor->getKey(),
-            'failure_reason' => $reason,
-            'failed_at' => now(),
-        ]);
-
-        return $bill->refresh();
+    private function lockBill(
+        BuildingBillPayment $bill
+    ): BuildingBillPayment {
+        return BuildingBillPayment::query()
+            ->with('wallet')
+            ->lockForUpdate()
+            ->findOrFail($bill->getKey());
     }
 }

@@ -159,6 +159,24 @@ class ProductionReadinessAudit extends Command
 
         $this->finding(
             $findings,
+            'Trusted reverse proxies',
+            ! $isProduction
+                || config('api_security.trusted_proxies', []) !== [],
+            'critical',
+            'TRUSTED_PROXIES must explicitly identify the TLS/load-balancer proxies in production.'
+        );
+
+        $this->finding(
+            $findings,
+            'Secure session cookie',
+            ! $isProduction
+                || (bool) config('session.secure'),
+            'critical',
+            'SESSION_SECURE_COOKIE must be true in production.'
+        );
+
+        $this->finding(
+            $findings,
             'Private file disk',
             (string) config('file_management.disk') === 'private',
             'critical',

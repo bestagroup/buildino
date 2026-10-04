@@ -345,6 +345,42 @@ class OtpSecurityTest extends TestCase
         );
     }
 
+    public function test_otp_login_rate_limit_is_bound_to_identifier_across_ip_addresses(): void
+    {
+        config()->set(
+            'api_security.auth_rate_limit',
+            2
+        );
+
+        $payload = [
+            'identifier' => '09129999999',
+            'channel' => 'sms',
+            'code' => '123456',
+            'device_name' => 'rate-limit-test',
+        ];
+
+        $this->withServerVariables([
+            'REMOTE_ADDR' => '10.0.0.1',
+        ])->postJson(
+            '/api/v1/auth/otp/login',
+            $payload
+        )->assertUnauthorized();
+
+        $this->withServerVariables([
+            'REMOTE_ADDR' => '10.0.0.2',
+        ])->postJson(
+            '/api/v1/auth/otp/login',
+            $payload
+        )->assertUnauthorized();
+
+        $this->withServerVariables([
+            'REMOTE_ADDR' => '10.0.0.3',
+        ])->postJson(
+            '/api/v1/auth/otp/login',
+            $payload
+        )->assertTooManyRequests();
+    }
+
     private function user(string $mobile): User
     {
         return User::factory()->create([

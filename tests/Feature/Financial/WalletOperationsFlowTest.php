@@ -333,6 +333,113 @@ class WalletOperationsFlowTest extends TestCase
         );
     }
 
+    public function test_terminal_payout_state_cannot_be_reversed_into_paid(): void
+    {
+        $graph = $this->createGraph('PAYOUT-TERMINAL');
+        $manager = $this->createUser(
+            '09125553001',
+            'payout-terminal-manager@example.test'
+        );
+        $operator = $this->createUser(
+            '09125553002',
+            'payout-terminal-operator@example.test'
+        );
+
+        $bank = BuildingBankAccount::query()->create([
+            'building_id' => $graph['building']->id,
+            'bank_name' => 'Terminal Bank',
+            'account_holder_name' => 'Building Manager',
+            'iban' => 'IR000000000000000000000002',
+            'is_default' => true,
+            'is_verified' => true,
+            'is_active' => true,
+            'verified_by' => $operator->id,
+            'verified_at' => now(),
+        ]);
+
+        $wallets = app(WalletService::class);
+        $wallet = $wallets->walletFor($graph['building']);
+
+        $wallets->credit(
+            $wallet,
+            500_000,
+            WalletTransferType::TopUp,
+            'test:payout-terminal-topup'
+        );
+
+        $service = app(WalletPayoutService::class);
+        $request = $service->request(
+            $graph['building'],
+            $bank,
+            $manager,
+            300_000
+        );
+
+        $service->approve(
+            $request,
+            $operator
+        );
+
+        $service->reject(
+            $request->fresh(),
+            $operator,
+            'Rejected before settlement'
+        );
+
+        $this->expectException(ValidationException::class);
+
+        $service->markPaid(
+            $request->fresh(),
+            $operator,
+            'SHOULD-NOT-BE-USED'
+        );
+    }
+
+    public function test_failed_bill_cannot_later_be_completed(): void
+    {
+        $graph = $this->createGraph('BILL-TERMINAL');
+        $manager = $this->createUser(
+            '09125554001',
+            'bill-terminal-manager@example.test'
+        );
+        $operator = $this->createUser(
+            '09125554002',
+            'bill-terminal-operator@example.test'
+        );
+
+        $wallets = app(WalletService::class);
+        $wallet = $wallets->walletFor($graph['building']);
+
+        $wallets->credit(
+            $wallet,
+            400_000,
+            WalletTransferType::TopUp,
+            'test:bill-terminal-topup'
+        );
+
+        $service = app(BuildingBillPaymentService::class);
+        $bill = $service->request(
+            $graph['building'],
+            $manager,
+            BuildingBillType::Water,
+            200_000
+        );
+
+        $service->fail(
+            $bill,
+            $operator,
+            'Provider rejected payment'
+        );
+
+        $this->expectException(ValidationException::class);
+
+        $service->complete(
+            $bill->fresh(),
+            $operator,
+            'SHOULD-NOT-BE-USED'
+        );
+    }
+
     public function test_wallet_idempotency_key_cannot_be_reused_for_a_different_operation(): void
     {
         $graph = $this->createGraph('IDEMPOTENCY');

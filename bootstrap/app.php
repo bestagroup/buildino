@@ -29,6 +29,35 @@ return Application::configure(basePath: dirname(__DIR__))
     )
 
     ->withMiddleware(function (Middleware $middleware): void {
+        /*
+         * Middleware is configured before Laravel's Config Repository has
+         * finished bootstrapping (e.g. during composer package discovery).
+         * Read the trusted proxy list directly from the environment here;
+         * the same setting is exposed through config/api_security.php for
+         * runtime audits after application bootstrap.
+         */
+        $trustedProxies = array_values(
+            array_filter(
+                array_map(
+                    'trim',
+                    explode(
+                        ',',
+                        (string) env('TRUSTED_PROXIES', '')
+                    )
+                )
+            )
+        );
+
+        if ($trustedProxies !== []) {
+            $middleware->trustProxies(
+                at: $trustedProxies,
+                headers:
+                    Request::HEADER_X_FORWARDED_FOR
+                    | Request::HEADER_X_FORWARDED_HOST
+                    | Request::HEADER_X_FORWARDED_PORT
+                    | Request::HEADER_X_FORWARDED_PROTO
+            );
+        }
 
         $middleware->alias([
             'user.active' => EnsureUserIsActive::class,
