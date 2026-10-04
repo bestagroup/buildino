@@ -365,50 +365,72 @@ final class ServiceRequestMarketplaceService
     public function start(
         ServiceRequest $request
     ): ServiceRequest {
-        $this->assertLockedPayment($request);
+        return DB::transaction(function () use (
+            $request
+        ): ServiceRequest {
+            $request = ServiceRequest::query()
+                ->lockForUpdate()
+                ->findOrFail($request->getKey());
 
-        if (! in_array(
-            $request->status,
-            [
-                ServiceRequestStatus::Assigned,
-                ServiceRequestStatus::Open,
-            ],
-            true
-        )) {
-            throw ValidationException::withMessages([
-                'status' =>
-                    'Service request cannot be started in its current status.',
+            $this->assertLockedPayment(
+                $request,
+                lock: true
+            );
+
+            if (! in_array(
+                $request->status,
+                [
+                    ServiceRequestStatus::Assigned,
+                    ServiceRequestStatus::Open,
+                ],
+                true
+            )) {
+                throw ValidationException::withMessages([
+                    'status' =>
+                        'Service request cannot be started in its current status.',
+                ]);
+            }
+
+            $request->update([
+                'status' => ServiceRequestStatus::InProgress,
             ]);
-        }
 
-        $request->update([
-            'status' => ServiceRequestStatus::InProgress,
-        ]);
-
-        return $request->refresh();
+            return $request->refresh();
+        }, 3);
     }
 
     public function finish(
         ServiceRequest $request
     ): ServiceRequest {
-        $this->assertLockedPayment($request);
+        return DB::transaction(function () use (
+            $request
+        ): ServiceRequest {
+            $request = ServiceRequest::query()
+                ->lockForUpdate()
+                ->findOrFail($request->getKey());
 
-        if (
-            $request->status
-            !== ServiceRequestStatus::InProgress
-        ) {
-            throw ValidationException::withMessages([
+            $this->assertLockedPayment(
+                $request,
+                lock: true
+            );
+
+            if (
+                $request->status
+                !== ServiceRequestStatus::InProgress
+            ) {
+                throw ValidationException::withMessages([
+                    'status' =>
+                        'Only an in-progress service request can be submitted for confirmation.',
+                ]);
+            }
+
+            $request->update([
                 'status' =>
-                    'Only an in-progress service request can be submitted for confirmation.',
+                    ServiceRequestStatus::AwaitingConfirmation,
             ]);
-        }
 
-        $request->update([
-            'status' =>
-                ServiceRequestStatus::AwaitingConfirmation,
-        ]);
-
-        return $request->refresh();
+            return $request->refresh();
+        }, 3);
     }
 
     public function confirmCompletion(
@@ -641,15 +663,21 @@ final class ServiceRequestMarketplaceService
     }
 
     private function assertLockedPayment(
-        ServiceRequest $request
+        ServiceRequest $request,
+        bool $lock = false
     ): ServiceRequestWalletPayment {
-        $payment = ServiceRequestWalletPayment::query()
+        $query = ServiceRequestWalletPayment::query()
             ->where(
                 'service_request_id',
                 $request->getKey()
             )
-            ->latest('id')
-            ->first();
+            ->latest('id');
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        $payment = $query->first();
 
         if (
             ! $payment
