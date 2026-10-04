@@ -443,6 +443,7 @@ class UiFoundationWebTest extends TestCase
                 public_path('css/buildino-management.css'),
                 public_path('css/buildino-portal.css'),
                 public_path('css/buildino-crud.css'),
+                public_path('css/buildino-datatables.css'),
                 resource_path('css/buildino-select2.css'),
             ]
             as $path
