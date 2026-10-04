@@ -408,6 +408,79 @@ class ServiceMarketplaceWalletFlowTest extends TestCase
         );
     }
 
+
+    public function test_stale_assigned_request_cannot_start_after_cancellation(): void
+    {
+        $graph = $this->createBuildingGraph();
+
+        $requester = $this->createUser();
+        $provider = $this->createUser();
+
+        $serviceRequest = $this->createAssignedRequest(
+            $graph,
+            $requester,
+            $provider
+        );
+
+        $wallets = app(WalletService::class);
+        $source = $wallets->walletFor(
+            $requester,
+            'IRR'
+        );
+
+        $wallets->credit(
+            $source,
+            300_000,
+            WalletTransferType::TopUp,
+            'service-stale-start-topup',
+            null,
+            $requester
+        );
+
+        $marketplace = app(
+            ServiceRequestMarketplaceService::class
+        );
+
+        $quote = $marketplace->createQuote(
+            $serviceRequest,
+            300_000
+        );
+
+        $marketplace->acceptQuote(
+            $quote,
+            $requester,
+            ServiceRequestPayerSource::UserWallet
+        );
+
+        $stale = ServiceRequest::query()
+            ->findOrFail($serviceRequest->id);
+
+        ServiceRequest::query()
+            ->whereKey($serviceRequest->id)
+            ->update([
+                'status' =>
+                    ServiceRequestStatus::Cancelled->value,
+            ]);
+
+        try {
+            $marketplace->start($stale);
+
+            $this->fail(
+                'A stale assigned request started after cancellation.'
+            );
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->assertArrayHasKey(
+                'status',
+                $exception->errors()
+            );
+        }
+
+        $this->assertSame(
+            ServiceRequestStatus::Cancelled,
+            $serviceRequest->fresh()->status
+        );
+    }
+
     public function test_commission_is_calculated_from_server_side_building_setting(): void
     {
         $graph = $this->createBuildingGraph();
