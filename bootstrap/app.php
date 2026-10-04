@@ -29,6 +29,21 @@ return Application::configure(basePath: dirname(__DIR__))
     )
 
     ->withMiddleware(function (Middleware $middleware): void {
+        $trustedProxies = config(
+            'api_security.trusted_proxies',
+            []
+        );
+
+        if ($trustedProxies !== []) {
+            $middleware->trustProxies(
+                at: $trustedProxies,
+                headers:
+                    Request::HEADER_X_FORWARDED_FOR
+                    | Request::HEADER_X_FORWARDED_HOST
+                    | Request::HEADER_X_FORWARDED_PORT
+                    | Request::HEADER_X_FORWARDED_PROTO
+            );
+        }
 
         $middleware->alias([
             'user.active' => EnsureUserIsActive::class,
