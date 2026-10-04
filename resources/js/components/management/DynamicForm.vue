@@ -69,9 +69,78 @@ const inputDirection = (field: CrudField): 'ltr' | undefined => {
         'datetime-local',
         'number',
     ].includes(field.type ?? '')
-        || /mobile|phone|email|code|iban|card|url|website/.test(name)
+        || /mobile|phone|email|code|iban|card|url|website|postal/.test(name)
         ? 'ltr'
         : undefined;
+};
+
+const inputMode = (
+    field: CrudField,
+): 'decimal' | 'email' | 'numeric' | 'tel' | 'url' | undefined => {
+    const name = field.name.toLowerCase();
+    const type = field.type ?? 'text';
+
+    if (type === 'email' || /email/.test(name)) {
+        return 'email';
+    }
+
+    if (type === 'number') {
+        return field.step && String(field.step) !== '1'
+            ? 'decimal'
+            : 'numeric';
+    }
+
+    if (/mobile|phone/.test(name)) {
+        return 'tel';
+    }
+
+    if (/iban|card|code|postal/.test(name)) {
+        return 'numeric';
+    }
+
+    if (type === 'url' || /url|website/.test(name)) {
+        return 'url';
+    }
+
+    return undefined;
+};
+
+const autoComplete = (field: CrudField): string | undefined => {
+    const name = field.name.toLowerCase();
+
+    if (field.type === 'password') {
+        return 'new-password';
+    }
+
+    if (/first_name/.test(name)) {
+        return 'given-name';
+    }
+
+    if (/last_name/.test(name)) {
+        return 'family-name';
+    }
+
+    if (/email/.test(name)) {
+        return 'email';
+    }
+
+    if (/mobile|phone/.test(name)) {
+        return 'tel';
+    }
+
+    if (/postal/.test(name)) {
+        return 'postal-code';
+    }
+
+    if (/address/.test(name)) {
+        return 'street-address';
+    }
+
+    if (/website|url/.test(name)) {
+        return 'url';
+    }
+
+    return undefined;
 };
 
 const fieldDomId = (field: CrudField): string =>
@@ -316,7 +385,8 @@ watch(
                 :placeholder="field.placeholder"
                 :step="field.step"
                 :dir="inputDirection(field)"
-                :autocomplete="field.type === 'password' ? 'new-password' : undefined"
+                :inputmode="inputMode(field)"
+                :autocomplete="autoComplete(field)"
                 :value="fieldValue(field) as string | number"
                 @input="setFieldValue(field, ($event.target as HTMLInputElement).value)"
             >
