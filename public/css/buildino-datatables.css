@@ -260,7 +260,7 @@ div.dt-container .dt-paging .dt-paging-button.current {
 .portal-detail-hero p {
     margin: 0;
     color: var(--portal-muted, #718096);
-    font-size: 8.5px;
+    font-size: 11px;
 }
 
 .portal-datatable-toolbar {
@@ -395,7 +395,7 @@ div.dt-container .dt-paging .dt-paging-button.current {
 }
 
 .portal-detail-timeline strong {
-    font-size: 8.5px;
+    font-size: 11px;
 }
 
 .portal-detail-timeline p {
