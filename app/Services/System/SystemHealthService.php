@@ -707,10 +707,16 @@ final class SystemHealthService
     private function message(
         \Throwable $exception
     ): string {
-        return mb_substr(
-            $exception->getMessage(),
-            0,
-            1000
+        report($exception);
+
+        /*
+         * Health endpoints must diagnose availability without leaking
+         * connection strings, filesystem paths or provider internals.
+         * Detailed stack traces remain in protected application logs.
+         */
+        return sprintf(
+            '%s health check failed.',
+            class_basename($exception)
         );
     }
 }
