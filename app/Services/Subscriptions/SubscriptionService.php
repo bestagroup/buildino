@@ -38,31 +38,66 @@ final class SubscriptionService
         Building $building,
         ?User $actor = null
     ): BuildingSubscription {
-        $usable = $this->usable($building);
-
-        if ($usable) {
-            return $usable;
-        }
-
-        $plan = Plan::query()->firstOrCreate(
-            ['code' => 'trial'],
-            [
-                'title' => 'آزمایشی',
-                'description' => 'پلن آزمایشی پیش‌فرض Buildino',
-                'price' => 0,
-                'duration_days' => 14,
-                'is_active' => true,
-            ]
-        );
-
-        return $this->activate(
+        return DB::transaction(function () use (
             $building,
-            $plan,
-            $actor,
-            now(),
-            $plan->duration_days ?? 14,
-            7
-        );
+            $actor
+        ): BuildingSubscription {
+            /*
+             * A trial is an initial provisioning operation, not a fallback
+             * for every unusable subscription. Lock the building and check
+             * subscription history inside the same transaction so concurrent
+             * calls cannot mint additional free trials or expire a newly
+             * activated paid subscription.
+             */
+            $building = Building::query()
+                ->whereKey($building->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $existing = $building
+                ->buildingSubscriptions()
+                ->with('plan.features')
+                ->latest('starts_at')
+                ->latest('id')
+                ->first();
+
+            if ($existing) {
+                return $existing;
+            }
+
+            $plan = Plan::query()->firstOrCreate(
+                ['code' => 'trial'],
+                [
+                    'title' => 'آزمایشی',
+                    'description' => 'پلن آزمایشی پیش‌فرض Buildino',
+                    'price' => 0,
+                    'duration_days' => 14,
+                    'is_active' => true,
+                ]
+            );
+
+            $startsAt = now();
+            $durationDays = $plan->duration_days ?? 14;
+            $expiresAt = $startsAt->copy()->addDays($durationDays);
+
+            return $building
+                ->buildingSubscriptions()
+                ->create([
+                    'plan_id' => $plan->getKey(),
+                    'starts_at' => $startsAt,
+                    'expires_at' => $expiresAt,
+                    'grace_ends_at' => $expiresAt
+                        ->copy()
+                        ->addDays(7),
+                    'status' => SubscriptionStatus::Active,
+                    'limits' => [],
+                    'metadata' => [
+                        'provisioned_as' => 'initial_trial',
+                    ],
+                    'created_by' => $actor?->getKey(),
+                ])
+                ->load('plan.features');
+        }, 3);
     }
 
     public function activate(
