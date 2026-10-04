@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ImmutableAfterCreate;
+
 use App\Enums\LedgerEntryType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FinancialLedgerEntry extends Model
 {
-    use HasFactory;
+    use HasFactory, ImmutableAfterCreate;
 
     protected $table = 'financial_ledger_entries';
 
