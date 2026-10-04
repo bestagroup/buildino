@@ -2186,7 +2186,7 @@
             ].includes(
                 field.type
             )
-            || /mobile|phone|email|code|iban|card|url|website/.test(
+            || /mobile|phone|email|code|iban|card|url|website|postal/.test(
                 fieldName
             )
         ) {
@@ -2200,6 +2200,41 @@
         ) {
             input.autocomplete =
                 "new-password";
+        } else if (/first_name/.test(fieldName)) {
+            input.autocomplete =
+                "given-name";
+        } else if (/last_name/.test(fieldName)) {
+            input.autocomplete =
+                "family-name";
+        } else if (/email/.test(fieldName)) {
+            input.autocomplete =
+                "email";
+            input.inputMode =
+                "email";
+        } else if (/mobile|phone/.test(fieldName)) {
+            input.autocomplete =
+                "tel";
+            input.inputMode =
+                "tel";
+        } else if (/postal/.test(fieldName)) {
+            input.autocomplete =
+                "postal-code";
+            input.inputMode =
+                "numeric";
+        } else if (/iban|card|code/.test(fieldName)) {
+            input.inputMode =
+                "numeric";
+        } else if (/url|website/.test(fieldName)) {
+            input.autocomplete =
+                "url";
+            input.inputMode =
+                "url";
+        } else if (field.type === "number") {
+            input.inputMode =
+                field.step
+                && String(field.step) !== "1"
+                    ? "decimal"
+                    : "numeric";
         }
 
         if (field.step) {
@@ -2215,6 +2250,10 @@
         if (required) {
             input.required =
                 true;
+            input.setAttribute(
+                "aria-required",
+                "true"
+            );
         }
 
         if (
@@ -2537,6 +2576,15 @@
                 }
             );
         });
+
+        container.dispatchEvent(
+            new CustomEvent(
+                "buildino:form-mounted",
+                {
+                    bubbles: true,
+                }
+            )
+        );
     };
 
     const collectPayload = (
