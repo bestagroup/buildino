@@ -30,6 +30,13 @@ class FacilityReservationService
     public function create(array $data): FacilityReservation
     {
         return DB::transaction(function () use ($data): FacilityReservation {
+            /*
+             * Serialize booking decisions per facility. Locking only matching
+             * reservation rows is insufficient when the range is currently
+             * empty: two concurrent transactions can both observe available
+             * capacity and insert conflicting reservations. The facility row
+             * is the aggregate lock for capacity, overlap and quota checks.
+             */
             $facility = BuildingFacility::query()
                 ->with([
                     'building',
@@ -37,6 +44,7 @@ class FacilityReservationService
                     'facilitySchedules.facilityTimeSlots',
                     'facilityBlackouts',
                 ])
+                ->lockForUpdate()
                 ->findOrFail($data['building_facility_id']);
 
             if (! $facility->is_active) {
