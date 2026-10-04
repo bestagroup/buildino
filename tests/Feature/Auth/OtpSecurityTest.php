@@ -228,6 +228,123 @@ class OtpSecurityTest extends TestCase
             ->assertJsonPath('code', 'AUTH_INVALID_CREDENTIALS');
     }
 
+    public function test_login_otp_request_does_not_send_to_unknown_identity(): void
+    {
+        $this->postJson(
+            '/api/v1/auth/otp/request',
+            [
+                'identifier' => '09121000998',
+                'channel' => 'sms',
+            ]
+        )->assertAccepted();
+
+        $this->assertArrayNotHasKey(
+            '09121000998',
+            $this->sender->codes
+        );
+
+        $this->assertDatabaseMissing(
+            'otp_codes',
+            [
+                'identifier' => '09121000998',
+                'purpose' => 'login',
+            ]
+        );
+    }
+
+    public function test_failed_otp_delivery_is_invalidated_and_can_be_retried_immediately(): void
+    {
+        $user = $this->user(
+            '09121000008'
+        );
+
+        $failingSender = new class implements OtpSender
+        {
+            public function send(
+                string $identifier,
+                string $channel,
+                string $code
+            ): void {
+                throw new \RuntimeException(
+                    'Simulated SMS provider outage.'
+                );
+            }
+        };
+
+        $this->app->instance(
+            OtpSender::class,
+            $failingSender
+        );
+
+        $service = $this->app->make(
+            OtpService::class
+        );
+
+        try {
+            $service->request(
+                $user->mobile,
+                'sms',
+                'login',
+                '127.0.0.1'
+            );
+
+            $this->fail(
+                'Provider failure did not bubble up.'
+            );
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(
+                'Simulated SMS provider outage.',
+                $exception->getMessage()
+            );
+        }
+
+        $failedOtp = OtpCode::query()
+            ->where(
+                'identifier',
+                $user->mobile
+            )
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->assertNotNull(
+            $failedOtp->consumed_at
+        );
+
+        $this->app->instance(
+            OtpSender::class,
+            $this->sender
+        );
+
+        $retryService = $this->app->make(
+            OtpService::class
+        );
+
+        $retryService->request(
+            $user->mobile,
+            'sms',
+            'login',
+            '127.0.0.1'
+        );
+
+        $this->assertArrayHasKey(
+            $user->mobile,
+            $this->sender->codes
+        );
+
+        $this->assertSame(
+            1,
+            OtpCode::query()
+                ->where(
+                    'identifier',
+                    $user->mobile
+                )
+                ->whereNull(
+                    'consumed_at'
+                )
+                ->count()
+        );
+    }
+
     private function user(string $mobile): User
     {
         return User::factory()->create([
