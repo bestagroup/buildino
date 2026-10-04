@@ -14,6 +14,7 @@ use App\Models\UserRoleAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\CreatesBuildingDomainData;
 use Tests\TestCase;
@@ -306,6 +307,46 @@ class ManagedFileFlowTest extends TestCase
                 'data.category',
                 'meeting_minute'
             );
+    }
+
+    public function test_deleted_file_reconciliation_removes_orphaned_blob(): void
+    {
+        $path =
+            'uploads/orphaned/'
+            .Str::uuid()
+            .'.pdf';
+
+        Storage::disk('private')->put(
+            $path,
+            'orphaned-content'
+        );
+
+        $file = ManagedFile::query()->create([
+            'uuid' => (string) Str::uuid(),
+            'disk' => 'private',
+            'visibility' => 'private',
+            'path' => $path,
+            'stored_name' => basename($path),
+            'original_name' => 'orphaned.pdf',
+            'extension' => 'pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 16,
+            'category' => 'other',
+            'scan_status' => 'clean',
+            'scanned_at' => now(),
+        ]);
+
+        $file->delete();
+
+        Storage::disk('private')
+            ->assertExists($path);
+
+        $this->artisan(
+            'files:purge-deleted'
+        )->assertSuccessful();
+
+        Storage::disk('private')
+            ->assertMissing($path);
     }
 
     private function verifiedUser(): User
