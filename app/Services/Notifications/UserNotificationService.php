@@ -161,6 +161,11 @@ class UserNotificationService
             $notification->data
         );
 
+        $storedChannel =
+            $log->channel instanceof \BackedEnum
+                ? $log->channel->value
+                : (string) $log->channel;
+
         if (
             $log->notifiable_type
                 !== $user->getMorphClass()
@@ -168,8 +173,7 @@ class UserNotificationService
                 !== (int) $user->getKey()
             || (string) $log->notification_type
                 !== $notification->type
-            || (string) $log->channel
-                !== $channel
+            || $storedChannel !== $channel
             || (string) $log->title
                 !== $notification->title
             || (string) $log->message
