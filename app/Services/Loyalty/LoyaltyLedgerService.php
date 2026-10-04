@@ -134,15 +134,23 @@ final class LoyaltyLedgerService
             $rule,
             $user
         ): LoyaltyTransaction {
+            $account = $this->lockedAccount($user);
+
             $existing = LoyaltyTransaction::query()
                 ->where('idempotency_key', $idempotencyKey)
                 ->first();
 
             if ($existing) {
-                return $existing;
+                return $this->assertIdempotentTransaction(
+                    $existing,
+                    $account->getKey(),
+                    LoyaltyTransactionType::Earn,
+                    $points,
+                    $reference,
+                    null
+                );
             }
 
-            $account = $this->lockedAccount($user);
             $balance = (int) $account->balance + $points;
 
             $transaction = LoyaltyTransaction::query()->create([
@@ -188,15 +196,22 @@ final class LoyaltyLedgerService
             $reference,
             $user
         ): LoyaltyTransaction {
+            $account = $this->lockedAccount($user);
+
             $existing = LoyaltyTransaction::query()
                 ->where('idempotency_key', $idempotencyKey)
                 ->first();
 
             if ($existing) {
-                return $existing;
+                return $this->assertIdempotentTransaction(
+                    $existing,
+                    $account->getKey(),
+                    LoyaltyTransactionType::Spend,
+                    -$points,
+                    $reference,
+                    null
+                );
             }
-
-            $account = $this->lockedAccount($user);
 
             if ((int) $account->balance < $points) {
                 throw ValidationException::withMessages([
@@ -281,14 +296,6 @@ final class LoyaltyLedgerService
             $reference,
             $spend
         ): LoyaltyTransaction {
-            $existing = LoyaltyTransaction::query()
-                ->where('idempotency_key', $idempotencyKey)
-                ->first();
-
-            if ($existing) {
-                return $existing;
-            }
-
             $spend = LoyaltyTransaction::query()
                 ->lockForUpdate()
                 ->findOrFail($spend->getKey());
@@ -305,7 +312,23 @@ final class LoyaltyLedgerService
             $account = LoyaltyAccount::query()
                 ->lockForUpdate()
                 ->findOrFail($spend->loyalty_account_id);
+
             $points = abs((int) $spend->points);
+
+            $existing = LoyaltyTransaction::query()
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+
+            if ($existing) {
+                return $this->assertIdempotentTransaction(
+                    $existing,
+                    $account->getKey(),
+                    LoyaltyTransactionType::Adjust,
+                    $points,
+                    $reference,
+                    $spend->getKey()
+                );
+            }
             $balance = (int) $account->balance + $points;
 
             $refund = LoyaltyTransaction::query()->create([
@@ -386,6 +409,45 @@ final class LoyaltyLedgerService
         }
 
         return $expired;
+    }
+
+
+    private function assertIdempotentTransaction(
+        LoyaltyTransaction $transaction,
+        int $accountId,
+        LoyaltyTransactionType $type,
+        int $points,
+        ?Model $reference,
+        ?int $reversedTransactionId
+    ): LoyaltyTransaction {
+        $storedType = $transaction->type instanceof \BackedEnum
+            ? $transaction->type->value
+            : (string) $transaction->type;
+
+        $expectedReferenceType =
+            $reference?->getMorphClass();
+
+        $expectedReferenceId =
+            $reference?->getKey();
+
+        if (
+            (int) $transaction->loyalty_account_id !== $accountId
+            || $storedType !== $type->value
+            || (int) $transaction->points !== $points
+            || $transaction->reference_type
+                !== $expectedReferenceType
+            || $transaction->reference_id
+                !== $expectedReferenceId
+            || $transaction->reversed_transaction_id
+                !== $reversedTransactionId
+        ) {
+            throw ValidationException::withMessages([
+                'idempotency_key' =>
+                    'The idempotency key has already been used for a different loyalty operation.',
+            ]);
+        }
+
+        return $transaction->refresh();
     }
 
     private function lockedAccount(User $user): LoyaltyAccount
