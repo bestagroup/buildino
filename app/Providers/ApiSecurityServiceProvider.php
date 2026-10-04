@@ -16,12 +16,26 @@ class ApiSecurityServiceProvider extends ServiceProvider
                 ->by($request->user()?->id ?: $request->ip());
         });
 
-        RateLimiter::for('auth', function (Request $request): Limit {
-            return Limit::perMinute((int) config('api_security.auth_rate_limit', 10))
-                ->by(strtolower((string) $request->input(
-                    'login',
-                    $request->input('mobile', $request->ip())
-                )));
+        RateLimiter::for('auth', function (Request $request): array {
+            $principal = strtolower(trim((string) $request->input(
+                'login',
+                $request->input(
+                    'identifier',
+                    $request->input('mobile', 'unknown')
+                )
+            )));
+
+            $limit = (int) config(
+                'api_security.auth_rate_limit',
+                10
+            );
+
+            return [
+                Limit::perMinute($limit)
+                    ->by('principal:'.$principal),
+                Limit::perMinute($limit * 3)
+                    ->by('ip:'.$request->ip()),
+            ];
         });
 
         RateLimiter::for('otp-request', function (Request $request): array {
