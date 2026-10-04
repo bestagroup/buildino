@@ -372,4 +372,115 @@ class UiFoundationWebTest extends TestCase
             $bladeDateInputs
         );
     }
+
+    public function test_persian_rtl_design_system_is_applied_consistently(): void
+    {
+        $this->assertStringContainsString(
+            'bootstrap.rtl.min.css',
+            (string) config('management_ui.libraries.bootstrap.css')
+        );
+
+        $fontCss = (string) file_get_contents(
+            public_path('css/buildino-fonts.css')
+        );
+        $designSystem = (string) file_get_contents(
+            public_path('css/buildino-design-system.css')
+        );
+        $foundation = (string) file_get_contents(
+            public_path('js/buildino-foundation.js')
+        );
+
+        $this->assertStringContainsString(
+            'IRANSansX',
+            $fontCss
+        );
+        $this->assertStringContainsString(
+            '--buildino-font-persian',
+            $fontCss
+        );
+        $this->assertStringContainsString(
+            'direction: rtl;',
+            $designSystem
+        );
+        $this->assertStringContainsString(
+            '.buildino-skip-link',
+            $designSystem
+        );
+        $this->assertStringContainsString(
+            "aria-live",
+            $foundation
+        );
+        $this->assertStringContainsString(
+            "aria-required",
+            $foundation
+        );
+
+        $legacyCrud = (string) file_get_contents(
+            public_path('js/buildino-crud.js')
+        );
+
+        $this->assertStringContainsString(
+            'buildino:form-mounted',
+            $legacyCrud
+        );
+        $this->assertStringContainsString(
+            'aria-required',
+            $legacyCrud
+        );
+        $this->assertStringContainsString(
+            'input.inputMode',
+            $legacyCrud
+        );
+
+        foreach (
+            [
+                '/management/login',
+                '/portal/login',
+            ]
+            as $uri
+        ) {
+            $this->get($uri)
+                ->assertOk()
+                ->assertSee('dir="rtl"', false)
+                ->assertSee(
+                    'buildino-fonts.css',
+                    false
+                )
+                ->assertSee(
+                    'buildino-design-system.css',
+                    false
+                );
+        }
+    }
+
+    public function test_primary_product_css_avoids_unreadably_small_text(): void
+    {
+        foreach (
+            [
+                public_path('css/buildino-management.css'),
+                public_path('css/buildino-portal.css'),
+                public_path('css/buildino-crud.css'),
+                public_path('css/buildino-datatables.css'),
+                resource_path('css/buildino-select2.css'),
+            ]
+            as $path
+        ) {
+            $css = (string) file_get_contents($path);
+
+            preg_match_all(
+                '/font-size:\s*([0-9.]+)px/',
+                $css,
+                $matches
+            );
+
+            foreach ($matches[1] ?? [] as $size) {
+                $this->assertGreaterThanOrEqual(
+                    11.0,
+                    (float) $size,
+                    "Typography below 11px exists in {$path}."
+                );
+            }
+        }
+    }
+
 }

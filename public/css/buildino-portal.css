@@ -1,6 +1,6 @@
 
 :root {
-    --portal-font: "Yekan Bakh", Tahoma, "Segoe UI", sans-serif;
+    --portal-font: var(--buildino-font-persian, Tahoma, "Segoe UI", sans-serif);
     --portal-bg: #f4f7fb;
     --portal-surface: #ffffff;
     --portal-soft: #f7f9fc;
@@ -155,7 +155,7 @@ a {
 .portal-brand__copy small {
     margin-top: 3px;
     color: rgba(255,255,255,.52);
-    font-size: 8.5px;
+    font-size: 11px;
 }
 
 .portal-user-card {
@@ -190,12 +190,12 @@ a {
 }
 
 .portal-user-card strong {
-    font-size: 10px;
+    font-size: 11px;
 }
 
 .portal-user-card span {
     color: rgba(255,255,255,.54);
-    font-size: 8px;
+    font-size: 11px;
 }
 
 .portal-nav {
@@ -212,7 +212,7 @@ a {
     border: 1px solid transparent;
     border-radius: 11px;
     color: rgba(255,255,255,.64);
-    font-size: 9.8px;
+    font-size: 11px;
     font-weight: 500;
     transition: all var(--portal-transition);
 }
@@ -242,7 +242,7 @@ a {
     align-items: flex-start;
     gap: 6px;
     color: rgba(255,255,255,.44);
-    font-size: 7.7px;
+    font-size: 11px;
     line-height: 1.7;
 }
 
@@ -257,7 +257,7 @@ a {
     border-radius: 10px;
     background: rgba(255,255,255,.05);
     color: rgba(255,255,255,.72);
-    font-size: 8.7px;
+    font-size: 11px;
     cursor: pointer;
 }
 
@@ -292,7 +292,7 @@ a {
 .portal-topbar__title span {
     display: block;
     color: var(--portal-muted);
-    font-size: 7.2px;
+    font-size: 11px;
     letter-spacing: .6px;
     direction: ltr;
     text-align: right;
@@ -356,18 +356,18 @@ a {
 
 .portal-wallet-chip small {
     color: var(--portal-muted);
-    font-size: 7.4px;
+    font-size: 11px;
 }
 
 .portal-wallet-chip strong {
     margin-top: 1px;
-    font-size: 9px;
+    font-size: 11px;
     direction: ltr;
 }
 
 .portal-wallet-chip em {
     color: var(--portal-muted);
-    font-size: 7px;
+    font-size: 11px;
     font-style: normal;
 }
 
@@ -384,7 +384,7 @@ a {
     border-radius: 999px;
     background: var(--portal-danger);
     color: #fff;
-    font-size: 7px;
+    font-size: 11px;
     font-weight: 800;
 }
 
@@ -413,19 +413,19 @@ a {
 }
 
 .portal-notification-menu__header strong {
-    font-size: 10px;
+    font-size: 11px;
 }
 
 .portal-notification-menu__header span {
     color: var(--portal-muted);
-    font-size: 7.8px;
+    font-size: 11px;
 }
 
 .portal-notification-menu__header button {
     border: 0;
     background: transparent;
     color: var(--portal-blue);
-    font-size: 8px;
+    font-size: 11px;
     cursor: pointer;
 }
 
@@ -471,20 +471,20 @@ a {
 }
 
 .portal-notification-item strong {
-    font-size: 8.8px;
+    font-size: 11px;
 }
 
 .portal-notification-item small {
     margin-top: 2px;
     color: var(--portal-muted);
-    font-size: 7.8px;
+    font-size: 11px;
     line-height: 1.8;
 }
 
 .portal-notification-item em {
     margin-top: 3px;
     color: color-mix(in srgb, var(--portal-muted) 70%, transparent);
-    font-size: 6.8px;
+    font-size: 11px;
     font-style: normal;
 }
 
@@ -537,7 +537,7 @@ a {
 .portal-eyebrow {
     display: block;
     color: var(--portal-teal);
-    font-size: 7.7px;
+    font-size: 11px;
     font-weight: 800;
     letter-spacing: .5px;
 }
@@ -552,7 +552,7 @@ a {
     max-width: 720px;
     margin: 0;
     color: var(--portal-muted);
-    font-size: 9.8px;
+    font-size: 11px;
 }
 
 .portal-hero__meta {
@@ -568,7 +568,7 @@ a {
     border-radius: 999px;
     background: var(--portal-surface);
     color: var(--portal-muted);
-    font-size: 7.7px;
+    font-size: 11px;
 }
 
 .portal-hero__actions {
@@ -591,7 +591,7 @@ a {
     border-radius: 10px;
     background: var(--portal-surface);
     color: var(--portal-text);
-    font-size: 8.6px;
+    font-size: 11px;
     font-weight: 700;
     cursor: pointer;
     transition: all var(--portal-transition);
@@ -676,7 +676,7 @@ a {
 
 .portal-stat-card div > span {
     color: var(--portal-muted);
-    font-size: 7.8px;
+    font-size: 11px;
 }
 
 .portal-stat-card strong {
@@ -690,7 +690,7 @@ a {
 
 .portal-stat-card small {
     color: var(--portal-muted);
-    font-size: 7px;
+    font-size: 11px;
 }
 
 .portal-section {
@@ -713,7 +713,7 @@ a {
 
 .portal-section__note {
     color: var(--portal-muted);
-    font-size: 7.8px;
+    font-size: 11px;
 }
 
 .portal-unit-grid,
@@ -743,7 +743,7 @@ a {
     justify-content: space-between;
     gap: 8px;
     color: var(--portal-muted);
-    font-size: 7.7px;
+    font-size: 11px;
 }
 
 .portal-unit-card__role {
@@ -763,7 +763,7 @@ a {
 .portal-unit-card p {
     margin: 0;
     color: var(--portal-muted);
-    font-size: 8px;
+    font-size: 11px;
 }
 
 .portal-unit-card__facts {
@@ -787,12 +787,12 @@ a {
 
 .portal-unit-card__facts span {
     color: var(--portal-muted);
-    font-size: 7px;
+    font-size: 11px;
 }
 
 .portal-unit-card__facts strong {
     margin-top: 2px;
-    font-size: 8.8px;
+    font-size: 11px;
 }
 
 .portal-inline-action {
@@ -803,7 +803,7 @@ a {
     border-radius: 9px;
     background: var(--portal-soft);
     color: var(--portal-blue);
-    font-size: 8px;
+    font-size: 11px;
     font-weight: 700;
     cursor: pointer;
 }
@@ -818,14 +818,14 @@ a {
     --bs-table-bg: transparent;
     --bs-table-color: var(--portal-text);
     --bs-table-border-color: var(--portal-border);
-    font-size: 8.5px;
+    font-size: 11px;
 }
 
 .portal-table th {
     padding: 10px;
     background: var(--portal-soft);
     color: var(--portal-muted);
-    font-size: 7.5px;
+    font-size: 11px;
     font-weight: 700;
 }
 
@@ -846,7 +846,7 @@ a {
     min-width: 55px;
     padding: 3px 7px;
     border-radius: 999px;
-    font-size: 7px;
+    font-size: 11px;
     font-weight: 700;
 }
 
@@ -903,12 +903,12 @@ a {
 }
 
 .portal-list-card > header strong {
-    font-size: 9.5px;
+    font-size: 11px;
 }
 
 .portal-list-card > header > span {
     color: var(--portal-muted);
-    font-size: 7.5px;
+    font-size: 11px;
 }
 
 .portal-list {
@@ -940,14 +940,14 @@ a {
 
 .portal-list-item > div > strong,
 .portal-bank-account > div > strong {
-    font-size: 8.8px;
+    font-size: 11px;
 }
 
 .portal-list-item > div > span,
 .portal-bank-account > div > span {
     margin-top: 2px;
     color: var(--portal-muted);
-    font-size: 7.4px;
+    font-size: 11px;
 }
 
 .portal-bank-account > div:last-child {
@@ -959,7 +959,7 @@ a {
 .portal-empty-state {
     color: var(--portal-muted);
     text-align: center;
-    font-size: 8px;
+    font-size: 11px;
 }
 
 .portal-empty-mini {
@@ -987,7 +987,7 @@ a {
 
 .portal-job-card__header > div > span {
     color: var(--portal-muted);
-    font-size: 7px;
+    font-size: 11px;
     direction: ltr;
 }
 
@@ -1001,7 +1001,7 @@ a {
     min-height: 45px;
     margin: 10px 0;
     color: var(--portal-muted);
-    font-size: 8px;
+    font-size: 11px;
     line-height: 1.9;
 }
 
@@ -1025,13 +1025,13 @@ a {
 
 .portal-job-card__meta span {
     color: var(--portal-muted);
-    font-size: 6.7px;
+    font-size: 11px;
 }
 
 .portal-job-card__meta strong {
     margin-top: 2px;
     overflow: hidden;
-    font-size: 7.7px;
+    font-size: 11px;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -1045,7 +1045,7 @@ a {
     padding: 8px;
     border-radius: 9px;
     background: color-mix(in srgb, var(--portal-teal) 7%, var(--portal-soft));
-    font-size: 7.5px;
+    font-size: 11px;
 }
 
 .portal-quote-summary strong {
@@ -1073,7 +1073,7 @@ a {
     border-radius: 8px;
     background: var(--portal-soft);
     color: var(--portal-blue);
-    font-size: 7.5px;
+    font-size: 11px;
     font-weight: 700;
     cursor: pointer;
 }
@@ -1089,7 +1089,7 @@ a {
 
 .portal-job-awaiting {
     color: var(--portal-warning);
-    font-size: 7.5px;
+    font-size: 11px;
 }
 
 .portal-modal {
@@ -1130,7 +1130,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
 
 .portal-field > span {
     color: var(--portal-muted);
-    font-size: 8px;
+    font-size: 11px;
     font-weight: 700;
 }
 
@@ -1143,7 +1143,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     outline: none;
     background: var(--portal-soft);
     color: var(--portal-text);
-    font-size: 8.8px;
+    font-size: 11px;
 }
 
 .portal-field input,
@@ -1169,7 +1169,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     align-items: center;
     gap: 7px;
     color: var(--portal-muted);
-    font-size: 8px;
+    font-size: 11px;
 }
 
 .portal-check input {
@@ -1183,7 +1183,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     border: 1px solid var(--portal-border);
     border-radius: 9px;
     background: var(--portal-soft);
-    font-size: 8px;
+    font-size: 11px;
 }
 
 .portal-topup-target span {
@@ -1270,7 +1270,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
 
 .portal-login-brand small {
     color: rgba(255,255,255,.53);
-    font-size: 8px;
+    font-size: 11px;
     direction: ltr;
 }
 
@@ -1280,7 +1280,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
 
 .portal-login-copy > span {
     color: #a9d7ff;
-    font-size: 8.5px;
+    font-size: 11px;
     font-weight: 700;
 }
 
@@ -1300,7 +1300,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     max-width: 610px;
     margin: 10px 0 0;
     color: rgba(255,255,255,.65);
-    font-size: 10.5px;
+    font-size: 11px;
     line-height: 2;
 }
 
@@ -1319,7 +1319,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     border: 1px solid rgba(255,255,255,.1);
     border-radius: 11px;
     background: rgba(255,255,255,.055);
-    font-size: 8px;
+    font-size: 11px;
 }
 
 .portal-login-form-area {
@@ -1340,7 +1340,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
 
 .portal-login-card__heading > span {
     color: #16847e;
-    font-size: 8px;
+    font-size: 11px;
     font-weight: 800;
 }
 
@@ -1354,11 +1354,11 @@ html[data-theme="dark"] .portal-modal .btn-close {
 .portal-login-card__heading p {
     margin: 0 0 20px;
     color: #77869a;
-    font-size: 9.3px;
+    font-size: 11px;
 }
 
 .portal-login-alert {
-    font-size: 8.5px;
+    font-size: 11px;
 }
 
 .portal-login-form {
@@ -1373,7 +1373,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
 
 .portal-login-form > label > span {
     color: #637287;
-    font-size: 8.5px;
+    font-size: 11px;
     font-weight: 700;
 }
 
@@ -1388,7 +1388,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     outline: none;
     background: #f9fbfd;
     color: #172033;
-    font-size: 9.5px;
+    font-size: 11px;
 }
 
 .portal-login-form input:focus {
@@ -1409,7 +1409,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     align-items: center;
     gap: 6px !important;
     color: #748397;
-    font-size: 8px;
+    font-size: 11px;
 }
 
 .portal-remember input[type="checkbox"] {
@@ -1420,7 +1420,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
 
 .portal-login-meta > a {
     color: #29658f;
-    font-size: 8px;
+    font-size: 11px;
     font-weight: 700;
 }
 
@@ -1436,7 +1436,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     gap: 5px;
     margin-top: 15px;
     color: #8491a3;
-    font-size: 7.8px;
+    font-size: 11px;
 }
 
 .portal-login-register {
@@ -1448,7 +1448,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     border-radius: 11px;
     background: #f5f9fc;
     color: #718196;
-    font-size: 8px;
+    font-size: 11px;
     line-height: 1.7;
     text-align: center;
 }
@@ -1480,7 +1480,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     background: transparent;
     color: #748397;
     font-family: var(--portal-font);
-    font-size: 8.5px;
+    font-size: 11px;
     font-weight: 700;
     cursor: pointer;
 }
@@ -1503,7 +1503,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     border-radius: 9px;
     background: #f4faf8;
     color: #4b746e;
-    font-size: 8px;
+    font-size: 11px;
     line-height: 1.75;
 }
 
@@ -1521,7 +1521,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
 
 .portal-otp-copy strong {
     color: #2b3d52;
-    font-size: 8.8px;
+    font-size: 11px;
 }
 
 .portal-otp-copy span {
@@ -1549,7 +1549,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     background: transparent;
     color: #29658f;
     font-family: var(--portal-font);
-    font-size: 7.8px;
+    font-size: 11px;
     font-weight: 700;
     cursor: pointer;
 }
@@ -1700,7 +1700,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
             var(--portal-surface)
         );
     color: var(--portal-blue);
-    font-size: 7.4px;
+    font-size: 11px;
     font-weight: 700;
     cursor: pointer;
     transition: all var(--portal-transition);
@@ -1729,7 +1729,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     border-radius: 7px;
     background: var(--portal-soft);
     color: var(--portal-blue);
-    font-size: 7px;
+    font-size: 11px;
     font-weight: 700;
     cursor: pointer;
     transition: all var(--portal-transition);
@@ -1776,12 +1776,12 @@ html[data-theme="dark"] .portal-modal .btn-close {
     gap: 5px 9px;
     margin-top: 5px;
     color: var(--portal-teal);
-    font-size: 7.3px;
+    font-size: 11px;
 }
 
 .portal-quote-inline small {
     color: var(--portal-muted);
-    font-size: 7px;
+    font-size: 11px;
 }
 
 .portal-wallet-history-grid {
@@ -1847,13 +1847,13 @@ html[data-theme="dark"] .portal-modal .btn-close {
 }
 
 .portal-wallet-history-card > header strong {
-    font-size: 9px;
+    font-size: 11px;
 }
 
 .portal-wallet-history-card > header span {
     margin-top: 2px;
     color: var(--portal-muted);
-    font-size: 7px;
+    font-size: 11px;
 }
 
 .portal-wallet-entry-list {
@@ -1916,7 +1916,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
 }
 
 .portal-wallet-entry strong {
-    font-size: 8.5px;
+    font-size: 11px;
     direction: ltr;
     text-align: right;
 }
@@ -1925,14 +1925,14 @@ html[data-theme="dark"] .portal-modal .btn-close {
     margin-top: 1px;
     overflow: hidden;
     color: var(--portal-muted);
-    font-size: 7px;
+    font-size: 11px;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .portal-wallet-entry time {
     color: var(--portal-muted);
-    font-size: 6.7px;
+    font-size: 11px;
     white-space: nowrap;
 }
 
@@ -1986,18 +1986,18 @@ html[data-theme="dark"] .portal-modal .btn-close {
 }
 
 .portal-ticket-message strong {
-    font-size: 7.6px;
+    font-size: 11px;
 }
 
 .portal-ticket-message time {
     color: var(--portal-muted);
-    font-size: 6.3px;
+    font-size: 11px;
 }
 
 .portal-ticket-message p {
     margin: 5px 0 0;
     color: var(--portal-text);
-    font-size: 8px;
+    font-size: 11px;
     line-height: 1.9;
     white-space: pre-wrap;
 }
@@ -2028,7 +2028,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
     background: var(--portal-soft);
     color: var(--portal-text);
     font-family: var(--portal-font);
-    font-size: 8.2px;
+    font-size: 11px;
 }
 
 .portal-ticket-reply textarea:focus {

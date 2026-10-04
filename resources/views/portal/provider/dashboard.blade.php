@@ -111,7 +111,7 @@
 <section class="portal-hero portal-hero--provider">
     <div class="portal-hero__copy">
         <span class="portal-eyebrow">
-            SERVICE PROVIDER
+            پنل ارائه‌دهنده خدمات
         </span>
 
         <h2>
@@ -136,7 +136,7 @@
             </span>
 
             <span>
-                بروزرسانی:
+                به‌روزرسانی:
                 {{
                     $portalData[
                         'generated_at_jalali'
@@ -304,7 +304,7 @@
     <div class="portal-section__heading">
         <div>
             <span class="portal-eyebrow">
-                WALLET LEDGER
+                گردش کیف پول
             </span>
             <h3>
                 گردش کیف پول ارائه‌دهنده
@@ -346,7 +346,7 @@
 
                 <div>
                     <strong>
-                        کیف پول Provider
+                        کیف پول ارائه‌دهنده
                     </strong>
 
                     <span>
@@ -432,7 +432,7 @@
                 </div>
             @empty
                 <div class="portal-empty-mini">
-                    هنوز تراکنشی در کیف پول Provider ثبت نشده است.
+                    هنوز تراکنشی در کیف پول ارائه‌دهنده ثبت نشده است.
                 </div>
             @endforelse
         </div>
@@ -446,7 +446,7 @@
     <div class="portal-section__heading">
         <div>
             <span class="portal-eyebrow">
-                ASSIGNED JOBS
+                کارهای تخصیص‌یافته
             </span>
             <h3>
                 درخواست‌های تخصیص‌یافته
@@ -455,7 +455,7 @@
 
         <div class="portal-section__actions">
             <span class="portal-section__note">
-                Workflow هر کار از API اصلی Service Marketplace اجرا می‌شود.
+                فرایند هر کار از API اصلی بازار خدمات اجرا می‌شود.
             </span>
 
             <a
@@ -735,7 +735,7 @@
     <div class="portal-section__heading">
         <div>
             <span class="portal-eyebrow">
-                SETTLEMENT
+                تسویه‌حساب
             </span>
             <h3>
                 حساب بانکی و تسویه
@@ -919,7 +919,7 @@
             <div class="modal-header">
                 <div>
                     <span class="portal-eyebrow">
-                        QUOTE
+                        پیشنهاد قیمت
                     </span>
 
                     <h5 class="modal-title">

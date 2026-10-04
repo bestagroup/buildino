@@ -69,10 +69,88 @@ const inputDirection = (field: CrudField): 'ltr' | undefined => {
         'datetime-local',
         'number',
     ].includes(field.type ?? '')
-        || /mobile|phone|email|code|iban|card|url|website/.test(name)
+        || /mobile|phone|email|code|iban|card|url|website|postal/.test(name)
         ? 'ltr'
         : undefined;
 };
+
+const inputMode = (
+    field: CrudField,
+): 'decimal' | 'email' | 'numeric' | 'tel' | 'url' | undefined => {
+    const name = field.name.toLowerCase();
+    const type = field.type ?? 'text';
+
+    if (type === 'email' || /email/.test(name)) {
+        return 'email';
+    }
+
+    if (type === 'number') {
+        return field.step && String(field.step) !== '1'
+            ? 'decimal'
+            : 'numeric';
+    }
+
+    if (/mobile|phone/.test(name)) {
+        return 'tel';
+    }
+
+    if (/iban|card|code|postal/.test(name)) {
+        return 'numeric';
+    }
+
+    if (type === 'url' || /url|website/.test(name)) {
+        return 'url';
+    }
+
+    return undefined;
+};
+
+const autoComplete = (field: CrudField): string | undefined => {
+    const name = field.name.toLowerCase();
+
+    if (field.type === 'password') {
+        return 'new-password';
+    }
+
+    if (/first_name/.test(name)) {
+        return 'given-name';
+    }
+
+    if (/last_name/.test(name)) {
+        return 'family-name';
+    }
+
+    if (/email/.test(name)) {
+        return 'email';
+    }
+
+    if (/mobile|phone/.test(name)) {
+        return 'tel';
+    }
+
+    if (/postal/.test(name)) {
+        return 'postal-code';
+    }
+
+    if (/address/.test(name)) {
+        return 'street-address';
+    }
+
+    if (/website|url/.test(name)) {
+        return 'url';
+    }
+
+    return undefined;
+};
+
+const fieldDomId = (field: CrudField): string =>
+    `management-${props.mode}-${field.name.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+
+const fieldMessageId = (field: CrudField): string =>
+    `${fieldDomId(field)}-message`;
+
+const hasFieldError = (field: CrudField): boolean =>
+    Boolean(props.errors?.[field.name]?.length);
 
 const fieldValue = (field: CrudField): unknown =>
     props.modelValue[field.name]
@@ -238,7 +316,10 @@ watch(
 
             <textarea
                 v-if="field.type === 'textarea' || field.type === 'json'"
+                :id="fieldDomId(field)"
                 :name="field.name"
+                :aria-invalid="hasFieldError(field)"
+                :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
                 :rows="field.type === 'json' ? 8 : 5"
                 :required="field.required || (mode === 'create' && field.required_on_create)"
                 :disabled="mode === 'edit' && field.readonly_on_edit"
@@ -250,7 +331,11 @@ watch(
 
             <select
                 v-else-if="field.type === 'select' || field.type === 'multiselect'"
+                :id="fieldDomId(field)"
                 :name="field.name"
+                :aria-invalid="hasFieldError(field)"
+                :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
+                :aria-busy="loadingFields.has(field.name)"
                 :multiple="field.type === 'multiselect'"
                 :required="field.required || (mode === 'create' && field.required_on_create)"
                 :disabled="loadingFields.has(field.name) || (mode === 'edit' && field.readonly_on_edit)"
@@ -276,7 +361,10 @@ watch(
                 class="ui-checkbox"
             >
                 <input
+                    :id="fieldDomId(field)"
                     :name="field.name"
+                    :aria-invalid="hasFieldError(field)"
+                    :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
                     type="checkbox"
                     :checked="Boolean(fieldValue(field))"
                     :disabled="mode === 'edit' && field.readonly_on_edit"
@@ -287,24 +375,31 @@ watch(
 
             <input
                 v-else
+                :id="fieldDomId(field)"
                 :name="field.name"
+                :aria-invalid="hasFieldError(field)"
+                :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
                 :type="['date', 'datetime-local', 'time'].includes(field.type ?? '') ? field.type : (field.type ?? 'text')"
                 :required="field.required || (mode === 'create' && field.required_on_create)"
                 :disabled="mode === 'edit' && field.readonly_on_edit"
                 :placeholder="field.placeholder"
                 :step="field.step"
                 :dir="inputDirection(field)"
-                :autocomplete="field.type === 'password' ? 'new-password' : undefined"
+                :inputmode="inputMode(field)"
+                :autocomplete="autoComplete(field)"
                 :value="fieldValue(field) as string | number"
                 @input="setFieldValue(field, ($event.target as HTMLInputElement).value)"
             >
 
             <small
                 v-if="errors?.[field.name]?.length"
+                :id="fieldMessageId(field)"
                 class="ui-field__error"
+                role="alert"
             >{{ errors[field.name][0] }}</small>
             <small
                 v-else-if="field.help"
+                :id="fieldMessageId(field)"
                 class="ui-field__help"
             >{{ field.help }}</small>
         </label>

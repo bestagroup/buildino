@@ -27,7 +27,6 @@
     <link
         rel="stylesheet"
         href="{{ config('management_ui.libraries.bootstrap.css') }}"
-        integrity="{{ config('management_ui.libraries.bootstrap.css_integrity') }}"
         crossorigin="anonymous"
     >
 
@@ -39,6 +38,10 @@
     <link
         rel="stylesheet"
         href="{{ asset('css/buildino-portal.css') }}"
+    >
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/buildino-design-system.css') }}"
     >
 </head>
 
@@ -55,7 +58,7 @@
                     </strong>
 
                     <small>
-                        Resident & Provider Portal
+                        پرتال ساکنین و ارائه‌دهندگان
                     </small>
                 </div>
             </div>

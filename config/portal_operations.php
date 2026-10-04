@@ -70,7 +70,7 @@ return [
 
         'support' => [
             'title' => 'تیکت‌های من',
-            'description' => 'پیگیری گفتگو، SLA، وضعیت رسیدگی و بازگشایی تیکت.',
+            'description' => 'پیگیری گفت‌وگو، سطح خدمت، وضعیت رسیدگی و بازگشایی تیکت.',
             'icon' => 'support',
             'columns' => [
                 ['data' => 'ticket_number', 'title' => 'تیکت'],
@@ -105,7 +105,7 @@ return [
 
         'services' => [
             'title' => 'کارهای تخصیص‌یافته',
-            'description' => 'تمام درخواست‌های خدمت تخصیص‌یافته، Quote و وضعیت مالی هر کار.',
+            'description' => 'تمام درخواست‌های خدمت تخصیص‌یافته، پیشنهاد قیمت و وضعیت مالی هر کار.',
             'icon' => 'tools',
             'columns' => [
                 ['data' => 'request_number', 'title' => 'درخواست'],
@@ -136,7 +136,7 @@ return [
         ],
 
         'wallet' => [
-            'title' => 'گردش کیف پول Provider',
+            'title' => 'گردش کیف پول ارائه‌دهنده',
             'description' => 'اعتبارها، برداشت‌ها، تسویه و مانده کیف پول ارائه‌دهنده خدمات.',
             'icon' => 'wallet',
             'columns' => [

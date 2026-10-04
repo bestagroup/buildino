@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Buildino؛ سامانه یکپارچه مدیریت ساختمان، شارژ، رزرو امکانات، خدمات و ارتباط با ساکنین.">
     <title>Buildino | مدیریت هوشمند ساختمان</title>
+    <link rel="stylesheet" href="{{ asset('css/buildino-fonts.css') }}">
     @vite('resources/css/app.css')
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
@@ -21,7 +22,7 @@
     <main>
         <section class="mx-auto grid max-w-7xl gap-12 px-6 pb-20 pt-16 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:px-8 lg:pt-24">
             <div>
-                <span class="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-300">Building Operations Platform</span>
+                <span class="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-300">سامانه یکپارچه مدیریت ساختمان</span>
                 <h1 class="mt-6 max-w-3xl text-4xl font-black leading-[1.35] md:text-6xl">
                     مدیریت ساختمان، مالی و خدمات در یک سامانه یکپارچه
                 </h1>
@@ -57,9 +58,9 @@
 
         <section class="border-y border-white/10 bg-white/[.025]">
             <div class="mx-auto grid max-w-7xl gap-6 px-6 py-16 md:grid-cols-3 lg:px-8">
-                <div><strong class="text-2xl font-black text-emerald-300">امن و Scope-aware</strong><p class="mt-2 text-sm leading-7 text-slate-400">کنترل دسترسی در سطح پلتفرم، مجتمع، ساختمان و روابط واحد.</p></div>
-                <div><strong class="text-2xl font-black text-emerald-300">API-first</strong><p class="mt-2 text-sm leading-7 text-slate-400">Laravel REST API، Sanctum، کلاینت وب و موبایل با قرارداد نسخه‌بندی‌شده.</p></div>
-                <div><strong class="text-2xl font-black text-emerald-300">آماده رشد</strong><p class="mt-2 text-sm leading-7 text-slate-400">Queue، Redis، گزارش صفی، health check و معماری ماژولار برای توسعه تدریجی.</p></div>
+                <div><strong class="text-2xl font-black text-emerald-300">امن و مبتنی بر محدوده دسترسی</strong><p class="mt-2 text-sm leading-7 text-slate-400">کنترل دسترسی در سطح پلتفرم، مجتمع، ساختمان و روابط واحد.</p></div>
+                <div><strong class="text-2xl font-black text-emerald-300">معماری API محور</strong><p class="mt-2 text-sm leading-7 text-slate-400">رابط برنامه‌نویسی REST بر بستر Laravel و Sanctum، همراه با کلاینت وب و موبایل و قرارداد نسخه‌بندی‌شده.</p></div>
+                <div><strong class="text-2xl font-black text-emerald-300">آماده رشد</strong><p class="mt-2 text-sm leading-7 text-slate-400">صف پردازش، Redis، گزارش‌های صفی، پایش سلامت و معماری ماژولار برای توسعه تدریجی.</p></div>
             </div>
         </section>
     </main>

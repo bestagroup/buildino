@@ -14,11 +14,20 @@
     >
     <link
         rel="stylesheet"
+        href="{{ config('management_ui.libraries.bootstrap.css') }}"
+        crossorigin="anonymous"
+    >
+    <link
+        rel="stylesheet"
         href="{{ asset('css/buildino-foundation.css') }}"
     >
     <link
         rel="stylesheet"
         href="{{ asset('css/buildino-management.css') }}"
+    >
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/buildino-design-system.css') }}"
     >
 </head>
 
@@ -51,7 +60,7 @@
 
         <div class="auth-recovery-heading">
             <span class="eyebrow">
-                PASSWORD RECOVERY
+                بازیابی رمز عبور
             </span>
 
             <h1>فراموشی رمز عبور</h1>

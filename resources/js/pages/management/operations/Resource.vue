@@ -442,7 +442,7 @@ onMounted(() => {
                     <input
                         v-model="search"
                         type="search"
-                        placeholder="جستجو در رکوردهای بارگذاری‌شده..."
+                        placeholder="جستجو در رکوردها..."\n                        aria-label="جستجو در رکوردهای این بخش"
                         @input="currentPage = 1"
                     >
                 </div>
@@ -453,7 +453,7 @@ onMounted(() => {
                         class="crud-button crud-button--soft"
                         :disabled="loading"
                         @click="loadRows"
-                    >{{ loading ? 'در حال بارگذاری...' : 'بروزرسانی' }}</button>
+                    >{{ loading ? 'در حال بارگذاری...' : 'به‌روزرسانی' }}</button>
                 </div>
             </div>
 
@@ -570,8 +570,8 @@ onMounted(() => {
     <UiConfirmDialog
         :open="Boolean(deleteTarget)"
         title="حذف رکورد"
-        message="این رکورد حذف می‌شود. آیا از ادامه مطمئن هستید؟"
-        confirm-label="بله، حذف شود"
+        message="این رکورد حذف می‌شود و ممکن است بازیابی آن امکان‌پذیر نباشد. آیا ادامه می‌دهید؟"
+        confirm-label="حذف رکورد"
         :busy="deleting"
         @cancel="!deleting && (deleteTarget = null)"
         @confirm="remove"

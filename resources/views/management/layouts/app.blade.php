@@ -17,7 +17,6 @@
     <link
         rel="stylesheet"
         href="{{ config('management_ui.libraries.bootstrap.css') }}"
-        integrity="{{ config('management_ui.libraries.bootstrap.css_integrity') }}"
         crossorigin="anonymous"
     >
 
@@ -46,6 +45,11 @@
     >
 
     @stack('styles')
+
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/buildino-design-system.css') }}"
+    >
 </head>
 
 @php
@@ -154,6 +158,7 @@
 @endphp
 
 <body class="management-body">
+<a class="buildino-skip-link" href="#mainContent">پرش به محتوای اصلی</a>
 <div class="management-shell">
     <aside
         class="sidebar"
@@ -619,7 +624,7 @@
                                     )
                                 </span>
                                 <span class="nav-link__label">
-                                    پشتیبانی و SLA
+                                    پشتیبانی و سطح خدمت
                                 </span>
                             </a>
                         @endif
@@ -800,7 +805,7 @@
         aria-label="بستن منو"
     ></button>
 
-    <main class="main-area">
+    <main class="main-area" id="mainContent" tabindex="-1">
         <header class="topbar">
             <div class="topbar__start">
                 <button
@@ -817,7 +822,7 @@
 
                 <div class="page-heading">
                     <span class="page-heading__eyebrow">
-                        BUILDINO MANAGEMENT
+                        مدیریت BUILDINO
                     </span>
 
                     <h1>
@@ -989,7 +994,7 @@
 
                     @if (! ($personalWallet['exists'] ?? false))
                         <div class="wallet-popover__note">
-                            کیف پول شخصی برای این حساب هنوز Provision نشده است.
+                            کیف پول شخصی برای این حساب هنوز ایجاد نشده است.
                         </div>
                     @endif
                 </div>

@@ -31,7 +31,6 @@
     <link
         rel="stylesheet"
         href="{{ config('management_ui.libraries.bootstrap.css') }}"
-        integrity="{{ config('management_ui.libraries.bootstrap.css_integrity') }}"
         crossorigin="anonymous"
     >
 
@@ -58,6 +57,11 @@
     >
 
     @stack('styles')
+
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/buildino-design-system.css') }}"
+    >
 </head>
 
 @php
@@ -138,6 +142,7 @@
     class="portal-body"
     data-portal-user-id="{{ $portalUser?->getKey() }}"
 >
+<a class="buildino-skip-link" href="#mainContent">پرش به محتوای اصلی</a>
 <div class="portal-shell">
     <aside
         class="portal-sidebar"
@@ -290,7 +295,7 @@
         aria-label="بستن منو"
     ></button>
 
-    <main class="portal-main">
+    <main class="portal-main" id="mainContent" tabindex="-1">
         <header class="portal-topbar">
             <div class="portal-topbar__title">
                 <button
@@ -310,7 +315,7 @@
 
                 <div>
                     <span>
-                        BUILDINO PORTAL
+                        پرتال BUILDINO
                     </span>
 
                     <h1>

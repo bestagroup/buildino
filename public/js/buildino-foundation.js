@@ -1,6 +1,12 @@
 (() => {
     'use strict';
 
+    const fieldSelector = [
+        'input:not([type="hidden"])',
+        'select',
+        'textarea',
+    ].join(',');
+
     const setLoading = (element, loading = true) => {
         if (! element) {
             return;
@@ -38,7 +44,7 @@
     const confirm = async ({
         title = 'آیا مطمئن هستید؟',
         text = '',
-        confirmButtonText = 'بله، ادامه بده',
+        confirmButtonText = 'بله، ادامه می‌دهم',
         cancelButtonText = 'انصراف',
         icon = 'warning',
     } = {}) => {
@@ -55,6 +61,9 @@
                 cancelButtonText,
                 reverseButtons: true,
                 focusCancel: true,
+                customClass: {
+                    popup: 'buildino-swal',
+                },
             });
 
             return result.isConfirmed;
@@ -71,8 +80,120 @@
         );
     };
 
+    const isLtrField = (field) => {
+        const type = String(
+            field.getAttribute('type') || ''
+        ).toLowerCase();
+
+        const name = String(
+            field.getAttribute('name') || ''
+        ).toLowerCase();
+
+        return [
+            'email',
+            'tel',
+            'url',
+            'number',
+            'date',
+            'time',
+            'datetime-local',
+            'password',
+        ].includes(type)
+            || /mobile|phone|email|code|iban|card|url|website|postal/.test(name);
+    };
+
+    const clearInvalidState = (field) => {
+        field.removeAttribute('aria-invalid');
+        field.classList.remove('is-invalid');
+
+        field.closest(
+            '.auth-field, .portal-field, .crud-field, .ui-field, label'
+        )?.classList.remove('has-error');
+    };
+
+    const markInvalidState = (field) => {
+        field.setAttribute('aria-invalid', 'true');
+        field.classList.add('is-invalid');
+
+        field.closest(
+            '.auth-field, .portal-field, .crud-field, .ui-field, label'
+        )?.classList.add('has-error');
+    };
+
+    const enhanceField = (field) => {
+        if (field.dataset.buildinoEnhanced === 'true') {
+            return;
+        }
+
+        field.dataset.buildinoEnhanced = 'true';
+
+        if (field.required) {
+            field.setAttribute('aria-required', 'true');
+        }
+
+        if (
+            ! field.hasAttribute('dir')
+            && isLtrField(field)
+        ) {
+            field.setAttribute('dir', 'ltr');
+        }
+
+        field.addEventListener(
+            'input',
+            () => {
+                if (field.checkValidity()) {
+                    clearInvalidState(field);
+                }
+            }
+        );
+
+        field.addEventListener(
+            'change',
+            () => {
+                if (field.checkValidity()) {
+                    clearInvalidState(field);
+                }
+            }
+        );
+    };
+
+    const enhanceFeedback = (root = document) => {
+        root
+            .querySelectorAll(
+                '.alert--success, .subscription-alert, .otp-login-status, [data-ui-status]'
+            )
+            .forEach((element) => {
+                if (! element.hasAttribute('role')) {
+                    element.setAttribute('role', 'status');
+                }
+
+                element.setAttribute('aria-live', 'polite');
+            });
+
+        root
+            .querySelectorAll(
+                '.alert--danger, .subscription-errors, .crud-form-error, .ui-field__error, .invalid-feedback, [data-ui-error]'
+            )
+            .forEach((element) => {
+                if (! element.hasAttribute('role')) {
+                    element.setAttribute('role', 'alert');
+                }
+
+                element.setAttribute('aria-live', 'assertive');
+            });
+    };
+
+    const enhanceForms = (root = document) => {
+        root
+            .querySelectorAll(fieldSelector)
+            .forEach(enhanceField);
+
+        enhanceFeedback(root);
+    };
+
     window.BuildinoUI = Object.freeze({
         confirm,
+        enhanceForms,
         setLoading,
         toast,
     });
@@ -80,12 +201,42 @@
     if (document.readyState === 'loading') {
         document.addEventListener(
             'DOMContentLoaded',
-            markReady,
+            () => {
+                markReady();
+                enhanceForms();
+            },
             { once: true }
         );
     } else {
         markReady();
+        enhanceForms();
     }
+
+    document.addEventListener(
+        'invalid',
+        (event) => {
+            const field = event.target;
+
+            if (! field.matches?.(fieldSelector)) {
+                return;
+            }
+
+            markInvalidState(field);
+
+            if (
+                field.form?.querySelector(':invalid')
+                === field
+            ) {
+                window.requestAnimationFrame(() => {
+                    field.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                    });
+                });
+            }
+        },
+        true
+    );
 
     document.addEventListener('submit', (event) => {
         const form = event.target.closest(
@@ -96,11 +247,23 @@
             return;
         }
 
+        if (! form.checkValidity()) {
+            return;
+        }
+
         const submitter = event.submitter
             ?? form.querySelector('[type="submit"]');
 
         setLoading(submitter, true);
+        form.setAttribute('aria-busy', 'true');
     });
+
+    document.addEventListener(
+        'buildino:form-mounted',
+        (event) => {
+            enhanceForms(event.target || document);
+        }
+    );
 
     window.addEventListener('pageshow', () => {
         document
@@ -109,6 +272,12 @@
             )
             .forEach((element) => {
                 setLoading(element, false);
+            });
+
+        document
+            .querySelectorAll('form[aria-busy="true"]')
+            .forEach((form) => {
+                form.removeAttribute('aria-busy');
             });
     });
 })();
