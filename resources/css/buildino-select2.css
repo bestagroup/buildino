@@ -32,7 +32,7 @@
 
 .portal-body .select2-container {
     font-family: var(--portal-font);
-    font-size: 8.8px;
+    font-size: 12px;
 }
 
 .select2-container--default .select2-selection--single,
@@ -48,14 +48,14 @@
 }
 
 .select2-container--default .select2-selection--single {
-    height: 40px;
+    height: 46px;
 }
 
 .select2-container--default .select2-selection--single .select2-selection__rendered {
     padding-right: 11px;
     padding-left: 34px;
     color: var(--buildino-select-text, #172033);
-    line-height: 38px;
+    line-height: 44px;
 }
 
 .select2-container--default .select2-selection--single .select2-selection__placeholder {
@@ -65,7 +65,7 @@
 .select2-container--default[dir="rtl"] .select2-selection--single .select2-selection__arrow {
     right: auto;
     left: 7px;
-    height: 38px;
+    height: 44px;
 }
 
 .select2-container--default[dir="rtl"] .select2-selection--single .select2-selection__clear {
@@ -76,7 +76,7 @@
 }
 
 .select2-container--default .select2-selection--multiple {
-    min-height: 41px;
+    min-height: 46px;
     padding: 3px 7px;
 }
 
@@ -107,7 +107,7 @@
 }
 
 .select2-container .select2-search--inline .select2-search__field {
-    height: 30px;
+    min-height: 32px;
     margin: 0;
     color: var(--buildino-select-text, #172033);
     font: inherit;
@@ -149,7 +149,7 @@
 
 .select2-container--default .select2-search--dropdown .select2-search__field {
     width: 100%;
-    height: 38px;
+    height: 44px;
     padding: 0 10px;
     border: 1px solid var(--buildino-select-border, #d7e0ea);
     border-radius: 8px;
