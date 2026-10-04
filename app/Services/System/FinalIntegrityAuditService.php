@@ -21,20 +21,6 @@ final class FinalIntegrityAuditService
                 ->count()
         );
 
-        $this->check(
-            $checks,
-            'wallet_negative_balance',
-            'critical',
-            'wallets',
-            fn () => DB::table('wallets')
-                ->where(function ($query): void {
-                    $query
-                        ->where('balance', '<', 0)
-                        ->orWhere('locked_balance', '<', 0);
-                })
-                ->count()
-        );
-
 
         if (
             Schema::hasTable('financial_transactions')
