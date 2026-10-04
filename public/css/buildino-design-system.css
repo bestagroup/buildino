@@ -836,3 +836,156 @@ html[data-theme="light"] {
         width: 100%;
     }
 }
+
+
+/* ---------- Responsive portal / modal hardening ---------- */
+
+.portal-datatable-toolbar,
+.portal-section__actions,
+.portal-hero__actions,
+.crud-toolbar,
+.crud-toolbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 10px;
+}
+
+.portal-datatable-toolbar > label {
+    min-width: 180px;
+    flex: 1 1 210px;
+}
+
+.portal-datatable-toolbar > label > span {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--portal-muted, var(--muted, #718096));
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.portal-datatable-toolbar input,
+.portal-datatable-toolbar select {
+    width: 100%;
+    min-height: var(--ui-control-height);
+    border: 1px solid var(--portal-border, var(--border, #dfe6ef));
+    border-radius: var(--ui-control-radius);
+    background: var(--portal-soft, var(--surface-soft, #f8fafc));
+    color: var(--portal-text, var(--text, #172033));
+    padding-inline: 12px;
+    font-family: var(--ui-font);
+    font-size: 13px;
+}
+
+.portal-dt-reset {
+    min-height: var(--ui-control-height);
+    padding-inline: 14px;
+    border: 1px solid var(--portal-border, var(--border, #dfe6ef));
+    border-radius: var(--ui-control-radius);
+    background: var(--portal-surface, var(--surface, #fff));
+    color: var(--portal-muted, var(--muted, #718096));
+    font-family: var(--ui-font);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.modal-content {
+    border: 1px solid var(--portal-border, var(--border, #e2e8f0));
+    border-radius: 18px;
+    background: var(--portal-surface, var(--surface, #fff));
+    color: var(--portal-text, var(--text, #172033));
+    box-shadow: 0 26px 80px rgba(8, 25, 43, .18);
+}
+
+.modal-header,
+.modal-footer {
+    border-color: var(--portal-border, var(--border, #e2e8f0));
+}
+
+.modal-title {
+    font-size: 16px;
+    font-weight: 850;
+}
+
+.modal-body {
+    line-height: 1.8;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .btn,
+    .crud-button,
+    .portal-action-button,
+    .portal-primary-button,
+    .portal-inline-action,
+    .subscription-button,
+    .portal-icon-button,
+    .ui-icon-button,
+    .crud-row-action {
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .portal-datatable-toolbar {
+        align-items: stretch;
+    }
+
+    .portal-datatable-toolbar > label,
+    .portal-dt-reset {
+        width: 100%;
+        flex-basis: 100%;
+    }
+
+    .portal-hero__actions,
+    .portal-section__actions,
+    .crud-toolbar,
+    .crud-toolbar__actions {
+        align-items: stretch;
+    }
+
+    .portal-hero__actions > *,
+    .portal-section__actions > *,
+    .crud-toolbar__actions > * {
+        flex: 1 1 auto;
+    }
+
+    .modal-dialog {
+        margin: .75rem;
+    }
+
+    .modal-content {
+        max-height: calc(100dvh - 1.5rem);
+        overflow: hidden;
+    }
+
+    .modal-body {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .modal-dialog {
+        margin: 0;
+        min-height: 100dvh;
+    }
+
+    .modal-dialog-centered {
+        min-height: 100dvh;
+    }
+
+    .modal-content {
+        min-height: 100dvh;
+        max-height: 100dvh;
+        border-width: 0;
+        border-radius: 0;
+    }
+
+    .modal-header {
+        padding-top: max(1rem, env(safe-area-inset-top));
+    }
+
+    .modal-footer {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+}
