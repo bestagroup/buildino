@@ -235,6 +235,8 @@ jobs:
           php artisan test tests/Feature/Financial/PaymentGatewaySecurityFlowTest.php
           php artisan test tests/Feature/Reports/ReportExportFlowTest.php
           php artisan test tests/Feature/System/BackendHardeningRegressionTest.php
+          php artisan test tests/Feature/Security/ManagedFileFlowTest.php
+          php artisan test tests/Feature/System/SchedulerRegistrationTest.php
           php artisan test tests/Unit/Notifications/NotificationDeliveryConcurrencyTest.php
 
       - name: Run critical financial and authorization regression
