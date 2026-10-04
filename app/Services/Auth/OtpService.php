@@ -5,53 +5,168 @@ namespace App\Services\Auth;
 use App\Contracts\Auth\OtpSender;
 use App\Models\OtpCode;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Throwable;
 use Illuminate\Validation\ValidationException;
 
 class OtpService
 {
     public function __construct(private readonly OtpSender $sender) {}
 
-    public function request(string $identifier, string $channel, string $purpose, ?string $ip = null): void
-    {
-        $this->validateChannelIdentifier($identifier, $channel);
+    public function request(
+        string $identifier,
+        string $channel,
+        string $purpose,
+        ?string $ip = null
+    ): void {
+        $this->validateChannelIdentifier(
+            $identifier,
+            $channel
+        );
 
-        $recent = OtpCode::query()
-            ->where('identifier', $identifier)
-            ->where('purpose', $purpose)
-            ->where('created_at', '>=', now()->subSeconds((int) config('auth_otp.resend_after', 60)))
-            ->exists();
+        $user = $this->findUser(
+            $identifier,
+            $channel
+        );
 
-        if ($recent) {
+        /*
+         * Login OTP endpoints must not become an arbitrary SMS/email relay.
+         * Callers keep a generic response, while unknown/blocked identities
+         * receive no provider delivery.
+         */
+        if (
+            $this->requiresExistingUser($purpose)
+            && (
+                ! $user
+                || ! $user->is_active
+                || $user->is_blocked
+            )
+        ) {
+            return;
+        }
+
+        $lock = Cache::lock(
+            'otp-request:'.hash(
+                'sha256',
+                $channel.'|'.$purpose.'|'.$identifier
+            ),
+            max(
+                5,
+                (int) config(
+                    'auth_otp.request_lock_seconds',
+                    10
+                )
+            )
+        );
+
+        if (! $lock->get()) {
             throw ValidationException::withMessages([
-                'identifier' => 'Please wait before requesting another code.',
+                'identifier' =>
+                    'Please wait before requesting another code.',
             ]);
         }
 
-        $user = $this->findUser($identifier, $channel);
-        $code = $this->generateCode();
-
-        DB::transaction(function () use ($user, $identifier, $channel, $purpose, $ip, $code): void {
-            OtpCode::query()
+        try {
+            $recent = OtpCode::query()
                 ->where('identifier', $identifier)
+                ->where('channel', $channel)
                 ->where('purpose', $purpose)
                 ->whereNull('consumed_at')
-                ->update(['consumed_at' => now()]);
+                ->where(
+                    'created_at',
+                    '>=',
+                    now()->subSeconds(
+                        (int) config(
+                            'auth_otp.resend_after',
+                            60
+                        )
+                    )
+                )
+                ->exists();
 
-            OtpCode::query()->create([
-                'user_id' => $user?->getKey(),
-                'identifier' => $identifier,
-                'channel' => $channel,
-                'purpose' => $purpose,
-                'code_hash' => Hash::make($code),
-                'expires_at' => now()->addMinutes((int) config('auth_otp.ttl_minutes', 2)),
-                'attempts' => 0,
-                'request_ip' => $ip,
-            ]);
-        });
+            if ($recent) {
+                throw ValidationException::withMessages([
+                    'identifier' =>
+                        'Please wait before requesting another code.',
+                ]);
+            }
 
-        $this->sender->send($identifier, $channel, $code);
+            $code = $this->generateCode();
+
+            $otp = DB::transaction(
+                function () use (
+                    $user,
+                    $identifier,
+                    $channel,
+                    $purpose,
+                    $ip,
+                    $code
+                ): OtpCode {
+                    OtpCode::query()
+                        ->where(
+                            'identifier',
+                            $identifier
+                        )
+                        ->where(
+                            'channel',
+                            $channel
+                        )
+                        ->where(
+                            'purpose',
+                            $purpose
+                        )
+                        ->whereNull(
+                            'consumed_at'
+                        )
+                        ->update([
+                            'consumed_at' => now(),
+                        ]);
+
+                    return OtpCode::query()->create([
+                        'user_id' => $user?->getKey(),
+                        'identifier' => $identifier,
+                        'channel' => $channel,
+                        'purpose' => $purpose,
+                        'code_hash' => Hash::make($code),
+                        'expires_at' =>
+                            now()->addMinutes(
+                                (int) config(
+                                    'auth_otp.ttl_minutes',
+                                    2
+                                )
+                            ),
+                        'attempts' => 0,
+                        'request_ip' => $ip,
+                    ]);
+                },
+                3
+            );
+        } finally {
+            $lock->release();
+        }
+
+        try {
+            $this->sender->send(
+                $identifier,
+                $channel,
+                $code
+            );
+        } catch (Throwable $exception) {
+            /*
+             * A provider failure must not leave an undelivered code active
+             * or block the user from immediately requesting a replacement.
+             */
+            OtpCode::query()
+                ->whereKey($otp->getKey())
+                ->whereNull('consumed_at')
+                ->update([
+                    'consumed_at' => now(),
+                ]);
+
+            throw $exception;
+        }
     }
 
     public function verify(string $identifier, string $channel, string $purpose, string $code): OtpCode
@@ -113,6 +228,16 @@ class OtpService
         }
 
         return $result['otp'];
+    }
+
+    private function requiresExistingUser(
+        string $purpose
+    ): bool {
+        return $purpose === 'login'
+            || str_ends_with(
+                $purpose,
+                '_login'
+            );
     }
 
     private function findUser(string $identifier, string $channel): ?User

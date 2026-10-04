@@ -22,4 +22,9 @@ return [
         'REPORT_EXPORT_MAX_ROWS',
         50000
     ),
+
+    'overlap_lock_seconds' => (int) env(
+        'REPORT_EXPORT_OVERLAP_LOCK_SECONDS',
+        180
+    ),
 ];

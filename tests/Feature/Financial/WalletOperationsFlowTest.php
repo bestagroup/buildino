@@ -24,6 +24,7 @@ use App\Services\Wallet\BuildingBillPaymentService;
 use App\Services\Wallet\WalletPayoutService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class WalletOperationsFlowTest extends TestCase
@@ -329,6 +330,61 @@ class WalletOperationsFlowTest extends TestCase
         $this->assertSame(
             0,
             (int) $buildingWallet->fresh()->locked_balance
+        );
+    }
+
+    public function test_wallet_idempotency_key_cannot_be_reused_for_a_different_operation(): void
+    {
+        $graph = $this->createGraph('IDEMPOTENCY');
+        $wallets = app(WalletService::class);
+        $wallet = $wallets->walletFor(
+            $graph['building']
+        );
+
+        $first = $wallets->credit(
+            $wallet,
+            100_000,
+            WalletTransferType::TopUp,
+            'hardening:wallet-idempotency'
+        );
+
+        $again = $wallets->credit(
+            $wallet->fresh(),
+            100_000,
+            WalletTransferType::TopUp,
+            'hardening:wallet-idempotency'
+        );
+
+        $this->assertSame(
+            $first->id,
+            $again->id
+        );
+        $this->assertSame(
+            100_000,
+            (int) $wallet->fresh()->balance
+        );
+
+        try {
+            $wallets->credit(
+                $wallet->fresh(),
+                200_000,
+                WalletTransferType::TopUp,
+                'hardening:wallet-idempotency'
+            );
+
+            $this->fail(
+                'Wallet idempotency key collision was accepted.'
+            );
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey(
+                'idempotency_key',
+                $exception->errors()
+            );
+        }
+
+        $this->assertSame(
+            100_000,
+            (int) $wallet->fresh()->balance
         );
     }
 

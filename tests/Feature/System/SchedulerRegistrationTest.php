@@ -52,6 +52,29 @@ class SchedulerRegistrationTest extends TestCase
         );
     }
 
+    public function test_deleted_file_reconciliation_is_scheduled_exactly_once(): void
+    {
+        $commands = collect(
+            $this->app->make(
+                Schedule::class
+            )->events()
+        )->map(
+            fn ($event): string =>
+                (string) $event->command
+        );
+
+        $this->assertCount(
+            1,
+            $commands->filter(
+                fn (string $command): bool =>
+                    str_contains(
+                        $command,
+                        'files:purge-deleted'
+                    )
+            )
+        );
+    }
+
     public function test_queue_heartbeat_command_dispatches_a_job_to_every_required_queue(): void
     {
         Queue::fake();

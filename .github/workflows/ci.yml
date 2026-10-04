@@ -150,10 +150,106 @@ jobs:
           php artisan test tests/Feature/System/DatabaseHardeningTest.php
           php artisan test tests/Feature/Financial
 
+  backend-hardening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_DATABASE: buildino_hard_test
+          MARIADB_USER: buildino
+          MARIADB_PASSWORD: buildino-hard-password
+          MARIADB_ROOT_PASSWORD: buildino-hard-root-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      APP_ENV: testing
+      APP_DEBUG: false
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: buildino_hard_test
+      DB_USERNAME: buildino
+      DB_PASSWORD: buildino-hard-password
+      CACHE_STORE: redis
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: database
+      QUEUE_AFTER_COMMIT: true
+      MAIL_MAILER: array
+      SMS_PROVIDER: log
+      PUSH_PROVIDER: log
+      FILE_SCAN_ENABLED: false
+      PAYMENT_GATEWAY_GENERIC_ENABLED: false
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql, redis
+          coverage: none
+          tools: composer:v2
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare hard-test application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate:fresh --force
+          php artisan config:clear
+
+      - name: Assert production-like infrastructure
+        run: |
+          php -r '$pdo = new PDO("mysql:host=127.0.0.1;port=3306;dbname=buildino_hard_test", "buildino", "buildino-hard-password"); echo $pdo->query("SELECT VERSION()")->fetchColumn(), PHP_EOL;'
+          php -r '$redis = new Redis(); $redis->connect("127.0.0.1", 6379); if ($redis->ping() !== true && $redis->ping() !== "+PONG") { exit(1); } echo "redis-ok", PHP_EOL;'
+
+      - name: Run backend hardening suites
+        run: |
+          php artisan test tests/Feature/Auth/OtpSecurityTest.php
+          php artisan test tests/Feature/Financial/WalletOperationsFlowTest.php
+          php artisan test tests/Feature/Financial/PaymentGatewaySecurityFlowTest.php
+          php artisan test tests/Feature/Reports/ReportExportFlowTest.php
+          php artisan test tests/Feature/System/BackendHardeningRegressionTest.php
+          php artisan test tests/Feature/Security/ManagedFileFlowTest.php
+          php artisan test tests/Feature/System/SchedulerRegistrationTest.php
+          php artisan test tests/Unit/Notifications/NotificationDeliveryConcurrencyTest.php
+
+      - name: Run critical financial and authorization regression
+        run: |
+          php artisan test tests/Feature/Financial
+          php artisan test tests/Feature/Security
+          php artisan test tests/Feature/Authorization
+
   container:
     needs:
       - test
       - database
+      - backend-hardening
     runs-on: ubuntu-latest
     timeout-minutes: 30
 

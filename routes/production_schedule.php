@@ -23,3 +23,11 @@ Schedule::command(
     ->dailyAt('03:40')
     ->withoutOverlapping()
     ->onOneServer();
+
+
+Schedule::command(
+    'files:purge-deleted'
+)
+    ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();

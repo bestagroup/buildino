@@ -11,6 +11,7 @@ use App\Services\Reports\Export\ReportExportWriterFactory;
 use App\Services\Reports\ReportDataResolver;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -36,6 +37,25 @@ class GenerateReportJob implements ShouldQueue
     public function backoff(): array
     {
         return [10, 60, 180];
+    }
+
+    public function middleware(): array
+    {
+        $lockSeconds = max(
+            $this->timeout + 30,
+            (int) config(
+                'report_exports.overlap_lock_seconds',
+                180
+            )
+        );
+
+        return [
+            (new WithoutOverlapping(
+                'generated-report:'.$this->generatedReportId
+            ))
+                ->releaseAfter(10)
+                ->expireAfter($lockSeconds),
+        ];
     }
 
     public function handle(

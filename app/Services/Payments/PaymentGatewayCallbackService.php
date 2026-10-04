@@ -8,6 +8,7 @@ use App\Enums\PaymentGatewayEventType;
 use App\Models\PaymentGatewayEvent;
 use App\Models\PaymentTransaction;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -257,14 +258,60 @@ final class PaymentGatewayCallbackService
         PaymentGatewayEvent $event,
         PaymentTransaction $transaction
     ): PaymentGatewayEvent {
-        if (
-            $event->status
-            === PaymentGatewayEventStatus::Rejected
-        ) {
-            return $event;
+        $lockSeconds = max(
+            30,
+            (int) config(
+                'payment_gateways.event_processing_lock_seconds',
+                90
+            )
+        );
+
+        $lock = Cache::lock(
+            'payment-gateway-event:'.$event->getKey(),
+            $lockSeconds
+        );
+
+        if (! $lock->get()) {
+            $fresh = $event->fresh();
+
+            if (
+                $fresh
+                && $fresh->status
+                    === PaymentGatewayEventStatus::Processed
+            ) {
+                return $fresh;
+            }
+
+            throw new HttpException(
+                409,
+                'Payment gateway event is already being processed.'
+            );
         }
 
         try {
+            $event = $event->fresh();
+
+            if (! $event) {
+                throw new \RuntimeException(
+                    'Payment gateway event disappeared during processing.'
+                );
+            }
+
+            if (
+                $event->status
+                === PaymentGatewayEventStatus::Processed
+            ) {
+                return $event;
+            }
+
+            if (
+                $event->status
+                === PaymentGatewayEventStatus::Rejected
+            ) {
+                return $event;
+            }
+
+            try {
             $event->update([
                 'payment_transaction_id' =>
                     $transaction->getKey(),
@@ -299,7 +346,10 @@ final class PaymentGatewayCallbackService
                     ),
             ]);
 
-            throw $exception;
+                throw $exception;
+            }
+        } finally {
+            $lock->release();
         }
     }
 
