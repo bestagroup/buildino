@@ -362,6 +362,52 @@ class ServiceMarketplaceWalletFlowTest extends TestCase
         );
     }
 
+
+    public function test_stale_service_request_cannot_create_quote_after_cancellation(): void
+    {
+        $graph = $this->createBuildingGraph();
+
+        $requester = $this->createUser();
+        $provider = $this->createUser();
+
+        $serviceRequest = $this->createAssignedRequest(
+            $graph,
+            $requester,
+            $provider
+        );
+
+        $stale = ServiceRequest::query()
+            ->findOrFail($serviceRequest->id);
+
+        ServiceRequest::query()
+            ->whereKey($serviceRequest->id)
+            ->update([
+                'status' => ServiceRequestStatus::Cancelled->value,
+            ]);
+
+        try {
+            app(ServiceRequestMarketplaceService::class)
+                ->createQuote(
+                    $stale,
+                    250_000
+                );
+
+            $this->fail(
+                'A stale service request created a quote after cancellation.'
+            );
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->assertArrayHasKey(
+                'status',
+                $exception->errors()
+            );
+        }
+
+        $this->assertDatabaseCount(
+            'service_request_quotes',
+            0
+        );
+    }
+
     public function test_commission_is_calculated_from_server_side_building_setting(): void
     {
         $graph = $this->createBuildingGraph();
