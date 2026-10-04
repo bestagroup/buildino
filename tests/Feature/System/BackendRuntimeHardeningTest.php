@@ -17,7 +17,7 @@ class BackendRuntimeHardeningTest extends TestCase
             new \App\Data\Notifications\NotificationMessage(
                 type: 'runtime-test',
                 title: 'Runtime test',
-                body: 'Runtime test'
+                message: 'Runtime test'
             ),
             'database',
             'runtime-hardening-test'
