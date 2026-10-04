@@ -137,6 +137,44 @@ class InvoicePaymentReservationTest extends TestCase
         $this->assertDatabaseCount('payments', 2);
     }
 
+
+    public function test_failed_payment_releases_reserved_invoice_amount_for_retry(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $payer = $this->createUser();
+        $invoice = $this->invoice($graph, 500_000);
+
+        $service = app(PaymentService::class);
+
+        $failed = $service->createForInvoice(
+            $invoice,
+            $payer,
+            [
+                'amount' => 500_000,
+                'method' => PaymentMethod::Online->value,
+                'idempotency_key' => 'invoice-failed-reservation-1',
+            ]
+        );
+
+        $failed->update([
+            'status' => \App\Enums\PaymentStatus::Failed,
+        ]);
+
+        $retry = $service->createForInvoice(
+            $invoice->fresh(),
+            $payer,
+            [
+                'amount' => 500_000,
+                'method' => PaymentMethod::Online->value,
+                'idempotency_key' => 'invoice-failed-reservation-2',
+            ]
+        );
+
+        $this->assertNotSame($failed->id, $retry->id);
+        $this->assertSame(500_000, (int) $retry->amount);
+        $this->assertDatabaseCount('payments', 2);
+    }
+
     private function invoice(array $graph, int $amount): UnitInvoice
     {
         return UnitInvoice::query()->create([
