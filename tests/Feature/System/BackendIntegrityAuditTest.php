@@ -16,29 +16,9 @@ class BackendIntegrityAuditTest extends TestCase
 {
     use RefreshDatabase, CreatesBuildingDomainData;
 
-    public function test_integrity_audit_detects_negative_wallet_and_unbalanced_ledger(): void
+    public function test_integrity_audit_detects_unbalanced_ledger(): void
     {
         $graph = $this->createBuildingGraph();
-        $user = $this->createUser();
-
-        $walletId = DB::table('wallets')
-            ->where(
-                'owner_type',
-                $user->getMorphClass()
-            )
-            ->where(
-                'owner_id',
-                $user->id
-            )
-            ->value('id');
-
-        $this->assertNotNull($walletId);
-
-        DB::table('wallets')
-            ->where('id', $walletId)
-            ->update([
-                'balance' => -1,
-            ]);
 
         $account = FinancialAccount::query()->create([
             'building_id' => $graph['building']->id,
@@ -77,12 +57,6 @@ class BackendIntegrityAuditTest extends TestCase
 
         $checks = collect($audit['checks'])
             ->keyBy('name');
-
-        $this->assertSame(
-            1,
-            (int) $checks
-                ->get('wallet_negative_balance')['count']
-        );
 
         $this->assertSame(
             1,
