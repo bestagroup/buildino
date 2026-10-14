@@ -159,6 +159,7 @@
         };
 @endphp
 
+@section('content')
 <section class="portal-hero portal-hero--resident">
     <div class="portal-hero__copy">
         <span class="portal-eyebrow">
@@ -2200,3 +2201,5 @@
     </div>
 </div>
 @endif
+
+@endsection

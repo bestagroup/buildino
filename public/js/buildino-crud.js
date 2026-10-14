@@ -9,11 +9,16 @@
     }
 
     const resource = bootstrap.resource || {};
+    const core = window.BuildinoCoreFlows;
+    const coreResource = ["blocks", "floors", "units", "users", "roles", "role-assignments", "invitations"].includes(bootstrap.resourceKey);
+    if (coreResource && core && resource.create && !core.allowed(bootstrap.resourceKey, "create")) delete resource.create;
+    if (coreResource && core && resource.update && !core.allowed(bootstrap.resourceKey, "update")) delete resource.update;
     const app = document.getElementById("buildinoCrudApp");
 
     if (! app) {
         return;
     }
+    if (coreResource) app.dataset.coreProcessUi = '1';
 
     const $ = (selector, root = document) =>
         root.querySelector(selector);
@@ -61,6 +66,9 @@
         filteredRows: [],
         currentPage: 1,
         pageSize: 25,
+        remotePage: 1,
+        remoteLastPage: 1,
+        remoteEndpoint: null,
         editRow: null,
         action: null,
         actionRow: null,
@@ -261,6 +269,14 @@
             row,
             column.key
         );
+        const processLabels = bootstrap.resourceKey === 'invitations' ? {
+            status: { pending: 'در انتظار ارسال', sent: 'ارسال‌شده', accepted: 'پذیرفته‌شده', cancelled: 'لغوشده', expired: 'منقضی‌شده' },
+            relation_type: { owner: 'مالک', tenant: 'مستأجر', resident: 'ساکن', family_member: 'عضو خانواده' },
+            channel: { sms: 'پیامک', email: 'ایمیل' },
+        } : bootstrap.resourceKey === 'units' ? {
+            usage_type: { residential: 'مسکونی', commercial: 'تجاری', office: 'اداری', other: 'سایر' },
+        } : {};
+        const displayValue = processLabels[column.key]?.[value] ?? value;
 
         if (
             [
@@ -290,12 +306,12 @@
         ) {
             return `
                 <span class="crud-status crud-status--${statusTone(value)}">
-                    ${escapeHtml(formatValue(value))}
+                    ${escapeHtml(formatValue(displayValue))}
                 </span>
             `;
         }
 
-        let formatted = formatValue(value);
+        let formatted = formatValue(displayValue);
 
         const key =
             String(
@@ -523,6 +539,13 @@
     };
 
     const transformRows = (rows) => {
+        if (bootstrap.resourceKey === 'users') {
+            return rows.map((row) => ({
+                ...row,
+                full_name: row.full_name || [row.first_name, row.last_name].filter(Boolean).join(' '),
+                roles: row.roles || (row.user_role_assignments || []).filter((assignment) => assignment.is_active).map((assignment) => assignment.role?.display_name || assignment.role?.name).filter(Boolean),
+            }));
+        }
         if (
             resource.list_transform
             !== "schedule_time_slots"
@@ -1041,6 +1064,9 @@
                     }
 
                     state.currentPage = 1;
+                    state.remoteEndpoint = null;
+                    if (coreResource) core?.contextChanged(bootstrap.resourceKey, select.value);
+                    lookupCache.clear();
 
                     if (
                         resource.mode
@@ -1076,7 +1102,7 @@
 
         try {
             endpoint =
-                listEndpoint();
+                state.remoteEndpoint || listEndpoint();
         } catch (error) {
             showState(
                 error.message
@@ -1108,12 +1134,18 @@
 
             state.currentPage = 1;
 
+            const pagination = payload?.meta || payload || {};
+            state.remotePage = pagination.current_page || 1;
+            state.remoteLastPage = pagination.last_page || 1;
+            if (coreResource) core?.setRows(state.rows);
+
             applySearch();
             setLoading(false);
+            renderRemotePagination();
 
             if (! state.rows.length) {
                 showState(
-                    "رکوردی برای نمایش وجود ندارد."
+                    coreResource ? `هنوز ${core?.labels[bootstrap.resourceKey] || "موردی"} ثبت نشده است؛ از دکمه افزودن شروع کنید.` : "رکوردی برای نمایش وجود ندارد."
                 );
             }
         } catch (error) {
@@ -1233,7 +1265,11 @@
                 `);
             }
 
-            (resource.actions || [])
+            (resource.actions || []).filter((action) => bootstrap.resourceKey !== "invitations" || (
+                core?.allowed("invitations", "update") && (
+                    action.key === "resend" ? ["pending", "sent"].includes(row.status) && (!row.expires_at || Date.parse(row.expires_at) > Date.now()) : !["accepted", "cancelled", "expired"].includes(row.status)
+                )
+            ))
                 .forEach((action) => {
                     actions.push(`
                         <button
@@ -2884,6 +2920,7 @@
                 row,
                 mode
             );
+            if (coreResource) await core?.enhanceForm(elements.formFields, mode);
 
             if (
                 renderId
@@ -2962,6 +2999,8 @@
         event
     ) => {
         event.preventDefault();
+        if (elements.saveButton.disabled) return;
+        if (coreResource) core?.showErrors(elements.formFields, {});
 
         const mode =
             elements.form
@@ -2985,6 +3024,8 @@
                     resource.fields || [],
                     mode
                 );
+
+            if (coreResource) Object.assign(payload, core?.defaults(bootstrap.resourceKey, payload, mode));
 
             const endpoint =
                 interpolate(
@@ -3015,6 +3056,7 @@
             );
 
             lookupCache.clear();
+            if (coreResource) core?.saved(bootstrap.resourceKey, savedPayload?.data || savedPayload, mode);
 
             toast(
                 bootstrap.resourceKey === "invitations"
@@ -3035,10 +3077,12 @@
             if (resource.list) {
                 await loadRows();
             }
+            if (event.submitter?.dataset.coreSaveAnother === '1') await openDrawer('create');
         } catch (error) {
             elements.formError
                 .textContent =
                 error.message;
+            if (coreResource) core?.showErrors(elements.formFields, error.payload?.errors || {});
         } finally {
             elements.saveButton.disabled =
                 false;
@@ -3623,6 +3667,7 @@
                     );
                 }
             );
+        if (elements.createButton) elements.createButton.disabled = !resource.create;
 
         elements.refreshButton
             ?.addEventListener(
@@ -3752,10 +3797,48 @@
         );
     };
 
+    const renderRemotePagination = () => {
+        if (!coreResource) return;
+        let pager = $("#coreRemotePagination");
+        if (!pager) {
+            pager = document.createElement("div"); pager.id = "coreRemotePagination"; pager.className = "core-flow__actions";
+            elements.tableWrap.after(pager);
+        }
+        pager.replaceChildren();
+        if (state.remoteLastPage <= 1) return;
+        for (const [title, page] of [["صفحه قبلی فهرست", state.remotePage - 1], ["صفحه بعدی فهرست", state.remotePage + 1]]) {
+            const button = document.createElement("button"); button.type = "button"; button.textContent = title;
+            button.disabled = state.loading || page < 1 || page > state.remoteLastPage;
+            button.addEventListener("click", () => {
+                const endpoint = new URL(listEndpoint(), window.location.origin); endpoint.searchParams.set("page", String(page));
+                state.remoteEndpoint = endpoint.pathname + endpoint.search; void loadRows();
+            });
+            pager.append(button);
+        }
+        const label = document.createElement("span");
+        label.textContent = `صفحه ${state.remotePage} از ${state.remoteLastPage}؛ جستجو در موارد همین صفحه`;
+        pager.append(label);
+    };
+
     const init = async () => {
         initEvents();
 
+        if (coreResource && elements.createButton && !resource.create) elements.createButton.hidden = true;
+
+        if (coreResource) await core?.mount(bootstrap.resourceKey);
+
         await initContextLookups();
+
+        for (const select of $$("[data-context-name]")) {
+            const value = new URL(window.location.href).searchParams.get(select.dataset.contextName) || core?.parentValue(bootstrap.resourceKey);
+            if (value && [...select.options].some((option) => Number(option.value) === Number(value))) {
+                select.value = String(value);
+                select.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+        }
+        window.addEventListener("buildino:flow-create", (event) => {
+            if (event.detail.resourceKey === bootstrap.resourceKey && resource.create) void openDrawer("create");
+        });
 
         if (
             resource.mode
@@ -3772,6 +3855,7 @@
                 "این صفحه فقط برای اجرای عملیات ثبت طراحی شده است."
             );
         }
+        app.dataset.coreReady = '1';
 
         const url =
             new URL(

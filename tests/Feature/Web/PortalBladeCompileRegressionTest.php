@@ -27,7 +27,7 @@ class PortalBladeCompileRegressionTest extends TestCase
             'web'
         );
 
-        $this->get(
+        $response = $this->get(
             '/portal/resident'
         )
             ->assertOk()
@@ -37,6 +37,7 @@ class PortalBladeCompileRegressionTest extends TestCase
             ->assertSee(
                 'خانه من'
             );
+        $this->assertDashboardInsideLayout($response->getContent(), 'resident');
     }
 
     public function test_provider_portal_layout_compiles_and_renders(): void
@@ -55,7 +56,7 @@ class PortalBladeCompileRegressionTest extends TestCase
             'web'
         );
 
-        $this->get(
+        $response = $this->get(
             '/portal/provider'
         )
             ->assertOk()
@@ -65,6 +66,27 @@ class PortalBladeCompileRegressionTest extends TestCase
             ->assertSee(
                 'پنل ارائه‌دهنده خدمات'
             );
+        $this->assertDashboardInsideLayout($response->getContent(), 'provider');
+    }
+
+    private function assertDashboardInsideLayout(string $html, string $area): void
+    {
+        $this->assertStringStartsWith('<!doctype html>', ltrim($html));
+        $previous = libxml_use_internal_errors(true);
+        try {
+            $document = new \DOMDocument;
+            $document->loadHTML($html, LIBXML_NONET);
+            $xpath = new \DOMXPath($document);
+            $this->assertSame(1, $xpath->query(
+                '//main[@id="mainContent"]/div[contains(@class,"portal-content")]/section[contains(@class,"portal-hero--'.$area.'")]'
+            )->length);
+            $this->assertSame(1, $xpath->query(
+                '//main[@id="mainContent"]/div[contains(@class,"portal-content")]/section[1][@data-pending-invitation]'
+            )->length);
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
     }
 
     private function user(

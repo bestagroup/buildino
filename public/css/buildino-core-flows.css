@@ -1,0 +1,87 @@
+.core-flow {
+    margin-block: 16px;
+    padding: 20px;
+    border: 1px solid var(--border, var(--portal-border, #dfe6ef));
+    border-radius: var(--ui-card-radius, 18px);
+    background: var(--surface, var(--portal-surface, #fff));
+    color: var(--text, var(--portal-text, #172033));
+    line-height: 1.9;
+}
+.core-flow h2, .core-flow h3 { margin: 0 0 8px; font-size: 18px; }
+.core-flow p { margin-block: 8px; font-size: 14px; }
+.core-flow__steps { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; }
+.core-flow__steps li { padding: 6px 12px; border-radius: 12px; background: var(--surface-soft, var(--portal-soft, #f8fafc)); font-size: 13px; }
+.core-flow__steps [aria-current="step"] { color: var(--primary, var(--portal-blue, #29658f)); box-shadow: inset 0 0 0 2px currentColor; font-weight: 700; }
+.core-flow__steps .is-complete { color: var(--success, #16724b); }
+.core-flow__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-block-start: 12px; }
+.core-flow__actions button, .core-flow__actions a, .core-flow__select {
+    min-height: 46px; padding: 9px 14px; border: 1px solid var(--border, var(--portal-border, #dfe6ef));
+    border-radius: var(--ui-control-radius, 12px); background: var(--surface-soft, var(--portal-soft, #f8fafc));
+    color: inherit; font: inherit; font-size: 14px; text-decoration: none; cursor: pointer;
+}
+.core-flow__actions .is-primary { background: var(--primary-700, var(--portal-blue, #29658f)); color: #fff; }
+.core-flow__select { max-width: 100%; min-width: 220px; }
+.core-flow__error, .core-field-error { color: var(--danger, #bd3545); font-size: 13px; }
+.core-flow__status { font-size: 14px; }
+.core-flow__hint { color: var(--muted, var(--portal-muted, #718096)); }
+[data-pending-invitation] { scroll-margin-block-start: 100px; }
+.core-flow button:disabled { opacity: .58; cursor: wait; }
+.core-form-details { grid-column: 1 / -1; border: 1px solid var(--border, #dfe6ef); border-radius: 12px; padding: 12px; }
+.core-form-details summary { cursor: pointer; font-size: 14px; font-weight: 700; }
+.core-form-details > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-block-start: 12px; }
+.core-auth-password { position: relative; min-width: 0; }
+.core-auth-password:not(.auth-input) > input { width: 100%; min-height: var(--ui-control-height, 46px); padding: 0 12px; border: 1px solid var(--border, var(--portal-border, #dfe6ef)); border-radius: var(--ui-control-radius, 12px); background: var(--surface-soft, var(--portal-soft, #f8fafc)); color: var(--text, var(--portal-text, #172033)); font: inherit; font-size: 14px; }
+.core-auth-password > input { min-width: 0; padding-inline-start: 48px; }
+.core-auth-password:not(.auth-input) > input { padding-inline-start: 48px; }
+.core-auth-password:not(.auth-input) > input:focus { border-color: var(--primary-500, var(--portal-blue, #3b7dae)); background: var(--surface, var(--portal-surface, #fff)); box-shadow: var(--ui-focus-ring); outline: 0; }
+.core-auth-toggle { position: absolute; inset-inline-end: 3px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--muted, var(--portal-muted, #718096)); cursor: pointer; }
+.core-auth-toggle svg { width: 20px; height: 20px; }
+.core-auth-toggle:hover { color: var(--primary-700, var(--portal-blue, #29658f)); background: var(--primary-50, var(--portal-soft, #f2f8fd)); }
+.core-auth-toggle:focus-visible { outline: 2px solid var(--primary-500, var(--portal-blue, #3b7dae)); outline-offset: -2px; }
+.core-auth-helper { font-size: 13px; line-height: 1.8; color: var(--muted, var(--portal-muted, #718096)); }
+.core-otp-timer { display: block; margin-block-start: 6px; font-size: 13px; }
+.registration-progress { margin-block-end: 26px; scroll-margin-block-start: 20px; }
+.registration-progress ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0; margin: 0 0 14px; list-style: none; }
+.registration-progress button { display: grid; justify-items: center; gap: 8px; width: 100%; padding: 0; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 12px; line-height: 1.8; cursor: pointer; }
+.registration-progress button:disabled { cursor: default; opacity: 1; }
+.registration-progress__number { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--border-strong); border-radius: 50%; background: var(--surface-soft); font-weight: 700; }
+.registration-progress [aria-current="step"] button { color: var(--primary-700); font-weight: 700; }
+.registration-progress [aria-current="step"] .registration-progress__number { background: var(--primary-700); border-color: var(--primary-700); color: #fff; box-shadow: 0 0 0 4px var(--primary-100); }
+.registration-progress .is-complete button { color: var(--success); }
+.registration-progress .is-complete .registration-progress__number { border-color: var(--success); background: var(--success-soft); }
+.registration-progress__track { height: 5px; overflow: hidden; border-radius: 10px; background: var(--border); }
+.registration-progress__track > span { display: block; width: var(--registration-progress, 25%); height: 100%; border-radius: inherit; background: var(--primary-600); transition: width .2s ease; }
+.registration-wizard-panel { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 15px; min-width: 0; }
+.registration-wizard-heading { grid-column: 1 / -1; margin-block-end: 4px; }
+.registration-wizard-heading h3 { margin: 0 0 8px; color: var(--text); font-size: 18px; font-weight: 700; }
+.registration-wizard-heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.9; }
+.registration-wizard-panel .registration-field > span { font-size: 13px; }
+.registration-wizard-panel .registration-field > input, .registration-wizard-panel .registration-field > select, .registration-wizard-panel .registration-field > textarea { font-size: 14px; }
+.registration-wizard-panel .registration-terms { flex-wrap: wrap; }
+.registration-terms .core-field-error { flex-basis: 100%; margin-inline-start: 24px; }
+.registration-wizard-actions { display: flex; gap: 12px; align-items: center; padding-block-start: 10px; }
+.registration-wizard-back { flex: 0 0 auto; min-height: 48px; padding: 10px 18px; border: 1px solid var(--border-strong); border-radius: var(--ui-control-radius); background: var(--surface); color: var(--text-soft); font: inherit; font-size: 13px; cursor: pointer; }
+.registration-wizard-actions .registration-submit { flex: 1; width: auto; }
+.registration-wizard-panel[hidden], .registration-wizard-actions [hidden] { display: none !important; }
+.registration-field > .core-field-error { color: var(--danger); background: var(--danger-soft); }
+.registration-progress button:focus-visible, .registration-wizard-back:focus-visible { outline: 3px solid var(--primary-500); outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { .registration-progress__track > span { transition: none; } }
+@media (max-width: 991.98px) {
+    .registration-page .registration-showcase { min-height: 0; padding: 20px; }
+    .registration-page .registration-showcase__copy,
+    .registration-page .registration-safety-list,
+    .registration-page .registration-showcase__footer { display: none; }
+    .registration-page .registration-showcase__content { padding: 0; }
+}
+@media (max-width: 575.98px) {
+    .registration-wizard-panel { grid-template-columns: minmax(0, 1fr); }
+    .registration-progress ol { gap: 4px; }
+    .registration-progress button { font-size: 10px; }
+    .registration-progress__number { width: 32px; height: 32px; }
+    .registration-wizard-back { padding-inline: 12px; }
+    .core-flow { padding: 15px; }
+    .core-flow__actions { align-items: stretch; }
+    .core-flow__actions > * { width: 100%; }
+    .core-flow__select { min-width: 0; }
+    .core-form-details > div { grid-template-columns: minmax(0, 1fr); }
+}

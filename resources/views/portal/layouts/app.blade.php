@@ -62,6 +62,7 @@
         rel="stylesheet"
         href="{{ asset('css/buildino-design-system.css') }}"
     >
+    <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
 </head>
 
 @php
@@ -489,6 +490,17 @@
         </header>
 
         <div class="portal-content">
+            <section class="core-flow" data-pending-invitation data-resident-url="{{ route('portal.resident.dashboard') }}" hidden>
+                <h2>دعوت به واحد</h2>
+                <div data-invitation-details></div>
+                <p role="status"></p>
+                <p class="core-flow__error" role="alert"></p>
+                <div class="core-flow__actions">
+                    <button class="is-primary" type="button" data-invitation-accept hidden>پذیرش دعوت</button>
+                    <button type="button" data-invitation-retry hidden>تلاش مجدد</button>
+                    <button type="button" data-invitation-dismiss>فعلاً ادامه نمی‌دهم</button>
+                </div>
+            </section>
             @yield('content')
         </div>
     </main>
@@ -534,5 +546,7 @@
 ></script>
 
 @stack('scripts')
+@include('shared.core-flow-config')
+<script src="{{ asset('js/buildino-core-invitation.js') }}" defer></script>
 </body>
 </html>

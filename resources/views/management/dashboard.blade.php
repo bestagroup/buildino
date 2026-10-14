@@ -151,6 +151,22 @@
 @endphp
 
 @section('content')
+@if (count(array_intersect(['blocks.create', 'floors.create', 'units.create'], $managementUi['permissions'] ?? [])) || (in_array('users.create', $managementUi['global_permissions'] ?? [], true) && in_array('users.update', $managementUi['global_permissions'] ?? [], true)))
+<section class="core-flow">
+    <h2>تکمیل اطلاعات ساختمان</h2>
+    <p>ساختمان خود را انتخاب کنید، واحدها را اضافه کنید و کاربران را دعوت کنید.</p>
+    <div class="core-flow__actions">
+        @foreach (['buildings', 'blocks'] as $startResource)
+            @if (in_array($startResource, $managementUi['visible_resources'] ?? [], true))
+                <a href="{{ route('management.operations.show', ['resource' => $startResource, 'flow' => 'P06']) }}">{{ config('management_crud.resources.'.$startResource.'.title') }}</a>
+            @endif
+        @endforeach
+        @if (in_array('users.create', $managementUi['global_permissions'] ?? [], true) && in_array('users.update', $managementUi['global_permissions'] ?? [], true))
+            <a href="{{ route('management.operations.show', ['resource' => 'users', 'flow' => 'P05']) }}">تعریف کاربر و دسترسی</a>
+        @endif
+    </div>
+</section>
+@endif
 <section class="hero-panel" id="overview">
     <div class="hero-panel__copy">
         <span class="eyebrow">

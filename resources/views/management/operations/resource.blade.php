@@ -53,6 +53,8 @@
         <strong>{{ $resource['title'] }}</strong>
     </div>
 
+    <div data-core-flow-host hidden></div>
+
     <section class="crud-header">
         <div class="crud-header__copy">
             <span class="eyebrow">
@@ -82,9 +84,10 @@
                 <button
                     type="button"
                     class="crud-button crud-button--primary"
-                    id="crudثبت رکوردButton"
+                    id="crudCreateButton"
+                    disabled
                 >
-                    + ثبت رکورد جدید
+                    + افزودن {{ ['blocks' => 'بلوک', 'floors' => 'طبقه', 'units' => 'واحد', 'users' => 'کاربر', 'invitations' => 'دعوت', 'role-assignments' => 'نقش و محدوده'][$resourceKey] ?? 'رکورد جدید' }}
                 </button>
             @endif
         </div>
@@ -291,7 +294,7 @@
                 aria-busy="false"
             ></div>
 
-            <div class="crud-form-error" id="crudFormError"></div>
+            <div class="crud-form-error" id="crudFormError" role="alert"></div>
 
             <div class="crud-form-actions">
                 <button
@@ -309,6 +312,9 @@
                 >
                     ذخیره
                 </button>
+                @if (in_array($resourceKey, ['blocks', 'floors', 'units'], true) && !empty($resource['create']))
+                    <button type="submit" class="crud-button crud-button--soft" data-core-save-another="1">ذخیره و افزودن مورد دیگر</button>
+                @endif
             </div>
         </form>
     </aside>

@@ -50,6 +50,7 @@
         rel="stylesheet"
         href="{{ asset('css/buildino-design-system.css') }}"
     >
+    <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
 </head>
 
 @php
@@ -1501,6 +1502,7 @@
     defer
 ></script>
 
+@include('shared.core-flow-config')
 @stack('scripts')
 </body>
 </html>

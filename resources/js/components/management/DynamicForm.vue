@@ -38,6 +38,7 @@ const props = defineProps({
         type: Object as PropType<Record<string, string[]>>,
         default: () => ({}),
     },
+    groupOptional: { type: Boolean, default: true },
 });
 
 const emit = defineEmits<{
@@ -49,14 +50,19 @@ const lookupOptions = reactive<Record<string, CrudOption[]>>({});
 const loadingFields = ref(new Set<string>());
 const requestIds = new Map<string, number>();
 const lookupCache = new Map<string, Promise<CrudOption[]>>();
+const lookupErrors = reactive<Record<string, string[]>>({});
+const optionalNames = new Set(['address', 'postal_code', 'latitude', 'longitude', 'sort_order', 'building_number', 'timezone', 'currency', 'floors_count', 'units_count', 'parking_count', 'storage_count', 'construction_year', 'bedrooms']);
 
-const visibleFields = computed(() => props.fields.filter((field) => {
+const eligibleFields = computed(() => props.fields.filter((field) => {
     if (props.mode === 'edit' && field.create_only) {
         return false;
     }
 
     return !(props.mode === 'create' && field.edit_only);
 }));
+const additionalFields = computed(() => props.groupOptional ? eligibleFields.value.filter((field) => optionalNames.has(field.name) && !field.required && !(props.mode === 'create' && field.required_on_create)) : []);
+const visibleFields = computed(() => eligibleFields.value.filter((field) => !additionalFields.value.includes(field)));
+const additionalInvalid = computed(() => additionalFields.value.some((field) => props.errors[field.name]?.length));
 
 const inputDirection = (field: CrudField): 'ltr' | undefined => {
     const name = field.name.toLowerCase();
@@ -150,7 +156,7 @@ const fieldMessageId = (field: CrudField): string =>
     `${fieldDomId(field)}-message`;
 
 const hasFieldError = (field: CrudField): boolean =>
-    Boolean(props.errors?.[field.name]?.length);
+    Boolean(props.errors?.[field.name]?.length || lookupErrors[field.name]?.length);
 
 const fieldValue = (field: CrudField): unknown =>
     props.modelValue[field.name]
@@ -233,6 +239,7 @@ const loadLookup = async (field: CrudField): Promise<void> => {
     const requestId = (requestIds.get(field.name) ?? 0) + 1;
     requestIds.set(field.name, requestId);
     loadingFields.value = new Set(loadingFields.value).add(field.name);
+    delete lookupErrors[field.name];
     emit('loading', true);
 
     try {
@@ -240,6 +247,11 @@ const loadLookup = async (field: CrudField): Promise<void> => {
 
         if (requestIds.get(field.name) === requestId) {
             lookupOptions[field.name] = options;
+        }
+    } catch {
+        if (requestIds.get(field.name) === requestId) {
+            lookupOptions[field.name] = [];
+            lookupErrors[field.name] = ['گزینه‌ها بارگذاری نشد؛ دوباره تلاش کنید.'];
         }
     } finally {
         if (requestIds.get(field.name) === requestId) {
@@ -392,16 +404,31 @@ watch(
             >
 
             <small
-                v-if="errors?.[field.name]?.length"
+                v-if="hasFieldError(field)"
                 :id="fieldMessageId(field)"
                 class="ui-field__error"
                 role="alert"
-            >{{ errors[field.name][0] }}</small>
+            >{{ (errors[field.name] ?? lookupErrors[field.name])[0] }}</small>
             <small
                 v-else-if="field.help"
                 :id="fieldMessageId(field)"
                 class="ui-field__help"
             >{{ field.help }}</small>
+            <button v-if="lookupErrors[field.name]" type="button" class="crud-button crud-button--soft" @click="loadLookup(field)">تلاش مجدد</button>
         </label>
+        <details v-if="additionalFields.length" class="core-form-details" :open="additionalInvalid">
+            <summary>اطلاعات تکمیلی (اختیاری)</summary>
+            <DynamicForm
+                :fields="additionalFields"
+                :group-optional="false"
+                :model-value="modelValue"
+                :mode="mode"
+                :lookup-base="lookupBase"
+                :csrf-token="csrfToken"
+                :errors="errors"
+                @update:model-value="emit('update:modelValue', $event)"
+                @loading="emit('loading', $event)"
+            />
+        </details>
     </div>
 </template>

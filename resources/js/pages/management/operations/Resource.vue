@@ -3,6 +3,8 @@ import { Head, Link } from '@inertiajs/vue3';
 import {
     computed,
     onMounted,
+    onUnmounted,
+    nextTick,
     ref,
     watch,
     type PropType,
@@ -55,6 +57,12 @@ const pageError = ref('');
 const search = ref('');
 const currentPage = ref(1);
 const pageSize = 25;
+const remotePage = ref(1);
+const remoteLastPage = ref(1);
+const totalRows = ref<number | null>(null);
+const core = window.BuildinoCoreFlows;
+const canCreate = computed(() => Boolean(props.resource.create && core?.allowed(props.resourceKey, 'create')));
+const canUpdate = computed(() => Boolean(props.resource.update && core?.allowed(props.resourceKey, 'update')));
 
 const drawerOpen = ref(false);
 const drawerMode = ref<'create' | 'edit'>('create');
@@ -94,14 +102,16 @@ const visibleRows = computed(() => {
     return filteredRows.value.slice(start, start + pageSize);
 });
 
-const getByPath = (record: CrudRecord, path: string): unknown =>
-    path.split('.').reduce<unknown>((value, key) => {
+const getByPath = (record: CrudRecord, path: string): unknown => {
+    const read = (keyPath: string): unknown => keyPath.split('.').reduce<unknown>((value, key) => {
         if (!value || typeof value !== 'object') {
             return null;
         }
 
         return (value as Record<string, unknown>)[key];
     }, record);
+    return read(path) ?? (path.includes('.') ? null : read(`location.${path}`) ?? read(`statistics.${path}`));
+};
 
 const displayValue = (value: unknown): string => {
     if (value === null || value === undefined || value === '') {
@@ -143,7 +153,7 @@ const notify = (message: string, tone: 'success' | 'danger' = 'success'): void =
     }, 4500);
 };
 
-const loadRows = async (): Promise<void> => {
+const loadRows = async (page = remotePage.value): Promise<void> => {
     if (!props.resource.list) {
         loading.value = false;
         return;
@@ -153,8 +163,10 @@ const loadRows = async (): Promise<void> => {
     pageError.value = '';
 
     try {
-        const payload = await apiRequest<unknown>(
-            props.resource.list.url,
+        const endpoint = new URL(props.resource.list.url, window.location.origin);
+        endpoint.searchParams.set('page', String(page));
+        const payload = await apiRequest<{ data?: CrudRecord[]; meta?: { current_page?: number; last_page?: number; total?: number } }>(
+            endpoint.toString(),
             {
                 method: props.resource.list.method ?? 'GET',
                 csrfToken: props.csrfToken,
@@ -162,6 +174,10 @@ const loadRows = async (): Promise<void> => {
         );
 
         rows.value = rowsFromPayload<CrudRecord>(payload);
+        remotePage.value = payload.meta?.current_page ?? 1;
+        remoteLastPage.value = payload.meta?.last_page ?? 1;
+        totalRows.value = payload.meta?.total ?? null;
+        core?.setRows(rows.value);
         currentPage.value = 1;
     } catch (error) {
         pageError.value = error instanceof Error
@@ -176,7 +192,9 @@ const initialFieldValue = (
     field: CrudField,
     record: CrudRecord | null,
 ): unknown => {
-    const value = record ? getByPath(record, field.name) : undefined;
+    const value = record ? (getByPath(record, field.name)
+        ?? getByPath(record, `location.${field.name}`)
+        ?? getByPath(record, `statistics.${field.name}`)) : undefined;
 
     if (value !== undefined && value !== null) {
         if (field.type === 'json' && typeof value !== 'string') {
@@ -207,6 +225,7 @@ const openDrawer = (
             initialFieldValue(field, record),
         ]),
     );
+    form.value = core?.defaults(props.resourceKey, form.value, mode) ?? form.value;
     drawerOpen.value = true;
 };
 
@@ -265,6 +284,7 @@ const buildPayload = (): CrudRecord => {
 };
 
 const save = async (): Promise<void> => {
+    if (saving.value || lookupsLoading.value) return;
     const operation = drawerMode.value === 'edit'
         ? props.resource.update
         : props.resource.create;
@@ -281,12 +301,13 @@ const save = async (): Promise<void> => {
         const endpoint = interpolate(operation.url, selectedRow.value);
         const payload = buildPayload();
 
-        await apiRequest<unknown>(endpoint, {
+        const result = await apiRequest<{ data: CrudRecord }>(endpoint, {
             method: operation.method ?? (drawerMode.value === 'edit' ? 'PATCH' : 'POST'),
             csrfToken: props.csrfToken,
             body: JSON.stringify(payload),
         });
 
+        core?.saved(props.resourceKey, result.data, drawerMode.value);
         drawerOpen.value = false;
         notify(drawerMode.value === 'edit' ? 'تغییرات با موفقیت ذخیره شد.' : 'رکورد جدید با موفقیت ثبت شد.');
         await loadRows();
@@ -294,6 +315,8 @@ const save = async (): Promise<void> => {
         if (error instanceof ApiError) {
             formErrors.value = error.errors;
             formError.value = error.message;
+            await nextTick();
+            document.querySelector<HTMLElement>('#inertiaCrudForm [aria-invalid="true"]')?.focus();
         } else {
             formError.value = error instanceof Error
                 ? error.message
@@ -335,7 +358,7 @@ const remove = async (): Promise<void> => {
 
 const openRequestedDrawer = (): void => {
     const url = new URL(window.location.href);
-    if (url.searchParams.get('create') === '1' && props.resource.create) {
+    if (url.searchParams.get('create') === '1' && canCreate.value) {
         openDrawer('create');
         url.searchParams.delete('create');
         window.history.replaceState({}, '', url);
@@ -374,21 +397,30 @@ watch(
         deleteTarget.value = null;
         search.value = '';
         currentPage.value = 1;
+        remotePage.value = 1;
+        await nextTick();
+        await core?.mount(props.resourceKey);
         await loadRows();
         openRequestedDrawer();
     },
 );
 
-onMounted(() => {
-    void loadRows();
+const flowCreate = (event: Event): void => {
+    if ((event as CustomEvent<{ resourceKey: string }>).detail.resourceKey === props.resourceKey && canCreate.value) openDrawer('create');
+};
+onMounted(async () => {
+    window.addEventListener('buildino:flow-create', flowCreate);
+    await core?.mount(props.resourceKey);
+    await loadRows();
     openRequestedDrawer();
 });
+onUnmounted(() => window.removeEventListener('buildino:flow-create', flowCreate));
 </script>
 
 <template>
     <Head :title="resource.title" />
 
-    <div class="crud-page ui-crud-page">
+    <div class="crud-page ui-crud-page" data-core-process-ui>
         <nav class="crud-breadcrumb" aria-label="مسیر صفحه">
             <a href="/management">داشبورد</a>
             <span>/</span>
@@ -408,13 +440,15 @@ onMounted(() => {
             <div class="crud-header__actions">
                 <a :href="operationsUrl" class="crud-button crud-button--soft">همه ماژول‌ها</a>
                 <button
-                    v-if="resource.create"
+                    v-if="canCreate"
                     type="button"
                     class="crud-button crud-button--primary"
                     @click="openDrawer('create')"
-                >+ ثبت رکورد جدید</button>
+                >+ افزودن {{ core?.labels[resourceKey] ?? 'رکورد جدید' }}</button>
             </div>
         </section>
+
+        <div data-core-flow-host hidden />
 
         <nav
             v-if="siblingResources.length > 1"
@@ -447,12 +481,12 @@ onMounted(() => {
                     >
                 </div>
                 <div class="crud-toolbar__actions">
-                    <span class="ui-record-count">{{ filteredRows.length }} رکورد</span>
+                    <span class="ui-record-count">{{ totalRows ?? filteredRows.length }} رکورد؛ جستجو در صفحهٔ فعلی</span>
                     <button
                         type="button"
                         class="crud-button crud-button--soft"
                         :disabled="loading"
-                        @click="loadRows"
+                        @click="loadRows()"
                     >{{ loading ? 'در حال بارگذاری...' : 'به‌روزرسانی' }}</button>
                 </div>
             </div>
@@ -464,7 +498,7 @@ onMounted(() => {
 
             <div v-else-if="pageError" class="crud-empty crud-empty--danger">
                 {{ pageError }}
-                <button type="button" class="crud-button crud-button--soft" @click="loadRows">تلاش مجدد</button>
+                <button type="button" class="crud-button crud-button--soft" @click="loadRows()">تلاش مجدد</button>
             </div>
 
             <div v-else-if="!filteredRows.length" class="ui-empty-state">
@@ -494,7 +528,7 @@ onMounted(() => {
                             <td class="crud-actions-column">
                                 <div class="crud-row-actions">
                                     <button
-                                        v-if="resource.update"
+                                        v-if="canUpdate"
                                         type="button"
                                         class="crud-row-action crud-row-action--edit"
                                         @click="openDrawer('edit', row)"
@@ -528,6 +562,11 @@ onMounted(() => {
                 >بعدی</button>
             </div>
         </section>
+        <nav v-if="remoteLastPage > 1" class="core-flow__actions" aria-label="صفحه‌بندی فهرست">
+            <button type="button" :disabled="loading || remotePage <= 1" @click="loadRows(remotePage - 1)">صفحهٔ قبلی فهرست</button>
+            <span>صفحه {{ remotePage }} از {{ remoteLastPage }}</span>
+            <button type="button" :disabled="loading || remotePage >= remoteLastPage" @click="loadRows(remotePage + 1)">صفحهٔ بعدی فهرست</button>
+        </nav>
     </div>
 
     <UiDrawer
@@ -548,7 +587,7 @@ onMounted(() => {
                 :errors="formErrors"
                 @loading="lookupsLoading = $event"
             />
-            <div v-if="formError" class="crud-form-error">{{ formError }}</div>
+            <div v-if="formError" class="crud-form-error" role="alert">{{ formError }}</div>
         </form>
 
         <template #footer>

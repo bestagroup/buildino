@@ -146,6 +146,13 @@ const enhance = (root = document) => {
             });
 
         select.dataset.buildinoSelect2 = '1';
+        // Select2 emits jQuery events; the process forms listen to native change.
+        // Keep this bridge scoped to the new process UI rather than all resources.
+        element.off('.coreflow').on('select2:select.coreflow select2:unselect.coreflow select2:clear.coreflow', () => {
+            if (select.closest('[data-core-process-ui], [data-core-flow-host], [data-registration-form]')) {
+                window.queueMicrotask(() => select.dispatchEvent(new Event('change', { bubbles: true })));
+            }
+        });
     });
 };
 
@@ -175,7 +182,7 @@ const destroy = (root = document) => {
             return;
         }
 
-        element.off('.buildino').select2('destroy');
+        element.off('.buildino').off('.coreflow').select2('destroy');
         delete select.dataset.buildinoSelect2;
     });
 };

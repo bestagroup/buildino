@@ -2,7 +2,7 @@
 
 @section('title', 'مرکز عملیات Buildino')
 @section('page-title', 'عملیات و فرم‌های سامانه')
-@section('page-subtitle', 'ثبت، ویرایش و اجرای فرآیندهای عملیاتی روی Backend واقعی')
+@section('page-subtitle', 'مدیریت اطلاعات و کارهای روزمره ساختمان')
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/buildino-crud.css') }}">
@@ -15,7 +15,7 @@
         <h2>مرکز عملیات Buildino</h2>
         <p>
             از این بخش می‌توانید اطلاعات پایه و فرآیندهای عملیاتی سامانه را
-            بدون نیاز به Postman مستقیماً از طریق فرم‌های وب مدیریت کنید.
+            با فرم‌های ساده و متناسب با محدوده دسترسی خود مدیریت کنید.
         </p>
 
         <div class="crud-access-badge">
