@@ -2190,9 +2190,7 @@ tbody tr:hover td {
 .login-shell {
     min-height: 100vh;
     display: grid;
-    grid-template-columns:
-        minmax(470px, 1.1fr)
-        minmax(430px, .9fr);
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .login-visual {
@@ -2464,7 +2462,7 @@ tbody tr:hover td {
     align-items: center;
     gap: 7px;
     color: #6e7c90;
-    font-size: 16px;
+    font-size: 12px;
     cursor: pointer;
 }
 
@@ -2600,12 +2598,6 @@ tbody tr:hover td {
     background: #fff;
     color: #245d89;
     box-shadow: 0 3px 11px rgba(28, 61, 91, .09);
-}
-
-[data-auth-panel][hidden],
-[data-otp-verification][hidden],
-[data-otp-request-form][hidden] {
-    display: none !important;
 }
 
 .otp-login-panel {
@@ -3004,7 +2996,7 @@ tbody tr:hover td {
 
 .forgot-password-link {
     color: #1f527f;
-    font-size: 16px;
+    font-size: 12px;
     font-weight: 700;
     transition: color var(--transition);
 }
@@ -4151,9 +4143,7 @@ tbody tr:hover td {
 .registration-shell {
     min-height: 100vh;
     display: grid;
-    grid-template-columns:
-        minmax(360px, .72fr)
-        minmax(600px, 1.28fr);
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .registration-showcase {
@@ -4264,7 +4254,7 @@ tbody tr:hover td {
 
 .registration-form-area {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     min-height: 100vh;
     padding: 34px;
@@ -4278,7 +4268,9 @@ tbody tr:hover td {
 }
 
 .registration-card {
-    width: min(760px, 100%);
+    width: 100%;
+    max-width: 560px;
+    min-width: 0;
     padding: 28px;
     border: 1px solid #e3eaf2;
     border-radius: 24px;

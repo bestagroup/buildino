@@ -200,5 +200,7 @@
 <script
     src="{{ asset('js/buildino-foundation.js') }}"
 ></script>
+<div class="core-flow__actions"><a href="{{ route('portal.login') }}">ورود مالک، ساکن یا ارائه‌دهنده خدمات</a><a href="{{ route('login') }}">ورود مدیران</a></div>
+@include('shared.core-auth')
 </body>
 </html>

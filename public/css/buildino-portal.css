@@ -1205,7 +1205,7 @@ html[data-theme="dark"] .portal-modal .btn-close {
 .portal-login-shell {
     min-height: 100vh;
     display: grid;
-    grid-template-columns: minmax(480px, 1.1fr) minmax(400px, .9fr);
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .portal-login-showcase {

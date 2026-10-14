@@ -34,79 +34,6 @@
 
 <body class="login-page">
 <div class="login-shell">
-    <section class="login-visual">
-        <div class="login-visual__mesh"></div>
-
-        <div class="login-visual__content">
-            <div class="showcase-brand">
-                <div class="brand-mark brand-mark--large">
-                    <span>B</span>
-                </div>
-
-                <div>
-                    <strong>Buildino</strong>
-                    <span>سامانه مدیریت هوشمند ساختمان</span>
-                </div>
-            </div>
-
-            <div class="login-visual__headline">
-                <span class="eyebrow eyebrow--light">
-                    مدیریت هوشمند، تصمیم‌گیری دقیق
-                </span>
-
-                <h1>
-                    همه‌چیز برای مدیریت ساختمان،
-                    <em>در یک مرکز واحد.</em>
-                </h1>
-
-                <p>
-                    از ساختار مجتمع و ساکنین تا کیف پول، شارژ،
-                    رزرو امکانات، خدمات، پشتیبانی و گزارش‌های مدیریتی.
-                </p>
-            </div>
-
-            <div class="login-feature-grid">
-                <article>
-                    <div class="login-feature-icon">
-                        @include(
-                            'management.partials.icon',
-                            ['name' => 'building']
-                        )
-                    </div>
-                    <strong>ساختار یکپارچه</strong>
-                    <span>مجتمع، ساختمان، واحد و ساکنین</span>
-                </article>
-
-                <article>
-                    <div class="login-feature-icon">
-                        @include(
-                            'management.partials.icon',
-                            ['name' => 'wallet']
-                        )
-                    </div>
-                    <strong>شفافیت مالی</strong>
-                    <span>کیف پول، صورتحساب، پرداخت و دفتر مالی</span>
-                </article>
-
-                <article>
-                    <div class="login-feature-icon">
-                        @include(
-                            'management.partials.icon',
-                            ['name' => 'shield']
-                        )
-                    </div>
-                    <strong>دسترسی کنترل‌شده</strong>
-                    <span>نقش، مجوز و محدوده دسترسی</span>
-                </article>
-            </div>
-        </div>
-
-        <div class="login-visual__footer">
-            <span>Buildino · پنل مدیریت</span>
-            <span>امن • کنترل‌شده • قابل‌ردیابی</span>
-        </div>
-    </section>
-
     <main class="login-form-area">
         <div class="login-card">
             <div class="login-card__mobile-brand">
@@ -189,7 +116,7 @@
 
             <div
                 data-auth-panel="password"
-                @hidden($activeAuthMethod === 'otp')
+                @if ($activeAuthMethod === 'otp') hidden @endif
             >
                 <form
                     method="POST"
@@ -295,10 +222,10 @@
             <div
                 class="otp-login-panel"
                 data-auth-panel="otp"
-                @hidden($activeAuthMethod !== 'otp')
+                @if ($activeAuthMethod !== 'otp') hidden @endif
             >
                 @if (session('otp_status'))
-                    <div class="otp-login-status">
+                    <div class="otp-login-status" data-otp-status @if ($errors->has('mobile')) hidden @endif>
                         @include(
                             'management.partials.icon',
                             ['name' => 'shield', 'size' => 16]
@@ -311,6 +238,7 @@
                     <div
                         class="otp-login-verification"
                         data-otp-verification
+                        @if ($errors->has('mobile')) hidden @endif
                     >
                         <div class="otp-login-copy">
                             <strong>کد پیامک‌شده را وارد کنید</strong>
@@ -403,7 +331,7 @@
                     class="login-form otp-request-form"
                     data-otp-request-form
                     data-buildino-submit
-                    @hidden((bool) $managementOtpMobile)
+                    @if ((bool) $managementOtpMobile && ! $errors->has('mobile')) hidden @endif
                 >
                     @csrf
                     <input
@@ -491,5 +419,6 @@
     src="{{ asset('js/buildino-auth-login.js') }}"
     defer
 ></script>
+@include('shared.core-auth')
 </body>
 </html>

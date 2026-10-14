@@ -61,6 +61,14 @@ select[dir="rtl"] {
 
 /* ---------- Bootstrap RTL normalization ---------- */
 
+/* Auth stages must stay hidden even when their form/panel uses grid or flex. */
+[data-auth-panel][hidden],
+[data-otp-verification][hidden],
+[data-otp-request-form][hidden],
+[data-otp-status][hidden] {
+    display: none !important;
+}
+
 .dropdown-menu {
     --bs-dropdown-link-active-bg: var(--primary-700, var(--portal-blue, #1f527f));
     --bs-dropdown-link-hover-bg: var(--surface-soft, var(--portal-soft, #f7f9fc));

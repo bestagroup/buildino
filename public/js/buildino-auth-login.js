@@ -16,6 +16,20 @@
                     '[data-auth-panel]'
                 ),
             ];
+            const verification = scope.querySelector('[data-otp-verification]');
+            const requestForm = scope.querySelector('[data-otp-request-form]');
+            const otpStatus = scope.querySelector('[data-otp-status]');
+
+            const showOtpStage = (verify, focus = false) => {
+                const showVerification = Boolean(verify && verification);
+                if (verification) verification.hidden = !showVerification;
+                if (requestForm) requestForm.hidden = showVerification;
+                if (otpStatus) otpStatus.hidden = !showVerification;
+                if (focus) {
+                    (showVerification ? verification : requestForm)
+                        ?.querySelector('input:not([type="hidden"])')?.focus();
+                }
+            };
 
             const activate = (method) => {
                 const selected = method === 'otp'
@@ -42,6 +56,7 @@
                     panel.hidden =
                         panel.dataset.authPanel !== selected;
                 });
+                if (selected === 'otp') showOtpStage(verification && !verification.hidden, true);
             };
 
             buttons.forEach((button) => {
@@ -53,26 +68,11 @@
             scope.querySelectorAll('[data-otp-change]')
                 .forEach((button) => {
                     button.addEventListener('click', () => {
-                        const verification = scope.querySelector(
-                            '[data-otp-verification]'
-                        );
-                        const requestForm = scope.querySelector(
-                            '[data-otp-request-form]'
-                        );
-
-                        if (verification) {
-                            verification.hidden = true;
-                        }
-
-                        if (requestForm) {
-                            requestForm.hidden = false;
-                            requestForm.querySelector(
-                                'input[name="mobile"]'
-                            )?.focus();
-                        }
+                        showOtpStage(false, true);
                     });
                 });
 
+            showOtpStage(verification && !verification.hidden);
             activate(switcher.dataset.activeMethod);
         });
 })();

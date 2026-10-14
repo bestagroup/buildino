@@ -47,81 +47,6 @@
 
 <body class="portal-login-body">
 <div class="portal-login-shell">
-    <section class="portal-login-showcase">
-        <div class="portal-login-showcase__content">
-            <div class="portal-login-brand">
-                <span>B</span>
-
-                <div>
-                    <strong>
-                        Buildino
-                    </strong>
-
-                    <small>
-                        پرتال ساکنین و ارائه‌دهندگان
-                    </small>
-                </div>
-            </div>
-
-            <div class="portal-login-copy">
-                <span>
-                    زندگی و خدمات ساختمان در یک جا
-                </span>
-
-                <h1>
-                    پرتال شخصی
-                    <em>Buildino</em>
-                </h1>
-
-                <p>
-                    صورتحساب، کیف پول، مهمان، رزرو امکانات،
-                    درخواست خدمات، پشتیبانی و پنل ارائه‌دهندگان خدمات.
-                </p>
-            </div>
-
-            <div class="portal-login-features">
-                <div>
-                    @include(
-                        'management.partials.icon',
-                        [
-                            'name' => 'wallet',
-                            'size' => 20,
-                        ]
-                    )
-                    <span>
-                        مالی و کیف پول
-                    </span>
-                </div>
-
-                <div>
-                    @include(
-                        'management.partials.icon',
-                        [
-                            'name' => 'calendar',
-                            'size' => 20,
-                        ]
-                    )
-                    <span>
-                        رزرو و امکانات
-                    </span>
-                </div>
-
-                <div>
-                    @include(
-                        'management.partials.icon',
-                        [
-                            'name' => 'tools',
-                            'size' => 20,
-                        ]
-                    )
-                    <span>
-                        خدمات و پشتیبانی
-                    </span>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <main class="portal-login-form-area">
         <div class="portal-login-card">
             <div class="portal-login-card__heading">
@@ -191,7 +116,7 @@
 
             <div
                 data-auth-panel="password"
-                @hidden($activeAuthMethod === 'otp')
+                @if ($activeAuthMethod === 'otp') hidden @endif
             >
                 <form
                     method="POST"
@@ -269,16 +194,16 @@
             <div
                 class="portal-otp-login-panel"
                 data-auth-panel="otp"
-                @hidden($activeAuthMethod !== 'otp')
+                @if ($activeAuthMethod !== 'otp') hidden @endif
             >
                 @if (session('otp_status'))
-                    <div class="portal-otp-status">
+                    <div class="portal-otp-status" data-otp-status @if ($errors->has('mobile')) hidden @endif>
                         {{ session('otp_status') }}
                     </div>
                 @endif
 
                 @if ($portalOtpMobile)
-                    <div data-otp-verification>
+                    <div data-otp-verification @if ($errors->has('mobile')) hidden @endif>
                         <div class="portal-otp-copy">
                             <strong>کد پیامک‌شده را وارد کنید</strong>
                             <span>
@@ -362,7 +287,7 @@
                     class="portal-login-form portal-otp-request-form"
                     data-otp-request-form
                     data-buildino-submit
-                    @hidden((bool) $portalOtpMobile)
+                    @if ((bool) $portalOtpMobile && ! $errors->has('mobile')) hidden @endif
                 >
                     @csrf
                     <input
@@ -424,5 +349,6 @@
     src="{{ asset('js/buildino-auth-login.js') }}"
     defer
 ></script>
+@include('shared.core-auth')
 </body>
 </html>

@@ -345,6 +345,51 @@ final class WebSmsOtpLoginTest extends TestCase
         ]);
     }
 
+    #[DataProvider('loginAreaProvider')]
+    public function test_requesting_sms_replaces_the_mobile_form_with_the_code_form(string $area): void
+    {
+        $this->post('/'.$area.'/login/otp/request', [
+            'mobile' => '09121100999',
+            'auth_method' => 'otp',
+        ])->assertRedirect('/'.$area.'/login');
+
+        $response = $this->get('/'.$area.'/login')->assertOk();
+        $this->assertRenderedOtpStage($response->getContent(), true);
+    }
+
+    #[DataProvider('loginAreaProvider')]
+    public function test_invalid_changed_mobile_keeps_the_number_form_visible(string $area): void
+    {
+        $this->withSession(['buildino.web_otp.'.$area.'.mobile' => '09121100999'])
+            ->from('/'.$area.'/login')
+            ->post('/'.$area.'/login/otp/request', [
+                'mobile' => 'invalid-mobile',
+                'auth_method' => 'otp',
+            ])->assertSessionHasErrors('mobile');
+
+        $response = $this->get('/'.$area.'/login')->assertOk();
+        $this->assertRenderedOtpStage($response->getContent(), false);
+    }
+
+    public static function loginAreaProvider(): array
+    {
+        return ['management' => ['management'], 'portal' => ['portal']];
+    }
+
+    private function assertRenderedOtpStage(string $html, bool $verify): void
+    {
+        $document = new \DOMDocument;
+        @$document->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($document);
+        $request = $xpath->query('//*[@data-otp-request-form]')->item(0);
+        $verification = $xpath->query('//*[@data-otp-verification]')->item(0);
+        $this->assertNotNull($request);
+        $this->assertNotNull($verification);
+        $this->assertSame($verify, $request->hasAttribute('hidden'));
+        $this->assertSame(! $verify, $verification->hasAttribute('hidden'));
+        $this->assertStringNotContainsString('@hidden(', $html);
+    }
+
     private function unverifiedUser(
         string $mobile,
         string $email,

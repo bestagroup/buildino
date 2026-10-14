@@ -128,5 +128,6 @@
 </main>
 
 <script src="{{ asset('js/buildino-foundation.js') }}"></script>
+@include('shared.core-auth')
 </body>
 </html>
