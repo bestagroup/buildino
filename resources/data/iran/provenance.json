@@ -1,0 +1,15 @@
+{
+  "source": "https://github.com/sajaddp/list-of-cities-in-Iran",
+  "commit": "ace21bb251f96ced350bbc01541acffd71121feb",
+  "dataset_version": "3.1.2",
+  "official_source_year": 1404,
+  "retrieved_at": "2026-10-14",
+  "license": "GPL-3.0",
+  "files": {
+    "provinces.json": "01964b1c357eb21b0152382475357b40d3ca08057f08bba1a09b41161ac31a41",
+    "cities-filtered.json": "75f4d297a03b8c6a76cdee7c51706bc585495035d5ef1e9d8a115205e5805457",
+    "counties.json": "974d3d041db344aab653ce4ef84a6858f46864ce69fecb6f285f38972e4db8b9",
+    "source-manifest.json": "0e74232858fcaa74f3a9ad5375519842061fb3b271d5b6845b51a7696ed11d03",
+    "LICENSE": "38edb472781a55161f804518ac43b91726c36fb65db652158e4955baa08f55ba"
+  }
+}

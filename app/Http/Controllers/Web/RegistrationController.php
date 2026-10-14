@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\RegisterRequest;
 use App\Http\Requests\Web\VerifyRegistrationOtpRequest;
 use App\Services\Auth\OtpService;
+use App\Services\System\IranLocations;
 use App\Services\UnitInvitationService;
 use App\Services\Web\SelfRegistrationService;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +19,7 @@ use Illuminate\View\View;
 
 final class RegistrationController extends Controller
 {
-    public function create(Request $request): View
+    public function create(Request $request, IranLocations $locations): View
     {
         $personas = config(
             'self_registration.personas',
@@ -35,9 +36,17 @@ final class RegistrationController extends Controller
             ? $requestedPersona
             : 'building_manager';
 
+        $previousProvince = $locations->province($request->old('province_id'))
+            ?? $locations->provinceByName($request->old('province'));
+        $previousCity = $locations->city($request->old('city_id'))
+            ?? $locations->cityByName($previousProvince['name'] ?? null, $request->old('city'));
+
         return view('auth.register', [
             'personas' => $personas,
             'selectedPersona' => $selectedPersona,
+            'locationProvinces' => $locations->forForm(),
+            'selectedProvinceId' => (string) ($previousProvince['id'] ?? ''),
+            'selectedCityId' => (string) ($previousCity['id'] ?? ''),
             'invitationToken' => (string) $request->query(
                 'invitation_token',
                 ''

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Web;
 
+use App\Services\System\IranLocations;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -15,6 +16,14 @@ final class RegisterRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $locations = app(IranLocations::class);
+        $province = $this->has('province_id')
+            ? $locations->province($this->input('province_id'))
+            : $locations->provinceByName($this->input('province'));
+        $city = $this->has('city_id')
+            ? $locations->city($this->input('city_id'))
+            : $locations->cityByName($province['name'] ?? null, $this->input('city'));
+
         $this->merge([
             'first_name' => $this->cleanText(
                 $this->input('first_name')
@@ -31,11 +40,14 @@ final class RegisterRequest extends FormRequest
             'invitation_token' => $this->cleanText(
                 $this->input('invitation_token')
             ),
+            'province' => $province['name'] ?? ($this->has('province_id') ? null : $this->input('province')),
+            'city' => $city['name'] ?? ($this->has('city_id') ? null : $this->input('city')),
         ]);
     }
 
     public function rules(): array
     {
+        $locations = app(IranLocations::class);
         $personas = config(
             'self_registration.personas',
             []
@@ -58,6 +70,26 @@ final class RegisterRequest extends FormRequest
             ->all();
 
         return [
+            'province_id' => [
+                'bail',
+                'nullable',
+                'required_with:city_id',
+                'integer',
+                Rule::in(array_keys($locations->provinces())),
+            ],
+            'city_id' => [
+                'bail',
+                'nullable',
+                'required_with:province_id',
+                'integer',
+                function (string $attribute, mixed $value, \Closure $fail) use ($locations): void {
+                    $city = $locations->city($value);
+                    $province = $locations->province($this->input('province_id'));
+                    if (! $city || ! $province || $city['province_id'] !== $province['id']) {
+                        $fail('شهر انتخاب‌شده متعلق به استان انتخاب‌شده نیست.');
+                    }
+                },
+            ],
             'persona' => [
                 'required',
                 Rule::in(array_keys($personas)),
@@ -116,6 +148,7 @@ final class RegisterRequest extends FormRequest
                 'max:255',
             ],
             'province' => [
+                'bail',
                 Rule::requiredIf(
                     fn (): bool => in_array(
                         $this->input('persona'),
@@ -126,8 +159,10 @@ final class RegisterRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:100',
+                Rule::in(array_column($locations->provinces(), 'name')),
             ],
             'city' => [
+                'bail',
                 Rule::requiredIf(
                     fn (): bool => in_array(
                         $this->input('persona'),
@@ -138,6 +173,11 @@ final class RegisterRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:100',
+                function (string $attribute, mixed $value, \Closure $fail) use ($locations): void {
+                    if (! $locations->cityByName($this->input('province'), $value)) {
+                        $fail('شهر را از فهرست شهرهای استان انتخاب‌شده انتخاب کنید.');
+                    }
+                },
             ],
             'address' => [
                 'nullable',
@@ -189,6 +229,12 @@ final class RegisterRequest extends FormRequest
             'building_title.required' => 'نام ساختمان اولیه را وارد کنید.',
             'province.required' => 'استان را وارد کنید.',
             'city.required' => 'شهر را وارد کنید.',
+            'province.in' => 'استان را از فهرست استان‌های ایران انتخاب کنید.',
+            'province_id.in' => 'استان انتخاب‌شده معتبر نیست.',
+            'province_id.integer' => 'استان انتخاب‌شده معتبر نیست.',
+            'province_id.required_with' => 'ابتدا استان را انتخاب کنید.',
+            'city_id.integer' => 'شهر انتخاب‌شده معتبر نیست.',
+            'city_id.required_with' => 'شهر را انتخاب کنید.',
             'invitation_token.required' => 'برای ثبت‌نام مالک یا ساکن، کد دعوت واحد الزامی است.',
             'invitation_token.min' => 'کد دعوت معتبر نیست.',
             'terms.accepted' => 'پذیرش قوانین و حریم خصوصی الزامی است.',

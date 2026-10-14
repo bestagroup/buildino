@@ -13,6 +13,7 @@ use App\Models\UnitOccupancy;
 use App\Models\User;
 use App\Models\UserRoleAssignment;
 use App\Services\Web\ManagementDashboardAccessService;
+use App\Services\System\IranLocations;
 use Database\Seeders\RoleMatrixSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -404,6 +405,42 @@ final class SelfRegistrationWebTest extends TestCase
         ])->assertRedirect(
             route($destination)
         );
+    }
+
+    public function test_location_ids_resolve_to_canonical_names_and_ignore_client_labels(): void
+    {
+        $locations = app(IranLocations::class);
+        $province = $locations->provinceByName('گیلان');
+        $city = $locations->cityByName('گیلان', 'رشت');
+        $payload = $this->managementPayload('building_manager', '09120000301');
+        $payload['province_id'] = (string) $province['id'];
+        $payload['city_id'] = (string) $city['id'];
+        $payload['province'] = 'client-provided-label';
+        $payload['city'] = 'another-client-label';
+
+        $this->post('/register', $payload)->assertRedirect(route('register.verify'));
+        $this->post('/register/verify', ['code' => $this->otpCode($payload['mobile'])])->assertRedirect(route('management.dashboard'));
+        $this->assertDatabaseHas('complexes', ['province' => 'گیلان', 'city' => 'رشت']);
+    }
+
+    public function test_a_city_id_from_another_province_is_rejected_before_sending_otp(): void
+    {
+        $locations = app(IranLocations::class);
+        $payload = $this->managementPayload('building_manager', '09120000302');
+        $payload['province_id'] = (string) $locations->provinceByName('تهران')['id'];
+        $payload['city_id'] = (string) $locations->cityByName('فارس', 'شیراز')['id'];
+
+        $this->post('/register', $payload)->assertSessionHasErrors('city_id');
+        $this->assertArrayNotHasKey($payload['mobile'], $this->otpSender->codes);
+        $this->assertDatabaseCount('complexes', 0);
+    }
+
+    public function test_unknown_location_ids_and_invalid_legacy_city_names_are_rejected(): void
+    {
+        $payload = $this->managementPayload('building_manager', '09120000303');
+        $this->post('/register', [...$payload, 'province_id' => '999999', 'city_id' => '999999'])->assertSessionHasErrors(['province_id', 'city_id']);
+        $this->post('/register', [...$payload, 'city' => 'شیراز'])->assertSessionHasErrors('city');
+        $this->assertArrayNotHasKey($payload['mobile'], $this->otpSender->codes);
     }
 
     private function managementPayload(
