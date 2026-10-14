@@ -9,7 +9,7 @@
 
 html {
     direction: rtl;
-    font-family: "IRANSansX", "IRANSans", Tahoma, "Segoe UI", Arial, sans-serif;
+    font-family: var(--buildino-font-persian, "IRANYekanRd", Tahoma, "Segoe UI", Arial, sans-serif);
 }
 
 body,

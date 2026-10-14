@@ -3,56 +3,85 @@
 | Buildino Persian Typography
 |--------------------------------------------------------------------------
 |
-| IRANSans / IRANSansX is a licensed typeface. Font binaries are intentionally
-| not committed by the application. Production deployments should place their
-| licensed WOFF2 files in public/fonts/iransans using the documented names.
+| Shared IRANYekanRd faces supplied in public/fonts/iranyekanrd.
+| Weights follow the OS/2 metadata in the supplied static TTF files.
 |
 */
 
 @font-face {
-    font-family: "IRANSansX";
-    src:
-        local("IRANSansX Regular"),
-        local("IRANSans Regular"),
-        url("/fonts/iransans/IRANSansX-Regular.woff2") format("woff2");
+    font-family: "IRANYekanRd";
+    src: url("../fonts/iranyekanrd/IRANYekanThinRd.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 100;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "IRANYekanRd";
+    src: url("../fonts/iranyekanrd/IRANYekanLightRd.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "IRANYekanRd";
+    src: url("../fonts/iranyekanrd/IRANYekanRegularRd.ttf") format("truetype");
     font-style: normal;
     font-weight: 400;
     font-display: swap;
 }
 
 @font-face {
-    font-family: "IRANSansX";
-    src:
-        local("IRANSansX Medium"),
-        local("IRANSans Medium"),
-        url("/fonts/iransans/IRANSansX-Medium.woff2") format("woff2");
+    font-family: "IRANYekanRd";
+    src: url("../fonts/iranyekanrd/IRANYekanMediumRd.ttf") format("truetype");
     font-style: normal;
     font-weight: 500;
     font-display: swap;
 }
 
 @font-face {
-    font-family: "IRANSansX";
-    src:
-        local("IRANSansX Bold"),
-        local("IRANSans Bold"),
-        url("/fonts/iransans/IRANSansX-Bold.woff2") format("woff2");
+    font-family: "IRANYekanRd";
+    src: url("../fonts/iranyekanrd/IRANYekanBoldRd.ttf") format("truetype");
     font-style: normal;
     font-weight: 700;
     font-display: swap;
 }
 
+@font-face {
+    font-family: "IRANYekanRd";
+    src: url("../fonts/iranyekanrd/IRANYekanExtraBoldRd.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "IRANYekanRd";
+    src: url("../fonts/iranyekanrd/IRANYekanBlackRd.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 900;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "IRANYekanRd";
+    src: url("../fonts/iranyekanrd/IRANYekanExtraBlackRd.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 950;
+    font-display: swap;
+}
+
 :root {
     --buildino-font-persian:
-        "IRANSansX",
-        "IRANSans",
+        "IRANYekanRd",
         Tahoma,
         "Segoe UI",
         Arial,
         sans-serif;
 
     --buildino-font-latin:
-        Inter,
+        "IRANYekanRd",
         ui-sans-serif,
         -apple-system,
         BlinkMacSystemFont,

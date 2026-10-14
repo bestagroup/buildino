@@ -20,13 +20,22 @@ Existing complementary libraries remain:
 
 ## 2. Persian typography
 
-The product font is **IRANSans / IRANSansX**.
+The product font is **IRANYekanRd**, loaded from `public/fonts/iranyekanrd` through the shared `buildino-fonts.css` stylesheet.
 
-Licensed font binaries must be deployed to:
+The supplied static TTF faces use these weights, matching their font metadata:
 
-- `public/fonts/iransans/IRANSansX-Regular.woff2`
-- `public/fonts/iransans/IRANSansX-Medium.woff2`
-- `public/fonts/iransans/IRANSansX-Bold.woff2`
+| Font file | Weight |
+|---|---:|
+| `IRANYekanThinRd.ttf` | 100 |
+| `IRANYekanLightRd.ttf` | 300 |
+| `IRANYekanRegularRd.ttf` | 400 |
+| `IRANYekanMediumRd.ttf` | 500 |
+| `IRANYekanBoldRd.ttf` | 700 |
+| `IRANYekanExtraBoldRd.ttf` | 800 |
+| `IRANYekanBlackRd.ttf` | 900 |
+| `IRANYekanExtraBlackRd.ttf` | 950 |
+
+Management, portal, authentication and public landing pages use `--buildino-font-persian`; feature styles should inherit this token instead of naming a separate typeface. Font loading uses `font-display: swap`.
 
 The product keeps a Persian-capable system fallback so an unavailable licensed font never blocks rendering.
 
@@ -106,7 +115,7 @@ Primary management, portal and CRUD styles must not use text below 11px. Functio
 
 - pinned UI dependencies
 - Bootstrap RTL
-- IRANSans configuration
+- IRANYekanRd configuration
 - shared design-system loading
 - RTL markup
 - accessibility foundation

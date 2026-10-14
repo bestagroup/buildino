@@ -391,7 +391,7 @@ class UiFoundationWebTest extends TestCase
         );
 
         $this->assertStringContainsString(
-            'IRANSansX',
+            'IRANYekanRd',
             $fontCss
         );
         $this->assertStringContainsString(
