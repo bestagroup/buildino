@@ -364,6 +364,12 @@
 
                     <div class="nav-group__items">
                         @if ($nav['structure'] ?? false)
+                            @if (count(array_intersect(['buildings.create', 'blocks.create'], $managementUi['permissions'] ?? [])))
+                                <a href="{{ route('management.building-setup') }}" class="nav-link {{ request()->routeIs('management.building-setup') ? 'is-active' : '' }}" data-nav-key="building-setup">
+                                    <span class="nav-link__icon">@include('management.partials.icon', ['name' => 'building'])</span>
+                                    <span class="nav-link__label">راه‌اندازی ساختمان</span>
+                                </a>
+                            @endif
                             <a
                                 href="{{
                                     route(

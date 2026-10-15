@@ -86,8 +86,8 @@
             root.innerHTML = `<h2>${structurePage ? 'ساختار ساختمان را مرحله‌به‌مرحله تکمیل کنید' : 'تعریف کاربر و دسترسی'}</h2><p>${structurePage ? 'مجتمع یا ساختمان موجود را انتخاب کنید و سپس بلوک، طبقه و واحدها را اضافه کنید.' : 'ابتدا مشخصات کاربر را ثبت کنید؛ تعیین نقش و محدوده توسط مدیر سامانه انجام می‌شود.'}</p><div class="core-flow__actions"></div>`;
             if (structurePage || canP05()) {
                 const start = document.createElement('a');
-                start.className = 'is-primary'; start.textContent = 'شروع راهنمای مراحل';
-                start.href = urlFor(resourceKey, structurePage ? 'P06' : 'P05');
+                start.className = 'is-primary'; start.textContent = structurePage ? 'راه‌اندازی آسان ساختمان' : 'شروع راهنمای مراحل';
+                start.href = structurePage && config.setupUrl ? config.setupUrl : urlFor(resourceKey, structurePage ? 'P06' : 'P05');
                 root.querySelector('.core-flow__actions').append(start);
             }
             return;

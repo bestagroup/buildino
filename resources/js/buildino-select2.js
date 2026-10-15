@@ -149,7 +149,7 @@ const enhance = (root = document) => {
         // Select2 emits jQuery events; the process forms listen to native change.
         // Keep this bridge scoped to the new process UI rather than all resources.
         element.off('.coreflow').on('select2:select.coreflow select2:unselect.coreflow select2:clear.coreflow', () => {
-            if (select.closest('[data-core-process-ui], [data-core-flow-host], [data-registration-form]')) {
+            if (select.closest('[data-core-process-ui], [data-core-flow-host], [data-registration-form], [data-building-setup]')) {
                 window.queueMicrotask(() => select.dispatchEvent(new Event('change', { bubbles: true })));
             }
         });

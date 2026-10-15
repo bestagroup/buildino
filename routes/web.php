@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\ManagementAuthController;
+use App\Http\Controllers\Web\BuildingSetupController;
 use App\Http\Controllers\Web\ManagementDashboardController;
 use App\Http\Controllers\Web\ManagementLookupController;
 use App\Http\Controllers\Web\ManagementOperationsController;
@@ -183,6 +184,9 @@ Route::middleware([
                 'index',
             ]
         )->name('dashboard');
+
+        Route::get('/building-setup', BuildingSetupController::class)
+            ->name('building-setup');
 
         /*
         |--------------------------------------------------------------------------

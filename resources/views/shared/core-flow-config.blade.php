@@ -19,6 +19,7 @@
         'permissions' => $flowUi['permissions'] ?? [],
         'globalPermissions' => $flowUi['global_permissions'] ?? [],
         'csrfToken' => csrf_token(),
+        'setupUrl' => count(array_intersect(['buildings.create', 'blocks.create'], $flowUi['permissions'] ?? [])) ? route('management.building-setup') : null,
     ]) }};
 </script>
 <script src="{{ asset('js/buildino-core-flows.js') }}"></script>
