@@ -1,16 +1,8 @@
 @extends('portal.layouts.app')
 
-@section(
-    'title',
-    ($operationConfig['title'] ?? 'عملیات')
-    . ' | Buildino'
-)
+@section('title', ($operationConfig['title'] ?? 'عملیات') . ' | Buildino')
 
-@section(
-    'page-title',
-    $operationConfig['title']
-    ?? 'عملیات'
-)
+@section('page-title',  $operationConfig['title'] ?? 'عملیات')
 
 @section('sidebar-links')
     @php
@@ -76,22 +68,12 @@
         </p>
     </div>
 
-    <a
-        href="{{
-            route(
-                "portal.{$area}.dashboard"
-            )
-        }}"
-        class="portal-action-button"
-    >
+    <a href="{{  route( "portal.{$area}.dashboard") }}" class="portal-action-button">
         بازگشت به داشبورد
     </a>
 </section>
 
-<section
-    class="portal-section portal-datatable-section"
-    data-dt-filter-scope
->
+<section class="portal-section portal-datatable-section" data-dt-filter-scope>
     <div class="portal-datatable-toolbar">
         @if (
             in_array(
@@ -104,9 +86,7 @@
             <label>
                 <span>وضعیت</span>
 
-                <select
-                    data-dt-filter="status"
-                >
+                <select data-dt-filter="status">
                     <option value="">
                         همه وضعیت‌ها
                     </option>

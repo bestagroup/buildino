@@ -3,18 +3,7 @@
     $class = $class ?? '';
 @endphp
 
-<svg
-    class="ui-icon {{ $class }}"
-    width="{{ $size }}"
-    height="{{ $size }}"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.8"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
->
+<svg class="ui-icon {{ $class }}" width="{{ $size }}" height="{{ $size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     @switch($name)
         @case('home')
             <path d="M3 11.5 12 4l9 7.5"/>

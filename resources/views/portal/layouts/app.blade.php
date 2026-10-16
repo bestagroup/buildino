@@ -2,66 +2,33 @@
 <html lang="fa" dir="rtl" data-theme="light">
 <head>
     <meta charset="utf-8">
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1"
-    >
-    <meta
-        name="csrf-token"
-        content="{{ csrf_token() }}"
-    >
-    <meta
-        name="robots"
-        content="noindex,nofollow"
-    >
-    <meta
-        name="color-scheme"
-        content="light dark"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="color-scheme" content="light dark">
 
     <title>
         @yield('title', 'پرتال Buildino')
     </title>
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-fonts.css') }}"
-    >
+    <link rel="stylesheet" href="{{ asset('css/buildino-fonts.css') }}">
 
-    <link
-        rel="stylesheet"
-        href="{{ config('management_ui.libraries.bootstrap.css') }}"
-        crossorigin="anonymous"
-    >
+    <link rel="stylesheet" href="{{ config('management_ui.libraries.bootstrap.css') }}" crossorigin="anonymous">
 
-    <link
-        rel="stylesheet"
-        href="{{ config('management_ui.libraries.sweetalert2.css') }}"
-    >
+    <link rel="stylesheet" href="{{ config('management_ui.libraries.sweetalert2.css') }}">
 
     @vite('resources/js/app.js')
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-datatables.css') }}"
-    >
+    <link rel="stylesheet" href="{{ asset('css/buildino-datatables.css') }}">
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-foundation.css') }}"
-    >
+    <link rel="stylesheet" href="{{ asset('css/buildino-foundation.css') }}">
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-portal.css') }}"
-    >
+    <link rel="stylesheet" href="{{ asset('css/buildino-portal.css') }}">
 
     @stack('styles')
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-design-system.css') }}"
-    >
+    <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
+
     <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
 </head>
 
@@ -517,33 +484,17 @@
     };
 </script>
 
-<script
-    src="{{ config('management_ui.libraries.bootstrap.js') }}"
-    integrity="{{ config('management_ui.libraries.bootstrap.js_integrity') }}"
-    crossorigin="anonymous"
-></script>
+<script src="{{ config('management_ui.libraries.bootstrap.js') }}" integrity="{{ config('management_ui.libraries.bootstrap.js_integrity') }}" crossorigin="anonymous"></script>
 
-<script
-    src="{{ config('management_ui.libraries.sweetalert2.js') }}"
-></script>
+<script src="{{ config('management_ui.libraries.sweetalert2.js') }}"></script>
 
-<script
-    src="{{ asset('js/buildino-foundation.js') }}"
-></script>
+<script src="{{ asset('js/buildino-foundation.js') }}"></script>
 
-<script
-    src="{{ config('management_ui.libraries.jdate.js') }}"
-></script>
+<script src="{{ config('management_ui.libraries.jdate.js') }}"></script>
 
-<script
-    src="{{ asset('js/buildino-datatables.js') }}"
-    defer
-></script>
+<script src="{{ asset('js/buildino-datatables.js') }}" defer></script>
 
-<script
-    src="{{ asset('js/buildino-portal.js') }}"
-    defer
-></script>
+<script src="{{ asset('js/buildino-portal.js') }}" defer></script>
 
 @stack('scripts')
 @include('shared.core-flow-config')
