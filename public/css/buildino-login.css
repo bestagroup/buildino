@@ -1,0 +1,155 @@
+/* Shared login presentation. Authentication and OTP states use their existing hooks. */
+body.login-page, body.portal-login-body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100svh;
+    background: #f7faff;
+    color: #1c2d52;
+}
+.login-backdrop { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+.login-backdrop svg { display: block; width: 100%; height: 100%; }
+.registration-page .registration-shell { position: relative; }
+.registration-page .registration-form-area { background: transparent; }
+body.login-page .login-shell, body.portal-login-body .portal-login-shell {
+    position: relative; display: grid; grid-template-columns: minmax(0, 1fr);
+    place-items: center; min-height: 100vh; min-height: 100svh; padding: 40px 20px;
+    background: transparent;
+}
+body.login-page .login-form-area, body.portal-login-body .portal-login-form-area {
+    position: relative; isolation: isolate;
+    display: flex; justify-content: center; width: 100%; padding: 0; background: transparent;
+}
+body.login-page .login-card, body.portal-login-body .portal-login-card {
+    position: relative;
+    width: min(100%, 440px); padding: 22px 24px 20px; border: 1px solid rgb(255 255 255 / 85%);
+    border-radius: 24px; background: rgb(255 255 255 / 66%);
+    -webkit-backdrop-filter: blur(24px) saturate(135%);
+    backdrop-filter: blur(24px) saturate(135%);
+    box-shadow: 0 24px 65px rgb(51 91 153 / 13%), inset 0 1px 0 #ffffffb3; min-width: 0;
+}
+@property --login-border-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+@supports ((mask-composite: exclude) or (-webkit-mask-composite: xor)) {
+    .login-card::after, .portal-login-card::after {
+        content: ""; position: absolute; inset: -1px; border-radius: inherit;
+        padding: 1.5px; pointer-events: none;
+        background: conic-gradient(from var(--login-border-angle),
+            #ffffff30 0%, #ffffff50 20%, #71b5ff 30%, #b8a0f3 38%,
+            #ffffff40 46%, #ffffff40 70%, #88dce8 80%, #ffffffb3 88%, #ffffff30 100%);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        animation: login-border-orbit 8s linear infinite;
+    }
+}
+@keyframes login-border-orbit {
+    to { --login-border-angle: 360deg; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    body.login-page .login-card, body.portal-login-body .portal-login-card { background: rgb(255 255 255 / 94%); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .login-card::after, .portal-login-card::after { animation: none; }
+}
+.login-brand { display: grid; place-items: center; width: 44px; height: 44px; margin: 0 auto 8px;
+    border-radius: 16px; background: linear-gradient(140deg, #edf5ff, #e1edff); box-shadow: 0 5px 14px #276ee912; }
+body.login-page .login-card__mobile-brand { display: none; }
+.login-card .login-card__header, .portal-login-card .portal-login-card__heading { text-align: center; }
+.login-card .login-card__header .eyebrow, .portal-login-card .portal-login-card__heading > span {
+    color: #0871ef; font-size: 14px; font-weight: 700; letter-spacing: 0;
+}
+.login-card .login-card__header h2, .portal-login-card .portal-login-card__heading h2 {
+    margin: 6px 0; color: #1b2b50; font-size: 28px; font-weight: 900; line-height: 1.5;
+}
+.login-card .login-card__header p, .portal-login-card .portal-login-card__heading p {
+    margin: 0 0 18px; color: #7787a8; font-size: 13px; line-height: 1.9;
+}
+.login-card .auth-method-switch, .portal-login-card .portal-auth-method-switch {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 3px;
+    margin: 0 0 14px; background: #f0f3f8; border: 0; border-radius: 15px;
+}
+.login-card .auth-method-switch button, .portal-login-card .portal-auth-method-switch button {
+    display: flex; justify-content: center; align-items: center; gap: 12px; min-height: 44px;
+    padding: 8px; border: 1px solid transparent; border-radius: 12px; background: transparent;
+    color: #7787a8; font: inherit; font-size: 14px; cursor: pointer;
+}
+.login-card .auth-method-switch button.is-active, .portal-login-card .portal-auth-method-switch button.is-active {
+    color: #0670ef; background: #fff; border-color: #dceaff; box-shadow: 0 3px 12px #4386e51a; font-weight: 700;
+}
+.login-card .login-form, .portal-login-card .portal-login-form { display: grid; gap: 13px; }
+.login-card .auth-field, .portal-login-card .portal-login-form > label { display: grid; gap: 6px; margin: 0; }
+.login-card .auth-field > span, .portal-login-card .portal-login-form > label > span {
+    color: #50658c; font-size: 13px; font-weight: 600;
+}
+.login-card .auth-input, .portal-login-card .auth-input {
+    position: relative; display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 12px;
+    border: 1px solid #dbe5f5; border-radius: 14px; background: #fff; color: #7184a8;
+}
+.login-card .auth-input > input, .portal-login-card .auth-input > input {
+    width: 100%; min-width: 0; height: 100%; min-height: 0; padding: 0; border: 0; border-radius: 0;
+    outline: 0; background: transparent; box-shadow: none; color: #1b2b50; font: inherit; font-size: 14px;
+}
+.login-card .auth-input > svg, .portal-login-card .auth-input > svg { flex-shrink: 0; }
+.login-card .auth-input > input:autofill, .portal-login-card .auth-input > input:autofill {
+    background: #fff; box-shadow: 0 0 0 1000px #fff inset; color: #1b2b50;
+}
+.login-card .auth-input > input:-webkit-autofill, .portal-login-card .auth-input > input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px #fff inset;
+    -webkit-text-fill-color: #1b2b50;
+}
+.login-card .auth-input:focus-within, .portal-login-card .auth-input:focus-within {
+    border-color: #4d8fff; background: #fff; box-shadow: 0 0 0 3px #397ef309;
+}
+.login-card .auth-input.core-auth-password > input, .portal-login-card .auth-input.core-auth-password > input { padding-left: 30px; }
+.login-card .login-form__meta, .portal-login-card .portal-login-meta {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 0;
+}
+.login-card .remember-row, .portal-login-card .portal-remember { display: flex; align-items: center; gap: 8px; color: #7787a8; }
+.login-card .remember-row span, .portal-login-card .portal-remember span,
+.login-card .forgot-password-link, .portal-login-card .portal-login-meta > a { font-size: 12px; }
+.login-card .remember-row input[type="checkbox"], .portal-login-card .portal-remember input[type="checkbox"] {
+    width: 18px; height: 18px; margin: 0; accent-color: #1878e5;
+}
+.login-card a, .portal-login-card a { color: #0670ef; text-decoration: none; }
+.login-card a:hover, .portal-login-card a:hover { text-decoration: underline; }
+.login-card .login-submit, .portal-login-card .portal-primary-button {
+    display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 48px;
+    padding: 10px 16px; border: 1px solid #2f88e8; border-radius: 15px;
+    background: linear-gradient(110deg, #21558d, #2d82d7); color: #fff; font: inherit; font-weight: 800;
+    box-shadow: 0 5px 12px #2674c51c; cursor: pointer;
+}
+.login-card .login-submit:hover, .portal-login-card .portal-primary-button:hover { filter: brightness(1.06); }
+.login-separator { display: flex; align-items: center; gap: 14px; margin: 12px 0; color: #8a99b4; font-size: 12px; }
+.login-separator::before, .login-separator::after { content: ""; flex: 1; height: 1px; background: #e1e8f3; }
+.login-card .login-registration-cta, .portal-login-card .portal-login-register {
+    display: grid; gap: 10px; margin: 0; padding: 12px; border: 1px solid #e8effb;
+    border-radius: 15px; background: #f4f8ff; text-align: right;
+}
+.login-card .login-registration-cta > div, .portal-login-card .portal-login-register > div { display: flex; align-items: center; gap: 14px; }
+.login-card .login-registration-cta > div > svg, .portal-login-card .portal-login-register > div > svg {
+    flex-shrink: 0; box-sizing: content-box; padding: 9px; border-radius: 13px; background: #e5efff; color: #0971ed;
+}
+.login-card .login-registration-cta strong, .portal-login-card .portal-login-register strong { display: block; color: #21385e; font-size: 14px; }
+.login-card .login-registration-cta small, .portal-login-card .portal-login-register small { display: block; margin-top: 3px; color: #7787a8; font-size: 12px; line-height: 1.8; }
+.login-card .login-registration-cta > a, .portal-login-card .portal-login-register > a {
+    display: block; padding: 8px 12px; border: 1px solid #dce7f8; border-radius: 12px;
+    background: transparent; color: #0670ef; font-size: 13px; font-weight: 700; text-align: center; box-shadow: 0 3px 8px #3175bd08;
+}
+.login-card .login-security-note, .portal-login-card .portal-login-management {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
+    margin: 12px 0 0; padding: 12px 0 0; border-top: 1px solid #e1e8f3; color: #7787a8; font-size: 11px; line-height: 1.8;
+}
+.portal-login-card .portal-login-management a { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; }
+.login-card :focus-visible, .portal-login-card :focus-visible { outline: 2px solid #3387ed; outline-offset: 3px; }
+@media (max-width: 575px) {
+    body.login-page .login-shell, body.portal-login-body .portal-login-shell { padding: 24px 16px; }
+    body.login-page .login-card, body.portal-login-body .portal-login-card { padding: 20px 18px; border-radius: 22px; }
+    .login-card .login-card__header h2, .portal-login-card .portal-login-card__heading h2 { font-size: 28px; }
+    .login-card .login-card__header p, .portal-login-card .portal-login-card__heading p { font-size: 12px; }
+    .login-card .login-form__meta, .portal-login-card .portal-login-meta { flex-wrap: wrap; }
+    .login-backdrop svg { opacity: .75; }
+}

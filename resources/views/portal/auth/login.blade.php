@@ -43,12 +43,15 @@
         rel="stylesheet"
         href="{{ asset('css/buildino-design-system.css') }}"
     >
+    <link rel="stylesheet" href="{{ asset('css/buildino-login.css') }}">
 </head>
 
 <body class="portal-login-body">
+@include('shared.login-backdrop')
 <div class="portal-login-shell">
     <main class="portal-login-form-area">
         <div class="portal-login-card">
+            @include('shared.login-brand')
             <div class="portal-login-card__heading">
                 <span>
                     ورود کاربران
@@ -58,10 +61,6 @@
                     خوش آمدید
                 </h2>
 
-                <p>
-                    مالک، مستأجر، ساکن یا ارائه‌دهنده خدمات می‌تواند
-                    با رمز عبور یا کد پیامکی وارد حساب Buildino شود.
-                </p>
             </div>
 
             @php
@@ -102,7 +101,8 @@
                     data-auth-method="password"
                     role="tab"
                 >
-                    رمز عبور
+                    @include('management.partials.icon', ['name' => 'mail', 'size' => 18])
+                    <span>رمز عبور</span>
                 </button>
 
                 <button
@@ -110,7 +110,8 @@
                     data-auth-method="otp"
                     role="tab"
                 >
-                    کد پیامکی
+                    @include('management.partials.icon', ['name' => 'message', 'size' => 18])
+                    <span>کد پیامکی</span>
                 </button>
             </div>
 
@@ -131,16 +132,19 @@
                         موبایل یا ایمیل
                     </span>
 
-                    <input
-                        type="text"
-                        name="login"
-                        value="{{ old('login') }}"
-                        placeholder="0912... یا name@example.com"
-                        autocomplete="username"
-                        dir="ltr"
-                        required
-                        autofocus
-                    >
+                    <div class="auth-input">
+                        @include('management.partials.icon', ['name' => 'user', 'size' => 20])
+                        <input
+                            type="text"
+                            name="login"
+                            value="{{ old('login') }}"
+                            placeholder="0912... یا name@example.com"
+                            autocomplete="username"
+                            dir="ltr"
+                            required
+                            autofocus
+                        >
+                    </div>
                 </label>
 
                 <label>
@@ -148,14 +152,17 @@
                         رمز عبور
                     </span>
 
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="رمز عبور"
-                        autocomplete="current-password"
-                        dir="ltr"
-                        required
-                    >
+                    <div class="auth-input">
+                        @include('management.partials.icon', ['name' => 'lock', 'size' => 20])
+                        <input
+                            type="password"
+                            name="password"
+                            placeholder="رمز عبور"
+                            autocomplete="current-password"
+                            dir="ltr"
+                            required
+                        >
+                    </div>
                 </label>
 
                 <div class="portal-login-meta">
@@ -186,7 +193,8 @@
                         type="submit"
                         class="portal-primary-button"
                     >
-                        ورود به پرتال
+                        <span>ورود به پرتال</span>
+                        @include('management.partials.icon', ['name' => 'arrow-left', 'size' => 18])
                     </button>
                 </form>
             </div>
@@ -228,19 +236,22 @@
 
                             <label>
                                 <span>کد تأیید</span>
-                                <input
-                                    class="portal-otp-code"
-                                    type="text"
-                                    name="code"
-                                    value="{{ old('code') }}"
-                                    autocomplete="one-time-code"
-                                    inputmode="numeric"
-                                    pattern="[0-9۰-۹٠-٩]{4,8}"
-                                    placeholder="_ _ _ _ _ _"
-                                    dir="ltr"
-                                    maxlength="8"
-                                    required
-                                >
+                                <div class="auth-input">
+                                    @include('management.partials.icon', ['name' => 'key', 'size' => 20])
+                                    <input
+                                        class="portal-otp-code"
+                                        type="text"
+                                        name="code"
+                                        value="{{ old('code') }}"
+                                        autocomplete="one-time-code"
+                                        inputmode="numeric"
+                                        pattern="[0-9۰-۹٠-٩]{4,8}"
+                                        placeholder="_ _ _ _ _ _"
+                                        dir="ltr"
+                                        maxlength="8"
+                                        required
+                                    >
+                                </div>
                             </label>
 
                             <button
@@ -298,17 +309,20 @@
 
                     <label>
                         <span>شماره موبایل حساب</span>
-                        <input
-                            type="tel"
-                            name="mobile"
-                            value="{{ old('mobile', $portalOtpMobile) }}"
-                            placeholder="09123456789"
-                            autocomplete="tel"
-                            inputmode="numeric"
-                            dir="ltr"
-                            maxlength="16"
-                            required
-                        >
+                        <div class="auth-input">
+                            @include('management.partials.icon', ['name' => 'user', 'size' => 20])
+                            <input
+                                type="tel"
+                                name="mobile"
+                                value="{{ old('mobile', $portalOtpMobile) }}"
+                                placeholder="09123456789"
+                                autocomplete="tel"
+                                inputmode="numeric"
+                                dir="ltr"
+                                maxlength="16"
+                                required
+                            >
+                        </div>
                     </label>
 
                     <button
@@ -320,14 +334,16 @@
                 </form>
             </div>
 
+            <div class="login-separator" aria-hidden="true">یا</div>
             <div class="portal-login-register">
-                <span>
-                    حساب پرتال ندارید؟ به‌عنوان مالک، ساکن یا ارائه‌دهنده خدمات ثبت‌نام کنید.
-                </span>
-
-                <a href="{{ route('register', ['persona' => 'tenant']) }}">
-                    ایجاد حساب کاربری
-                </a>
+                <div>
+                    @include('management.partials.icon', ['name' => 'user-plus', 'size' => 20])
+                    <span>
+                        <strong>حساب پرتال ندارید؟</strong>
+                        <small>به‌عنوان مالک، ساکن یا ارائه‌دهنده خدمات ثبت‌نام کنید.</small>
+                    </span>
+                </div>
+                <a href="{{ route('register', ['persona' => 'tenant']) }}">ایجاد حساب کاربری</a>
             </div>
 
             <div class="portal-login-management">
@@ -336,6 +352,7 @@
                 </span>
 
                 <a href="{{ route('login') }}">
+                    @include('management.partials.icon', ['name' => 'settings', 'size' => 16])
                     ورود به پنل مدیریتی
                 </a>
             </div>

@@ -30,9 +30,11 @@
         rel="stylesheet"
         href="{{ asset('css/buildino-design-system.css') }}"
     >
+    <link rel="stylesheet" href="{{ asset('css/buildino-login.css') }}">
 </head>
 
 <body class="login-page">
+@include('shared.login-backdrop')
 <div class="login-shell">
     <main class="login-form-area">
         <div class="login-card">
@@ -43,6 +45,7 @@
                 <strong>Buildino</strong>
             </div>
 
+            @include('shared.login-brand')
             <div class="login-card__header">
                 <span class="eyebrow">
                     پنل مدیریتی
@@ -190,7 +193,7 @@
                         >
 
                         <span>
-                            مرا در این دستگاه به خاطر بسپار
+                            مرا به خاطر بسپار
                         </span>
                     </label>
 
@@ -198,7 +201,7 @@
                         class="forgot-password-link"
                         href="{{ route('password.request') }}"
                     >
-                        رمز عبور را فراموش کرده‌اید؟
+                        فراموشی رمز عبور؟
                     </a>
                 </div>
 
@@ -373,6 +376,7 @@
                 </form>
             </div>
 
+            <div class="login-separator" aria-hidden="true">یا</div>
             <div class="login-registration-cta">
                 <div>
                     @include(
@@ -385,9 +389,6 @@
 
                     <span>
                         <strong>هنوز حساب ندارید؟</strong>
-                        <small>
-                            به‌عنوان مدیر ساختمان یا یکی از نقش‌های سامانه ثبت‌نام کنید.
-                        </small>
                     </span>
                 </div>
 
@@ -396,19 +397,6 @@
                 </a>
             </div>
 
-            <div class="login-security-note">
-                @include(
-                    'management.partials.icon',
-                    [
-                        'name' => 'shield',
-                        'size' => 16,
-                    ]
-                )
-
-                <span>
-                    محتوای پنل بر اساس نقش و محدوده دسترسی حساب شما نمایش داده می‌شود.
-                </span>
-            </div>
         </div>
     </main>
 </div>

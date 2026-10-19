@@ -16,6 +16,20 @@
     aria-hidden="true"
 >
     @switch($name)
+        @case('mail')
+            <rect x="3" y="5" width="18" height="14" rx="2"/>
+            <path d="m3 6 9 7 9-7"/>
+            @break
+
+        @case('message')
+            <path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 4V6a2 2 0 0 1 2-2Z"/>
+            @break
+
+        @case('settings')
+            <path d="m10 3-.7 2.2-2 .9-2.1-.5-2 3.4 1.5 1.7v2.6L3.2 15l2 3.4 2.1-.5 2 .9L10 21h4l.7-2.2 2-.9 2.1.5 2-3.4-1.5-1.7v-2.6L20.8 9l-2-3.4-2.1.5-2-.9L14 3Z"/>
+            <circle cx="12" cy="12" r="3"/>
+            @break
+
         @case('home')
             <path d="M3 11.5 12 4l9 7.5"/>
             <path d="M5.5 10.5V20h13v-9.5"/>
