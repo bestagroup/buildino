@@ -131,6 +131,9 @@
 
     const fieldsIn = (step) => [...step.querySelectorAll('input, select, textarea')]
         .filter((field) => !field.disabled && field.type !== 'hidden');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const completionHint = form.querySelector('[data-registration-completion]');
+    let stageAnimation;
 
     const focusField = (field) => {
         const select2 = field.matches('select') && field.parentElement.querySelector('.select2-selection');
@@ -138,6 +141,8 @@
     };
 
     const showStep = (index, focus = true) => {
+        const lastStep = currentStep;
+        stageAnimation?.cancel();
         currentStep = index;
         steps.forEach((step, position) => { step.hidden = position !== index; });
         previous.hidden = index === 0;
@@ -154,9 +159,20 @@
         bar.setAttribute('aria-valuenow', String(index + 1));
         bar.setAttribute('aria-valuetext', `مرحله ${(index + 1).toLocaleString('fa-IR')} از ۴: ${steps[index].querySelector('h3').textContent}`);
         bar.style.setProperty('--registration-progress', `${((index + 1) / steps.length) * 100}%`);
+        bar.style.setProperty('--registration-progress-scale', String((index + 1) / steps.length));
+        updateCompletion();
+        if (focus && index !== lastStep && !reducedMotion.matches && steps[index].animate) {
+            stageAnimation = steps[index].animate([
+                { opacity: 0, transform: `translateX(${index > lastStep ? -14 : 14}px)` },
+                { opacity: 1, transform: 'translateX(0)' },
+            ], { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' });
+        }
         if (focus) {
             steps[index].querySelector('h3').focus({ preventScroll: true });
-            progress.scrollIntoView({ block: 'start', behavior: 'smooth' });
+            const bounds = steps[index].querySelector('h3').getBoundingClientRect();
+            if (bounds.top < 0 || bounds.bottom > window.innerHeight) {
+                progress.scrollIntoView({ block: 'start', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+            }
         }
     };
 
@@ -164,6 +180,39 @@
     const mobile = form.elements.namedItem('mobile');
     const password = form.elements.namedItem('password');
     const confirmation = form.elements.namedItem('password_confirmation');
+
+    // Read validity without checkValidity(): typing must not fire native invalid events.
+    const isComplete = (field) => {
+        if (field.type === 'checkbox') return field.checked;
+        const value = field.value.trim();
+        if (!value) return !field.required;
+        if (field === mobile) {
+            const normalized = digits(value).replace(/[\s\-()]+/g, '').replace(/^(?:\+98|0098|98)(?=9\d{9}$)/, '0');
+            return /^09\d{9}$/.test(normalized);
+        }
+        if (field === password) return field.value.length >= 8 && /\p{L}/u.test(field.value) && /\p{N}/u.test(field.value);
+        if (field === confirmation) return field.value === password.value && isComplete(password);
+        return field.validity.valid;
+    };
+
+    const updateCompletion = () => {
+        const fields = fieldsIn(steps[currentStep]);
+        const required = fields.filter((field) => field.required);
+        const complete = required.filter(isComplete).length;
+        const ready = fields.every(isComplete);
+        const fraction = Math.min(ready ? 1 : .95, required.length ? complete / required.length : 1);
+        for (const button of [next, submit]) {
+            button.style.setProperty('--registration-step-completion', String(fraction));
+            button.dataset.stepReady = String(ready);
+        }
+        if (completionHint) {
+            const message = ready
+                ? (currentStep === steps.length - 1 ? 'آماده ارسال کد تأیید' : 'این مرحله تکمیل است؛ ادامه دهید')
+                : `${complete.toLocaleString('fa-IR')} از ${required.length.toLocaleString('fa-IR')} مورد ضروری تکمیل شده`;
+            if (completionHint.textContent !== message) completionHint.textContent = message;
+            completionHint.dataset.ready = String(ready);
+        }
+    };
 
     const validateField = (field) => {
         field.setCustomValidity('');
@@ -208,7 +257,15 @@
         return false;
     };
 
-    const advance = () => { if (validateStep(currentStep)) showStep(currentStep + 1); };
+    const advance = () => {
+        if (validateStep(currentStep)) showStep(currentStep + 1);
+        else if (!reducedMotion.matches && next.animate) {
+            next.animate([
+                { transform: 'translateX(0)' }, { transform: 'translateX(3px)' },
+                { transform: 'translateX(-3px)' }, { transform: 'translateX(0)' },
+            ], { duration: 180, easing: 'ease-out' });
+        }
+    };
     next.addEventListener('click', advance);
     previous.addEventListener('click', () => showStep(currentStep - 1));
     progressButtons.forEach((button, index) => button.addEventListener('click', () => { if (index < currentStep) showStep(index); }));
@@ -227,6 +284,13 @@
     };
     form.addEventListener('input', clearFeedback);
     form.addEventListener('change', clearFeedback);
+    form.addEventListener('input', updateCompletion);
+    form.addEventListener('change', updateCompletion);
+    // Password managers may autofill without dispatching an input event.
+    form.addEventListener('focusin', updateCompletion);
+    reducedMotion.addEventListener('change', () => {
+        if (reducedMotion.matches) stageAnimation?.cancel();
+    });
 
     form.addEventListener('submit', (event) => {
         if (currentStep < steps.length - 1) {

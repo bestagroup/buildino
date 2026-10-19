@@ -1,0 +1,92 @@
+/* Registration motion stays on transform and opacity; no animation loops. */
+.registration-page .login-backdrop {
+    background-color: #edf5ff;
+    background-image: url('../images/Modern%20Architectural%20Mistscape.png');
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+.registration-page .login-backdrop svg { display: none; }
+.registration-page .registration-card {
+    border-color: #e1eafb;
+    box-shadow: 0 24px 65px #335b991a, inset 0 1px 0 #fff;
+    animation: registration-arrive 350ms cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes registration-arrive {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.registration-card__header .eyebrow { color: #1878d7; }
+.registration-page .registration-step {
+    border: 1px solid #dce9fb; border-radius: 16px;
+    background: linear-gradient(145deg, #f4f9ff, #eaf2fe);
+}
+.registration-page .registration-progress { margin-bottom: 24px; }
+.registration-progress__number {
+    position: relative; transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.registration-progress .is-complete .registration-progress__number { color: transparent; }
+.registration-progress .is-complete .registration-progress__number::after {
+    content: ""; position: absolute; width: 12px; height: 7px; top: 11px; left: 11px;
+    border-left: 2px solid var(--success); border-bottom: 2px solid var(--success);
+    transform: rotate(-45deg);
+}
+.registration-page .registration-progress__track { height: 4px; background: #e8eef7; }
+.registration-page .registration-progress__track > span {
+    width: 100%; transform: scaleX(var(--registration-progress-scale, .25)); transform-origin: right;
+    background: linear-gradient(90deg, #7bb7ee, #276db5); transition: transform 320ms cubic-bezier(.2,.8,.2,1);
+}
+.registration-page .registration-field > input,
+.registration-page .registration-field > textarea,
+.registration-page .core-auth-password > input {
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+.registration-page .registration-field > input:focus,
+.registration-page .registration-field > textarea:focus,
+.registration-page .core-auth-password > input:focus {
+    border-color: #70a5e2; box-shadow: 0 0 0 3px #3f83dd0d;
+}
+.registration-page .registration-wizard-actions { gap: 10px; }
+.registration-page .registration-submit {
+    position: relative; isolation: isolate; overflow: hidden; min-height: 48px;
+    border: 1px solid #386f9f; background: #244d77; color: #fff;
+    box-shadow: 0 4px 12px #2869a51a;
+    transition: box-shadow 180ms ease, transform 180ms ease;
+}
+.registration-submit .registration-button-fill {
+    position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(110deg, #296db1, #318adf);
+    transform: scaleX(var(--registration-step-completion, 0)); transform-origin: right;
+    transition: transform 350ms cubic-bezier(.2,.8,.2,1);
+}
+.registration-page .registration-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 16px #2869a529; }
+.registration-page .registration-submit:active { transform: translateY(0); }
+.registration-submit > .ui-icon { transition: transform 180ms ease; }
+.registration-submit[data-step-ready="true"] > .ui-icon { transform: translateX(-3px); }
+.registration-page .registration-wizard-back { transition: background-color 160ms ease, border-color 160ms ease; }
+.registration-page .registration-wizard-back:hover { background: #f3f7fc; border-color: #c3d6ed; }
+.registration-completion {
+    grid-column: 1 / -1; min-height: 22px; margin: -6px 0 0; text-align: center;
+    color: #7788a0; font-size: 12px; line-height: 1.8;
+}
+.registration-completion[data-ready="true"] { color: #286f59; }
+.registration-page .registration-wizard-heading h3:focus { outline: none; }
+.registration-page .registration-wizard-heading h3:focus-visible { outline: 2px solid #70a5e2; outline-offset: 4px; border-radius: 4px; }
+@media (max-width: 575px) {
+    .registration-page .login-backdrop { background-position: 72% center; }
+    .registration-progress .is-complete .registration-progress__number::after { top: 9px; left: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .registration-page .registration-card,
+    .registration-page button[data-buildino-loading="true"]::after { animation: none; }
+    .registration-page .registration-progress__track > span,
+    .registration-page .registration-progress__number,
+    .registration-page .registration-submit,
+    .registration-page .registration-submit > .ui-icon,
+    .registration-page .registration-button-fill,
+    .registration-page .registration-wizard-back,
+    .registration-page .registration-field > input,
+    .registration-page .registration-field > textarea,
+    .registration-page .core-auth-password > input { transition: none; }
+    .registration-page .registration-submit:hover { transform: none; }
+}

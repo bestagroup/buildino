@@ -32,6 +32,8 @@
         rel="stylesheet"
         href="{{ asset('css/buildino-design-system.css') }}"
     >
+    <link rel="stylesheet" href="{{ asset('css/buildino-login.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-registration.css') }}">
 </head>
 
 @php
@@ -45,6 +47,7 @@
 @endphp
 
 <body class="login-page registration-page">
+@include('shared.login-backdrop')
 <div class="registration-shell">
     <main class="registration-form-area">
         <div class="registration-card">
@@ -407,6 +410,7 @@
                 <div class="registration-wizard-actions registration-field--wide">
                     <button class="registration-wizard-back" type="button" data-registration-previous hidden>مرحله قبل</button>
                     <button class="login-submit registration-submit" type="button" data-registration-next hidden>
+                        <span class="registration-button-fill" aria-hidden="true"></span>
                         <span>ادامه</span>
                         @include('management.partials.icon', ['name' => 'arrow-left', 'size' => 18])
                     </button>
@@ -415,6 +419,7 @@
                         type="submit"
                         data-registration-submit
                     >
+                        <span class="registration-button-fill" aria-hidden="true"></span>
                         <span>ارسال کد تأیید و ادامه</span>
 
                         @include(
@@ -423,6 +428,7 @@
                         )
                     </button>
                 </div>
+                <p class="registration-completion" data-registration-completion role="status" aria-live="polite" aria-atomic="true"></p>
             </form>
 
             <div class="registration-login-links">
