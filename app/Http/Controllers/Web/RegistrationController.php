@@ -183,6 +183,8 @@ final class RegistrationController extends Controller
             'last_login_ip' => $request->ip(),
         ])->save();
 
+        $request->session()->flash('buildino.registration_success', true);
+
         return redirect()
             ->route($result['destination'])
             ->with(

@@ -159,6 +159,7 @@
 @endphp
 
 <body class="management-body">
+@include('shared.login-success')
 <a class="buildino-skip-link" href="#mainContent">پرش به محتوای اصلی</a>
 <div class="management-shell">
     <aside

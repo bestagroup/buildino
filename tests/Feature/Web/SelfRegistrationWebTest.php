@@ -113,7 +113,7 @@ final class SelfRegistrationWebTest extends TestCase
             'code' => $this->otpCode($mobile),
         ])->assertRedirect(
             route('management.dashboard')
-        );
+        )->assertSessionHas('buildino.registration_success', true);
 
         $user = User::query()
             ->where('mobile', $mobile)
@@ -143,7 +143,13 @@ final class SelfRegistrationWebTest extends TestCase
             (int) $assignment->scope_id
         );
 
-        $this->get('/management')->assertOk();
+        $this->get('/management')
+            ->assertOk()
+            ->assertSee('حساب شما با موفقیت ساخته شد')
+            ->assertSee('data-login-success', false);
+        $this->get('/management')
+            ->assertOk()
+            ->assertDontSee('data-login-success', false);
 
         $foreign = $this->createBuildingGraph();
         $accessible = $this->app
@@ -272,7 +278,13 @@ final class SelfRegistrationWebTest extends TestCase
         $this->assertDatabaseCount('complexes', 0);
         $this->assertDatabaseCount('buildings', 0);
 
-        $this->get('/portal/provider')->assertOk();
+        $this->get('/portal/provider')
+            ->assertOk()
+            ->assertSee('حساب شما با موفقیت ساخته شد')
+            ->assertSee('data-login-success', false);
+        $this->get('/portal/provider')
+            ->assertOk()
+            ->assertDontSee('data-login-success', false);
         $this->get('/management')
             ->assertRedirect('/management/login');
     }

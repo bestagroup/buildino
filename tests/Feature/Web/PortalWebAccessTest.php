@@ -64,7 +64,8 @@ class PortalWebAccessTest extends TestCase
         )
             ->assertRedirect(
                 '/portal'
-            );
+            )
+            ->assertSessionHas('buildino.login_success', true);
 
         $this->get(
             '/portal/resident'

@@ -20,6 +20,8 @@ final class PortalDashboardController extends Controller
                 $request->user()
             );
 
+        $request->session()->keep('buildino.login_success');
+
         return redirect()
             ->route(
                 "portal.{$area}.dashboard"

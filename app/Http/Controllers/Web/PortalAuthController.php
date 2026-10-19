@@ -174,6 +174,8 @@ final class PortalAuthController extends Controller
             'last_login_ip' => $request->ip(),
         ])->save();
 
+        $request->session()->flash('buildino.login_success', true);
+
         return redirect()
             ->intended(
                 route(
@@ -239,6 +241,8 @@ final class PortalAuthController extends Controller
 
         $request->session()->forget($sessionKey);
         $otp->login($request, $user);
+
+        $request->session()->flash('buildino.login_success', true);
 
         return redirect()->intended(
             route('portal.dashboard')

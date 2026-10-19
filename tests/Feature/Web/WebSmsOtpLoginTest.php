@@ -129,7 +129,7 @@ final class WebSmsOtpLoginTest extends TestCase
             ]
         )->assertRedirect(
             route('management.dashboard')
-        );
+        )->assertSessionHas('buildino.login_success', true);
 
         $this->assertAuthenticatedAs($user);
         $this->assertNotNull(
@@ -240,13 +240,21 @@ final class WebSmsOtpLoginTest extends TestCase
             'auth_method' => 'otp',
         ])->assertRedirect(
             route('portal.dashboard')
-        );
+        )->assertSessionHas('buildino.login_success', true);
 
         $this->assertAuthenticatedAs($user);
         $this->get('/portal')
             ->assertRedirect(
                 route("portal.{$expectedArea}.dashboard")
-            );
+            )
+            ->assertSessionHas('buildino.login_success', true);
+
+        $this->get(route("portal.{$expectedArea}.dashboard"))
+            ->assertOk()
+            ->assertSee('data-login-success', false);
+        $this->get(route("portal.{$expectedArea}.dashboard"))
+            ->assertOk()
+            ->assertDontSee('data-login-success', false);
     }
 
     public static function portalPersonaProvider(): array
@@ -327,12 +335,13 @@ final class WebSmsOtpLoginTest extends TestCase
         $this->post('/management/login/otp/request', [
             'mobile' => $user->mobile,
             'auth_method' => 'otp',
-        ])->assertRedirect('/management/login');
+        ])->assertRedirect('/management/login')->assertSessionMissing('buildino.login_success');
 
         $this->post('/management/login/otp/verify', [
             'code' => '000000',
             'auth_method' => 'otp',
-        ])->assertSessionHasErrors('code');
+        ])->assertSessionHasErrors('code')
+            ->assertSessionMissing('buildino.login_success');
 
         $this->assertGuest();
         $this->assertNull(
