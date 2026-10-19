@@ -55,7 +55,7 @@ class ScopedUserManagementWebTest extends TestCase
 
             $this->get('/management/operations/users')
                 ->assertOk()
-                ->assertSee('ثبت رکورد جدید');
+                ->assertSee('افزودن کاربر');
 
             $response = $this->postJson(
                 '/management/data/users',

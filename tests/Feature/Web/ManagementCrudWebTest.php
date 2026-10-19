@@ -25,7 +25,7 @@ class ManagementCrudWebTest extends TestCase
         );
     }
 
-    public function test_global_manager_can_view_operations_catalog_and_complex_form_page(): void
+    public function test_global_manager_can_view_operations_catalog_and_complex_resource_page(): void
     {
         $user =
             $this->createManagementUser();
@@ -56,11 +56,10 @@ class ManagementCrudWebTest extends TestCase
             '/management/operations/complexes'
         )
             ->assertOk()
-            ->assertSee(
-                'مجتمع‌ها'
-            )
-            ->assertSee(
-                'ثبت رکورد جدید'
+            ->assertInertia(
+                fn (Assert $page): Assert => $page
+                    ->component('management/operations/Resource')
+                    ->where('resourceKey', 'complexes')
             );
 
         $this->get(

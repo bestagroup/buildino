@@ -21,7 +21,7 @@ class ManagementPasswordResetWebTest extends TestCase
         )
             ->assertOk()
             ->assertSee(
-                'رمز عبور را فراموش کرده‌اید؟'
+                'فراموشی رمز عبور؟'
             )
             ->assertSee(
                 route(

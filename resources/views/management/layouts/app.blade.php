@@ -9,47 +9,25 @@
 
     <title>@yield('title', 'پنل مدیریتی Buildino')</title>
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-fonts.css') }}"
-    >
+    <link rel="stylesheet" href="{{ asset('css/buildino-fonts.css') }}">
 
-    <link
-        rel="stylesheet"
-        href="{{ config('management_ui.libraries.bootstrap.css') }}"
-        crossorigin="anonymous"
-    >
+    <link rel="stylesheet" href="{{ config('management_ui.libraries.bootstrap.css') }}" crossorigin="anonymous">
 
-    <link
-        rel="stylesheet"
-        href="{{ config('management_ui.libraries.sweetalert2.css') }}"
-    >
+    <link rel="stylesheet" href="{{ config('management_ui.libraries.sweetalert2.css') }}">
 
     @vite('resources/js/app.js')
 
     @stack('head')
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-datatables.css') }}"
-    >
+    <link rel="stylesheet" href="{{ asset('css/buildino-datatables.css') }}">
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-foundation.css') }}"
-    >
+    <link rel="stylesheet" href="{{ asset('css/buildino-foundation.css') }}">
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-management.css') }}"
-    >
+    <link rel="stylesheet" href="{{ asset('css/buildino-management.css') }}">
 
     @stack('styles')
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-design-system.css') }}"
-    >
+    <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
 </head>
 
@@ -816,12 +794,7 @@
     <main class="main-area" id="mainContent" tabindex="-1">
         <header class="topbar">
             <div class="topbar__start">
-                <button
-                    type="button"
-                    class="icon-button mobile-menu"
-                    id="sidebarToggle"
-                    aria-label="نمایش منو"
-                >
+                <button type="button" class="icon-button mobile-menu" id="sidebarToggle" aria-label="نمایش منو">
                     @include(
                         'management.partials.icon',
                         ['name' => 'menu']
@@ -829,23 +802,24 @@
                 </button>
 
                 <div class="page-heading">
-                    <span class="page-heading__eyebrow">
-                        مدیریت BUILDINO
-                    </span>
+{{--                    <span class="page-heading__eyebrow">--}}
+{{--                        مدیریت BUILDINO--}}
+{{--                    </span>--}}
 
                     <h1>
-                        @yield(
-                            'page-title',
-                            'پنل مدیریتی'
-                        )
+                        بیلدینو سامانه مدیریت هوشمند ساختمان
+{{--                        @yield(--}}
+{{--                            'page-title',--}}
+{{--                            'پنل مدیریتی'--}}
+{{--                        )--}}
                     </h1>
 
-                    <p>
-                        @yield(
-                            'page-subtitle',
-                            'مدیریت و پایش سامانه Buildino'
-                        )
-                    </p>
+{{--                    <p>--}}
+{{--                        @yield(--}}
+{{--                            'page-subtitle',--}}
+{{--                            'مدیریت و پایش سامانه Buildino'--}}
+{{--                        )--}}
+{{--                    </p>--}}
                 </div>
             </div>
 
@@ -1195,56 +1169,56 @@
                     </div>
                 </div>
 
-                @if ($quickCreate->isNotEmpty())
-                    <div class="topbar-menu" data-popover>
-                        <button
-                            type="button"
-                            class="quick-create-button"
-                            data-popover-trigger
-                        >
-                            @include(
-                                'management.partials.icon',
-                                [
-                                    'name' => 'plus',
-                                    'size' => 17,
-                                ]
-                            )
-                            <span>ثبت سریع</span>
-                        </button>
+{{--                @if ($quickCreate->isNotEmpty())--}}
+{{--                    <div class="topbar-menu" data-popover>--}}
+{{--                        <button--}}
+{{--                            type="button"--}}
+{{--                            class="quick-create-button"--}}
+{{--                            data-popover-trigger--}}
+{{--                        >--}}
+{{--                            @include(--}}
+{{--                                'management.partials.icon',--}}
+{{--                                [--}}
+{{--                                    'name' => 'plus',--}}
+{{--                                    'size' => 17,--}}
+{{--                                ]--}}
+{{--                            )--}}
+{{--                            <span>ثبت سریع</span>--}}
+{{--                        </button>--}}
 
-                        <div
-                            class="popover-menu popover-menu--quick"
-                            data-popover-menu
-                        >
-                            <div class="popover-menu__heading">
-                                ثبت رکورد جدید
-                            </div>
+{{--                        <div--}}
+{{--                            class="popover-menu popover-menu--quick"--}}
+{{--                            data-popover-menu--}}
+{{--                        >--}}
+{{--                            <div class="popover-menu__heading">--}}
+{{--                                ثبت رکورد جدید--}}
+{{--                            </div>--}}
 
-                            @foreach ($quickCreate as $key)
-                                @php
-                                    $item =
-                                        $visibleResources[$key];
-                                @endphp
+{{--                            @foreach ($quickCreate as $key)--}}
+{{--                                @php--}}
+{{--                                    $item =--}}
+{{--                                        $visibleResources[$key];--}}
+{{--                                @endphp--}}
 
-                                <a
-                                    href="{{
-                                        route(
-                                            'management.operations.show',
-                                            $key
-                                        )
-                                    }}?create=1"
-                                >
-                                    <span>
-                                        {{ $item['title'] }}
-                                    </span>
-                                    <small>
-                                        {{ $item['description'] ?? '' }}
-                                    </small>
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
+{{--                                <a--}}
+{{--                                    href="{{--}}
+{{--                                        route(--}}
+{{--                                            'management.operations.show',--}}
+{{--                                            $key--}}
+{{--                                        )--}}
+{{--                                    }}?create=1"--}}
+{{--                                >--}}
+{{--                                    <span>--}}
+{{--                                        {{ $item['title'] }}--}}
+{{--                                    </span>--}}
+{{--                                    <small>--}}
+{{--                                        {{ $item['description'] ?? '' }}--}}
+{{--                                    </small>--}}
+{{--                                </a>--}}
+{{--                            @endforeach--}}
+{{--                        </div>--}}
+{{--                    </div>--}}
+{{--                @endif--}}
 
                 <button
                     type="button"

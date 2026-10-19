@@ -447,7 +447,7 @@ class RoleMatrixAccessScenarioTest extends TestCase
         )
             ->assertOk()
             ->assertSee('کاربران')
-            ->assertSee('ثبت رکورد جدید');
+            ->assertSee('افزودن کاربر');
 
         $this->get(
             '/management/operations/roles'

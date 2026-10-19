@@ -9,29 +9,13 @@
 
     <title>ساخت حساب Buildino</title>
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-fonts.css') }}"
-    >
-    <link
-        rel="stylesheet"
-        href="{{ config('management_ui.libraries.bootstrap.css') }}"
-        crossorigin="anonymous"
-    >
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-foundation.css') }}"
-    >
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-management.css') }}"
-    >
+    <link rel="stylesheet" href="{{ asset('css/buildino-fonts.css') }}">
+    <link rel="stylesheet" href="{{ config('management_ui.libraries.bootstrap.css') }}" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ asset('css/buildino-foundation.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-management.css') }}">
 
     @vite('resources/js/app.js')
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/buildino-design-system.css') }}"
-    >
+    <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-login.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-registration.css') }}">
 </head>
@@ -56,7 +40,7 @@
                     <span class="eyebrow">ایجاد حساب جدید</span>
                     <h2>به Buildino بپیوندید</h2>
                     <p>
-                        در چهار مرحله اطلاعات حساب را تکمیل کنید؛ سپس شماره موبایل شما تأیید می‌شود.
+                        در چهار مرحله اطلاعات حساب را تکمیل کنید.
                     </p>
                 </div>
 
@@ -66,7 +50,7 @@
                 </div>
             </div>
 
-            <nav class="registration-progress" aria-label="مراحل ثبت‌نام" data-registration-progress>
+            <nav class="registration-progress" aria-label="مراحل ثبت ‌نام" data-registration-progress>
                 <ol>
                     @foreach (['نوع حساب', 'مشخصات فردی', 'رمز عبور', 'فضای کار و نشانی'] as $stepTitle)
                         <li @if ($loop->first) aria-current="step" @endif>
@@ -84,7 +68,7 @@
 
             @if ($errors->any())
                 <div class="alert alert--danger login-alert registration-alert">
-                    <strong>ثبت‌نام تکمیل نشد</strong>
+                    <strong>ثبت‌ نام تکمیل نشد</strong>
 
                     @foreach ($errors->all() as $error)
                         <span>{{ $error }}</span>
@@ -92,13 +76,7 @@
                 </div>
             @endif
 
-            <form
-                method="POST"
-                action="{{ route('register.store') }}"
-                class="registration-form"
-                data-registration-form
-                data-buildino-submit
-            >
+            <form method="POST" action="{{ route('register.store') }}" class="registration-form" data-registration-form data-buildino-submit>
                 @csrf
 
                 <section class="registration-wizard-panel" data-registration-step="0" aria-labelledby="registration-account-heading">
@@ -107,26 +85,13 @@
                         <p>حسابی را انتخاب کنید که با فعالیت شما در بیلدینو مطابقت دارد.</p>
                     </div>
                     <label class="registration-field registration-field--wide">
-                        <span>نوع حساب</span>
-
-                        <select
-                            name="persona"
-                            required
-                            data-registration-persona
-                            data-placeholder="نوع حساب را انتخاب کنید"
-                        >
+                        <select name="persona" required data-registration-persona data-placeholder="نوع حساب را انتخاب کنید">
                             @foreach ($personas as $name => $persona)
-                                <option
-                                    value="{{ $name }}"
-                                    data-kind="{{ $persona['kind'] }}"
-                                    data-description="{{ $persona['description'] }}"
-                                    @selected($activePersona === $name)
-                                >
+                                <option value="{{ $name }}" data-kind="{{ $persona['kind'] }}" data-description="{{ $persona['description'] }}">
                                     {{ $persona['label'] }}
                                 </option>
                             @endforeach
                         </select>
-
                         <small data-persona-description>
                             {{ $personas[$activePersona]['description'] ?? '' }}
                         </small>
@@ -228,13 +193,9 @@
                 <section class="registration-wizard-panel" data-registration-step="3" aria-labelledby="registration-context-heading">
                     <div class="registration-wizard-heading">
                         <h3 id="registration-context-heading" tabindex="-1" data-registration-context-heading>فضای کار اولیه و نشانی</h3>
-                        <p data-registration-context-description>اطلاعات مجتمع و ساختمان اولیه را وارد کنید؛ نشانی و کد پستی اختیاری‌اند.</p>
+                        <p data-registration-context-description>اطلاعات اولیه مجتمع و ساختمان را وارد کنید؛ نشانی و کد پستی اختیاری‌اند.</p>
                     </div>
-                    <section
-                        class="registration-context registration-field--wide"
-                        data-registration-section="management"
-                        @hidden($activeKind !== 'management')
-                    >
+                    <section class="registration-context registration-field--wide" data-registration-section="management" >
                         <div class="registration-context__heading">
                             <div>
                                 @include(
@@ -339,7 +300,6 @@
                     <section
                         class="registration-context registration-context--invite registration-field--wide"
                         data-registration-section="resident"
-                        @hidden($activeKind !== 'resident')
                     >
                         <div class="registration-context__heading">
                             <div>
@@ -373,7 +333,6 @@
                     <section
                         class="registration-context registration-context--provider registration-field--wide"
                         data-registration-section="provider"
-                        @hidden($activeKind !== 'provider')
                     >
                         <div class="registration-context__heading">
                             <div>
@@ -414,11 +373,7 @@
                         <span>ادامه</span>
                         @include('management.partials.icon', ['name' => 'arrow-left', 'size' => 18])
                     </button>
-                    <button
-                        class="login-submit registration-submit"
-                        type="submit"
-                        data-registration-submit
-                    >
+                    <button class="login-submit registration-submit" type="submit" data-registration-submit>
                         <span class="registration-button-fill" aria-hidden="true"></span>
                         <span>ارسال کد تأیید و ادامه</span>
 
@@ -440,14 +395,8 @@
         </div>
     </main>
 </div>
-
-<script
-    src="{{ asset('js/buildino-foundation.js') }}"
-></script>
-<script
-    src="{{ asset('js/buildino-registration.js') }}"
-    defer
-></script>
+<script src="{{ asset('js/buildino-foundation.js') }}"></script>
+<script src="{{ asset('js/buildino-registration.js') }}" defer></script>
 @include('shared.core-auth')
 </body>
 </html>
