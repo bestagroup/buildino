@@ -43,6 +43,8 @@ final class BuildingSetupWebTest extends TestCase
         $other = $this->createBuildingGraph();
         $user = $this->assigned('building_manager', $owned['building']);
         $this->actingAs($user)->get('/management/building-setup?building_id='.$other['building']->id)->assertOk()
+            ->assertSee('data-setup-selected-building', false)
+            ->assertSee($owned['building']->title)
             ->assertViewHas('setupConfig', function (array $config) use ($owned, $other): bool {
                 $ids = $config['buildings']->pluck('id')->all();
 

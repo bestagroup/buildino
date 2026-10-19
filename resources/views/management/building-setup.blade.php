@@ -12,7 +12,7 @@
 <div class="building-setup" data-building-setup>
     <header class="setup-intro">
         <div class="setup-intro__icon">@include('management.partials.icon', ['name' => 'building', 'size' => 28])</div>
-        <div><span class="eyebrow">از ساختمان تا اولین واحد</span><h2>ساختمان‌تان را آماده کنید</h2><p>تعداد طبقات و واحدها را مشخص کنید؛ فرم بقیه مسیر را برایتان آماده می‌کند.</p></div>
+        <div><span class="eyebrow">راه‌اندازی در ۴ گام</span><h2>ساختمان‌تان را آماده کنید</h2><p>ساختمان را انتخاب کنید، تعداد طبقات و واحدها را بگویید و نتیجه را تأیید کنید.</p></div>
     </header>
 
     <div class="setup-resume" data-setup-resume hidden><span>پیش‌نویس راه‌اندازی قبلی شما بازیابی شد.</span><button type="button" data-setup-reset>شروع راه‌اندازی تازه</button></div>
@@ -25,14 +25,21 @@
     <form class="setup-card" data-setup-form novalidate>
         <div class="setup-error" role="alert" data-setup-error hidden></div>
         <section data-setup-step="0" aria-labelledby="setup-building-title">
-            <div class="setup-section-heading"><span>گام اول</span><h3 id="setup-building-title" tabindex="-1">کدام ساختمان را راه‌اندازی می‌کنید؟</h3><p>ساختمان ساخته‌شده هنگام ثبت‌نام را انتخاب کنید یا ساختمان جدیدی اضافه کنید.</p></div>
-            <div class="setup-choice-grid" role="group" aria-label="روش شروع">
-                <label class="setup-choice"><input type="radio" name="mode" value="existing" data-setup-field="mode"><span><strong>تکمیل ساختمان موجود</strong><small>ادامه اطلاعات ساختمان خودم</small></span></label>
-                <label class="setup-choice" @if (! $setupConfig['canCreateBuilding']) hidden @endif><input type="radio" name="mode" value="new" data-setup-field="mode"><span><strong>ساختمان جدید</strong><small>ساخت یک فضای جدید برای مدیریت</small></span></label>
+            <div class="setup-section-heading"><span>گام اول</span><h3 id="setup-building-title" tabindex="-1">از کدام ساختمان شروع می‌کنید؟</h3><p>اگر ساختمان‌تان در فهرست است، همان را ادامه دهید. برای ساختمان تازه، گزینه دوم را بزنید.</p></div>
+            <div class="setup-choice-grid" role="group" aria-label="روش شروع" @if (! $setupConfig['canCreateBuilding']) hidden @endif>
+                <label class="setup-choice"><input type="radio" name="mode" value="existing" data-setup-field="mode"><span><strong>ساختمان موجود را تکمیل می‌کنم</strong><small>بلوک و واحد به آن اضافه می‌کنم</small></span></label>
+                <label class="setup-choice" @if (! $setupConfig['canCreateBuilding']) hidden @endif><input type="radio" name="mode" value="new" data-setup-field="mode"><span><strong>ساختمان تازه‌ای دارم</strong><small>ساختمان دیگری راه‌اندازی می‌کنم</small></span></label>
             </div>
             <div data-setup-existing>
-                <label class="setup-field"><span>ساختمان شما</span><select name="buildingId" data-setup-field="buildingId" data-required="1" data-placeholder="ساختمان را انتخاب کنید"><option value="">ساختمان را انتخاب کنید</option>@foreach ($setupConfig['buildings'] as $building)<option value="{{ $building['id'] }}">{{ $building['title'] }}@if ($building['complexTitle']) — {{ $building['complexTitle'] }}@endif</option>@endforeach</select></label>
-                <p class="setup-note">بلوک‌ها، طبقات و واحدهای ثبت‌شده با علامت «ثبت‌شده» مشخص می‌شوند؛ می‌توانید موارد جدید را به آن‌ها اضافه کنید.</p>
+                @if ($setupConfig['buildings']->count() === 1)
+                    <div class="setup-selected-building" data-setup-selected-building>
+                        <span class="setup-selected-building__icon">@include('management.partials.icon', ['name' => 'check', 'size' => 20])</span>
+                        <span><strong>{{ $setupConfig['buildings']->first()['title'] }}</strong><small>{{ $setupConfig['buildings']->first()['complexTitle'] ?: 'ساختمان انتخاب‌شده شما' }}</small></span>
+                        <span class="setup-selected-building__status">انتخاب شد</span>
+                    </div>
+                @endif
+                <label class="setup-field" @if ($setupConfig['buildings']->count() === 1) hidden @endif><span>ساختمان شما</span><select name="buildingId" data-setup-field="buildingId" data-required="1" data-placeholder="ساختمان را انتخاب کنید"><option value="">ساختمان را انتخاب کنید</option>@foreach ($setupConfig['buildings'] as $building)<option value="{{ $building['id'] }}">{{ $building['title'] }}@if ($building['complexTitle']) — {{ $building['complexTitle'] }}@endif</option>@endforeach</select></label>
+                <p class="setup-note">اطلاعاتی که قبلاً ثبت کرده‌اید حفظ می‌شود؛ در ادامه فقط موارد تازه را اضافه می‌کنید.</p>
                 @if ($setupConfig['buildings']->isEmpty())<p class="setup-note">هنوز ساختمانی برای انتخاب ندارید. از گزینه ساختمان جدید شروع کنید.</p>@endif
             </div>
             <div class="setup-fields" data-setup-new hidden>
@@ -47,20 +54,19 @@
                     <label class="setup-field"><span>استان</span><select name="provinceId" data-setup-field="provinceId" data-required="1" data-placeholder="انتخاب استان"><option value="">انتخاب استان</option>@foreach ($setupConfig['locations'] as $province)<option value="{{ $province['id'] }}">{{ $province['name'] }}</option>@endforeach</select></label>
                     <label class="setup-field"><span>شهر</span><select name="cityId" data-setup-field="cityId" data-required="1" data-placeholder="انتخاب شهر"><option value="">ابتدا استان را انتخاب کنید</option></select></label>
                 </div>
-                <label class="setup-field setup-wide"><span>نشانی <small>اختیاری</small></span><textarea name="address" data-setup-field="address" rows="2" maxlength="2000" placeholder="خیابان، کوچه و پلاک" autocomplete="street-address"></textarea></label>
-                <label class="setup-field"><span>کد پستی <small>اختیاری</small></span><input type="text" name="postalCode" data-setup-field="postalCode" maxlength="20" inputmode="numeric" dir="ltr" autocomplete="postal-code"></label>
-                <details class="setup-more setup-wide"><summary>تعداد پارکینگ و انباری (اختیاری)</summary><div class="setup-fields"><label class="setup-field"><span>تعداد پارکینگ</span><input type="number" name="parkingCount" data-setup-field="parkingCount" min="0" step="1"></label><label class="setup-field"><span>تعداد انباری</span><input type="number" name="storageCount" data-setup-field="storageCount" min="0" step="1"></label></div><p class="setup-note">این اعداد تعداد امکانات ساختمان‌اند؛ تخصیص آن‌ها به واحدها در این فرم انجام نمی‌شود.</p></details>
+                <details class="setup-more setup-wide" data-setup-optional><summary>نشانی، کد پستی و امکانات <small>اختیاری</small></summary><div class="setup-fields"><label class="setup-field setup-wide"><span>نشانی</span><textarea name="address" data-setup-field="address" rows="2" maxlength="2000" placeholder="خیابان، کوچه و پلاک" autocomplete="street-address"></textarea></label><label class="setup-field"><span>کد پستی</span><input type="text" name="postalCode" data-setup-field="postalCode" maxlength="20" inputmode="numeric" dir="ltr" autocomplete="postal-code"></label><label class="setup-field"><span>تعداد پارکینگ</span><input type="number" name="parkingCount" data-setup-field="parkingCount" min="0" step="1"></label><label class="setup-field"><span>تعداد انباری</span><input type="number" name="storageCount" data-setup-field="storageCount" min="0" step="1"></label></div><p class="setup-note">پارکینگ و انباری فقط به‌صورت تعداد ساختمان ثبت می‌شوند.</p></details>
             </div>
         </section>
 
         <section data-setup-step="1" aria-labelledby="setup-floors-title" hidden>
-            <div class="setup-section-heading"><span>گام دوم</span><h3 id="setup-floors-title" tabindex="-1">ساختمان چند طبقه دارد؟</h3><p>اگر ساختمان بلوک‌بندی ندارد، همان «بلوک اصلی» کافی است. تعداد واحدهای معمول هر طبقه را هم مشخص کنید.</p></div>
+            <div class="setup-section-heading"><span>گام دوم</span><h3 id="setup-floors-title" tabindex="-1">چند طبقه و چند واحد در هر طبقه دارید؟</h3><p>مقدارهای پیشنهادی را بررسی کنید. اگر ساختمان بلوک‌بندی ندارد، همان «بلوک اصلی» کافی است.</p></div>
+            <div class="setup-structure-summary" data-setup-structure-summary aria-live="polite"></div>
             <div data-setup-blocks></div>
-            <button type="button" class="setup-button setup-button--soft" data-setup-add-block>+ افزودن بلوک دیگر</button>
+            <button type="button" class="setup-button setup-button--soft" data-setup-add-block>+ ساختمان من بلوک دیگری هم دارد</button>
         </section>
 
         <section data-setup-step="2" aria-labelledby="setup-units-title" hidden>
-            <div class="setup-section-heading"><span>گام سوم</span><h3 id="setup-units-title" tabindex="-1">واحدها را بررسی کنید</h3><p>شماره واحدها خودکار پیشنهاد شده است. شماره، متراژ و تعداد واحدهای هر طبقه را می‌توانید تغییر دهید.</p></div>
+            <div class="setup-section-heading"><span>گام سوم</span><h3 id="setup-units-title" tabindex="-1">واحدهای پیشنهادی را بررسی کنید</h3><p>واحدها در پیش‌نویس آماده‌اند. اگر شماره‌ها درست هستند، مستقیم به بازبینی بروید؛ برای اصلاح هر طبقه، آن را باز کنید.</p></div>
             <div class="setup-totals" data-setup-totals></div>
             <div data-setup-units></div>
         </section>

@@ -93,15 +93,25 @@
         const host = query('[data-setup-blocks]'); window.BuildinoSelect2?.destroy(host);
         host.innerHTML = draft.blocks.map((block, index) => `<article class="setup-block" data-block="${index}">
             <div class="setup-block__header"><h4>${esc(block.title)}${block.existing ? '<span class="setup-badge">ثبت‌شده</span>' : ''}</h4>${!block.existing && draft.blocks.length > 1 ? '<button type="button" class="setup-button setup-button--danger" data-block-remove>حذف از پیش‌نویس</button>' : ''}</div>
+            <p class="setup-block__preview">${fa(block.floors.length)} طبقه · ${fa(block.floors.reduce((sum, floor) => sum + floor.units.length, 0))} واحد در این بلوک</p>
             <div class="setup-fields">
-                <label class="setup-field setup-wide"><span>نام بلوک</span><input type="text" data-block-field="title" value="${esc(block.title)}" maxlength="255" ${block.existing ? 'readonly' : ''}></label>
-                <div class="setup-field"><span>تعداد طبقات این بلوک</span>${counter('data-block-field="floorCount"', block.floors.length || 1, Math.max(1, block.floors.filter((floor) => floor.existing).length), 'تعداد طبقات')}</div>
-                <div class="setup-field"><span>واحدهای معمول در هر طبقه</span>${counter('data-block-field="unitsPerFloor"', block.unitsPerFloor, 0, 'واحدهای هر طبقه')}</div>
-                <label class="setup-field"><span>شروع طبقات از</span><select data-block-field="startFloor" data-required="1" ${block.floors.some((floor) => floor.existing) ? 'disabled' : ''}>${[...new Set([-3,-2,-1,0,1,Number(block.startFloor)])].sort((a,b) => a-b).map((number) => `<option value="${number}" ${Number(block.startFloor) === number ? 'selected' : ''}>${esc(engine.labelForFloor(number))}</option>`).join('')}</select></label>
-                <label class="setup-field"><span>کاربری واحدهای جدید</span><select data-block-field="usage" data-required="1">${Object.entries({ residential: 'مسکونی', commercial: 'تجاری', office: 'اداری', other: 'سایر' }).map(([value,label]) => `<option value="${value}" ${block.usage === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
-                <label class="setup-field"><span>متراژ معمول واحدها <small>اختیاری</small></span><input type="number" data-block-field="defaultArea" value="${esc(block.defaultArea)}" min="0" step="0.01" placeholder="مثلاً ۱۰۰ مترمربع"></label>
-                <label class="setup-field"><span>تعداد اتاق معمول <small>اختیاری</small></span><input type="number" data-block-field="defaultBedrooms" value="${esc(block.defaultBedrooms)}" min="0" max="50" step="1"></label>
-            </div><p class="setup-note">${block.existing ? 'طبقات و واحدهای ثبت‌شده حفظ می‌شوند. تعداد واحدهای هر طبقه را در گام بعد می‌توانید جداگانه تنظیم کنید.' : 'طبقات و واحدها با همین الگو آماده می‌شوند؛ در گام بعد جزئیات هر طبقه را اصلاح کنید.'}</p></article>`).join('');
+                <div class="setup-field"><span>تعداد طبقات</span>${counter('data-block-field="floorCount"', block.floors.length || 1, Math.max(1, block.floors.filter((floor) => floor.existing).length), 'تعداد طبقات')}</div>
+                <div class="setup-field"><span>واحد در هر طبقه</span>${counter('data-block-field="unitsPerFloor"', block.unitsPerFloor, 0, 'واحدهای هر طبقه')}</div>
+            </div>
+            <details class="setup-block__more" data-block-options ${block.optionsOpen ? 'open' : ''}>
+                <summary>تنظیمات بیشتر <small>نام بلوک، طبقه شروع، کاربری و مشخصات واحد</small></summary>
+                <div class="setup-fields">
+                    ${block.existing ? '' : `<label class="setup-field setup-wide"><span>نام بلوک</span><input type="text" data-block-field="title" value="${esc(block.title)}" maxlength="255"></label>`}
+                    <label class="setup-field"><span>شروع طبقات از</span><select data-block-field="startFloor" data-required="1" ${block.floors.some((floor) => floor.existing) ? 'disabled' : ''}>${[...new Set([-3,-2,-1,0,1,Number(block.startFloor)])].sort((a,b) => a-b).map((number) => `<option value="${number}" ${Number(block.startFloor) === number ? 'selected' : ''}>${esc(engine.labelForFloor(number))}</option>`).join('')}</select></label>
+                    <label class="setup-field"><span>کاربری واحدهای جدید</span><select data-block-field="usage" data-required="1">${Object.entries({ residential: 'مسکونی', commercial: 'تجاری', office: 'اداری', other: 'سایر' }).map(([value,label]) => `<option value="${value}" ${block.usage === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
+                    <label class="setup-field"><span>متراژ معمول واحدها <small>اختیاری</small></span><input type="number" data-block-field="defaultArea" value="${esc(block.defaultArea)}" min="0" step="0.01" placeholder="مثلاً ۱۰۰ مترمربع"></label>
+                    <label class="setup-field"><span>تعداد اتاق معمول <small>اختیاری</small></span><input type="number" data-block-field="defaultBedrooms" value="${esc(block.defaultBedrooms)}" min="0" max="50" step="1"></label>
+                </div>
+            </details>
+            <p class="setup-note">${block.existing ? 'طبقات و واحدهای ثبت‌شده محفوظ‌اند. در گام بعد می‌توانید واحدهای تازه را اصلاح کنید.' : 'شماره طبقات و واحدها خودکار پیشنهاد می‌شود و در گام بعد قابل اصلاح است.'}</p>
+        </article>`).join('');
+        const totals = engine.totals(draft.blocks);
+        query('[data-setup-structure-summary]').textContent = `پیش‌نمایش ساختمان: ${fa(totals.blocks)} بلوک، ${fa(totals.floors)} طبقه و ${fa(totals.units)} واحد`;
         window.BuildinoSelect2?.enhance(host);
     };
     const renderTotals = () => {
@@ -125,7 +135,7 @@
         query('[data-setup-previous]').hidden = step === 0 || draft.started;
         query('[data-setup-previous]').disabled = busy;
         query('[data-setup-next]').disabled = busy;
-        query('[data-setup-next]').textContent = step === 3 ? draft.started ? 'ادامه ثبت' : 'ثبت و راه‌اندازی' : 'ادامه';
+        query('[data-setup-next]').textContent = ['ادامه به طبقات', 'مشاهده واحدها', 'بازبینی اطلاعات', draft.started ? 'ادامه ثبت' : 'ثبت و راه‌اندازی'][step];
         query('[data-setup-step-status]').textContent = `گام ${fa(step + 1)} از ۴`;
         query('[data-setup-reset]').disabled = busy;
     };
@@ -236,6 +246,18 @@
         if (step === 1) renderBlocks(); else renderUnits();
         clearError(); persist();
     });
+    form.addEventListener('toggle', (event) => {
+        if (event.target.matches('[data-setup-optional]') && !draft.started) {
+            draft.optionalOpen = event.target.open;
+            persist();
+            return;
+        }
+        if (!event.target.matches('[data-block-options]') || draft.started) return;
+        const block = draft.blocks[Number(event.target.closest('[data-block]').dataset.block)];
+        if (!block) return;
+        block.optionsOpen = event.target.open;
+        persist();
+    }, true);
     form.addEventListener('click', (event) => {
         const counterButton = event.target.closest('[data-count-step]');
         if (counterButton && !draft.started) { const input = counterButton.parentElement.querySelector('input'); input.value = Math.max(Number(input.min || 0), Math.min(Number(input.max || 100), Number(input.value) + Number(counterButton.dataset.countStep))); input.dispatchEvent(new Event('change', { bubbles: true })); }
@@ -253,6 +275,7 @@
     const reset = () => { if (busy) return; try { sessionStorage.removeItem(key); } catch {} window.location.assign(window.location.pathname); };
     query('[data-setup-reset]').addEventListener('click', reset); query('[data-setup-another]').addEventListener('click', reset);
     for (const input of form.querySelectorAll('[data-setup-field]')) { if (input.type === 'radio') input.checked = input.value === draft.mode; else if (input.name !== 'cityId') input.value = draft[input.dataset.setupField] ?? ''; }
+    query('[data-setup-optional]').open = draft.optionalOpen ?? Boolean(draft.address || draft.postalCode || Number(draft.parkingCount) || Number(draft.storageCount));
     syncBasics(); syncLocations(); showStep(step, false);
     query('[data-setup-resume]').hidden = !restored;
     if (draft.started) query('[data-setup-resume]').hidden = false;
