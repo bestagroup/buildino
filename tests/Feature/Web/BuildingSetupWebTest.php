@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\UserRoleAssignment;
 use Database\Seeders\RoleMatrixSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Tests\Support\CreatesBuildingDomainData;
 use Tests\TestCase;
 
@@ -19,6 +21,25 @@ final class BuildingSetupWebTest extends TestCase
     {
         parent::setUp();
         $this->seed(RoleMatrixSeeder::class);
+    }
+
+    public function test_same_host_management_api_request_is_treated_as_stateful(): void
+    {
+        $request = Request::create(
+            'https://panel.buildino.ir/api/v1/buildings/1/blocks',
+            'GET',
+            [],
+            [],
+            [],
+            [
+                'HTTP_REFERER' =>
+                    'https://panel.buildino.ir/management/building-setup',
+            ]
+        );
+
+        $this->assertTrue(
+            EnsureFrontendRequestsAreStateful::fromFrontend($request)
+        );
     }
 
     public function test_guest_cannot_open_building_setup(): void
