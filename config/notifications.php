@@ -32,11 +32,26 @@ return [
     'http_sms' => [
         'endpoint' => env('SMS_HTTP_ENDPOINT'),
         'token' => env('SMS_HTTP_TOKEN'),
-        'token_header' => env('SMS_HTTP_TOKEN_HEADER', 'apikey'),
-        'token_prefix' => env('SMS_HTTP_TOKEN_PREFIX', ''),
-        'template' => env('SMS_HTTP_TEMPLATE'),
-        'timeout' => (int) env('SMS_HTTP_TIMEOUT', 30),
+        'token_header' => env('SMS_HTTP_TOKEN_HEADER', 'Authorization'),
+        'token_prefix' => env('SMS_HTTP_TOKEN_PREFIX', 'Bearer '),
+        'sender' => env('SMS_HTTP_SENDER'),
+        'timeout' => (int) env('SMS_HTTP_TIMEOUT', 15),
         'message_id_path' => env('SMS_HTTP_MESSAGE_ID_PATH', 'id'),
+    ],
+
+    'ghasedak' => [
+        'endpoint' => env(
+            'GHASEDAK_ENDPOINT',
+            'https://api.ghasedaksms.com/v2/send/verify'
+        ),
+        'api_key' => env('GHASEDAK_API_KEY'),
+        'template' => env('GHASEDAK_TEMPLATE'),
+        'type' => (int) env('GHASEDAK_TYPE', 1),
+        'timeout' => (int) env('GHASEDAK_TIMEOUT', 30),
+        'message_id_path' => env(
+            'GHASEDAK_MESSAGE_ID_PATH',
+            'result.items.0.messageid'
+        ),
     ],
 
     'http_push' => [
