@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Contracts\Notifications\PushSender;
 use App\Contracts\Notifications\SmsSender;
 use App\Services\Notifications\FcmV1PushSender;
+use App\Services\Notifications\GhasedakSmsSender;
 use App\Services\Notifications\HttpPushSender;
 use App\Services\Notifications\HttpSmsSender;
 use App\Services\Notifications\LogPushSender;
@@ -21,6 +22,7 @@ class NotificationServiceProvider extends ServiceProvider
             fn () => match ((string) config('notifications.sms_provider', 'log')) {
                 'log' => new LogSmsSender(),
                 'http' => new HttpSmsSender(),
+                'ghasedak' => new GhasedakSmsSender(),
                 default => throw new InvalidArgumentException(
                     'Unsupported SMS provider.'
                 ),
