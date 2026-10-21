@@ -32,10 +32,10 @@ return [
     'http_sms' => [
         'endpoint' => env('SMS_HTTP_ENDPOINT'),
         'token' => env('SMS_HTTP_TOKEN'),
-        'token_header' => env('SMS_HTTP_TOKEN_HEADER', 'Authorization'),
-        'token_prefix' => env('SMS_HTTP_TOKEN_PREFIX', 'Bearer '),
-        'sender' => env('SMS_HTTP_SENDER'),
-        'timeout' => (int) env('SMS_HTTP_TIMEOUT', 15),
+        'token_header' => env('SMS_HTTP_TOKEN_HEADER', 'apikey'),
+        'token_prefix' => env('SMS_HTTP_TOKEN_PREFIX', ''),
+        'template' => env('SMS_HTTP_TEMPLATE'),
+        'timeout' => (int) env('SMS_HTTP_TIMEOUT', 30),
         'message_id_path' => env('SMS_HTTP_MESSAGE_ID_PATH', 'id'),
     ],
 

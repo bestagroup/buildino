@@ -24,8 +24,8 @@ final class HttpSmsSender implements SmsSender
         }
 
         $request = Http::acceptJson()
-            ->asJson()
-            ->timeout((int) config('notifications.http_sms.timeout', 15));
+            ->asForm()
+            ->timeout((int) config('notifications.http_sms.timeout', 30));
 
         $token = (string) config('notifications.http_sms.token');
         $header = (string) config('notifications.http_sms.token_header', 'Authorization');
@@ -36,11 +36,11 @@ final class HttpSmsSender implements SmsSender
                 $header => $prefix.$token,
             ]);
         }
-
         $response = $request->post($endpoint, [
-            'to' => $mobile,
-            'message' => $message,
-            'sender' => config('notifications.http_sms.sender'),
+            'type' => 1,
+            'param1' => $message,
+            'receptor' => $mobile,
+            'template' => config('notifications.http_sms.template'),
         ]);
 
         if (! $response->successful()) {
