@@ -726,10 +726,14 @@ class ManagementLookupController extends Controller
         $unit = Unit::query()
             ->with('floor.block.building')
             ->find($request->integer('unit_id'));
+
         $building = $unit?->floor?->block?->building;
 
         abort_unless(
             $building
+            && $buildingIds->contains(
+                (int) $building->getKey()
+            )
             && $this->permissions->allows(
                 $request->user(),
                 'unit-invitations.create',
@@ -738,15 +742,162 @@ class ManagementLookupController extends Controller
             403
         );
 
-        return $this->userLookup(
-            $request,
-            $buildingIds,
-            $platform
-        )->reject(
-            fn (array $item): bool =>
-                (int) $item['id']
-                === (int) $request->user()->getKey()
-        )->values();
+        $activeRelation = function (Builder $query): void {
+            $query
+                ->where('is_active', true)
+                ->where(function (Builder $query): void {
+                    $query
+                        ->whereNull('starts_at')
+                        ->orWhere(
+                            'starts_at',
+                            '<=',
+                            now()->toDateString()
+                        );
+                })
+                ->where(function (Builder $query): void {
+                    $query
+                        ->whereNull('ends_at')
+                        ->orWhere(
+                            'ends_at',
+                            '>=',
+                            now()->toDateString()
+                        );
+                });
+        };
+
+        $users = User::query()
+            ->whereKeyNot(
+                $request->user()->getKey()
+            )
+            ->where('is_active', true)
+            ->where('is_blocked', false)
+            ->whereNotNull('mobile')
+            ->where('mobile', '<>', '')
+            ->where(function (Builder $query) use (
+                $unit,
+                $activeRelation
+            ): void {
+                $query
+                    ->whereHas(
+                        'unitOwnershipsAsUser',
+                        function (Builder $query) use (
+                            $unit,
+                            $activeRelation
+                        ): void {
+                            $query->where(
+                                'unit_id',
+                                $unit->getKey()
+                            );
+                            $activeRelation($query);
+                        }
+                    )
+                    ->orWhereHas(
+                        'unitOccupanciesAsUser',
+                        function (Builder $query) use (
+                            $unit,
+                            $activeRelation
+                        ): void {
+                            $query->where(
+                                'unit_id',
+                                $unit->getKey()
+                            );
+                            $activeRelation($query);
+                        }
+                    );
+            })
+            ->with([
+                'unitOwnershipsAsUser' =>
+                    function ($query) use (
+                        $unit,
+                        $activeRelation
+                    ): void {
+                        $query->where(
+                            'unit_id',
+                            $unit->getKey()
+                        );
+                        $activeRelation($query);
+                    },
+                'unitOccupanciesAsUser' =>
+                    function ($query) use (
+                        $unit,
+                        $activeRelation
+                    ): void {
+                        $query->where(
+                            'unit_id',
+                            $unit->getKey()
+                        );
+                        $activeRelation($query);
+                    },
+            ])
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get([
+                'id',
+                'first_name',
+                'last_name',
+                'mobile',
+            ]);
+
+        $relationLabels = [
+            'owner' => 'مالک',
+            'tenant' => 'مستأجر',
+            'resident' => 'ساکن',
+            'family_member' => 'عضو خانواده',
+        ];
+
+        return $users
+            ->map(
+                function (User $user) use (
+                    $relationLabels
+                ): array {
+                    if (
+                        $user->unitOwnershipsAsUser
+                            ->isNotEmpty()
+                    ) {
+                        $relation = 'owner';
+                    } else {
+                        $occupancy = $user
+                            ->unitOccupanciesAsUser
+                            ->sortByDesc(
+                                fn ($item): int =>
+                                    $item->is_primary
+                                        ? 1
+                                        : 0
+                            )
+                            ->first();
+
+                        $relation = $occupancy
+                            ? (
+                                $occupancy->occupancy_type
+                                    instanceof \BackedEnum
+                                        ? $occupancy
+                                            ->occupancy_type
+                                            ->value
+                                        : (string) $occupancy
+                                            ->occupancy_type
+                            )
+                            : 'resident';
+                    }
+
+                    $name = trim(
+                        "{$user->first_name} {$user->last_name}"
+                    );
+
+                    return [
+                        'id' => $user->id,
+                        'label' => sprintf(
+                            '%s — %s — %s',
+                            $name !== ''
+                                ? $name
+                                : "کاربر #{$user->id}",
+                            $relationLabels[$relation]
+                                ?? $relation,
+                            $user->mobile
+                        ),
+                    ];
+                }
+            )
+            ->values();
     }
 
     private function globalUserAdminLookup(
