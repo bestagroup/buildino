@@ -110,6 +110,7 @@ final class UnitInvitationService
     ): array {
 
         $rawToken = $this->newRawToken();
+        $invitationCode = $this->newInvitationCode();
 
         $invitation = UnitInvitation::query()->create([
             'unit_id' => $unit->getKey(),
@@ -121,12 +122,19 @@ final class UnitInvitationService
 
             'relation_type' => $data['relation_type'],
             'channel' => $data['channel'],
-            'message' => $data['message'] ?? null,
+            'message' => trim(
+                (string) config(
+                    'unit_invitations.message',
+                    'شما برای عضویت در یک واحد در سامانه بیلدینو دعوت شده‌اید.'
+                )
+            ),
 
             /*
              * Never store the bearer token itself.
              */
             'token' => $this->hashToken($rawToken),
+            'invitation_code_hash' =>
+                $this->hashToken($invitationCode),
 
             'status' => InvitationStatus::Pending,
 
@@ -137,12 +145,14 @@ final class UnitInvitationService
 
         $this->deliver(
             $invitation,
-            $rawToken
+            $rawToken,
+            $invitationCode
         );
 
         return [
             'invitation' => $invitation->refresh(),
             'raw_token' => $rawToken,
+            'invitation_code' => $invitationCode,
         ];
     }
 
@@ -160,25 +170,30 @@ final class UnitInvitationService
         );
 
         $rawToken = $this->newRawToken();
+        $invitationCode = $this->newInvitationCode();
 
         /*
-         * Rotate the token on each resend so all previous links
+         * Rotate the token and invitation code on each resend so all previous links
          * immediately become invalid.
          */
         $invitation->update([
             'token' => $this->hashToken($rawToken),
+            'invitation_code_hash' =>
+                $this->hashToken($invitationCode),
             'status' => InvitationStatus::Pending,
             'sent_at' => null,
         ]);
 
         $this->deliver(
             $invitation,
-            $rawToken
+            $rawToken,
+            $invitationCode
         );
 
         return [
             'invitation' => $invitation->refresh(),
             'raw_token' => $rawToken,
+            'invitation_code' => $invitationCode,
         ];
     }
 
@@ -217,12 +232,19 @@ final class UnitInvitationService
         string $rawToken,
         User $user
     ): UnitInvitation {
-        $tokenHash = $this->hashToken(
+        $credentialHash = $this->hashToken(
             $rawToken
         );
 
         $invitation = UnitInvitation::query()
-            ->where('token', $tokenHash)
+            ->where(function ($query) use ($credentialHash): void {
+                $query
+                    ->where('token', $credentialHash)
+                    ->orWhere(
+                        'invitation_code_hash',
+                        $credentialHash
+                    );
+            })
             ->firstOrFail();
 
         /*
@@ -250,11 +272,18 @@ final class UnitInvitationService
         );
 
         return DB::transaction(function () use (
-            $tokenHash,
+            $credentialHash,
             $user
         ): UnitInvitation {
             $invitation = UnitInvitation::query()
-                ->where('token', $tokenHash)
+                ->where(function ($query) use ($credentialHash): void {
+                    $query
+                        ->where('token', $credentialHash)
+                        ->orWhere(
+                            'invitation_code_hash',
+                            $credentialHash
+                        );
+                })
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -359,11 +388,19 @@ final class UnitInvitationService
         string $rawToken,
         User $user
     ): UnitInvitation {
+        $credentialHash = $this->hashToken(
+            $rawToken
+        );
+
         $invitation = UnitInvitation::query()
-            ->where(
-                'token',
-                $this->hashToken($rawToken)
-            )
+            ->where(function ($query) use ($credentialHash): void {
+                $query
+                    ->where('token', $credentialHash)
+                    ->orWhere(
+                        'invitation_code_hash',
+                        $credentialHash
+                    );
+            })
             ->firstOrFail();
 
         if (
@@ -385,7 +422,8 @@ final class UnitInvitationService
 
     private function deliver(
         UnitInvitation $invitation,
-        string $rawToken
+        string $rawToken,
+        string $invitationCode
     ): void {
         $link = $this->acceptanceLink(
             $rawToken
@@ -399,18 +437,24 @@ final class UnitInvitationService
             $invitation->unit?->unit_number ?? $invitation->unit_id,
             $link
         );
-        $message = $invitationText !== ''
-            ? $invitationText."\n\n".$actionText
-            : $actionText;
 
         if (
             $invitation->channel === InvitationChannel::Sms
         ) {
+            /*
+             * Ghasedak verify templates receive this value as param1.
+             * Sending only the short code avoids leaking the long bearer
+             * token and lets residents type the code during registration.
+             */
             $this->sms->send(
                 (string) $invitation->mobile,
-                $message
+                $invitationCode
             );
         } else {
+            $message = $invitationText
+                ."\n\nکد دعوت: {$invitationCode}"
+                ."\n\n".$actionText;
+
             Mail::to(
                 (string) $invitation->email
             )->send(
@@ -657,6 +701,37 @@ final class UnitInvitationService
             $base,
             urlencode($rawToken)
         );
+    }
+
+    private function newInvitationCode(): string
+    {
+        $digits = max(
+            6,
+            min(
+                10,
+                (int) config(
+                    'unit_invitations.code_digits',
+                    8
+                )
+            )
+        );
+
+        do {
+            $code = (string) random_int(1, 9);
+
+            for ($index = 1; $index < $digits; $index++) {
+                $code .= (string) random_int(0, 9);
+            }
+
+            $exists = UnitInvitation::query()
+                ->where(
+                    'invitation_code_hash',
+                    $this->hashToken($code)
+                )
+                ->exists();
+        } while ($exists);
+
+        return $code;
     }
 
     private function newRawToken(): string
