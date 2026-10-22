@@ -189,7 +189,9 @@ final class RegistrationController extends Controller
             ->route($result['destination'])
             ->with(
                 'status',
-                'حساب شما با موفقیت ساخته شد؛ خوش آمدید.'
+                ($result['created'] ?? true)
+                    ? 'حساب شما با موفقیت ساخته شد؛ خوش آمدید.'
+                    : 'حساب موجود شما با موفقیت فعال شد؛ خوش آمدید.'
             );
     }
 
