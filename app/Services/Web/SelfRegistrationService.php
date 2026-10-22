@@ -10,7 +10,6 @@ use App\Models\UnitInvitation;
 use App\Models\User;
 use App\Models\UserRoleAssignment;
 use App\Services\UnitInvitationService;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -53,12 +52,68 @@ final class SelfRegistrationService
                     $data
                 );
 
-                $this->assertIdentityIsAvailable(
+                $role = $this->role(
+                    (string) $data['persona']
+                );
+
+                $kind = $this->personaKind(
                     $data
                 );
 
-                $role = $this->role(
-                    (string) $data['persona']
+                /*
+                 * Residents invited by management already have a User record
+                 * and a unit relationship. Claim and activate that account
+                 * instead of creating a duplicate User.
+                 */
+                if ($kind === 'resident') {
+                    $invitation = $this->residentInvitation(
+                        $data
+                    );
+
+                    $user = User::query()
+                        ->lockForUpdate()
+                        ->findOrFail(
+                            $invitation->invited_user_id
+                        );
+
+                    if ($user->is_blocked) {
+                        throw ValidationException::withMessages([
+                            'invitation_token' => [
+                                'حساب کاربری شما مسدود است؛ برای فعال‌سازی با مدیر ساختمان تماس بگیرید.',
+                            ],
+                        ]);
+                    }
+
+                    $user->forceFill([
+                        'password' => $data['password_hash'],
+                        'mobile_verified_at' => now(),
+                        'is_active' => true,
+                    ])->save();
+
+                    $invitation = $this->invitations
+                        ->accept(
+                            (string) $data[
+                                'invitation_token'
+                            ],
+                            $user
+                        );
+
+                    $this->assignRole(
+                        $user,
+                        $role,
+                        $invitation->unit
+                    );
+
+                    return [
+                        'user' => $user->refresh(),
+                        'destination' =>
+                            'portal.resident.dashboard',
+                        'created' => false,
+                    ];
+                }
+
+                $this->assertIdentityIsAvailable(
+                    $data
                 );
 
                 $user = User::query()->create([
@@ -72,10 +127,6 @@ final class SelfRegistrationService
                     'is_active' => true,
                     'is_blocked' => false,
                 ]);
-
-                $kind = $this->personaKind(
-                    $data
-                );
 
                 if ($kind === 'management') {
                     $scope = $this->createWorkspace(
@@ -91,39 +142,21 @@ final class SelfRegistrationService
                     return [
                         'user' => $user,
                         'destination' => 'management.dashboard',
+                        'created' => true,
                     ];
                 }
-
-                if ($kind === 'provider') {
-                    $this->assignRole(
-                        $user,
-                        $role,
-                        null
-                    );
-
-                    return [
-                        'user' => $user,
-                        'destination' => 'portal.provider.dashboard',
-                    ];
-                }
-
-                $invitation = $this->invitations
-                    ->accept(
-                        (string) $data[
-                            'invitation_token'
-                        ],
-                        $user
-                    );
 
                 $this->assignRole(
                     $user,
                     $role,
-                    $invitation->unit
+                    null
                 );
 
                 return [
                     'user' => $user,
-                    'destination' => 'portal.resident.dashboard',
+                    'destination' =>
+                        'portal.provider.dashboard',
+                    'created' => true,
                 ];
             },
             3
@@ -200,35 +233,19 @@ final class SelfRegistrationService
     private function residentInvitation(
         array $data
     ): UnitInvitation {
-        $candidate = new User([
-            'mobile' => $data['mobile'] ?? null,
-            'email' => $data['email'] ?? null,
-        ]);
-
         try {
             $invitation = $this->invitations
-                ->findForUserByToken(
+                ->findForRegistrationCredential(
                     (string) (
                         $data[
                             'invitation_token'
                         ] ?? ''
-                    ),
-                    $candidate
+                    )
                 );
-        } catch (
-            AuthorizationException|ModelNotFoundException
-        ) {
+        } catch (ModelNotFoundException) {
             throw ValidationException::withMessages([
                 'invitation_token' => [
-                    'کد دعوت معتبر نیست یا با شماره موبایل/ایمیل شما مطابقت ندارد.',
-                ],
-            ]);
-        }
-
-        if (! $invitation->isActive()) {
-            throw ValidationException::withMessages([
-                'invitation_token' => [
-                    'کد دعوت منقضی شده یا قبلاً استفاده شده است.',
+                    'کد دعوت معتبر نیست یا دیگر در سامانه وجود ندارد.',
                 ],
             ]);
         }
@@ -260,7 +277,7 @@ final class SelfRegistrationService
         ) {
             throw ValidationException::withMessages([
                 'persona' => [
-                    'نوع حساب انتخاب‌شده با نوع دعوت واحد مطابقت ندارد.',
+                    'نوع حساب انتخاب‌شده با نوع ارتباط ثبت‌شده برای واحد مطابقت ندارد.',
                 ],
             ]);
         }
@@ -273,6 +290,37 @@ final class SelfRegistrationService
         Role $role,
         ?Model $scope
     ): void {
+        $query = UserRoleAssignment::query()
+            ->where(
+                'user_id',
+                $user->getKey()
+            )
+            ->where(
+                'role_id',
+                $role->getKey()
+            )
+            ->where('is_active', true);
+
+        if ($scope) {
+            $query
+                ->where(
+                    'scope_type',
+                    $scope->getMorphClass()
+                )
+                ->where(
+                    'scope_id',
+                    $scope->getKey()
+                );
+        } else {
+            $query
+                ->whereNull('scope_type')
+                ->whereNull('scope_id');
+        }
+
+        if ($query->exists()) {
+            return;
+        }
+
         UserRoleAssignment::query()->create([
             'user_id' => $user->getKey(),
             'role_id' => $role->getKey(),
