@@ -173,13 +173,19 @@ class UnitInvitationController extends Controller
             ->where('mobile', '<>', '')
             ->get();
 
+        /*
+         * When recipients are explicitly selected, every selected user must
+         * be deliverable. When only the unit is selected, silently exclude
+         * linked users that do not yet have an active SMS-capable account.
+         */
         if (
-            $users->count()
-            !== $recipientIds->count()
+            $requestedIds->isNotEmpty()
+            && $users->count()
+                !== $recipientIds->count()
         ) {
             throw ValidationException::withMessages([
                 'user_ids' => [
-                    'برای یک یا چند کاربر مرتبط، حساب فعال یا شماره موبایل معتبر ثبت نشده است.',
+                    'برای یک یا چند کاربر انتخاب‌شده، حساب فعال یا شماره موبایل معتبر ثبت نشده است.',
                 ],
             ]);
         }
