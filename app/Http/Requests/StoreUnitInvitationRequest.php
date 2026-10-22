@@ -14,14 +14,33 @@ class StoreUnitInvitationRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        /*
+         * The management invitation flow is SMS-first. Existing API clients
+         * may still provide user_ids/channel explicitly, but a direct mobile
+         * invitation defaults to SMS and the message body is server-owned.
+         */
+        if (
+            $this->filled('mobile')
+            && ! $this->filled('channel')
+        ) {
+            $this->merge([
+                'channel' => InvitationChannel::Sms->value,
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
             'user_ids' => [
-                'required',
+                'nullable',
                 'array',
                 'min:1',
                 'max:50',
+                'required_without:mobile',
+                'prohibited_with:mobile',
             ],
 
             'user_ids.*' => [
@@ -41,15 +60,28 @@ class StoreUnitInvitationRequest extends FormRequest
             ],
 
             'mobile' => [
-                'prohibited',
+                'nullable',
+                'string',
+                'regex:/^09\d{9}$/',
+                'required_without:user_ids',
+                'prohibited_with:user_ids',
             ],
 
+            /*
+             * Email invitation for existing users remains API-compatible.
+             * Direct public-registration invitations are SMS-only.
+             */
             'email' => [
                 'prohibited',
             ],
 
+            /*
+             * Kept nullable for backward API compatibility. The service
+             * deliberately ignores custom text and stores the configured
+             * fixed invitation message.
+             */
             'message' => [
-                'required',
+                'nullable',
                 'string',
                 'max:1600',
             ],
@@ -60,6 +92,18 @@ class StoreUnitInvitationRequest extends FormRequest
                 'min:1',
                 'max:720',
             ],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'user_ids.required_without' =>
+                'حداقل یک کاربر یا شماره موبایل دریافت‌کننده را مشخص کنید.',
+            'mobile.required_without' =>
+                'شماره موبایل دریافت‌کننده دعوت را وارد کنید.',
+            'mobile.regex' =>
+                'شماره موبایل باید با 09 شروع شود و 11 رقم باشد.',
         ];
     }
 }
