@@ -179,6 +179,7 @@ class UnitInvitationFlowTest extends TestCase
                     OccupancyType::Owner->value,
                 'channel' =>
                     InvitationChannel::Email->value,
+                'message' => 'متن تکراری',
             ]
         )
             ->assertUnprocessable()
@@ -546,6 +547,10 @@ class UnitInvitationFlowTest extends TestCase
             'unit_id' => $structure['unit']->id,
             'invited_by' => $manager->id,
             'mobile' => $invitee->mobile,
+            'relation_type' =>
+                OccupancyType::Resident->value,
+            'channel' =>
+                InvitationChannel::Sms->value,
             'token' => hash('sha256', $rawToken),
             'status' => InvitationStatus::Sent->value,
             'sent_at' => now()->subDays(2),
