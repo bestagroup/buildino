@@ -54,7 +54,8 @@
 
     const normalizeFieldDigits = (field) => {
         if (
-            isSensitiveField(field)
+            field.tagName === 'SELECT'
+            || isSensitiveField(field)
             || typeof field.value !== 'string'
         ) {
             return;
