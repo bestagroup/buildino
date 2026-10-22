@@ -30,8 +30,14 @@ class UnitInvitationFlowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_manager_can_send_scoped_bulk_invitations_with_custom_text(): void
+    public function test_manager_can_send_fixed_text_invitations_and_signup_codes(): void
     {
+        config([
+            'unit_invitations.message' =>
+                'دعوت ثابت بیلدینو برای عضویت در واحد.',
+            'unit_invitations.code_digits' => 8,
+        ]);
+
         $manager = $this->createUser(
             '09121100001',
             'bulk-manager@example.test'
@@ -60,12 +66,17 @@ class UnitInvitationFlowTest extends TestCase
             ]
         );
 
-        $this->assignRole($manager, $role, $inside['building']);
+        $this->assignRole(
+            $manager,
+            $role,
+            $inside['building']
+        );
 
         foreach ([$first, $second] as $user) {
             ManagedUserScope::query()->create([
                 'user_id' => $user->id,
-                'scope_type' => $inside['building']->getMorphClass(),
+                'scope_type' =>
+                    $inside['building']->getMorphClass(),
                 'scope_id' => $inside['building']->id,
                 'assigned_by' => $manager->id,
             ]);
@@ -73,7 +84,8 @@ class UnitInvitationFlowTest extends TestCase
 
         ManagedUserScope::query()->create([
             'user_id' => $outsider->id,
-            'scope_type' => $outside['building']->getMorphClass(),
+            'scope_type' =>
+                $outside['building']->getMorphClass(),
             'scope_id' => $outside['building']->id,
             'assigned_by' => $manager->id,
         ]);
@@ -82,15 +94,20 @@ class UnitInvitationFlowTest extends TestCase
         {
             public array $messages = [];
 
-            public function send(string $mobile, string $message): array
-            {
+            public function send(
+                string $mobile,
+                string $message
+            ): array {
                 $this->messages[$mobile] = $message;
 
                 return ['accepted' => true];
             }
         };
 
-        $this->app->instance(SmsSender::class, $sms);
+        $this->app->instance(
+            SmsSender::class,
+            $sms
+        );
         Mail::fake();
 
         $this->actingAs($manager, 'web')
@@ -108,10 +125,16 @@ class UnitInvitationFlowTest extends TestCase
         $smsResponse = $this->postJson(
             "/api/v1/units/{$inside['unit']->id}/invitations",
             [
-                'user_ids' => [$first->id, $second->id],
-                'relation_type' => OccupancyType::Tenant->value,
-                'channel' => InvitationChannel::Sms->value,
-                'message' => 'لطفاً دعوت عضویت در واحد را بررسی کنید.',
+                'user_ids' => [
+                    $first->id,
+                    $second->id,
+                ],
+                'relation_type' =>
+                    OccupancyType::Tenant->value,
+                'channel' =>
+                    InvitationChannel::Sms->value,
+                'message' =>
+                    'این متن سفارشی باید نادیده گرفته شود.',
                 'expires_in_hours' => 48,
             ]
         );
@@ -119,29 +142,39 @@ class UnitInvitationFlowTest extends TestCase
         $smsResponse
             ->assertCreated()
             ->assertJsonPath('meta.sent_count', 2)
-            ->assertJsonPath('data.0.invited_user_id', $first->id)
+            ->assertJsonPath(
+                'data.0.invited_user_id',
+                $first->id
+            )
             ->assertJsonPath(
                 'data.0.message',
-                'لطفاً دعوت عضویت در واحد را بررسی کنید.'
+                'دعوت ثابت بیلدینو برای عضویت در واحد.'
             );
 
-        $this->assertCount(2, $sms->messages);
-        $this->assertStringContainsString(
-            'لطفاً دعوت عضویت در واحد را بررسی کنید.',
+        $this->assertCount(
+            2,
+            $sms->messages
+        );
+        $this->assertMatchesRegularExpression(
+            '/^\\d{8}$/',
             $sms->messages[$first->mobile]
         );
-        $this->assertStringContainsString(
-            '/invitations/accept?token=',
-            $sms->messages[$first->mobile]
+        $this->assertMatchesRegularExpression(
+            '/^\\d{8}$/',
+            $sms->messages[$second->mobile]
         );
 
         $this->postJson(
             "/api/v1/units/{$inside['unit']->id}/invitations",
             [
-                'user_ids' => [$first->id, $second->id],
-                'relation_type' => OccupancyType::FamilyMember->value,
-                'channel' => InvitationChannel::Email->value,
-                'message' => 'متن اختصاصی دعوت ایمیلی',
+                'user_ids' => [
+                    $first->id,
+                    $second->id,
+                ],
+                'relation_type' =>
+                    OccupancyType::FamilyMember->value,
+                'channel' =>
+                    InvitationChannel::Email->value,
             ]
         )
             ->assertCreated()
@@ -156,7 +189,11 @@ class UnitInvitationFlowTest extends TestCase
             fn (UnitInvitationMail $mail): bool =>
                 str_contains(
                     $mail->bodyText,
-                    'متن اختصاصی دعوت ایمیلی'
+                    'دعوت ثابت بیلدینو برای عضویت در واحد.'
+                )
+                && str_contains(
+                    $mail->bodyText,
+                    'کد دعوت:'
                 )
                 && str_contains(
                     $mail->bodyText,
@@ -167,31 +204,71 @@ class UnitInvitationFlowTest extends TestCase
         $this->postJson(
             "/api/v1/units/{$inside['unit']->id}/invitations",
             [
-                'user_ids' => [$first->id, $outsider->id],
-                'relation_type' => OccupancyType::Owner->value,
-                'channel' => InvitationChannel::Sms->value,
-                'message' => 'این درخواست نباید ارسال شود.',
+                'user_ids' => [
+                    $first->id,
+                    $outsider->id,
+                ],
+                'relation_type' =>
+                    OccupancyType::Owner->value,
+                'channel' =>
+                    InvitationChannel::Sms->value,
             ]
         )
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('user_ids');
+            ->assertJsonValidationErrors(
+                'user_ids'
+            );
 
-        $this->assertDatabaseCount('unit_invitations', 4);
+        $directMobile = '09129999999';
 
-        $this->postJson(
+        $direct = $this->postJson(
             "/api/v1/units/{$inside['unit']->id}/invitations",
             [
-                'mobile' => '09129999999',
-                'relation_type' => OccupancyType::Resident->value,
-                'channel' => InvitationChannel::Sms->value,
-                'message' => 'دعوت با شماره خام مجاز نیست.',
+                'mobile' => $directMobile,
+                'relation_type' =>
+                    OccupancyType::Resident->value,
+                'expires_in_hours' => 72,
             ]
         )
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'user_ids',
-                'mobile',
-            ]);
+            ->assertCreated()
+            ->assertJsonPath(
+                'data.0.mobile',
+                $directMobile
+            )
+            ->assertJsonPath(
+                'data.0.channel',
+                InvitationChannel::Sms->value
+            );
+
+        $directInvitationId = (string) $direct->json(
+            'data.0.id'
+        );
+        $invitationCode = $direct->json(
+            "meta.invitation_codes.{$directInvitationId}"
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/^\\d{8}$/',
+            (string) $invitationCode
+        );
+        $this->assertSame(
+            $invitationCode,
+            $sms->messages[$directMobile]
+        );
+
+        $this->assertDatabaseHas(
+            'unit_invitations',
+            [
+                'mobile' => $directMobile,
+                'message' =>
+                    'دعوت ثابت بیلدینو برای عضویت در واحد.',
+                'invitation_code_hash' =>
+                    hash(
+                        'sha256',
+                        (string) $invitationCode
+                    ),
+            ]
+        );
     }
 
     public function test_manager_can_invite_only_inside_assigned_building(): void
