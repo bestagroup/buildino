@@ -51,7 +51,7 @@ final class NormalizeLocalizedDigitsTest extends TestCase
         );
     }
 
-    public function test_it_does_not_modify_sensitive_credentials(): void
+    public function test_it_preserves_sensitive_credentials_but_normalizes_invitation_codes(): void
     {
         $request = Request::create(
             '/submit',
@@ -83,7 +83,7 @@ final class NormalizeLocalizedDigitsTest extends TestCase
             $request->input('password_confirmation')
         );
         $this->assertSame(
-            'invite-۱۲۳',
+            'invite-123',
             $request->input('invitation_token')
         );
         $this->assertSame(

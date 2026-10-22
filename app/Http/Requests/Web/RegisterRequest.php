@@ -199,8 +199,47 @@ final class RegisterRequest extends FormRequest
                 ),
                 'nullable',
                 'string',
-                'min:32',
                 'max:255',
+                function (
+                    string $attribute,
+                    mixed $value,
+                    \Closure $fail
+                ): void {
+                    if (blank($value)) {
+                        return;
+                    }
+
+                    $value = (string) $value;
+                    $digits = max(
+                        6,
+                        min(
+                            10,
+                            (int) config(
+                                'unit_invitations.code_digits',
+                                8
+                            )
+                        )
+                    );
+
+                    $isInvitationCode = preg_match(
+                        '/^\\d{'.$digits.'}$/',
+                        $value
+                    ) === 1;
+
+                    $isSecureLinkToken = preg_match(
+                        '/^[A-Za-z0-9]{32,255}$/',
+                        $value
+                    ) === 1;
+
+                    if (
+                        ! $isInvitationCode
+                        && ! $isSecureLinkToken
+                    ) {
+                        $fail(
+                            'کد دعوت معتبر نیست؛ کد پیامک‌شده یا لینک دعوت معتبر را وارد کنید.'
+                        );
+                    }
+                },
             ],
             'terms' => [
                 'accepted',
@@ -236,7 +275,6 @@ final class RegisterRequest extends FormRequest
             'city_id.integer' => 'شهر انتخاب‌شده معتبر نیست.',
             'city_id.required_with' => 'شهر را انتخاب کنید.',
             'invitation_token.required' => 'برای ثبت‌نام مالک یا ساکن، کد دعوت واحد الزامی است.',
-            'invitation_token.min' => 'کد دعوت معتبر نیست.',
             'terms.accepted' => 'پذیرش قوانین و حریم خصوصی الزامی است.',
         ];
     }

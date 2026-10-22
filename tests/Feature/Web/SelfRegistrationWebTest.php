@@ -293,6 +293,7 @@ final class SelfRegistrationWebTest extends TestCase
     {
         $mobile = '09120000401';
         $rawToken = Str::random(64);
+        $invitationCode = '48372615';
         $inviter = $this->createUser([
             'mobile' => '09129990401',
             'email' => 'inviter-owner@example.test',
@@ -307,6 +308,8 @@ final class SelfRegistrationWebTest extends TestCase
             'relation_type' => OccupancyType::Owner,
             'channel' => InvitationChannel::Sms,
             'token' => hash('sha256', $rawToken),
+            'invitation_code_hash' =>
+                hash('sha256', $invitationCode),
             'status' => InvitationStatus::Sent,
             'sent_at' => now(),
             'expires_at' => now()->addDay(),
@@ -327,7 +330,11 @@ final class SelfRegistrationWebTest extends TestCase
             'email' => 'new-owner@example.test',
             'password' => 'Owner1234',
             'password_confirmation' => 'Owner1234',
-            'invitation_token' => $rawToken,
+            /*
+             * Persian digits prove global digit normalization happens before
+             * invitation-code validation and lookup.
+             */
+            'invitation_token' => '۴۸۳۷۲۶۱۵',
             'terms' => '1',
         ], $mobile, 'portal.resident.dashboard');
 

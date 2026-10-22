@@ -1,5 +1,7 @@
 # Buildino Production Deployment Runbook
 
+> برای هاست اشتراکی cPanel بدون Docker، از `docs/production/CPANEL_DEPLOYMENT.md` و دستور `sh scripts/deploy-cpanel.sh` استفاده کنید.
+
 این runbook برای انتشار کانتینری `compose.production.yml` است. اجرای فرمان‌ها باید توسط اپراتور دارای دسترسی production و از روی نسخه tag‌شده انجام شود.
 
 ## 1. پیش‌نیاز و secretها

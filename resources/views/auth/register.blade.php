@@ -312,7 +312,7 @@
                             <span>
                                 <strong>دعوت امن واحد</strong>
                                 <small>
-                                    کد باید با شماره موبایل یا ایمیل شما مطابقت داشته باشد.
+                                    کد پیامک‌شده باید با شماره موبایل شما مطابقت داشته باشد.
                                 </small>
                             </span>
                         </div>
@@ -323,7 +323,7 @@
                                 type="text"
                                 name="invitation_token"
                                 value="{{ old('invitation_token', $invitationToken) }}"
-                                placeholder="کد موجود در لینک دعوت مدیر ساختمان"
+                                placeholder="کد دعوت پیامک‌شده یا کد موجود در لینک دعوت"
                                 dir="ltr"
                                 maxlength="255"
                             >

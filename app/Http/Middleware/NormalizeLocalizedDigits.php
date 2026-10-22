@@ -29,7 +29,6 @@ final class NormalizeLocalizedDigits
         'secret',
         'signature',
         'hash',
-        'invitation_token',
     ];
 
     public function __construct(

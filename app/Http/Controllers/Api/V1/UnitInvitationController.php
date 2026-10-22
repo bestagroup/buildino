@@ -95,38 +95,55 @@ class UnitInvitationController extends Controller
 
         $data = $request->validated();
 
-        $requestedIds = collect($data['user_ids'])
-            ->map(fn ($id): int => (int) $id)
-            ->unique()
-            ->values();
-        $query = User::query()
-            ->whereIn('id', $requestedIds->all())
-            ->whereKeyNot($request->user()->getKey())
-            ->where('is_active', true)
-            ->where('is_blocked', false);
+        if (! empty($data['user_ids'])) {
+            $requestedIds = collect($data['user_ids'])
+                ->map(fn ($id): int => (int) $id)
+                ->unique()
+                ->values();
 
-        $scopedUsers->applyVisibleUsers(
-            $query,
-            $request->user(),
-            'users.view'
-        );
+            $query = User::query()
+                ->whereIn('id', $requestedIds->all())
+                ->whereKeyNot($request->user()->getKey())
+                ->where('is_active', true)
+                ->where('is_blocked', false);
 
-        $users = $query->get();
+            $scopedUsers->applyVisibleUsers(
+                $query,
+                $request->user(),
+                'users.view'
+            );
 
-        if ($users->count() !== $requestedIds->count()) {
-            throw ValidationException::withMessages([
-                'user_ids' => [
-                    'یک یا چند کاربر انتخاب‌شده خارج از محدوده دسترسی شما هستند.',
-                ],
-            ]);
+            $users = $query->get();
+
+            if ($users->count() !== $requestedIds->count()) {
+                throw ValidationException::withMessages([
+                    'user_ids' => [
+                        'یک یا چند کاربر انتخاب‌شده خارج از محدوده دسترسی شما هستند.',
+                    ],
+                ]);
+            }
+
+            $results = $service->createForUsers(
+                $unit,
+                $request->user(),
+                $users,
+                $data
+            );
+        } else {
+            /*
+             * Direct mobile invitations are intended for residents who have
+             * not created their Buildino account yet. The mobile address is
+             * bound to the invitation and will be checked again at signup.
+             */
+            $results = [
+                $service->create(
+                    $unit,
+                    $request->user(),
+                    $data
+                ),
+            ];
         }
 
-        $results = $service->createForUsers(
-            $unit,
-            $request->user(),
-            $users,
-            $data
-        );
         $invitations = collect($results)
             ->pluck('invitation');
 
@@ -156,8 +173,20 @@ class UnitInvitationController extends Controller
             $response['meta']['accept_tokens'] = collect($results)
                 ->mapWithKeys(
                     fn (array $result): array => [
-                        (string) $result['invitation']->invited_user_id =>
-                            $result['raw_token'],
+                        (string) (
+                            $result['invitation']->invited_user_id
+                            ?: $result['invitation']->getKey()
+                        ) => $result['raw_token'],
+                    ]
+                );
+
+            $response['meta']['invitation_codes'] = collect($results)
+                ->mapWithKeys(
+                    fn (array $result): array => [
+                        (string) (
+                            $result['invitation']->invited_user_id
+                            ?: $result['invitation']->getKey()
+                        ) => $result['invitation_code'],
                     ]
                 );
         }
@@ -225,6 +254,7 @@ class UnitInvitationController extends Controller
 
                 'meta' => [
                     'accept_token' => $result['raw_token'],
+                    'invitation_code' => $result['invitation_code'],
                 ],
             ]);
         }
