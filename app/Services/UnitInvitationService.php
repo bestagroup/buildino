@@ -533,6 +533,50 @@ final class UnitInvitationService
         });
     }
 
+    public function findForRegistrationCredential(
+        string $credential
+    ): UnitInvitation {
+        $credentialHash = $this->hashToken(
+            trim($credential)
+        );
+
+        $invitation = UnitInvitation::query()
+            ->with([
+                'invitedUser',
+                'unit.floor.block.building',
+            ])
+            ->where(function ($query) use ($credentialHash): void {
+                $query
+                    ->where('token', $credentialHash)
+                    ->orWhere(
+                        'invitation_code_hash',
+                        $credentialHash
+                    );
+            })
+            ->firstOrFail();
+
+        if (! $invitation->isActive()) {
+            throw ValidationException::withMessages([
+                'invitation_token' => [
+                    'کد دعوت منقضی شده یا قبلاً استفاده شده است.',
+                ],
+            ]);
+        }
+
+        if (
+            $invitation->invited_user_id === null
+            || ! $invitation->invitedUser
+        ) {
+            throw ValidationException::withMessages([
+                'invitation_token' => [
+                    'این دعوت به حساب کاربری ثبت‌شده متصل نیست؛ از مدیر ساختمان دعوت جدید دریافت کنید.',
+                ],
+            ]);
+        }
+
+        return $invitation;
+    }
+
     public function findForUserByToken(
         string $rawToken,
         User $user
