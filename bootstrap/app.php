@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureSubscriptionIsActive;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureVerifiedIdentity;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\NormalizeLocalizedDigits;
 use App\Http\Middleware\ResolveBuildingContext;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -80,6 +81,9 @@ return Application::configure(basePath: dirname(__DIR__))
          * routes keep their current contracts.
          */
         $middleware->web(
+            prepend: [
+                NormalizeLocalizedDigits::class,
+            ],
             append: [
                 HandleInertiaRequests::class,
             ]
@@ -87,6 +91,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(
             prepend: [
+                NormalizeLocalizedDigits::class,
                 AssignRequestId::class,
                 ApplyApiSecurityHeaders::class,
             ]
