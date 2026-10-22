@@ -289,22 +289,46 @@ final class SelfRegistrationWebTest extends TestCase
             ->assertRedirect('/management/login');
     }
 
-    public function test_owner_can_register_only_with_a_matching_active_unit_invitation(): void
+    public function test_invited_resident_claims_existing_user_without_duplicate_profile_entry(): void
     {
         $mobile = '09120000401';
         $rawToken = Str::random(64);
         $invitationCode = '48372615';
+
         $inviter = $this->createUser([
             'mobile' => '09129990401',
             'email' => 'inviter-owner@example.test',
             'mobile_verified_at' => now(),
         ]);
+
+        $existingUser = $this->createUser([
+            'first_name' => 'مریم',
+            'last_name' => 'مالک',
+            'mobile' => $mobile,
+            'email' => 'existing-owner@example.test',
+            'mobile_verified_at' => null,
+            'is_active' => false,
+        ]);
+
         $structure = $this->createBuildingGraph();
+
+        UnitOwnership::query()->create([
+            'unit_id' => $structure['unit']->id,
+            'user_id' => $existingUser->id,
+            'ownership_percentage' => 100,
+            'starts_at' => now()->subDay()->toDateString(),
+            'ends_at' => null,
+            'is_primary' => true,
+            'is_active' => true,
+            'created_by' => $inviter->id,
+        ]);
 
         $invitation = UnitInvitation::query()->create([
             'unit_id' => $structure['unit']->id,
             'invited_by' => $inviter->id,
+            'invited_user_id' => $existingUser->id,
             'mobile' => $mobile,
+            'email' => $existingUser->email,
             'relation_type' => OccupancyType::Owner,
             'channel' => InvitationChannel::Sms,
             'token' => hash('sha256', $rawToken),
@@ -315,6 +339,8 @@ final class SelfRegistrationWebTest extends TestCase
             'expires_at' => now()->addDay(),
         ]);
 
+        $userCountBefore = User::query()->count();
+
         $this->get(
             '/invitations/accept?token='.$rawToken
         )->assertRedirect(route('register', [
@@ -322,18 +348,14 @@ final class SelfRegistrationWebTest extends TestCase
             'invitation_token' => $rawToken,
         ]));
 
+        /*
+         * Resident profile fields are deliberately omitted. The application
+         * resolves name/mobile/email from the invited User record.
+         */
         $this->completeRegistration([
             'persona' => 'owner',
-            'first_name' => 'مریم',
-            'last_name' => 'مالک',
-            'mobile' => $mobile,
-            'email' => 'new-owner@example.test',
             'password' => 'Owner1234',
             'password_confirmation' => 'Owner1234',
-            /*
-             * Persian digits prove global digit normalization happens before
-             * invitation-code validation and lookup.
-             */
             'invitation_token' => '۴۸۳۷۲۶۱۵',
             'terms' => '1',
         ], $mobile, 'portal.resident.dashboard');
@@ -341,12 +363,25 @@ final class SelfRegistrationWebTest extends TestCase
         $user = User::query()
             ->where('mobile', $mobile)
             ->firstOrFail();
+
+        $this->assertSame(
+            $existingUser->id,
+            $user->id
+        );
+        $this->assertSame(
+            $userCountBefore,
+            User::query()->count()
+        );
+        $this->assertSame('مریم', $user->first_name);
+        $this->assertSame('مالک', $user->last_name);
+        $this->assertTrue((bool) $user->is_active);
+        $this->assertNotNull(
+            $user->mobile_verified_at
+        );
+
         $assignment = $user
             ->userRoleAssignments()
-            ->firstOrFail();
-        $occupancy = UnitOccupancy::query()
-            ->where('unit_id', $structure['unit']->id)
-            ->where('user_id', $user->id)
+            ->where('is_active', true)
             ->firstOrFail();
 
         $this->assertSame(
@@ -361,13 +396,21 @@ final class SelfRegistrationWebTest extends TestCase
             $structure['unit']->id,
             (int) $assignment->scope_id
         );
-        $this->assertSame(
-            OccupancyType::Owner,
-            $occupancy->occupancy_type
-        );
+
         $this->assertSame(
             InvitationStatus::Accepted,
             $invitation->fresh()->status
+        );
+
+        $this->assertDatabaseHas(
+            'unit_occupancies',
+            [
+                'unit_id' => $structure['unit']->id,
+                'user_id' => $user->id,
+                'occupancy_type' =>
+                    OccupancyType::Owner->value,
+                'is_active' => true,
+            ]
         );
 
         $this->get('/portal/resident')
