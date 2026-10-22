@@ -742,7 +742,7 @@ class ManagementLookupController extends Controller
             403
         );
 
-        $activeRelation = function (Builder $query): void {
+        $activeRelation = function ($query): void {
             $query
                 ->where('is_active', true)
                 ->where(function (Builder $query): void {
