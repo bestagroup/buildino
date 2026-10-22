@@ -25,6 +25,7 @@ class UnitInvitation extends Model
         'channel',
         'message',
         'token',
+        'invitation_code_hash',
         'status',
         'sent_at',
         'expires_at',
