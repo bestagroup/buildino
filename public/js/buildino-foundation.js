@@ -7,6 +7,80 @@
         'textarea',
     ].join(',');
 
+    const normalizeDigits = (value) => String(value)
+        .replace(
+            /[۰-۹٠-٩]/g,
+            (digit) => {
+                const persian = '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit);
+
+                if (persian >= 0) {
+                    return String(persian);
+                }
+
+                return String(
+                    '٠١٢٣٤٥٦٧٨٩'.indexOf(digit)
+                );
+            }
+        );
+
+    const isSensitiveField = (field) => {
+        const type = String(
+            field.getAttribute('type') || ''
+        ).toLowerCase();
+
+        const name = String(
+            field.getAttribute('name') || ''
+        ).toLowerCase();
+
+        return type === 'password'
+            || type === 'file'
+            || name === '_token'
+            || name === 'token'
+            || name === 'access_token'
+            || name === 'refresh_token'
+            || name === 'api_token'
+            || name === 'api_key'
+            || name === 'secret'
+            || name === 'signature'
+            || name === 'hash'
+            || name === 'invitation_token'
+            || name.includes('password')
+            || name.endsWith('_token')
+            || name.endsWith('_secret')
+            || name.endsWith('_signature')
+            || name.endsWith('_hash')
+            || name.endsWith('_api_key');
+    };
+
+    const normalizeFieldDigits = (field) => {
+        if (
+            field.tagName === 'SELECT'
+            || isSensitiveField(field)
+            || typeof field.value !== 'string'
+        ) {
+            return;
+        }
+
+        const normalized = normalizeDigits(field.value);
+
+        if (normalized === field.value) {
+            return;
+        }
+
+        const start = field.selectionStart;
+        const end = field.selectionEnd;
+
+        field.value = normalized;
+
+        if (
+            typeof field.setSelectionRange === 'function'
+            && start !== null
+            && end !== null
+        ) {
+            field.setSelectionRange(start, end);
+        }
+    };
+
     const setLoading = (element, loading = true) => {
         if (! element) {
             return;
@@ -141,6 +215,8 @@
         field.addEventListener(
             'input',
             () => {
+                normalizeFieldDigits(field);
+
                 if (field.checkValidity()) {
                     clearInvalidState(field);
                 }
@@ -194,6 +270,7 @@
     window.BuildinoUI = Object.freeze({
         confirm,
         enhanceForms,
+        normalizeDigits,
         setLoading,
         toast,
     });
