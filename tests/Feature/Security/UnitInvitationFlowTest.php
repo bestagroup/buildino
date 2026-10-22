@@ -61,6 +61,7 @@ class UnitInvitationFlowTest extends TestCase
         $role = $this->createRoleWithPermissions(
             'existing-data-invitation-manager',
             [
+                'reports.dashboard.view',
                 'unit-invitations.view',
                 'unit-invitations.create',
                 'unit-invitations.update',
