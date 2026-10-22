@@ -30,7 +30,7 @@ class UnitInvitationFlowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_manager_can_send_fixed_text_invitations_and_signup_codes(): void
+    public function test_invitation_uses_existing_unit_user_data_without_duplicate_form_fields(): void
     {
         config([
             'unit_invitations.message' =>
@@ -40,29 +40,30 @@ class UnitInvitationFlowTest extends TestCase
 
         $manager = $this->createUser(
             '09121100001',
-            'bulk-manager@example.test'
+            'manager-existing-data@example.test'
         );
         $first = $this->createUser(
             '09121100002',
-            'bulk-first@example.test'
+            'tenant-existing@example.test'
         );
         $second = $this->createUser(
             '09121100003',
-            'bulk-second@example.test'
+            'family-existing@example.test'
         );
         $outsider = $this->createUser(
             '09121100004',
-            'bulk-outsider@example.test'
+            'outsider-existing@example.test'
         );
-        $inside = $this->createStructure('BULK-IN');
-        $outside = $this->createStructure('BULK-OUT');
+
+        $inside = $this->createStructure('EXISTING-IN');
+        $outside = $this->createStructure('EXISTING-OUT');
+
         $role = $this->createRoleWithPermissions(
-            'bulk-invitation-manager',
+            'existing-data-invitation-manager',
             [
-                'reports.dashboard.view',
-                'users.view',
                 'unit-invitations.view',
                 'unit-invitations.create',
+                'unit-invitations.update',
             ]
         );
 
@@ -72,23 +73,24 @@ class UnitInvitationFlowTest extends TestCase
             $inside['building']
         );
 
-        foreach ([$first, $second] as $user) {
-            ManagedUserScope::query()->create([
-                'user_id' => $user->id,
-                'scope_type' =>
-                    $inside['building']->getMorphClass(),
-                'scope_id' => $inside['building']->id,
-                'assigned_by' => $manager->id,
-            ]);
-        }
-
-        ManagedUserScope::query()->create([
-            'user_id' => $outsider->id,
-            'scope_type' =>
-                $outside['building']->getMorphClass(),
-            'scope_id' => $outside['building']->id,
-            'assigned_by' => $manager->id,
-        ]);
+        $this->attachOccupancy(
+            $first,
+            $inside['unit'],
+            OccupancyType::Tenant,
+            $manager
+        );
+        $this->attachOccupancy(
+            $second,
+            $inside['unit'],
+            OccupancyType::FamilyMember,
+            $manager
+        );
+        $this->attachOccupancy(
+            $outsider,
+            $outside['unit'],
+            OccupancyType::Resident,
+            $manager
+        );
 
         $sms = new class implements SmsSender
         {
@@ -108,7 +110,6 @@ class UnitInvitationFlowTest extends TestCase
             SmsSender::class,
             $sms
         );
-        Mail::fake();
 
         $this->actingAs($manager, 'web')
             ->getJson(
@@ -116,158 +117,158 @@ class UnitInvitationFlowTest extends TestCase
             )
             ->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonFragment(['id' => $first->id])
-            ->assertJsonFragment(['id' => $second->id])
-            ->assertJsonMissing(['id' => $outsider->id]);
+            ->assertJsonFragment([
+                'id' => $first->id,
+            ])
+            ->assertJsonFragment([
+                'id' => $second->id,
+            ])
+            ->assertJsonMissing([
+                'id' => $outsider->id,
+            ]);
 
         Sanctum::actingAs($manager);
 
-        $smsResponse = $this->postJson(
+        $response = $this->postJson(
             "/api/v1/units/{$inside['unit']->id}/invitations",
             [
-                'user_ids' => [
-                    $first->id,
-                    $second->id,
-                ],
-                'relation_type' =>
-                    OccupancyType::Tenant->value,
-                'channel' =>
-                    InvitationChannel::Sms->value,
-                'message' =>
-                    'این متن سفارشی باید نادیده گرفته شود.',
+                'user_ids' => [$first->id],
                 'expires_in_hours' => 48,
             ]
         );
 
-        $smsResponse
+        $response
             ->assertCreated()
-            ->assertJsonPath('meta.sent_count', 2)
+            ->assertJsonPath('meta.sent_count', 1)
             ->assertJsonPath(
                 'data.0.invited_user_id',
                 $first->id
+            )
+            ->assertJsonPath(
+                'data.0.mobile',
+                $first->mobile
+            )
+            ->assertJsonPath(
+                'data.0.relation_type',
+                OccupancyType::Tenant->value
+            )
+            ->assertJsonPath(
+                'data.0.channel',
+                InvitationChannel::Sms->value
             )
             ->assertJsonPath(
                 'data.0.message',
                 'دعوت ثابت بیلدینو برای عضویت در واحد.'
             );
 
-        $this->assertCount(
-            2,
-            $sms->messages
-        );
         $this->assertMatchesRegularExpression(
             '/^\\d{8}$/',
             $sms->messages[$first->mobile]
         );
-        $this->assertMatchesRegularExpression(
-            '/^\\d{8}$/',
-            $sms->messages[$second->mobile]
-        );
 
+        /*
+         * Duplicate contact / relationship fields are rejected. The server
+         * owns these values and resolves them from User + Unit relations.
+         */
         $this->postJson(
             "/api/v1/units/{$inside['unit']->id}/invitations",
             [
-                'user_ids' => [
-                    $first->id,
-                    $second->id,
-                ],
+                'user_ids' => [$second->id],
+                'mobile' => '09129999999',
                 'relation_type' =>
-                    OccupancyType::FamilyMember->value,
+                    OccupancyType::Owner->value,
                 'channel' =>
                     InvitationChannel::Email->value,
+            ]
+        )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'mobile',
+                'relation_type',
+                'channel',
+                'message',
+            ]);
+    }
+
+    public function test_selecting_only_unit_invites_all_linked_users_with_mobile(): void
+    {
+        $manager = $this->createUser(
+            '09121101001',
+            'manager-unit-all@example.test'
+        );
+        $tenant = $this->createUser(
+            '09121101002',
+            'tenant-unit-all@example.test'
+        );
+        $resident = $this->createUser(
+            '09121101003',
+            'resident-unit-all@example.test'
+        );
+        $structure = $this->createStructure('UNIT-ALL');
+
+        $role = $this->createRoleWithPermissions(
+            'unit-all-invitation-manager',
+            [
+                'unit-invitations.create',
+            ]
+        );
+
+        $this->assignRole(
+            $manager,
+            $role,
+            $structure['building']
+        );
+
+        $this->attachOccupancy(
+            $tenant,
+            $structure['unit'],
+            OccupancyType::Tenant,
+            $manager
+        );
+        $this->attachOccupancy(
+            $resident,
+            $structure['unit'],
+            OccupancyType::Resident,
+            $manager
+        );
+
+        $sms = new class implements SmsSender
+        {
+            public array $messages = [];
+
+            public function send(
+                string $mobile,
+                string $message
+            ): array {
+                $this->messages[$mobile] = $message;
+
+                return ['accepted' => true];
+            }
+        };
+
+        $this->app->instance(
+            SmsSender::class,
+            $sms
+        );
+
+        Sanctum::actingAs($manager);
+
+        $this->postJson(
+            "/api/v1/units/{$structure['unit']->id}/invitations",
+            [
+                'expires_in_hours' => 72,
             ]
         )
             ->assertCreated()
             ->assertJsonPath('meta.sent_count', 2);
 
-        Mail::assertSent(
-            UnitInvitationMail::class,
-            2
+        $this->assertArrayHasKey(
+            $tenant->mobile,
+            $sms->messages
         );
-        Mail::assertSent(
-            UnitInvitationMail::class,
-            fn (UnitInvitationMail $mail): bool =>
-                str_contains(
-                    $mail->bodyText,
-                    'دعوت ثابت بیلدینو برای عضویت در واحد.'
-                )
-                && str_contains(
-                    $mail->bodyText,
-                    'کد دعوت:'
-                )
-                && str_contains(
-                    $mail->bodyText,
-                    '/invitations/accept?token='
-                )
-        );
-
-        $this->postJson(
-            "/api/v1/units/{$inside['unit']->id}/invitations",
-            [
-                'user_ids' => [
-                    $first->id,
-                    $outsider->id,
-                ],
-                'relation_type' =>
-                    OccupancyType::Owner->value,
-                'channel' =>
-                    InvitationChannel::Sms->value,
-            ]
-        )
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(
-                'user_ids'
-            );
-
-        $directMobile = '09129999999';
-
-        $direct = $this->postJson(
-            "/api/v1/units/{$inside['unit']->id}/invitations",
-            [
-                'mobile' => $directMobile,
-                'relation_type' =>
-                    OccupancyType::Resident->value,
-                'expires_in_hours' => 72,
-            ]
-        )
-            ->assertCreated()
-            ->assertJsonPath(
-                'data.0.mobile',
-                $directMobile
-            )
-            ->assertJsonPath(
-                'data.0.channel',
-                InvitationChannel::Sms->value
-            );
-
-        $directInvitationId = (string) $direct->json(
-            'data.0.id'
-        );
-        $invitationCode = $direct->json(
-            "meta.invitation_codes.{$directInvitationId}"
-        );
-
-        $this->assertMatchesRegularExpression(
-            '/^\\d{8}$/',
-            (string) $invitationCode
-        );
-        $this->assertSame(
-            $invitationCode,
-            $sms->messages[$directMobile]
-        );
-
-        $this->assertDatabaseHas(
-            'unit_invitations',
-            [
-                'mobile' => $directMobile,
-                'message' =>
-                    'دعوت ثابت بیلدینو برای عضویت در واحد.',
-                'invitation_code_hash' =>
-                    hash(
-                        'sha256',
-                        (string) $invitationCode
-                    ),
-            ]
+        $this->assertArrayHasKey(
+            $resident->mobile,
+            $sms->messages
         );
     }
 
@@ -306,6 +307,12 @@ class UnitInvitationFlowTest extends TestCase
             $structureA['building'],
             $manager
         );
+        $this->attachOccupancy(
+            $invitee,
+            $structureA['unit'],
+            OccupancyType::Tenant,
+            $manager
+        );
 
         Sanctum::actingAs($manager);
 
@@ -313,9 +320,6 @@ class UnitInvitationFlowTest extends TestCase
             "/api/v1/units/{$structureA['unit']->id}/invitations",
             [
                 'user_ids' => [$invitee->id],
-                'relation_type' => OccupancyType::Tenant->value,
-                'channel' => InvitationChannel::Sms->value,
-                'message' => 'دعوت عضویت در واحد',
                 'expires_in_hours' => 72,
 
                 // Must be ignored because unit comes from route.
@@ -344,14 +348,11 @@ class UnitInvitationFlowTest extends TestCase
             "/api/v1/units/{$structureB['unit']->id}/invitations",
             [
                 'user_ids' => [$invitee->id],
-                'relation_type' => OccupancyType::Tenant->value,
-                'channel' => InvitationChannel::Sms->value,
-                'message' => 'دعوت خارج از محدوده',
             ]
         )->assertForbidden();
     }
 
-    public function test_matching_authenticated_user_can_accept_invitation_and_becomes_occupant(): void
+    public function test_matching_linked_user_can_accept_invitation_without_duplicate_occupancy(): void
     {
         $manager = $this->createUser(
             '09121120001',
@@ -383,6 +384,12 @@ class UnitInvitationFlowTest extends TestCase
             $structure['building'],
             $manager
         );
+        $this->attachOccupancy(
+            $invitee,
+            $structure['unit'],
+            OccupancyType::Tenant,
+            $manager
+        );
 
         Sanctum::actingAs($manager);
 
@@ -390,9 +397,6 @@ class UnitInvitationFlowTest extends TestCase
             "/api/v1/units/{$structure['unit']->id}/invitations",
             [
                 'user_ids' => [$invitee->id],
-                'relation_type' => OccupancyType::Tenant->value,
-                'channel' => InvitationChannel::Sms->value,
-                'message' => 'دعوت برای سکونت در واحد',
             ]
         )->assertCreated();
 
@@ -428,15 +432,19 @@ class UnitInvitationFlowTest extends TestCase
             ]
         );
 
-        /*
-         * Invitation acceptance must never infer legal ownership.
-         */
-        $this->assertDatabaseMissing(
-            'unit_ownerships',
-            [
-                'unit_id' => $structure['unit']->id,
-                'user_id' => $invitee->id,
-            ]
+        $this->assertSame(
+            1,
+            UnitOccupancy::query()
+                ->where(
+                    'unit_id',
+                    $structure['unit']->id
+                )
+                ->where(
+                    'user_id',
+                    $invitee->id
+                )
+                ->where('is_active', true)
+                ->count()
         );
     }
 
@@ -477,6 +485,12 @@ class UnitInvitationFlowTest extends TestCase
             $structure['building'],
             $manager
         );
+        $this->attachOccupancy(
+            $invitee,
+            $structure['unit'],
+            OccupancyType::Resident,
+            $manager
+        );
 
         Sanctum::actingAs($manager);
 
@@ -484,9 +498,6 @@ class UnitInvitationFlowTest extends TestCase
             "/api/v1/units/{$structure['unit']->id}/invitations",
             [
                 'user_ids' => [$invitee->id],
-                'relation_type' => OccupancyType::Resident->value,
-                'channel' => InvitationChannel::Sms->value,
-                'message' => 'دعوت امن واحد',
             ]
         )->assertCreated();
 
@@ -535,8 +546,6 @@ class UnitInvitationFlowTest extends TestCase
             'unit_id' => $structure['unit']->id,
             'invited_by' => $manager->id,
             'mobile' => $invitee->mobile,
-            'relation_type' => OccupancyType::Resident->value,
-            'channel' => InvitationChannel::Sms->value,
             'token' => hash('sha256', $rawToken),
             'status' => InvitationStatus::Sent->value,
             'sent_at' => now()->subDays(2),
@@ -596,6 +605,12 @@ class UnitInvitationFlowTest extends TestCase
             $structure['building'],
             $manager
         );
+        $this->attachOccupancy(
+            $invitee,
+            $structure['unit'],
+            OccupancyType::FamilyMember,
+            $manager
+        );
 
         Sanctum::actingAs($manager);
 
@@ -603,9 +618,6 @@ class UnitInvitationFlowTest extends TestCase
             "/api/v1/units/{$structure['unit']->id}/invitations",
             [
                 'user_ids' => [$invitee->id],
-                'relation_type' => OccupancyType::FamilyMember->value,
-                'channel' => InvitationChannel::Sms->value,
-                'message' => 'دعوت عضو خانواده',
             ]
         )->assertCreated();
 
@@ -659,11 +671,14 @@ class UnitInvitationFlowTest extends TestCase
             ]
         )->assertUnprocessable();
 
-        $this->assertDatabaseMissing(
+        $this->assertDatabaseHas(
             'unit_occupancies',
             [
                 'unit_id' => $structure['unit']->id,
                 'user_id' => $invitee->id,
+                'occupancy_type' =>
+                    OccupancyType::FamilyMember->value,
+                'is_active' => true,
             ]
         );
     }
@@ -765,6 +780,24 @@ class UnitInvitationFlowTest extends TestCase
         }
 
         return $role;
+    }
+
+    private function attachOccupancy(
+        User $user,
+        Unit $unit,
+        OccupancyType $type,
+        User $actor
+    ): UnitOccupancy {
+        return UnitOccupancy::query()->create([
+            'unit_id' => $unit->id,
+            'user_id' => $user->id,
+            'occupancy_type' => $type->value,
+            'starts_at' => now()->subDay()->toDateString(),
+            'ends_at' => null,
+            'is_primary' => false,
+            'is_active' => true,
+            'created_by' => $actor->id,
+        ]);
     }
 
     private function attachManagedUser(
