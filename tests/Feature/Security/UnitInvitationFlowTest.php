@@ -206,6 +206,14 @@ class UnitInvitationFlowTest extends TestCase
             '09121101003',
             'resident-unit-all@example.test'
         );
+        $withoutMobile = $this->createUser(
+            '09121101004',
+            'no-mobile-unit-all@example.test'
+        );
+        $withoutMobile->forceFill([
+            'mobile' => null,
+        ])->save();
+
         $structure = $this->createStructure('UNIT-ALL');
 
         $role = $this->createRoleWithPermissions(
@@ -231,6 +239,12 @@ class UnitInvitationFlowTest extends TestCase
             $resident,
             $structure['unit'],
             OccupancyType::Resident,
+            $manager
+        );
+        $this->attachOccupancy(
+            $withoutMobile,
+            $structure['unit'],
+            OccupancyType::FamilyMember,
             $manager
         );
 
