@@ -40,7 +40,9 @@ class StoreUnitInvitationRequest extends FormRequest
                 'min:1',
                 'max:50',
                 'required_without:mobile',
-                'prohibited_with:mobile',
+                Rule::prohibitedIf(
+                    fn (): bool => $this->filled('mobile')
+                ),
             ],
 
             'user_ids.*' => [
@@ -64,7 +66,9 @@ class StoreUnitInvitationRequest extends FormRequest
                 'string',
                 'regex:/^09\d{9}$/',
                 'required_without:user_ids',
-                'prohibited_with:user_ids',
+                Rule::prohibitedIf(
+                    fn (): bool => $this->filled('user_ids')
+                ),
             ],
 
             /*
