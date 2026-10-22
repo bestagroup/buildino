@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\Notifications\SmsSender;
 use App\Enums\InvitationChannel;
 use App\Enums\InvitationStatus;
+use App\Enums\OccupancyType;
 use App\Mail\UnitInvitationMail;
 use App\Models\Unit;
 use App\Models\UnitInvitation;
@@ -95,6 +96,154 @@ final class UnitInvitationService
             )
             ->values()
             ->all();
+    }
+
+    /**
+     * Create invitations using contact and relationship data already stored
+     * for users linked to the selected unit.
+     *
+     * @param  Collection<int, User>  $users
+     * @return array<int, array{
+     *     invitation: UnitInvitation,
+     *     raw_token: string,
+     *     invitation_code: string
+     * }>
+     */
+    public function createForLinkedUsers(
+        Unit $unit,
+        User $actor,
+        Collection $users,
+        array $data = []
+    ): array {
+        $payloads = $users->map(
+            function (User $user) use ($unit, $data): array {
+                $relationType = $this->relationTypeForUser(
+                    $unit,
+                    $user
+                );
+
+                if ($relationType === null) {
+                    throw ValidationException::withMessages([
+                        'user_ids' => [
+                            'یک یا چند کاربر انتخاب‌شده ارتباط فعال با واحد انتخاب‌شده ندارند.',
+                        ],
+                    ]);
+                }
+
+                return $this->normalizeContactData([
+                    'invited_user_id' => $user->getKey(),
+                    'mobile' => $user->mobile,
+                    'email' => $user->email,
+                    'relation_type' => $relationType,
+                    'channel' => InvitationChannel::Sms->value,
+                    'expires_in_hours' =>
+                        (int) ($data['expires_in_hours'] ?? 72),
+                ]);
+            }
+        );
+
+        /*
+         * Validate the whole batch before sending the first SMS. This avoids
+         * partially delivered batches if a recipient has no mobile number
+         * or already has an active invitation for the unit.
+         */
+        $payloads->each(
+            function (array $payload) use ($unit): void {
+                $this->assertContactMatchesChannel(
+                    $payload
+                );
+                $this->assertNoActiveDuplicate(
+                    $unit,
+                    $payload
+                );
+            }
+        );
+
+        return $payloads
+            ->map(
+                fn (array $payload): array =>
+                    $this->createPrepared(
+                        $unit,
+                        $actor,
+                        $payload
+                    )
+            )
+            ->values()
+            ->all();
+    }
+
+    private function relationTypeForUser(
+        Unit $unit,
+        User $user
+    ): ?string {
+        $activeOwnership = $unit
+            ->unitOwnerships()
+            ->where(
+                'user_id',
+                $user->getKey()
+            )
+            ->where('is_active', true)
+            ->where(function ($query): void {
+                $query
+                    ->whereNull('starts_at')
+                    ->orWhere(
+                        'starts_at',
+                        '<=',
+                        now()->toDateString()
+                    );
+            })
+            ->where(function ($query): void {
+                $query
+                    ->whereNull('ends_at')
+                    ->orWhere(
+                        'ends_at',
+                        '>=',
+                        now()->toDateString()
+                    );
+            })
+            ->exists();
+
+        if ($activeOwnership) {
+            return OccupancyType::Owner->value;
+        }
+
+        $occupancy = $unit
+            ->unitOccupancies()
+            ->where(
+                'user_id',
+                $user->getKey()
+            )
+            ->where('is_active', true)
+            ->where(function ($query): void {
+                $query
+                    ->whereNull('starts_at')
+                    ->orWhere(
+                        'starts_at',
+                        '<=',
+                        now()->toDateString()
+                    );
+            })
+            ->where(function ($query): void {
+                $query
+                    ->whereNull('ends_at')
+                    ->orWhere(
+                        'ends_at',
+                        '>=',
+                        now()->toDateString()
+                    );
+            })
+            ->orderByDesc('is_primary')
+            ->orderByDesc('starts_at')
+            ->first();
+
+        if (! $occupancy) {
+            return null;
+        }
+
+        return $occupancy->occupancy_type
+            instanceof OccupancyType
+                ? $occupancy->occupancy_type->value
+                : (string) $occupancy->occupancy_type;
     }
 
     /**
