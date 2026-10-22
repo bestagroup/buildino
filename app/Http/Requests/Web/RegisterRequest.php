@@ -3,12 +3,17 @@
 namespace App\Http\Requests\Web;
 
 use App\Services\System\IranLocations;
+use App\Services\UnitInvitationService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 
 final class RegisterRequest extends FormRequest
 {
+    private ?int $invitedUserId = null;
+
     public function authorize(): bool
     {
         return true;
@@ -22,26 +27,81 @@ final class RegisterRequest extends FormRequest
             : $locations->provinceByName($this->input('province'));
         $city = $this->has('city_id')
             ? $locations->city($this->input('city_id'))
-            : $locations->cityByName($province['name'] ?? null, $this->input('city'));
+            : $locations->cityByName(
+                $province['name'] ?? null,
+                $this->input('city')
+            );
+
+        $invitationToken = $this->cleanText(
+            $this->input('invitation_token')
+        );
+
+        $invitedUser = null;
+        $persona = (string) $this->input('persona');
+        $personaKind = (string) config(
+            "self_registration.personas.{$persona}.kind",
+            ''
+        );
+
+        if (
+            $personaKind === 'resident'
+            && filled($invitationToken)
+        ) {
+            try {
+                $invitation = app(
+                    UnitInvitationService::class
+                )->findForRegistrationCredential(
+                    (string) $invitationToken
+                );
+
+                $invitedUser = $invitation->invitedUser;
+                $this->invitedUserId = $invitedUser
+                    ? (int) $invitedUser->getKey()
+                    : null;
+            } catch (
+                ModelNotFoundException|ValidationException
+            ) {
+                /*
+                 * Let the registration service return the invitation-specific
+                 * validation message after the base form shape is validated.
+                 */
+            }
+        }
 
         $this->merge([
-            'first_name' => $this->cleanText(
-                $this->input('first_name')
-            ),
-            'last_name' => $this->cleanText(
-                $this->input('last_name')
-            ),
-            'mobile' => $this->normalizeMobile(
-                $this->input('mobile')
-            ),
-            'email' => $this->normalizeEmail(
-                $this->input('email')
-            ),
-            'invitation_token' => $this->cleanText(
-                $this->input('invitation_token')
-            ),
-            'province' => $province['name'] ?? ($this->has('province_id') ? null : $this->input('province')),
-            'city' => $city['name'] ?? ($this->has('city_id') ? null : $this->input('city')),
+            /*
+             * Resident identity is authoritative in the existing User record.
+             * The registration form must not ask the resident to re-enter it.
+             */
+            'first_name' => $invitedUser?->first_name
+                ?? $this->cleanText(
+                    $this->input('first_name')
+                ),
+            'last_name' => $invitedUser?->last_name
+                ?? $this->cleanText(
+                    $this->input('last_name')
+                ),
+            'mobile' => $invitedUser?->mobile
+                ?? $this->normalizeMobile(
+                    $this->input('mobile')
+                ),
+            'email' => $invitedUser?->email
+                ?? $this->normalizeEmail(
+                    $this->input('email')
+                ),
+            'invitation_token' => $invitationToken,
+            'province' => $province['name']
+                ?? (
+                    $this->has('province_id')
+                        ? null
+                        : $this->input('province')
+                ),
+            'city' => $city['name']
+                ?? (
+                    $this->has('city_id')
+                        ? null
+                        : $this->input('city')
+                ),
         ]);
     }
 
@@ -69,6 +129,12 @@ final class RegisterRequest extends FormRequest
             ->keys()
             ->all();
 
+        $isResident = in_array(
+            $this->input('persona'),
+            $residentPersonas,
+            true
+        );
+
         return [
             'province_id' => [
                 'bail',
@@ -95,25 +161,30 @@ final class RegisterRequest extends FormRequest
                 Rule::in(array_keys($personas)),
             ],
             'first_name' => [
-                'required',
+                Rule::requiredIf(! $isResident),
+                'nullable',
                 'string',
                 'max:100',
             ],
             'last_name' => [
-                'required',
+                Rule::requiredIf(! $isResident),
+                'nullable',
                 'string',
                 'max:100',
             ],
             'mobile' => [
-                'required',
+                Rule::requiredIf(! $isResident),
+                'nullable',
                 'regex:/^09\d{9}$/',
-                Rule::unique('users', 'mobile'),
+                Rule::unique('users', 'mobile')
+                    ->ignore($this->invitedUserId),
             ],
             'email' => [
                 'nullable',
                 'email:rfc',
                 'max:190',
-                Rule::unique('users', 'email'),
+                Rule::unique('users', 'email')
+                    ->ignore($this->invitedUserId),
             ],
             'password' => [
                 'required',
