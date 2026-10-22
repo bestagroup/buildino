@@ -43,7 +43,6 @@
             || name === 'secret'
             || name === 'signature'
             || name === 'hash'
-            || name === 'invitation_token'
             || name.includes('password')
             || name.endsWith('_token')
             || name.endsWith('_secret')
