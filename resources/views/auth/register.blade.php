@@ -100,10 +100,19 @@
 
                 <section class="registration-wizard-panel" data-registration-step="1" aria-labelledby="registration-personal-heading">
                     <div class="registration-wizard-heading">
-                        <h3 id="registration-personal-heading" tabindex="-1">مشخصات فردی شما</h3>
-                        <p>کد تأیید به شماره موبایلی که اینجا وارد می‌کنید ارسال می‌شود.</p>
+                        <h3
+                            id="registration-personal-heading"
+                            tabindex="-1"
+                            data-registration-personal-heading
+                        >مشخصات فردی شما</h3>
+                        <p data-registration-personal-description>
+                            کد تأیید به شماره موبایلی که اینجا وارد می‌کنید ارسال می‌شود.
+                        </p>
                     </div>
-                    <label class="registration-field">
+                    <label
+                        class="registration-field"
+                        data-registration-existing-profile
+                    >
                         <span>نام</span>
                         <input
                             type="text"
@@ -116,7 +125,10 @@
                         >
                     </label>
 
-                    <label class="registration-field">
+                    <label
+                        class="registration-field"
+                        data-registration-existing-profile
+                    >
                         <span>نام خانوادگی</span>
                         <input
                             type="text"
@@ -129,7 +141,10 @@
                         >
                     </label>
 
-                    <label class="registration-field">
+                    <label
+                        class="registration-field"
+                        data-registration-existing-profile
+                    >
                         <span>شماره موبایل</span>
                         <input
                             type="tel"
@@ -144,7 +159,10 @@
                         >
                     </label>
 
-                    <label class="registration-field">
+                    <label
+                        class="registration-field"
+                        data-registration-existing-profile
+                    >
                         <span>ایمیل <small>(اختیاری)</small></span>
                         <input
                             type="email"

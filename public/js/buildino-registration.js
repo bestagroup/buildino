@@ -30,6 +30,17 @@
     const citySelect = form.querySelector('[data-registration-city]');
     const cityHint = form.querySelector('[data-registration-city-hint]');
     const cityGroups = citySelect ? [...citySelect.querySelectorAll('optgroup')] : [];
+    const existingProfileFields = [
+        ...form.querySelectorAll(
+            '[data-registration-existing-profile]'
+        ),
+    ];
+    const personalHeading = form.querySelector(
+        '[data-registration-personal-heading]'
+    );
+    const personalDescription = form.querySelector(
+        '[data-registration-personal-description]'
+    );
     let currentProvince = provinceSelect?.value;
     let currentStep = 0;
 
@@ -90,6 +101,34 @@
 
         const management = kind === 'management';
         const resident = kind === 'resident';
+
+        existingProfileFields.forEach((field) => {
+            field.hidden = resident;
+
+            field.querySelectorAll(
+                'input, select, textarea'
+            ).forEach((control) => {
+                control.disabled = resident;
+                if (
+                    ['first_name', 'last_name', 'mobile']
+                        .includes(control.name)
+                ) {
+                    control.required = ! resident;
+                }
+            });
+        });
+
+        if (personalHeading) {
+            personalHeading.textContent = resident
+                ? 'اطلاعات حساب شما'
+                : 'مشخصات فردی شما';
+        }
+
+        if (personalDescription) {
+            personalDescription.textContent = resident
+                ? 'نام، مشخصات تماس و واحد شما از دعوت ثبت‌شده مدیر ساختمان خوانده می‌شود و نیاز به ورود دوباره ندارد.'
+                : 'کد تأیید به شماره موبایلی که اینجا وارد می‌کنید ارسال می‌شود.';
+        }
 
         [
             'complex_title',

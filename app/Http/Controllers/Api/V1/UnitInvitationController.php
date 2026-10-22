@@ -11,7 +11,6 @@ use App\Models\Unit;
 use App\Models\UnitInvitation;
 use App\Models\User;
 use App\Services\UnitInvitationService;
-use App\Services\Web\ScopedUserManagementService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -76,8 +75,7 @@ class UnitInvitationController extends Controller
         StoreUnitInvitationRequest $request,
         Unit $unit,
         UnitInvitationService $service,
-        PermissionChecker $permissions,
-        ScopedUserManagementService $scopedUsers
+        PermissionChecker $permissions
     ) {
         $building = $this->resolveBuilding(
             $unit
@@ -95,54 +93,117 @@ class UnitInvitationController extends Controller
 
         $data = $request->validated();
 
-        if (! empty($data['user_ids'])) {
-            $requestedIds = collect($data['user_ids'])
-                ->map(fn ($id): int => (int) $id)
-                ->unique()
-                ->values();
-
-            $query = User::query()
-                ->whereIn('id', $requestedIds->all())
-                ->whereKeyNot($request->user()->getKey())
+        /*
+         * Recipient identity, mobile and unit relationship are already stored
+         * in Buildino. Resolve them from the selected unit instead of asking
+         * the manager to enter duplicate information.
+         */
+        $activeRelation = function ($query): void {
+            $query
                 ->where('is_active', true)
-                ->where('is_blocked', false);
+                ->where(function ($query): void {
+                    $query
+                        ->whereNull('starts_at')
+                        ->orWhere(
+                            'starts_at',
+                            '<=',
+                            now()->toDateString()
+                        );
+                })
+                ->where(function ($query): void {
+                    $query
+                        ->whereNull('ends_at')
+                        ->orWhere(
+                            'ends_at',
+                            '>=',
+                            now()->toDateString()
+                        );
+                });
+        };
 
-            $scopedUsers->applyVisibleUsers(
-                $query,
-                $request->user(),
-                'users.view'
-            );
+        $linkedUserIds = $unit
+            ->unitOwnerships()
+            ->where($activeRelation)
+            ->pluck('user_id')
+            ->merge(
+                $unit
+                    ->unitOccupancies()
+                    ->where($activeRelation)
+                    ->pluck('user_id')
+            )
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->reject(
+                fn (int $id): bool =>
+                    $id === (int) $request
+                        ->user()
+                        ->getKey()
+            )
+            ->values();
 
-            $users = $query->get();
+        $requestedIds = collect(
+            $data['user_ids'] ?? []
+        )
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
 
-            if ($users->count() !== $requestedIds->count()) {
-                throw ValidationException::withMessages([
-                    'user_ids' => [
-                        'یک یا چند کاربر انتخاب‌شده خارج از محدوده دسترسی شما هستند.',
-                    ],
-                ]);
-            }
-
-            $results = $service->createForUsers(
-                $unit,
-                $request->user(),
-                $users,
-                $data
-            );
-        } else {
-            /*
-             * Direct mobile invitations are intended for residents who have
-             * not created their Buildino account yet. The mobile address is
-             * bound to the invitation and will be checked again at signup.
-             */
-            $results = [
-                $service->create(
-                    $unit,
-                    $request->user(),
-                    $data
-                ),
-            ];
+        if (
+            $requestedIds->isNotEmpty()
+            && $requestedIds
+                ->diff($linkedUserIds)
+                ->isNotEmpty()
+        ) {
+            throw ValidationException::withMessages([
+                'user_ids' => [
+                    'یک یا چند کاربر انتخاب‌شده به واحد انتخاب‌شده متصل نیستند.',
+                ],
+            ]);
         }
+
+        $recipientIds = $requestedIds->isNotEmpty()
+            ? $requestedIds
+            : $linkedUserIds;
+
+        $users = User::query()
+            ->whereIn('id', $recipientIds->all())
+            ->where('is_active', true)
+            ->where('is_blocked', false)
+            ->whereNotNull('mobile')
+            ->where('mobile', '<>', '')
+            ->get();
+
+        /*
+         * When recipients are explicitly selected, every selected user must
+         * be deliverable. When only the unit is selected, silently exclude
+         * linked users that do not yet have an active SMS-capable account.
+         */
+        if (
+            $requestedIds->isNotEmpty()
+            && $users->count()
+                !== $recipientIds->count()
+        ) {
+            throw ValidationException::withMessages([
+                'user_ids' => [
+                    'برای یک یا چند کاربر انتخاب‌شده، حساب فعال یا شماره موبایل معتبر ثبت نشده است.',
+                ],
+            ]);
+        }
+
+        if ($users->isEmpty()) {
+            throw ValidationException::withMessages([
+                'user_ids' => [
+                    'برای این واحد کاربر فعالی با شماره موبایل ثبت نشده است.',
+                ],
+            ]);
+        }
+
+        $results = $service->createForLinkedUsers(
+            $unit,
+            $request->user(),
+            $users,
+            $data
+        );
 
         $invitations = collect($results)
             ->pluck('invitation');
