@@ -2084,7 +2084,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'finance',
             'title' => 'فرمول شارژ',
-            'description' => 'تعریف روش محاسبه شارژ',
+            'description' => 'تعریف دائمی روش تقسیم هر دسته هزینه بین واحدهای ساختمان',
             'context' => [
                 [
                     'name' => 'building_id',
@@ -2132,7 +2132,7 @@ return [
                 ],
                 [
                     'name' => 'builder',
-                    'label' => 'فرمول‌ساز شارژ',
+                    'label' => 'قاعده محاسبه و تقسیم',
                     'type' => 'charge_formula_builder'
                 ],
                 [

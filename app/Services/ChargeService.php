@@ -32,11 +32,12 @@ class ChargeService
             'fixed', 'equal' => $base,
             'area' => (int) round($base * (float) ($unit->area ?? 0)),
             'persons' => (int) round($base * (int) ($context['persons'] ?? 0)),
-            'custom' => (int) (
-                $context['calculated_amount']
-                ?? throw ValidationException::withMessages([
-                    'calculated_amount' => 'Custom calculation amount is required.',
-                ])
+            'floor_coefficient' => (int) round(
+                $base
+                * (float) (
+                    $context['floor_coefficient']
+                    ?? 0
+                )
             ),
             default => throw ValidationException::withMessages([
                 'calculation_type' => 'Unsupported charge calculation type.',
@@ -63,6 +64,11 @@ class ChargeService
                 $periodStart,
                 $periodEnd
             ),
+            ChargeCalculationType::FloorCoefficient =>
+                $this->floorCoefficient(
+                    $formula,
+                    $unit
+                ),
             default => 1,
         };
 
@@ -116,43 +122,37 @@ class ChargeService
             ChargeCalculationType::Equal => $baseAmount,
 
             ChargeCalculationType::Area,
-            ChargeCalculationType::Persons => (int) round(
-                $baseAmount * $baseValue
-            ),
-
-            ChargeCalculationType::Custom => $this->customAmount(
-                $formula,
-                $item,
-                $unit
-            ),
+            ChargeCalculationType::Persons,
+            ChargeCalculationType::FloorCoefficient =>
+                (int) round(
+                    $baseAmount * $baseValue
+                ),
         };
     }
 
-    private function customAmount(
+    private function floorCoefficient(
         ChargeFormula $formula,
-        ChargeItem $item,
         Unit $unit
-    ): int {
-        $itemMap = $item->configuration['unit_amounts'] ?? [];
-        $formulaMap = $formula->configuration['unit_amounts'] ?? [];
+    ): float {
+        $unit->loadMissing('floor');
 
-        $value = $itemMap[$unit->getKey()]
-            ?? $itemMap[(string) $unit->getKey()]
-            ?? $formulaMap[$unit->getKey()]
-            ?? $formulaMap[(string) $unit->getKey()]
-            ?? null;
+        $coefficients =
+            $formula->configuration[
+                'floor_coefficients'
+            ] ?? [];
 
-        if ($value === null) {
-            throw ValidationException::withMessages([
-                'configuration' => sprintf(
-                    'Custom charge amount is missing for unit %d in formula %d.',
-                    $unit->getKey(),
-                    $formula->getKey()
-                ),
-            ]);
-        }
+        $floorNumber = (string) (
+            $unit->floor?->floor_number
+            ?? ''
+        );
 
-        return max(0, (int) $value);
+        return max(
+            0,
+            (float) (
+                $coefficients[$floorNumber]
+                ?? 0
+            )
+        );
     }
 
     private function activePersons(
