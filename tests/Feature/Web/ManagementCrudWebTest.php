@@ -266,20 +266,21 @@ class ManagementCrudWebTest extends TestCase
             'management_crud.resources.charge-formulas',
             []
         );
+        $active = $fields->firstWhere(
+            'name',
+            'is_active'
+        );
 
-        $this->assertSame(
-            'DELETE',
-            data_get(
-                $resource,
-                'delete.method'
-            )
+        $this->assertArrayNotHasKey(
+            'delete',
+            $resource
         );
         $this->assertSame(
-            'charge-formulas.delete',
-            data_get(
-                $resource,
-                'operation_permissions.delete'
-            )
+            'checkbox',
+            $active['type'] ?? null
+        );
+        $this->assertTrue(
+            $active['default'] ?? false
         );
 
         $script = (string) file_get_contents(
