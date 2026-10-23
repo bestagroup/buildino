@@ -19,17 +19,13 @@ class StoreUnitInvitationRequest extends FormRequest
              * optional user ids; an empty list means all active users linked
              * to the selected unit.
              */
-            'user_ids' => [
+            'user_id' => [
                 'nullable',
-                'array',
-                'max:50',
-            ],
-
-            'user_ids.*' => [
                 'integer',
-                'distinct',
                 'exists:users,id',
             ],
+
+            'user_ids' => ['prohibited'],
 
             /*
              * These values are derived server-side from the selected users

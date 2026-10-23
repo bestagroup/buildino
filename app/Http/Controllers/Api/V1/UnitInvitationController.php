@@ -141,29 +141,38 @@ class UnitInvitationController extends Controller
             )
             ->values();
 
-        $requestedIds = collect(
-            $data['user_ids'] ?? []
-        )
-            ->map(fn ($id): int => (int) $id)
-            ->unique()
-            ->values();
+        $requestedUserId = isset($data['user_id'])
+            ? (int) $data['user_id']
+            : null;
 
         if (
-            $requestedIds->isNotEmpty()
-            && $requestedIds
-                ->diff($linkedUserIds)
-                ->isNotEmpty()
+            $requestedUserId !== null
+            && ! $linkedUserIds->contains(
+                $requestedUserId
+            )
         ) {
             throw ValidationException::withMessages([
-                'user_ids' => [
-                    'یک یا چند کاربر انتخاب‌شده به واحد انتخاب‌شده متصل نیستند.',
+                'user_id' => [
+                    'کاربر انتخاب‌شده به واحد انتخاب‌شده متصل نیست.',
                 ],
             ]);
         }
 
-        $recipientIds = $requestedIds->isNotEmpty()
-            ? $requestedIds
-            : $linkedUserIds;
+        if ($requestedUserId === null) {
+            if ($linkedUserIds->count() === 1) {
+                $requestedUserId = (int) $linkedUserIds->first();
+            } elseif ($linkedUserIds->count() > 1) {
+                throw ValidationException::withMessages([
+                    'user_id' => [
+                        'برای این واحد بیش از یک کاربر ثبت شده است؛ کاربر دریافت‌کننده دعوت را انتخاب کنید.',
+                    ],
+                ]);
+            }
+        }
+
+        $recipientIds = $requestedUserId !== null
+            ? collect([$requestedUserId])
+            : collect();
 
         $users = User::query()
             ->whereIn('id', $recipientIds->all())
@@ -179,20 +188,20 @@ class UnitInvitationController extends Controller
          * linked users that do not yet have an active SMS-capable account.
          */
         if (
-            $requestedIds->isNotEmpty()
+            $requestedUserId !== null
             && $users->count()
                 !== $recipientIds->count()
         ) {
             throw ValidationException::withMessages([
-                'user_ids' => [
-                    'برای یک یا چند کاربر انتخاب‌شده، حساب فعال یا شماره موبایل معتبر ثبت نشده است.',
+                'user_id' => [
+                    'برای کاربر انتخاب‌شده، حساب فعال یا شماره موبایل معتبر ثبت نشده است.',
                 ],
             ]);
         }
 
         if ($users->isEmpty()) {
             throw ValidationException::withMessages([
-                'user_ids' => [
+                'user_id' => [
                     'برای این واحد کاربر فعالی با شماره موبایل ثبت نشده است.',
                 ],
             ]);
