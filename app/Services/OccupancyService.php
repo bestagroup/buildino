@@ -173,6 +173,11 @@ class OccupancyService
                         $occupancy->getKey()
                     )
                     ->where('is_active', true)
+                    ->whereDate(
+                        'starts_at',
+                        '<=',
+                        now()->toDateString()
+                    )
                     ->where(function (
                         $query
                     ): void {
