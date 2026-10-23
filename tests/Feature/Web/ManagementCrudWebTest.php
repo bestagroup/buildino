@@ -419,6 +419,46 @@ class ManagementCrudWebTest extends TestCase
         $this->assertFalse($fields->contains('name', 'email'));
     }
 
+    public function test_occupancy_form_collects_unit_resident_count(): void
+    {
+        $resource = config(
+            'management_crud.resources.occupancies',
+            []
+        );
+
+        $fields = collect(
+            $resource['fields'] ?? []
+        );
+
+        $residentCount = $fields->firstWhere(
+            'name',
+            'resident_count'
+        );
+
+        $this->assertSame(
+            'number',
+            $residentCount['type'] ?? null
+        );
+        $this->assertTrue(
+            $residentCount['required'] ?? false
+        );
+        $this->assertSame(
+            0,
+            $residentCount['min'] ?? null
+        );
+
+        $columns = collect(
+            $resource['columns'] ?? []
+        );
+
+        $this->assertTrue(
+            $columns->contains(
+                'key',
+                'resident_count'
+            )
+        );
+    }
+
     public function test_facility_schedule_create_form_uses_multi_day_selection(): void
     {
         $fields = collect(
