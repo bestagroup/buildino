@@ -24,14 +24,9 @@ class UnitOccupancyResource extends JsonResource
             'is_primary' => (bool) $this->is_primary,
             'is_active' => (bool) $this->is_active,
             'resident_count' =>
-                (int) (
-                    $this->whenLoaded(
-                        'unit',
-                        fn () =>
-                            $this->unit
-                                ->resident_count
-                    ) ?? 0
-                ),
+                $this->relationLoaded('unit')
+                    ? (int) $this->unit->resident_count
+                    : 0,
 
             'created_by' => $this->created_by,
             'ended_by' => $this->ended_by,
