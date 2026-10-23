@@ -962,6 +962,23 @@
                 );
             });
 
+            if (
+                field.auto_select_single
+                && rows.length === 1
+                && (
+                    selectedValue === null
+                    || selectedValue === ""
+                    || (
+                        Array.isArray(selectedValue)
+                        && selectedValue.length === 0
+                    )
+                )
+            ) {
+                select.value = String(
+                    rows[0].id
+                );
+            }
+
             refreshLookupSelect(
                 select
             );
