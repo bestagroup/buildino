@@ -69,8 +69,9 @@
 .ownership-more .ownership-form-grid { margin-block-start: 16px; }
 .ownership-form-hint { margin: 15px 0 0; }
 .ownership-editor__actions, .ownership-dialog__actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 9px; margin-block-start: 20px; }
-.ownership-dialog { width: min(440px, calc(100% - 30px)); padding: 25px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); color: var(--text); box-shadow: var(--shadow-lg); }
-.ownership-dialog::backdrop { background: rgba(15, 33, 54, .45); }
+.ownership-dialog-backdrop { position: fixed; inset: 0; z-index: 11000; background: rgba(15, 33, 54, .45); }
+.ownership-dialog { position: fixed; inset: 0; z-index: 11001; width: min(440px, calc(100% - 30px)); max-height: calc(100dvh - 30px); margin: auto; padding: 25px; overflow: auto; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); color: var(--text); box-shadow: var(--shadow-lg); }
+body.ownership-modal-open { overflow: hidden; }
 .ownership-dialog h3 { font-size: 19px; font-weight: 800; }
 .ownership-dialog p { color: var(--muted); font-size: 13px; line-height: 1.8; }
 .ownership-dialog strong { display: block; margin-block-end: 15px; }

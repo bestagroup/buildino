@@ -26,6 +26,7 @@
     let userGeneration = 0;
     let searchTimer;
     let busy = false;
+    let endTrigger = null;
 
     const today = () => {
         const date = new Date();
@@ -284,11 +285,19 @@
         $('editor-title').focus({ preventScroll: true });
     };
     const closeEditor = () => { $('editor').hidden = true; editing = null; updateFlow(); };
+    const closeEndDialog = () => {
+        window.jalaliDatepicker?.hide();
+        $('end-dialog').close();
+    };
     const openEnd = (record) => {
         ending = record;
+        endTrigger = document.activeElement;
         $('end-name').textContent = ownerName(record);
         setDate(endForm, 'ends_at', today());
-        $('end-dialog').showModal();
+        $('end-backdrop').hidden = false;
+        document.body.classList.add('ownership-modal-open');
+        $('end-dialog').show();
+        document.getElementById('ownership-end-title').focus({ preventScroll: true });
     };
     const save = async (event) => {
         event.preventDefault();
@@ -327,15 +336,15 @@
         if (busy || !ending || !unitId()) return;
         if (!endForm.reportValidity()) return;
         const endDate = readDate(endForm, 'ends_at');
-        if (ending.starts_at && endDate < ending.starts_at) { message('error', 'تاریخ پایان نمی‌تواند پیش از تاریخ شروع مالکیت باشد.'); $('end-dialog').close(); return; }
+        if (ending.starts_at && endDate < ending.starts_at) { message('error', 'تاریخ پایان نمی‌تواند پیش از تاریخ شروع مالکیت باشد.'); closeEndDialog(); return; }
         busy = true; $('end-confirm').disabled = true;
         try {
             await request(`${config.apiBase}/unit-ownerships/${ending.id}/end`, {
                 method: 'POST', body: JSON.stringify({ ends_at: endDate }),
             });
-            $('end-dialog').close(); ending = null;
+            closeEndDialog();
             await loadRecords(); message('success', 'مالکیت پایان یافت و در سابقه واحد باقی ماند.');
-        } catch (error) { $('end-dialog').close(); report(error); }
+        } catch (error) { closeEndDialog(); report(error); }
         finally { busy = false; $('end-confirm').disabled = false; }
     };
     const searchUsers = async () => {
@@ -362,7 +371,32 @@
     $('reload').addEventListener('click', () => { message(null, null); loadRecords(); });
     $('add').addEventListener('click', () => openEditor());
     $('cancel').addEventListener('click', closeEditor);
-    $('end-cancel').addEventListener('click', () => $('end-dialog').close());
+    $('end-cancel').addEventListener('click', closeEndDialog);
+    $('end-backdrop').addEventListener('click', closeEndDialog);
+    $('end-dialog').addEventListener('close', () => {
+        $('end-backdrop').hidden = true;
+        document.body.classList.remove('ownership-modal-open');
+        ending = null;
+        if (endTrigger?.isConnected) endTrigger.focus({ preventScroll: true });
+        endTrigger = null;
+    });
+    document.addEventListener('keydown', (event) => {
+        const dialog = $('end-dialog');
+        if (!dialog.open) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeEndDialog();
+        } else if (event.key === 'Tab') {
+            const focusable = [...dialog.querySelectorAll('input:not([type="hidden"]), button')].filter((element) => !element.disabled);
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+                event.preventDefault(); last?.focus();
+            } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+                event.preventDefault(); first?.focus();
+            }
+        }
+    });
     form.addEventListener('submit', save);
     endForm.addEventListener('submit', end);
     userSearch.addEventListener('input', () => {

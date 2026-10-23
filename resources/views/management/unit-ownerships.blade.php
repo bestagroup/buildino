@@ -5,7 +5,7 @@
 @section('page-subtitle', 'مالک‌های هر واحد را ثبت کنید و سوابق تغییر مالکیت را ببینید.')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/buildino-unit-ownerships.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-unit-ownerships.css') }}?v={{ filemtime(public_path('css/buildino-unit-ownerships.css')) }}">
 @endpush
 
 @section('content')
@@ -87,9 +87,10 @@
         </form>
     </section>
 
-    <dialog class="ownership-dialog" data-ownership-end-dialog aria-labelledby="ownership-end-title">
+    <div class="ownership-dialog-backdrop" data-ownership-end-backdrop hidden></div>
+    <dialog class="ownership-dialog" data-ownership-end-dialog aria-modal="true" aria-labelledby="ownership-end-title">
         <form data-ownership-end-form novalidate>
-            <h3 id="ownership-end-title">پایان مالکیت</h3>
+            <h3 id="ownership-end-title" tabindex="-1">پایان مالکیت</h3>
             <p>این مالکیت در سابقه واحد می‌ماند، اما دیگر فعال نخواهد بود.</p>
             <strong data-ownership-end-name></strong>
             <label class="ownership-field"><span>تاریخ پایان</span><input type="date" name="ends_at" required></label>
