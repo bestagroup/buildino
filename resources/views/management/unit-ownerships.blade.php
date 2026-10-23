@@ -102,5 +102,5 @@
 
 @push('scripts')
     <script>window.BuildinoOwnershipConfig = {{ \Illuminate\Support\Js::from($ownershipConfig) }};</script>
-    <script src="{{ asset('js/buildino-unit-ownerships.js') }}" defer></script>
+    <script src="{{ asset('js/buildino-unit-ownerships.js') }}?v={{ filemtime(public_path('js/buildino-unit-ownerships.js')) }}" defer></script>
 @endpush

@@ -373,6 +373,7 @@
 
     const initial = config.initialUnit;
     fields.building.value = String(initial?.buildingId || (buildings.size === 1 ? [...buildings.keys()][0] : ''));
+    window.BuildinoSelect2?.refresh(fields.building);
     if (fields.building.value) loadBlocks(initial);
     else updateFlow();
 })();
