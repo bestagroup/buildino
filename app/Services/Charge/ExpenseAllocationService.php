@@ -9,7 +9,6 @@ use App\Models\BuildingExpenseAllocationRule;
 use App\Models\ChargeFormula;
 use App\Models\ChargePeriod;
 use App\Models\Unit;
-use App\Models\UnitOccupancy;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -322,30 +321,10 @@ final class ExpenseAllocationService
         Unit $unit,
         ChargePeriod $period
     ): int {
-        /*
-         * Historical occupancy is based on date overlap.
-         * We deliberately do not require is_active=true because
-         * an occupancy that ended during the period is still part
-         * of that historical period.
-         */
-        return UnitOccupancy::query()
-            ->where('unit_id', $unit->getKey())
-            ->whereDate(
-                'starts_at',
-                '<=',
-                $period->period_end->toDateString()
-            )
-            ->where(function ($query) use ($period): void {
-                $query
-                    ->whereNull('ends_at')
-                    ->orWhereDate(
-                        'ends_at',
-                        '>=',
-                        $period->period_start->toDateString()
-                    );
-            })
-            ->distinct('user_id')
-            ->count('user_id');
+        return max(
+            0,
+            (int) ($unit->resident_count ?? 0)
+        );
     }
 
     private function customWeight(
