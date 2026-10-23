@@ -177,6 +177,7 @@
             form.hidden = true; query('.setup-steps').hidden = true; query('[data-setup-resume]').hidden = true;
             const success = query('[data-setup-success]'); success.hidden = false;
             query('[data-setup-success-summary]').textContent = `${fa(result.blocks)} بلوک، ${fa(result.floors)} طبقه و ${fa(result.units)} واحد در ساختار انتخاب‌شده آماده است.`;
+            if (config.canManageOwnership && result.firstUnitId) { const url = new URL(config.ownershipUrl, location.origin); url.searchParams.set('unit_id', result.firstUnitId); query('[data-setup-ownership]').href = url.pathname + url.search; query('[data-setup-ownership]').hidden = false; }
             if (config.canInvite && result.firstUnitId) { const url = new URL(config.invitationsUrl, location.origin); url.searchParams.set('unit_id', result.firstUnitId); query('[data-setup-invite]').href = url.pathname + url.search; query('[data-setup-invite]').hidden = false; }
             try { sessionStorage.removeItem(key); } catch {}
             success.querySelector('h3').focus();

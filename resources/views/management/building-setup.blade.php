@@ -82,7 +82,7 @@
 
     <section class="setup-card setup-success" data-setup-success hidden>
         <div class="setup-success__icon">@include('management.partials.icon', ['name' => 'check', 'size' => 30])</div><h3 tabindex="-1">ساختار ساختمان آماده شد</h3><p data-setup-success-summary></p>
-        <div class="setup-success__actions"><a class="setup-button setup-button--primary" data-setup-invite hidden>دعوت ساکنین به واحدها</a><a class="setup-button setup-button--soft" href="{{ $setupConfig['unitsUrl'] }}">مشاهده واحدها</a><a class="setup-button setup-button--soft" href="{{ $setupConfig['dashboardUrl'] }}">بازگشت به داشبورد</a><button type="button" class="setup-button setup-button--soft" data-setup-another>راه‌اندازی ساختمان دیگر</button></div>
+        <div class="setup-success__actions"><a class="setup-button setup-button--primary" data-setup-ownership hidden>ثبت مالکیت واحدها</a><a class="setup-button setup-button--soft" data-setup-invite hidden>دعوت ساکنین به واحدها</a><a class="setup-button setup-button--soft" href="{{ $setupConfig['unitsUrl'] }}">مشاهده واحدها</a><a class="setup-button setup-button--soft" href="{{ $setupConfig['dashboardUrl'] }}">بازگشت به داشبورد</a><button type="button" class="setup-button setup-button--soft" data-setup-another>راه‌اندازی ساختمان دیگر</button></div>
     </section>
     <noscript><p class="setup-error">برای استفاده از فرم مرحله‌ای، جاوااسکریپت مرورگر را فعال کنید.</p></noscript>
 </div>

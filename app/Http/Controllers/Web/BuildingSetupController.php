@@ -46,11 +46,13 @@ final class BuildingSetupController extends Controller
                 'canCreateBuilding' => $permissions->allowsAnyScope($user, 'buildings.create')
                     && ($permissions->allows($user, 'complexes.create') || $complexes->isNotEmpty()),
                 'canInvite' => $permissions->allowsAnyScope($user, 'unit-invitations.create'),
+                'canManageOwnership' => $permissions->allowsAnyScope($user, 'unit-ownerships.create'),
                 'locations' => $locations->forForm(),
                 'initialBuildingId' => $request->integer('building_id'),
                 'dashboardUrl' => route('management.dashboard'),
                 'unitsUrl' => route('management.operations.show', 'units'),
                 'invitationsUrl' => route('management.operations.show', 'invitations'),
+                'ownershipUrl' => route('management.operations.show', 'ownerships'),
             ],
         ]);
     }
