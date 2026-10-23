@@ -133,7 +133,7 @@ class UnitInvitationFlowTest extends TestCase
         $response = $this->postJson(
             "/api/v1/units/{$inside['unit']->id}/invitations",
             [
-                'user_ids' => [$first->id],
+                'user_id' => $first->id,
                 'expires_in_hours' => 48,
             ]
         );
@@ -174,7 +174,7 @@ class UnitInvitationFlowTest extends TestCase
         $this->postJson(
             "/api/v1/units/{$inside['unit']->id}/invitations",
             [
-                'user_ids' => [$second->id],
+                'user_id' => $second->id,
                 'mobile' => '09129999999',
                 'relation_type' =>
                     OccupancyType::Owner->value,
@@ -192,32 +192,26 @@ class UnitInvitationFlowTest extends TestCase
             ]);
     }
 
-    public function test_selecting_only_unit_invites_all_linked_users_with_mobile(): void
+    public function test_single_user_is_implicit_but_multiple_users_require_selection(): void
     {
         $manager = $this->createUser(
             '09121101001',
-            'manager-unit-all@example.test'
+            'manager-unit-selection@example.test'
         );
-        $tenant = $this->createUser(
+        $first = $this->createUser(
             '09121101002',
-            'tenant-unit-all@example.test'
+            'first-unit-selection@example.test'
         );
-        $resident = $this->createUser(
+        $second = $this->createUser(
             '09121101003',
-            'resident-unit-all@example.test'
+            'second-unit-selection@example.test'
         );
-        $withoutMobile = $this->createUser(
-            '09121101004',
-            'no-mobile-unit-all@example.test'
-        );
-        $withoutMobile->forceFill([
-            'mobile' => null,
-        ])->save();
 
-        $structure = $this->createStructure('UNIT-ALL');
+        $single = $this->createStructure('UNIT-SINGLE');
+        $multiple = $this->createStructure('UNIT-MULTI');
 
         $role = $this->createRoleWithPermissions(
-            'unit-all-invitation-manager',
+            'unit-selection-invitation-manager',
             [
                 'unit-invitations.create',
             ]
@@ -226,25 +220,30 @@ class UnitInvitationFlowTest extends TestCase
         $this->assignRole(
             $manager,
             $role,
-            $structure['building']
+            $single['building']
+        );
+        $this->assignRole(
+            $manager,
+            $role,
+            $multiple['building']
         );
 
         $this->attachOccupancy(
-            $tenant,
-            $structure['unit'],
+            $first,
+            $single['unit'],
             OccupancyType::Tenant,
             $manager
         );
         $this->attachOccupancy(
-            $resident,
-            $structure['unit'],
-            OccupancyType::Resident,
+            $first,
+            $multiple['unit'],
+            OccupancyType::Tenant,
             $manager
         );
         $this->attachOccupancy(
-            $withoutMobile,
-            $structure['unit'],
-            OccupancyType::FamilyMember,
+            $second,
+            $multiple['unit'],
+            OccupancyType::Resident,
             $manager
         );
 
@@ -270,22 +269,40 @@ class UnitInvitationFlowTest extends TestCase
         Sanctum::actingAs($manager);
 
         $this->postJson(
-            "/api/v1/units/{$structure['unit']->id}/invitations",
+            "/api/v1/units/{$single['unit']->id}/invitations",
             [
                 'expires_in_hours' => 72,
             ]
         )
             ->assertCreated()
-            ->assertJsonPath('meta.sent_count', 2);
+            ->assertJsonPath('meta.sent_count', 1)
+            ->assertJsonPath(
+                'data.0.invited_user_id',
+                $first->id
+            );
 
-        $this->assertArrayHasKey(
-            $tenant->mobile,
-            $sms->messages
-        );
-        $this->assertArrayHasKey(
-            $resident->mobile,
-            $sms->messages
-        );
+        $this->postJson(
+            "/api/v1/units/{$multiple['unit']->id}/invitations",
+            [
+                'expires_in_hours' => 72,
+            ]
+        )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('user_id');
+
+        $this->postJson(
+            "/api/v1/units/{$multiple['unit']->id}/invitations",
+            [
+                'user_id' => $second->id,
+                'expires_in_hours' => 72,
+            ]
+        )
+            ->assertCreated()
+            ->assertJsonPath('meta.sent_count', 1)
+            ->assertJsonPath(
+                'data.0.invited_user_id',
+                $second->id
+            );
     }
 
     public function test_manager_can_invite_only_inside_assigned_building(): void
@@ -335,7 +352,7 @@ class UnitInvitationFlowTest extends TestCase
         $response = $this->postJson(
             "/api/v1/units/{$structureA['unit']->id}/invitations",
             [
-                'user_ids' => [$invitee->id],
+                'user_id' => $invitee->id,
                 'expires_in_hours' => 72,
 
                 // Must be ignored because unit comes from route.
@@ -363,7 +380,7 @@ class UnitInvitationFlowTest extends TestCase
         $this->postJson(
             "/api/v1/units/{$structureB['unit']->id}/invitations",
             [
-                'user_ids' => [$invitee->id],
+                'user_id' => $invitee->id,
             ]
         )->assertForbidden();
     }
@@ -412,7 +429,7 @@ class UnitInvitationFlowTest extends TestCase
         $create = $this->postJson(
             "/api/v1/units/{$structure['unit']->id}/invitations",
             [
-                'user_ids' => [$invitee->id],
+                'user_id' => $invitee->id,
             ]
         )->assertCreated();
 
@@ -513,7 +530,7 @@ class UnitInvitationFlowTest extends TestCase
         $create = $this->postJson(
             "/api/v1/units/{$structure['unit']->id}/invitations",
             [
-                'user_ids' => [$invitee->id],
+                'user_id' => $invitee->id,
             ]
         )->assertCreated();
 
@@ -637,7 +654,7 @@ class UnitInvitationFlowTest extends TestCase
         $create = $this->postJson(
             "/api/v1/units/{$structure['unit']->id}/invitations",
             [
-                'user_ids' => [$invitee->id],
+                'user_id' => $invitee->id,
             ]
         )->assertCreated();
 
