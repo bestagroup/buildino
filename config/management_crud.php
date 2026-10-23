@@ -2105,13 +2105,6 @@ return [
                 'method' => 'PATCH',
                 'url' => '/api/v1/charge-formulas/{id}'
             ],
-            'delete' => [
-                'method' => 'DELETE',
-                'url' => '/api/v1/charge-formulas/{id}'
-            ],
-            'operation_permissions' => [
-                'delete' => 'charge-formulas.delete'
-            ],
             'columns' => [
                 [
                     'key' => 'id',
@@ -2144,9 +2137,10 @@ return [
                 ],
                 [
                     'name' => 'is_active',
-                    'label' => 'فعال',
+                    'label' => 'فعال در محاسبات',
                     'type' => 'checkbox',
-                    'default' => true
+                    'default' => true,
+                    'help' => 'اگر غیرفعال باشد، این فرمول در محاسبات دوره شارژ اجرا نمی‌شود.'
                 ]
             ]
         ],

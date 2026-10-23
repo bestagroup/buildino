@@ -268,30 +268,57 @@ class FinancialCoreFlowTest extends TestCase
         );
     }
 
-    public function test_charge_formula_delete_requires_delete_permission_and_removes_unused_formula(): void
+    public function test_inactive_charge_formula_is_excluded_and_can_be_reactivated(): void
     {
         $manager = $this->createUser(
             '09123330501',
-            'formula-delete@example.test'
+            'formula-activation@example.test'
         );
 
         $structure = $this->createStructure(
-            'FORMULA-DELETE'
+            'FORMULA-ACTIVATION',
+            100
         );
 
-        $category = FinancialCategory::query()->create([
+        $gas = FinancialCategory::query()->create([
             'building_id' =>
                 $structure['building']->id,
-            'title' => 'Removable expense',
+            'title' => 'Gas activation test',
             'type' => 'expense',
             'is_active' => true,
         ]);
 
+        $fixedCategory =
+            FinancialCategory::query()->create([
+                'building_id' =>
+                    $structure['building']->id,
+                'title' => 'Fixed activation test',
+                'type' => 'expense',
+                'is_active' => true,
+            ]);
+
+        BuildingExpense::query()->create([
+            'building_id' =>
+                $structure['building']->id,
+            'financial_category_id' =>
+                $gas->id,
+            'title' => 'August gas activation bill',
+            'amount' => 100000,
+            'expense_date' => '2026-08-15',
+            'status' => 'posted',
+            'created_by' => $manager->id,
+            'approved_by' => $manager->id,
+            'approved_at' => now(),
+            'posted_at' => now(),
+        ]);
+
         $role = $this->createRoleWithPermissions(
-            'formula-delete-manager',
+            'formula-activation-manager',
             [
                 'charge-formulas.create',
-                'charge-formulas.view',
+                'charge-formulas.update',
+                'charge-periods.create',
+                'charge-periods.calculate',
             ]
         );
 
@@ -303,60 +330,112 @@ class FinancialCoreFlowTest extends TestCase
 
         Sanctum::actingAs($manager);
 
-        $formulaId = $this->postJson(
+        $this->postJson(
             "/api/v1/buildings/{$structure['building']->id}/charge-formulas",
             [
-                'title' => 'Removable formula',
+                'title' => 'Gas by area activation',
                 'builder' => [
                     'calculation_type' =>
-                        ChargeCalculationType::Equal->value,
+                        ChargeCalculationType::Area->value,
                     'financial_category_id' =>
-                        $category->id,
+                        $gas->id,
+                ],
+            ]
+        )->assertCreated();
+
+        $fixedFormulaId = $this->postJson(
+            "/api/v1/buildings/{$structure['building']->id}/charge-formulas",
+            [
+                'title' => 'Fixed activation',
+                'builder' => [
+                    'calculation_type' =>
+                        ChargeCalculationType::Fixed->value,
+                    'financial_category_id' =>
+                        $fixedCategory->id,
+                    'fixed_amount' => 50000,
                 ],
             ]
         )
             ->assertCreated()
             ->json('data.id');
 
-        $this->deleteJson(
-            "/api/v1/charge-formulas/{$formulaId}"
-        )->assertForbidden();
-
-        $deletePermission = Permission::query()
-            ->firstOrCreate(
-                [
-                    'name' =>
-                        'charge-formulas.delete',
-                ],
-                [
-                    'display_name' =>
-                        'charge-formulas.delete',
-                    'module' =>
-                        'charge-formulas',
-                ]
+        $this->patchJson(
+            "/api/v1/charge-formulas/{$fixedFormulaId}",
+            [
+                'is_active' => false,
+            ]
+        )
+            ->assertOk()
+            ->assertJsonPath(
+                'data.is_active',
+                false
             );
 
-        $role->permissions()
-            ->syncWithoutDetaching([
-                $deletePermission->id,
-            ]);
+        $augustPeriodId = $this->postJson(
+            "/api/v1/buildings/{$structure['building']->id}/charge-periods",
+            [
+                'title' => 'August activation',
+                'period_start' => '2026-08-01',
+                'period_end' => '2026-08-31',
+                'due_date' => '2026-09-10',
+            ]
+        )
+            ->assertCreated()
+            ->json('data.id');
 
-        $this->deleteJson(
-            "/api/v1/charge-formulas/{$formulaId}"
-        )->assertNoContent();
+        $this->postJson(
+            "/api/v1/charge-periods/{$augustPeriodId}/calculate"
+        )->assertOk();
 
         $this->assertDatabaseMissing(
-            'charge_formulas',
+            'charge_calculations',
             [
-                'id' => $formulaId,
+                'charge_period_id' =>
+                    $augustPeriodId,
+                'charge_formula_id' =>
+                    $fixedFormulaId,
             ]
         );
 
-        $this->assertDatabaseMissing(
-            'charge_items',
+        $this->patchJson(
+            "/api/v1/charge-formulas/{$fixedFormulaId}",
             [
+                'is_active' => true,
+            ]
+        )
+            ->assertOk()
+            ->assertJsonPath(
+                'data.is_active',
+                true
+            );
+
+        $septemberPeriodId = $this->postJson(
+            "/api/v1/buildings/{$structure['building']->id}/charge-periods",
+            [
+                'title' => 'September activation',
+                'period_start' => '2026-09-01',
+                'period_end' => '2026-09-30',
+                'due_date' => '2026-10-10',
+            ]
+        )
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->postJson(
+            "/api/v1/charge-periods/{$septemberPeriodId}/calculate"
+        )->assertOk();
+
+        $this->assertDatabaseHas(
+            'charge_calculations',
+            [
+                'charge_period_id' =>
+                    $septemberPeriodId,
+                'unit_id' =>
+                    $structure['unit']->id,
                 'charge_formula_id' =>
-                    $formulaId,
+                    $fixedFormulaId,
+                'calculated_amount' =>
+                    50000,
             ]
         );
     }

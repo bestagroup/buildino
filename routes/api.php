@@ -485,11 +485,6 @@ Route::prefix('v1')
             [ChargeFormulaController::class, 'update']
         );
 
-        Route::delete(
-            'charge-formulas/{chargeFormula}',
-            [ChargeFormulaController::class, 'destroy']
-        );
-
         Route::get(
             'buildings/{building}/charge-periods',
             [ChargePeriodController::class, 'index']

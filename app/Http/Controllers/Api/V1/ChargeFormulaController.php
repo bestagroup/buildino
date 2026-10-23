@@ -7,14 +7,11 @@ use App\Http\Requests\StoreChargeFormulaRequest;
 use App\Http\Requests\UpdateChargeFormulaRequest;
 use App\Http\Resources\V1\ChargeFormulaResource;
 use App\Models\Building;
-use App\Models\BuildingExpenseAllocationRule;
-use App\Models\ChargeExpenseAllocation;
 use App\Models\ChargeFormula;
 use App\Models\FinancialCategory;
 use App\Services\ChargeFormulaBuilder;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -140,63 +137,6 @@ class ChargeFormulaController extends Controller
         $chargeFormula->load('chargeItems');
 
         return new ChargeFormulaResource($chargeFormula->refresh());
-    }
-
-    public function destroy(
-        ChargeFormula $chargeFormula
-    ): Response {
-        $this->authorize(
-            'delete',
-            $chargeFormula
-        );
-
-        $usedInFixedCalculations =
-            $chargeFormula
-                ->chargeCalculations()
-                ->exists();
-
-        $usedInExpenseAllocations =
-            ChargeExpenseAllocation::query()
-                ->where(
-                    'calculation_snapshot->charge_formula_id',
-                    $chargeFormula->getKey()
-                )
-                ->exists();
-
-        if (
-            $usedInFixedCalculations
-            || $usedInExpenseAllocations
-        ) {
-            throw ValidationException::withMessages([
-                'charge_formula' =>
-                    'این فرمول در محاسبات مالی استفاده شده است و برای حفظ سوابق قابل حذف نیست.',
-            ]);
-        }
-
-        DB::transaction(
-            function () use (
-                $chargeFormula
-            ): void {
-                BuildingExpenseAllocationRule::query()
-                    ->where(
-                        'building_id',
-                        $chargeFormula->building_id
-                    )
-                    ->where(
-                        'configuration->charge_formula_id',
-                        $chargeFormula->getKey()
-                    )
-                    ->delete();
-
-                $chargeFormula
-                    ->chargeItems()
-                    ->delete();
-
-                $chargeFormula->delete();
-            }
-        );
-
-        return response()->noContent();
     }
 
     private function validateUniqueCategory(
