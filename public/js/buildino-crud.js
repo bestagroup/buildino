@@ -1676,7 +1676,7 @@
             {
                 type: "select",
                 lookup:
-                    "financial_categories",
+                    "expense_categories",
             },
             item?.financial_category_id
                 ?? null
