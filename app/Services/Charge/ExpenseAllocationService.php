@@ -268,12 +268,28 @@ final class ExpenseAllocationService
                 'floor_coefficients'
             ] ?? [];
 
+        if (
+            $floorNumber === ''
+            || ! array_key_exists(
+                $floorNumber,
+                $coefficients
+            )
+        ) {
+            throw ValidationException::withMessages([
+                'floor_coefficients' => sprintf(
+                    'برای طبقه %s ضریب محاسبه تعریف نشده است.',
+                    $floorNumber !== ''
+                        ? $floorNumber
+                        : 'نامشخص'
+                ),
+            ]);
+        }
+
         return max(
             0,
-            (float) (
-                $coefficients[$floorNumber]
-                ?? 0
-            )
+            (float) $coefficients[
+                $floorNumber
+            ]
         );
     }
 
