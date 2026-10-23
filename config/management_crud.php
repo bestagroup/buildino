@@ -2105,6 +2105,13 @@ return [
                 'method' => 'PATCH',
                 'url' => '/api/v1/charge-formulas/{id}'
             ],
+            'delete' => [
+                'method' => 'DELETE',
+                'url' => '/api/v1/charge-formulas/{id}'
+            ],
+            'operation_permissions' => [
+                'delete' => 'charge-formulas.delete'
+            ],
             'columns' => [
                 [
                     'key' => 'id',
