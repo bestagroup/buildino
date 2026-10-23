@@ -262,6 +262,26 @@ class ManagementCrudWebTest extends TestCase
             $fields->contains('name', 'items')
         );
 
+        $resource = config(
+            'management_crud.resources.charge-formulas',
+            []
+        );
+
+        $this->assertSame(
+            'DELETE',
+            data_get(
+                $resource,
+                'delete.method'
+            )
+        );
+        $this->assertSame(
+            'charge-formulas.delete',
+            data_get(
+                $resource,
+                'operation_permissions.delete'
+            )
+        );
+
         $script = (string) file_get_contents(
             public_path('js/buildino-crud.js')
         );
