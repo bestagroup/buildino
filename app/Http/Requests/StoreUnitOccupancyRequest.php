@@ -49,6 +49,7 @@ class StoreUnitOccupancyRequest extends FormRequest
             ],
 
             'resident_count' => [
+                'sometimes',
                 'required',
                 'integer',
                 'min:0',
