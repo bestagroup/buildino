@@ -48,6 +48,22 @@
         );
     $currentResource = request()->route('resource');
 
+    $today = now()->toDateString();
+    $canSwitchToOwnerPortal =
+        $user->unitOwnershipsAsUser()
+            ->where('is_active', true)
+            ->whereDate('starts_at', '<=', $today)
+            ->where(function ($query) use ($today): void {
+                $query
+                    ->whereNull('ends_at')
+                    ->orWhereDate(
+                        'ends_at',
+                        '>=',
+                        $today
+                    );
+            })
+            ->exists();
+
     $resourceActive = static function (
         array $resources
     ) use ($currentResource): bool {
@@ -1348,6 +1364,22 @@
                                     </span>
                                 @endforeach
                             </div>
+                        @endif
+
+                        @if ($canSwitchToOwnerPortal)
+                            <a
+                                href="{{ route('portal.resident.dashboard') }}"
+                                class="popover-access-switch"
+                            >
+                                @include(
+                                    'management.partials.icon',
+                                    [
+                                        'name' => 'home',
+                                        'size' => 17,
+                                    ]
+                                )
+                                تغییر دسترسی
+                            </a>
                         @endif
 
                         <form
