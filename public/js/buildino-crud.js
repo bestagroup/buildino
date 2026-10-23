@@ -1344,104 +1344,131 @@
 
     const formulaMethods = [
         {
-            value: "fixed",
-            title: "مبلغ ثابت برای هر واحد",
-            description: "همه واحدها مبلغ یکسانی پرداخت می‌کنند.",
-            amountLabel: "مبلغ هر واحد (ریال)",
-        },
-        {
             value: "area",
             title: "بر اساس متراژ",
-            description: "نرخ هر مترمربع در متراژ واحد ضرب می‌شود.",
-            amountLabel: "نرخ هر مترمربع (ریال)",
+            description:
+                "مبلغ هزینه دوره متناسب با متراژ واحدها تقسیم می‌شود.",
         },
         {
             value: "persons",
-            title: "بر اساس تعداد ساکنان",
-            description: "نرخ هر نفر در تعداد ساکنان فعال ضرب می‌شود.",
-            amountLabel: "نرخ هر نفر (ریال)",
+            title: "بر اساس تعداد نفرات",
+            description:
+                "مبلغ هزینه دوره متناسب با تعداد ساکنان واحدها تقسیم می‌شود.",
+        },
+        {
+            value: "equal",
+            title: "تقسیم مساوی بین واحدها",
+            description:
+                "مبلغ هزینه دوره به تعداد واحدهای مشمول تقسیم می‌شود.",
+        },
+        {
+            value: "floor_coefficient",
+            title: "بر اساس ضریب طبقه",
+            description:
+                "مبلغ هزینه دوره بر اساس ضریب تعریف‌شده برای طبقه هر واحد تقسیم می‌شود.",
+        },
+        {
+            value: "fixed",
+            title: "مبلغ ثابت برای هر واحد",
+            description:
+                "برای هر واحد در هر دوره، مبلغ ثابت تعریف‌شده بدهکار می‌شود.",
         },
     ];
 
-    const formulaNumber = (value) =>
-        new Intl.NumberFormat("fa-IR")
-            .format(Number(value) || 0);
-
-    const parseFormulaJson = (
-        value,
-        label,
-        fallback
+    const parseFloorCoefficients = (
+        rawValue
     ) => {
-        const trimmed = String(value || "")
+        const raw = String(rawValue || "")
             .trim();
 
-        if (! trimmed) {
-            return fallback;
+        if (! raw) {
+            return {};
         }
 
-        try {
-            return JSON.parse(trimmed);
-        } catch (error) {
-            throw new Error(
-                `مقدار «${label}» JSON معتبر نیست.`
+        if (raw.startsWith("{")) {
+            const value = JSON.parse(raw);
+
+            if (
+                ! value
+                || Array.isArray(value)
+                || typeof value !== "object"
+            ) {
+                throw new Error(
+                    "ضرایب طبقات باید یک شیء معتبر باشند."
+                );
+            }
+
+            return Object.fromEntries(
+                Object.entries(value).map(
+                    ([floor, coefficient]) => {
+                        const number =
+                            Number(coefficient);
+
+                        if (
+                            ! Number.isFinite(number)
+                            || number <= 0
+                        ) {
+                            throw new Error(
+                                `ضریب طبقه «${floor}» معتبر نیست.`
+                            );
+                        }
+
+                        return [
+                            String(floor).trim(),
+                            number,
+                        ];
+                    }
+                )
             );
         }
+
+        const coefficients = {};
+
+        raw
+            .split(/[\n,]+/)
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .forEach((line) => {
+                const match = line.match(
+                    /^(-?\d+)\s*[:=]\s*(\d+(?:\.\d+)?)$/
+                );
+
+                if (! match) {
+                    throw new Error(
+                        "ضرایب طبقات را به شکل «1=1، 2=1.2» وارد کنید."
+                    );
+                }
+
+                const coefficient =
+                    Number(match[2]);
+
+                if (
+                    ! Number.isFinite(
+                        coefficient
+                    )
+                    || coefficient <= 0
+                ) {
+                    throw new Error(
+                        `ضریب طبقه «${match[1]}» معتبر نیست.`
+                    );
+                }
+
+                coefficients[match[1]] =
+                    coefficient;
+            });
+
+        return coefficients;
     };
 
     const collectChargeFormulaBuilder = (
         component
     ) => {
-        if (
-            component.dataset.builderMode
-            === "advanced"
-        ) {
-            const calculationType = $(
-                "[data-formula-advanced-type]",
-                component
-            )?.value;
-            const configuration =
-                parseFormulaJson(
-                    $(
-                        "[data-formula-advanced-configuration]",
-                        component
-                    )?.value,
-                    "تنظیمات پیشرفته فرمول",
-                    null
-                );
-            const items = parseFormulaJson(
-                $(
-                    "[data-formula-advanced-items]",
-                    component
-                )?.value,
-                "آیتم‌های پیشرفته فرمول",
-                []
-            );
-
-            if (! calculationType) {
-                throw new Error(
-                    "روش محاسبه پیشرفته را انتخاب کنید."
-                );
-            }
-
-            if (
-                ! Array.isArray(items)
-                || ! items.length
-            ) {
-                throw new Error(
-                    "فرمول باید دست‌کم یک آیتم هزینه داشته باشد."
-                );
-            }
-
-            return {
-                calculation_type:
-                    calculationType,
-                configuration,
-                items,
-            };
-        }
-
         const calculationType = $(
             "[data-formula-method]:checked",
+            component
+        )?.value;
+        const categoryValue = $(
+            "[data-formula-category]",
             component
         )?.value;
 
@@ -1451,72 +1478,73 @@
             );
         }
 
-        const items = $$([
-            "[data-formula-item]",
-        ].join(""), component).map(
-            (row) => {
-                const title = String(
-                    $(
-                        "[data-formula-item-title]",
-                        row
-                    )?.value
-                    || ""
-                ).trim();
-                const rawAmount = $(
-                    "[data-formula-item-amount]",
-                    row
-                )?.value;
-                const baseAmount =
-                    Number(rawAmount);
-                const categoryValue = $(
-                    "[data-formula-item-category]",
-                    row
-                )?.value;
-
-                if (! title) {
-                    throw new Error(
-                        "عنوان همه ردیف‌های هزینه را وارد کنید."
-                    );
-                }
-
-                if (
-                    rawAmount === ""
-                    || ! Number.isSafeInteger(
-                        baseAmount
-                    )
-                    || baseAmount < 0
-                ) {
-                    throw new Error(
-                        `مبلغ «${title}» باید عدد صحیح و مثبت یا صفر باشد.`
-                    );
-                }
-
-                return {
-                    financial_category_id:
-                        categoryValue
-                            ? Number(
-                                categoryValue
-                            )
-                            : null,
-                    title,
-                    base_amount:
-                        baseAmount,
-                };
-            }
-        );
-
-        if (! items.length) {
+        if (! categoryValue) {
             throw new Error(
-                "فرمول باید دست‌کم یک ردیف هزینه داشته باشد."
+                "دسته هزینه را انتخاب کنید."
             );
         }
 
+        const builder = {
+            calculation_type:
+                calculationType,
+            financial_category_id:
+                Number(categoryValue),
+        };
+
+        if (
+            calculationType === "fixed"
+        ) {
+            const rawAmount = $(
+                "[data-formula-fixed-amount]",
+                component
+            )?.value;
+            const amount =
+                Number(rawAmount);
+
+            if (
+                rawAmount === ""
+                || ! Number.isSafeInteger(
+                    amount
+                )
+                || amount < 0
+            ) {
+                throw new Error(
+                    "مبلغ ثابت هر واحد را به‌صورت عدد صحیح وارد کنید."
+                );
+            }
+
+            builder.fixed_amount =
+                amount;
+        }
+
+        if (
+            calculationType
+            === "floor_coefficient"
+        ) {
+            const coefficients =
+                parseFloorCoefficients(
+                    $(
+                        "[data-formula-floor-coefficients]",
+                        component
+                    )?.value
+                );
+
+            if (
+                ! Object.keys(
+                    coefficients
+                ).length
+            ) {
+                throw new Error(
+                    "حداقل یک ضریب طبقه تعریف کنید."
+                );
+            }
+
+            builder.floor_coefficients =
+                coefficients;
+        }
+
         return {
-            builder: {
-                calculation_type:
-                    calculationType,
-                items,
-            },
+            builder,
         };
     };
 
@@ -1526,404 +1554,153 @@
     ) => {
         formulaBuilderSequence += 1;
 
-        const component = document.createElement(
-            "section"
-        );
+        const component =
+            document.createElement(
+                "section"
+            );
         const methodName =
             `charge-formula-method-${formulaBuilderSequence}`;
         const currentType =
             String(
                 row?.calculation_type
-                || "fixed"
+                || "area"
             );
         const guidedType =
             formulaMethods.some(
                 (method) =>
-                    method.value === currentType
+                    method.value
+                    === currentType
             )
                 ? currentType
-                : "fixed";
-        const startsAdvanced =
-            Boolean(row)
-            && ! formulaMethods.some(
-                (method) =>
-                    method.value === currentType
-            );
+                : "area";
+
+        const item =
+            row?.items?.[0]
+            || null;
+
+        const floorCoefficients =
+            row?.configuration
+                ?.floor_coefficients
+            || {};
 
         component.className =
             "crud-field crud-field--wide crud-formula-builder";
-        component.dataset.chargeFormulaBuilder =
-            field.name;
-        component.dataset.builderMode =
-            startsAdvanced
-                ? "advanced"
-                : "guided";
+        component.dataset
+            .chargeFormulaBuilder =
+                field.name;
+
         component.innerHTML = `
             <div class="crud-formula-builder__heading">
                 <div>
                     <strong>${escapeHtml(field.label)}</strong>
-                    <p>روش محاسبه را انتخاب و ردیف‌های هزینه را وارد کنید؛ فرمول به‌صورت خودکار ساخته می‌شود.</p>
+                    <p>
+                        این قاعده یک‌بار برای ساختمان تعریف می‌شود و در تمام دوره‌های شارژ روی هزینه همان دسته اعمال می‌شود.
+                    </p>
                 </div>
-                <button
-                    type="button"
-                    class="crud-formula-builder__advanced-button"
-                    data-formula-advanced-toggle
-                >
-                    ${startsAdvanced ? "بازگشت به فرمول‌ساز ساده" : "تنظیمات پیشرفته"}
-                </button>
             </div>
 
-            <div data-formula-guided ${startsAdvanced ? "hidden" : ""}>
-                <div class="crud-formula-methods">
-                    ${formulaMethods.map((method) => `
-                        <label class="crud-formula-method">
-                            <input
-                                type="radio"
-                                name="${methodName}"
-                                value="${method.value}"
-                                data-formula-method
-                                ${method.value === guidedType ? "checked" : ""}
-                            >
-                            <span>
-                                <b>${method.title}</b>
-                                <small>${method.description}</small>
-                            </span>
-                        </label>
-                    `).join("")}
-                </div>
+            <label class="crud-field">
+                <span>دسته هزینه <b>*</b></span>
+                <select
+                    data-formula-category
+                    required
+                ></select>
+            </label>
 
-                <div class="crud-formula-items-heading">
-                    <div>
-                        <strong>ردیف‌های هزینه</strong>
-                        <small>برای نمونه می‌توانید شارژ پایه، آب مشاع و نظافت را جدا وارد کنید.</small>
-                    </div>
-                    <button type="button" data-formula-add-item>
-                        + افزودن ردیف
-                    </button>
-                </div>
-                <div class="crud-formula-items" data-formula-items></div>
-
-                <div class="crud-formula-preview">
-                    <div>
-                        <small>فرمول تولیدشده</small>
-                        <strong data-formula-expression></strong>
-                    </div>
-                    <label data-formula-example-wrap>
-                        <span data-formula-example-label></span>
+            <div class="crud-formula-methods">
+                ${formulaMethods.map((method) => `
+                    <label class="crud-formula-method">
                         <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value="100"
-                            data-formula-example
+                            type="radio"
+                            name="${methodName}"
+                            value="${method.value}"
+                            data-formula-method
+                            ${method.value === guidedType ? "checked" : ""}
                         >
+                        <span>
+                            <b>${method.title}</b>
+                            <small>${method.description}</small>
+                        </span>
                     </label>
-                    <div>
-                        <small>مبلغ نمونه</small>
-                        <strong data-formula-example-result></strong>
-                    </div>
-                </div>
+                `).join("")}
             </div>
 
-            <div class="crud-formula-advanced" data-formula-advanced ${startsAdvanced ? "" : "hidden"}>
-                <p>این بخش فقط برای فرمول‌های قدیمی یا سناریوهای سفارشی است. در استفاده معمول، فرمول‌ساز ساده پیشنهاد می‌شود.</p>
-                <label>
-                    <span>روش محاسبه</span>
-                    <select data-formula-advanced-type>
-                        <option value="fixed">ثابت برای هر واحد</option>
-                        <option value="area">بر اساس متراژ</option>
-                        <option value="persons">بر اساس تعداد نفرات</option>
-                        <option value="equal">مساوی</option>
-                        <option value="custom">سفارشی</option>
-                    </select>
-                </label>
-                <label>
-                    <span>تنظیمات فرمول (JSON)</span>
-                    <textarea rows="6" dir="ltr" data-formula-advanced-configuration></textarea>
-                </label>
-                <label>
-                    <span>آیتم‌های فرمول (JSON)</span>
-                    <textarea rows="10" dir="ltr" data-formula-advanced-items></textarea>
-                </label>
-            </div>
+            <label
+                class="crud-field"
+                data-formula-fixed-wrap
+            >
+                <span>مبلغ ثابت هر واحد (ریال)</span>
+                <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    dir="ltr"
+                    value="${Number(item?.base_amount || 0)}"
+                    data-formula-fixed-amount
+                >
+            </label>
+
+            <label
+                class="crud-field crud-field--wide"
+                data-formula-floor-wrap
+            >
+                <span>ضرایب طبقات</span>
+                <textarea
+                    rows="5"
+                    dir="ltr"
+                    placeholder="1=1&#10;2=1.2&#10;3=1.4"
+                    data-formula-floor-coefficients
+                >${escapeHtml(
+                    Object.entries(
+                        floorCoefficients
+                    )
+                        .map(
+                            ([floor, coefficient]) =>
+                                `${floor}=${coefficient}`
+                        )
+                        .join("\n")
+                )}</textarea>
+                <small>
+                    هر خط: شماره طبقه = ضریب. برای طبقه همکف می‌توانید 0 و برای زیرزمین عدد منفی وارد کنید.
+                </small>
+            </label>
         `;
 
-        const itemsContainer = $(
-            "[data-formula-items]",
-            component
-        );
-        const advancedType = $(
-            "[data-formula-advanced-type]",
-            component
-        );
-        const advancedConfiguration = $(
-            "[data-formula-advanced-configuration]",
-            component
-        );
-        const advancedItems = $(
-            "[data-formula-advanced-items]",
+        const categorySelect = $(
+            "[data-formula-category]",
             component
         );
 
-        advancedType.value = currentType;
-        advancedConfiguration.value = JSON.stringify(
-            row?.configuration || {},
-            null,
-            2
-        );
-        advancedItems.value = JSON.stringify(
-            row?.items?.length
-                ? row.items.map((item) => ({
-                    financial_category_id:
-                        item.financial_category_id,
-                    title: item.title,
-                    base_amount:
-                        item.base_amount,
-                    configuration:
-                        item.configuration || {},
-                }))
-                : [
-                    {
-                        financial_category_id:
-                            null,
-                        title: "شارژ پایه",
-                        base_amount: 0,
-                        configuration: {},
-                    },
-                ],
-            null,
-            2
+        await loadLookupOptions(
+            categorySelect,
+            {
+                type: "select",
+                lookup:
+                    "financial_categories",
+            },
+            item?.financial_category_id
+                ?? null
         );
 
-        const selectedMethod = () =>
-            $(
+        const syncVisibility = () => {
+            const type = $(
                 "[data-formula-method]:checked",
                 component
-            )?.value
-            || "fixed";
-
-        const updatePreview = () => {
-            const method = selectedMethod();
-            const definition =
-                formulaMethods.find(
-                    (item) =>
-                        item.value === method
-                )
-                || formulaMethods[0];
-            const amounts = $$([
-                "[data-formula-item-amount]",
-            ].join(""), component);
-            const total = amounts.reduce(
-                (sum, input) =>
-                    sum
-                    + (
-                        Number(input.value)
-                        || 0
-                    ),
-                0
-            );
-            const exampleInput = $(
-                "[data-formula-example]",
-                component
-            );
-            const exampleWrap = $(
-                "[data-formula-example-wrap]",
-                component
-            );
-            const exampleLabel = $(
-                "[data-formula-example-label]",
-                component
-            );
-
-            if (
-                method === "persons"
-                && Number(exampleInput.value) === 100
-            ) {
-                exampleInput.value = 4;
-            }
-
-            const multiplier =
-                method === "fixed"
-                    ? 1
-                    : Number(
-                        exampleInput.value
-                    ) || 0;
-            const expression =
-                method === "fixed"
-                    ? `${formulaNumber(total)} ریال برای هر واحد`
-                    : method === "area"
-                        ? `${formulaNumber(total)} ریال × متراژ واحد`
-                        : `${formulaNumber(total)} ریال × تعداد ساکنان`;
+            )?.value;
 
             $(
-                "[data-formula-expression]",
+                "[data-formula-fixed-wrap]",
                 component
-            ).textContent = expression;
-            $(
-                "[data-formula-example-result]",
-                component
-            ).textContent =
-                `${formulaNumber(total * multiplier)} ریال`;
+            ).hidden =
+                type !== "fixed";
 
-            exampleWrap.hidden =
-                method === "fixed";
-            exampleLabel.textContent =
-                method === "area"
-                    ? "متراژ نمونه"
-                    : "تعداد نفر نمونه";
-            $$([
-                "[data-formula-item-amount-label]",
-            ].join(""), component).forEach(
-                (label) => {
-                    label.textContent =
-                        definition.amountLabel;
-                }
-            );
+            $(
+                "[data-formula-floor-wrap]",
+                component
+            ).hidden =
+                type
+                !== "floor_coefficient";
         };
-
-        const addItem = async (item = {}) => {
-            const itemRow = document.createElement(
-                "div"
-            );
-            itemRow.className =
-                "crud-formula-item";
-            itemRow.dataset.formulaItem = "";
-            itemRow.innerHTML = `
-                <label>
-                    <span>عنوان هزینه</span>
-                    <input
-                        type="text"
-                        maxlength="255"
-                        required
-                        placeholder="مثلاً شارژ پایه"
-                        data-formula-item-title
-                    >
-                </label>
-                <label>
-                    <span data-formula-item-amount-label></span>
-                    <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        required
-                        dir="ltr"
-                        placeholder="0"
-                        data-formula-item-amount
-                    >
-                </label>
-                <label>
-                    <span>دسته مالی (اختیاری)</span>
-                    <select data-formula-item-category></select>
-                </label>
-                <button
-                    type="button"
-                    class="crud-formula-item__remove"
-                    title="حذف ردیف"
-                    data-formula-remove-item
-                >×</button>
-            `;
-
-            $(
-                "[data-formula-item-title]",
-                itemRow
-            ).value = item.title || "";
-            $(
-                "[data-formula-item-amount]",
-                itemRow
-            ).value = item.base_amount ?? 0;
-
-            itemsContainer.appendChild(itemRow);
-
-            const categorySelect = $(
-                "[data-formula-item-category]",
-                itemRow
-            );
-
-            await loadLookupOptions(
-                categorySelect,
-                {
-                    type: "select",
-                    lookup:
-                        "financial_categories",
-                },
-                item.financial_category_id
-            );
-
-            window.BuildinoSelect2
-                ?.enhance(itemRow);
-
-            $$([
-                "input",
-                "select",
-            ].join(","), itemRow).forEach(
-                (input) => {
-                    input.addEventListener(
-                        "input",
-                        updatePreview
-                    );
-                    input.addEventListener(
-                        "change",
-                        updatePreview
-                    );
-                }
-            );
-
-            $(
-                "[data-formula-remove-item]",
-                itemRow
-            ).addEventListener(
-                "click",
-                () => {
-                    if (
-                        $$(
-                            "[data-formula-item]",
-                            itemsContainer
-                        ).length === 1
-                    ) {
-                        toast(
-                            "حداقل یک ردیف هزینه باید باقی بماند.",
-                            "danger"
-                        );
-
-                        return;
-                    }
-
-                    window.BuildinoSelect2
-                        ?.destroy(itemRow);
-                    itemRow.remove();
-                    updatePreview();
-                }
-            );
-
-            updatePreview();
-        };
-
-        const initialItems =
-            row?.items?.length
-                ? row.items
-                : [
-                    {
-                        title: "شارژ پایه",
-                        base_amount: 0,
-                    },
-                ];
-
-        await Promise.all(
-            initialItems.map(
-                (item) => addItem(item)
-            )
-        );
-
-        $(
-            "[data-formula-add-item]",
-            component
-        ).addEventListener(
-            "click",
-            () => addItem({
-                title: "",
-                base_amount: 0,
-            })
-        );
 
         $$(
             "[data-formula-method]",
@@ -1931,90 +1708,14 @@
         ).forEach((input) => {
             input.addEventListener(
                 "change",
-                updatePreview
+                syncVisibility
             );
         });
 
-        $(
-            "[data-formula-example]",
-            component
-        ).addEventListener(
-            "input",
-            updatePreview
-        );
+        syncVisibility();
 
-        $(
-            "[data-formula-advanced-toggle]",
-            component
-        ).addEventListener(
-            "click",
-            (event) => {
-                const isAdvanced =
-                    component.dataset
-                        .builderMode
-                    === "advanced";
-                const nextMode =
-                    isAdvanced
-                        ? "guided"
-                        : "advanced";
-                const generated =
-                    nextMode === "advanced"
-                        ? collectChargeFormulaBuilder(
-                            component
-                        ).builder
-                        : null;
-
-                component.dataset.builderMode =
-                    nextMode;
-                $(
-                    "[data-formula-guided]",
-                    component
-                ).hidden =
-                    nextMode === "advanced";
-                $(
-                    "[data-formula-advanced]",
-                    component
-                ).hidden =
-                    nextMode !== "advanced";
-                event.currentTarget.textContent =
-                    nextMode === "advanced"
-                        ? "بازگشت به فرمول‌ساز ساده"
-                        : "تنظیمات پیشرفته";
-
-                if (nextMode === "advanced") {
-                    advancedType.value =
-                        generated
-                            .calculation_type;
-                    advancedConfiguration.value =
-                        JSON.stringify(
-                            {
-                                generated_by:
-                                    "guided_builder",
-                                builder_version: 1,
-                            },
-                            null,
-                            2
-                        );
-                    advancedItems.value =
-                        JSON.stringify(
-                            generated.items.map(
-                                (item) => ({
-                                    ...item,
-                                    configuration: {},
-                                })
-                            ),
-                            null,
-                            2
-                        );
-                    window.BuildinoSelect2
-                        ?.refresh(
-                            advancedType
-                        );
-                }
-            }
-        );
-
-        updatePreview();
+        window.BuildinoSelect2
+            ?.enhance(component);
 
         return component;
     };
