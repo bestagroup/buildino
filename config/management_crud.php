@@ -1033,6 +1033,10 @@ return [
                     'label' => 'پایان'
                 ],
                 [
+                    'key' => 'resident_count',
+                    'label' => 'تعداد ساکن'
+                ],
+                [
                     'key' => 'is_primary',
                     'label' => 'اصلی'
                 ],
@@ -1072,6 +1076,15 @@ return [
                             'label' => 'عضو خانواده'
                         ]
                     ]
+                ],
+                [
+                    'name' => 'resident_count',
+                    'label' => 'تعداد ساکنین واحد',
+                    'type' => 'number',
+                    'required' => true,
+                    'min' => 0,
+                    'default' => 1,
+                    'help' => 'این عدد در محاسبه هزینه‌هایی که بر اساس تعداد ساکن تقسیم می‌شوند استفاده می‌شود.'
                 ],
                 [
                     'name' => 'starts_at',
