@@ -268,6 +268,99 @@ class FinancialCoreFlowTest extends TestCase
         );
     }
 
+    public function test_charge_formula_delete_requires_delete_permission_and_removes_unused_formula(): void
+    {
+        $manager = $this->createUser(
+            '09123330501',
+            'formula-delete@example.test'
+        );
+
+        $structure = $this->createStructure(
+            'FORMULA-DELETE'
+        );
+
+        $category = FinancialCategory::query()->create([
+            'building_id' =>
+                $structure['building']->id,
+            'title' => 'Removable expense',
+            'type' => 'expense',
+            'is_active' => true,
+        ]);
+
+        $role = $this->createRoleWithPermissions(
+            'formula-delete-manager',
+            [
+                'charge-formulas.create',
+                'charge-formulas.view',
+            ]
+        );
+
+        $this->assignRole(
+            $manager,
+            $role,
+            $structure['building']
+        );
+
+        Sanctum::actingAs($manager);
+
+        $formulaId = $this->postJson(
+            "/api/v1/buildings/{$structure['building']->id}/charge-formulas",
+            [
+                'title' => 'Removable formula',
+                'builder' => [
+                    'calculation_type' =>
+                        ChargeCalculationType::Equal->value,
+                    'financial_category_id' =>
+                        $category->id,
+                ],
+            ]
+        )
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->deleteJson(
+            "/api/v1/charge-formulas/{$formulaId}"
+        )->assertForbidden();
+
+        $deletePermission = Permission::query()
+            ->firstOrCreate(
+                [
+                    'name' =>
+                        'charge-formulas.delete',
+                ],
+                [
+                    'display_name' =>
+                        'charge-formulas.delete',
+                    'module' =>
+                        'charge-formulas',
+                ]
+            );
+
+        $role->permissions()
+            ->syncWithoutDetaching([
+                $deletePermission->id,
+            ]);
+
+        $this->deleteJson(
+            "/api/v1/charge-formulas/{$formulaId}"
+        )->assertNoContent();
+
+        $this->assertDatabaseMissing(
+            'charge_formulas',
+            [
+                'id' => $formulaId,
+            ]
+        );
+
+        $this->assertDatabaseMissing(
+            'charge_items',
+            [
+                'charge_formula_id' =>
+                    $formulaId,
+            ]
+        );
+    }
+
     public function test_resident_can_view_and_create_payment_only_for_own_invoice(): void
     {
         $resident = $this->createUser(
