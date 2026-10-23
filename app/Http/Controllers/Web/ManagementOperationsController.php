@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Services\Web\ManagementUiContextService;
+use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Inertia\Inertia;
@@ -69,7 +70,8 @@ class ManagementOperationsController extends Controller
 
     public function show(
         string $resource,
-        ManagementUiContextService $ui
+        ManagementUiContextService $ui,
+        PermissionChecker $permissions
     ): View|InertiaResponse {
         $configuration =
             config(
@@ -93,6 +95,10 @@ class ManagementOperationsController extends Controller
             request()->user(),
             $configuration
         );
+
+        if ($resource === 'ownerships') {
+            return app(UnitOwnershipPageController::class)(request(), $permissions);
+        }
 
         $inertiaResources = config(
             'management_ui.inertia_resources',

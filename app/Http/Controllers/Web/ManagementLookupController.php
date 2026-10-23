@@ -264,6 +264,9 @@ class ManagementLookupController extends Controller
                     $platform
                 ),
 
+            'ownership_candidates' =>
+                $this->ownershipCandidateLookup($request),
+
             'invitable_users' =>
                 $this->invitableUserLookup(
                     $request,
@@ -613,6 +616,55 @@ class ManagementLookupController extends Controller
         return response()->json([
             'data' => $items->values(),
         ]);
+    }
+
+    private function ownershipCandidateLookup(Request $request)
+    {
+        $unit = Unit::query()
+            ->with('floor.block.building')
+            ->find($request->integer('unit_id'));
+        $building = $unit?->floor?->block?->building;
+
+        abort_unless(
+            $building
+            && $this->permissions->allows($request->user(), 'unit-ownerships.create', $building),
+            Response::HTTP_FORBIDDEN
+        );
+
+        $search = trim((string) $request->query('search', ''));
+        if (mb_strlen($search) < 2) {
+            return collect();
+        }
+
+        $candidates = User::query()
+            ->where('is_active', true)
+            ->where('is_blocked', false);
+
+        if (preg_match('/^09[0-9]{9}$/', $search)) {
+            $candidates->where('mobile', $search);
+        } elseif (filter_var($search, FILTER_VALIDATE_EMAIL)) {
+            $candidates->where('email', $search);
+        } elseif ($this->permissions->allows($request->user(), 'users.view', $building)) {
+            $this->scopedUsers->applyVisibleUsers($candidates, $request->user(), 'users.view');
+            $candidates->where(function (Builder $query) use ($search): void {
+                $query->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('mobile', 'like', "%{$search}%");
+            });
+        } else {
+            return collect();
+        }
+
+        return $candidates
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->limit(30)
+            ->get(['id', 'first_name', 'last_name', 'mobile', 'email'])
+            ->map(fn (User $candidate): array => [
+                'id' => $candidate->id,
+                'label' => trim("{$candidate->first_name} {$candidate->last_name}")
+                    .' — '.($candidate->mobile ?: $candidate->email ?: "#{$candidate->id}"),
+            ]);
     }
 
     private function userLookup(
