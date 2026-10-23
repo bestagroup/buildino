@@ -35,11 +35,18 @@ class OccupancyServiceTest extends TestCase
             'starts_at' => now()->toDateString(),
             'is_primary' => true,
             'is_active' => true,
+            'resident_count' => 4,
         ], $actor);
 
         $this->assertFalse($previous->fresh()->is_primary);
         $this->assertTrue($current->is_primary);
         $this->assertSame($actor->id, $current->created_by);
+        $this->assertSame(
+            4,
+            (int) $graph['unit']
+                ->fresh()
+                ->resident_count
+        );
     }
 
     public function test_occupancy_can_be_ended(): void
@@ -62,5 +69,11 @@ class OccupancyServiceTest extends TestCase
         $this->assertFalse($result->is_active);
         $this->assertSame($actor->id, $result->ended_by);
         $this->assertNotNull($result->ends_at);
+        $this->assertSame(
+            0,
+            (int) $graph['unit']
+                ->fresh()
+                ->resident_count
+        );
     }
 }

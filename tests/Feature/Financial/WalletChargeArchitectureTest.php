@@ -475,7 +475,7 @@ class WalletChargeArchitectureTest extends TestCase
         Unit $unit,
         User $user
     ): UnitOccupancy {
-        return UnitOccupancy::query()->create([
+        $occupancy = UnitOccupancy::query()->create([
             'unit_id' => $unit->id,
             'user_id' => $user->id,
             'occupancy_type' => OccupancyType::Resident->value,
@@ -484,6 +484,10 @@ class WalletChargeArchitectureTest extends TestCase
             'is_primary' => true,
             'is_active' => true,
         ]);
+
+        $unit->increment('resident_count');
+
+        return $occupancy;
     }
 
     private function createUser(

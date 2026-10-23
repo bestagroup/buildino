@@ -6,7 +6,6 @@ use App\Enums\ChargeCalculationType;
 use App\Models\ChargeFormula;
 use App\Models\ChargeItem;
 use App\Models\Unit;
-use App\Models\UnitOccupancy;
 use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
 
@@ -160,20 +159,9 @@ class ChargeService
         CarbonInterface $periodStart,
         CarbonInterface $periodEnd
     ): int {
-        return UnitOccupancy::query()
-            ->where('unit_id', $unit->getKey())
-            ->where('is_active', true)
-            ->whereDate('starts_at', '<=', $periodEnd->toDateString())
-            ->where(function ($query) use ($periodStart): void {
-                $query
-                    ->whereNull('ends_at')
-                    ->orWhereDate(
-                        'ends_at',
-                        '>=',
-                        $periodStart->toDateString()
-                    );
-            })
-            ->distinct('user_id')
-            ->count('user_id');
+        return max(
+            0,
+            (int) ($unit->resident_count ?? 0)
+        );
     }
 }

@@ -9,7 +9,6 @@ use App\Models\ChargePeriod;
 use App\Models\FinancialCategory;
 use App\Models\Floor;
 use App\Models\Unit;
-use App\Models\UnitOccupancy;
 use App\Services\Charge\ExpenseAllocationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\CreatesBuildingDomainData;
@@ -78,17 +77,18 @@ class ChargeFormulaAllocationServiceTest extends TestCase
             array_column($equalRows, 'amount')
         );
 
-        foreach (range(1, 3) as $index) {
-            $this->occupy(
-                $graph['unit']->id,
-                '0912777000'.$index
-            );
-        }
+        $graph['unit']->update([
+            'resident_count' => 3,
+        ]);
 
-        $this->occupy(
-            $secondUnit->id,
-            '09127770004'
-        );
+        $secondUnit->update([
+            'resident_count' => 1,
+        ]);
+
+        $units = collect([
+            $graph['unit']->fresh('floor'),
+            $secondUnit->fresh('floor'),
+        ]);
 
         $persons = $this->formula(
             $graph['building']->id,
@@ -177,23 +177,5 @@ class ChargeFormulaAllocationServiceTest extends TestCase
         ]);
     }
 
-    private function occupy(
-        int $unitId,
-        string $mobile
-    ): void {
-        $user = $this->createUser([
-            'mobile' => $mobile,
-            'email' => $mobile.'@example.test',
-        ]);
 
-        UnitOccupancy::query()->create([
-            'unit_id' => $unitId,
-            'user_id' => $user->id,
-            'occupancy_type' => 'resident',
-            'starts_at' => '2026-01-01',
-            'ends_at' => null,
-            'is_primary' => true,
-            'is_active' => true,
-        ]);
-    }
 }

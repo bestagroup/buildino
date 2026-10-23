@@ -384,6 +384,8 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
             'is_primary' => $primary,
             'is_active' => true,
         ]);
+
+        $unit->increment('resident_count');
     }
 
     private function own(Unit $unit, User $user): void
