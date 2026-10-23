@@ -1095,6 +1095,41 @@ html[data-theme="dark"] .theme-icon--dark {
     font-size: 12px;
 }
 
+.popover-access-switch {
+    width: calc(100% - 24px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 0 12px 8px;
+    padding: 9px;
+    border: 1px solid
+        color-mix(
+            in srgb,
+            var(--primary-500) 28%,
+            var(--border)
+        );
+    border-radius: 10px;
+    background: var(--primary-50);
+    color: var(--primary-800);
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+    transition:
+        background var(--transition),
+        border-color var(--transition);
+}
+
+.popover-access-switch:hover {
+    border-color: var(--primary-500);
+    background: color-mix(
+        in srgb,
+        var(--primary-50) 76%,
+        var(--primary-100)
+    );
+    color: var(--primary-900);
+}
+
 .popover-logout {
     width: calc(100% - 24px);
     display: flex;
