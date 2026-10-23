@@ -2,9 +2,11 @@
 
 namespace App\Services\Charge;
 
+use App\Enums\ChargeCalculationType;
 use App\Enums\ExpenseAllocationMethod;
 use App\Models\BuildingExpense;
 use App\Models\BuildingExpenseAllocationRule;
+use App\Models\ChargeFormula;
 use App\Models\ChargePeriod;
 use App\Models\Unit;
 use App\Models\UnitOccupancy;
@@ -105,6 +107,173 @@ final class ExpenseAllocationService
                 'amount' => $row['amount'],
             ],
             $raw
+        );
+    }
+
+    /**
+     * @return array<int, array{
+     *     unit: Unit,
+     *     base_value: float,
+     *     amount: int
+     * }>
+     */
+    public function allocateByFormula(
+        BuildingExpense $expense,
+        ChargeFormula $formula,
+        ChargePeriod $period,
+        Collection $units
+    ): array {
+        if ($units->isEmpty()) {
+            throw ValidationException::withMessages([
+                'units' => 'No active units exist for charge allocation.',
+            ]);
+        }
+
+        $type = $formula->calculation_type
+            instanceof ChargeCalculationType
+                ? $formula->calculation_type
+                : ChargeCalculationType::from(
+                    (string) $formula->calculation_type
+                );
+
+        if ($type === ChargeCalculationType::Fixed) {
+            throw ValidationException::withMessages([
+                'formula' =>
+                    'Fixed formulas do not allocate a building expense amount.',
+            ]);
+        }
+
+        $weights = [];
+
+        foreach ($units as $unit) {
+            $weights[$unit->getKey()] =
+                $this->formulaWeight(
+                    $formula,
+                    $type,
+                    $unit,
+                    $period
+                );
+        }
+
+        $totalWeight = array_sum($weights);
+
+        if ($totalWeight <= 0) {
+            throw ValidationException::withMessages([
+                'allocation' => sprintf(
+                    'Charge formula %d produced zero total weight for expense %d.',
+                    $formula->getKey(),
+                    $expense->getKey()
+                ),
+            ]);
+        }
+
+        $amount = (int) $expense->amount;
+        $raw = [];
+        $allocated = 0;
+
+        foreach ($units as $unit) {
+            $unitId = $unit->getKey();
+            $exact = ($amount * $weights[$unitId])
+                / $totalWeight;
+            $floor = (int) floor($exact);
+
+            $raw[$unitId] = [
+                'unit' => $unit,
+                'base_value' =>
+                    (float) $weights[$unitId],
+                'amount' => $floor,
+                'fraction' => $exact - $floor,
+            ];
+
+            $allocated += $floor;
+        }
+
+        $remainder = $amount - $allocated;
+
+        uasort(
+            $raw,
+            fn (array $a, array $b): int =>
+                ($b['fraction'] <=> $a['fraction'])
+                ?: (
+                    $a['unit']->getKey()
+                    <=> $b['unit']->getKey()
+                )
+        );
+
+        foreach (array_keys($raw) as $unitId) {
+            if ($remainder <= 0) {
+                break;
+            }
+
+            $raw[$unitId]['amount']++;
+            $remainder--;
+        }
+
+        ksort($raw);
+
+        return array_map(
+            fn (array $row): array => [
+                'unit' => $row['unit'],
+                'base_value' => $row['base_value'],
+                'amount' => $row['amount'],
+            ],
+            $raw
+        );
+    }
+
+    private function formulaWeight(
+        ChargeFormula $formula,
+        ChargeCalculationType $type,
+        Unit $unit,
+        ChargePeriod $period
+    ): float {
+        return match ($type) {
+            ChargeCalculationType::Equal => 1,
+
+            ChargeCalculationType::Area =>
+                max(
+                    0,
+                    (float) ($unit->area ?? 0)
+                ),
+
+            ChargeCalculationType::Persons =>
+                $this->residentCount(
+                    $unit,
+                    $period
+                ),
+
+            ChargeCalculationType::FloorCoefficient =>
+                $this->floorCoefficient(
+                    $formula,
+                    $unit
+                ),
+
+            ChargeCalculationType::Fixed => 0,
+        };
+    }
+
+    private function floorCoefficient(
+        ChargeFormula $formula,
+        Unit $unit
+    ): float {
+        $unit->loadMissing('floor');
+
+        $floorNumber = (string) (
+            $unit->floor?->floor_number
+            ?? ''
+        );
+
+        $coefficients =
+            $formula->configuration[
+                'floor_coefficients'
+            ] ?? [];
+
+        return max(
+            0,
+            (float) (
+                $coefficients[$floorNumber]
+                ?? 0
+            )
         );
     }
 
