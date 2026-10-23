@@ -187,6 +187,7 @@ class ChargeFormulaController extends Controller
 
         $count = FinancialCategory::query()
             ->whereIn('id',$ids)
+            ->where('type', 'expense')
             ->where(function ($query) use ($building): void {
                 $query
                     ->whereNull('building_id')
@@ -196,7 +197,7 @@ class ChargeFormulaController extends Controller
 
         if ($count !== $ids->count()) {
             throw ValidationException::withMessages([
-                'items'=>'Charge item categories must be global or belong to the selected building.',
+                'items'=>'Charge formula categories must be expense categories that are global or belong to the selected building.',
             ]);
         }
     }
