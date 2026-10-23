@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Financial;
 
+use App\Enums\ChargeCalculationType;
 use App\Enums\ExpensePayerResponsibility;
 use App\Enums\OccupancyType;
 use App\Enums\UnitUsageType;
@@ -9,6 +10,7 @@ use App\Models\Block;
 use App\Models\Building;
 use App\Models\ChargeExpenseAllocation;
 use App\Models\Complex;
+use App\Models\FinancialCategory;
 use App\Models\Floor;
 use App\Models\Permission;
 use App\Models\Role;
@@ -49,6 +51,7 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
             'expenses.view',
             'expenses.create',
             'expenses.update',
+            'charge-formulas.create',
             'charge-periods.create',
             'charge-periods.calculate',
             'charge-periods.issue',
@@ -57,26 +60,71 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
 
         Sanctum::actingAs($manager);
 
+        $waterCategory =
+            FinancialCategory::query()->create([
+                'building_id' =>
+                    $graph['building']->id,
+                'title' => 'آب مشترک',
+                'type' => 'expense',
+                'is_active' => true,
+            ]);
+
+        $repairCategory =
+            FinancialCategory::query()->create([
+                'building_id' =>
+                    $graph['building']->id,
+                'title' => 'تعمیرات اساسی',
+                'type' => 'expense',
+                'is_active' => true,
+            ]);
+
+        $this->postJson(
+            "/api/v1/buildings/{$graph['building']->id}/charge-formulas",
+            [
+                'title' => 'آب بر اساس نفرات',
+                'builder' => [
+                    'calculation_type' =>
+                        ChargeCalculationType::Persons->value,
+                    'financial_category_id' =>
+                        $waterCategory->id,
+                ],
+            ]
+        )->assertCreated();
+
+        $this->postJson(
+            "/api/v1/buildings/{$graph['building']->id}/charge-formulas",
+            [
+                'title' => 'تعمیرات مساوی',
+                'builder' => [
+                    'calculation_type' =>
+                        ChargeCalculationType::Equal->value,
+                    'financial_category_id' =>
+                        $repairCategory->id,
+                ],
+            ]
+        )->assertCreated();
+
         $waterId = $this->postJson('/api/v1/expenses', [
             'building_id' => $graph['building']->id,
+            'financial_category_id' =>
+                $waterCategory->id,
             'title' => 'آب مشترک',
             'amount' => 300_000,
             'expense_date' => '2026-08-10',
-            'allocation_method' => 'persons',
             'payer_responsibility' => 'resident',
             'status' => 'posted',
         ])
             ->assertCreated()
-            ->assertJsonPath('data.allocation_method', 'persons')
             ->assertJsonPath('data.payer_responsibility', 'resident')
             ->json('data.id');
 
         $repairId = $this->postJson('/api/v1/expenses', [
             'building_id' => $graph['building']->id,
+            'financial_category_id' =>
+                $repairCategory->id,
             'title' => 'تعمیرات اساسی نما',
             'amount' => 300_000,
             'expense_date' => '2026-08-12',
-            'allocation_method' => 'equal',
             'payer_responsibility' => 'owner',
             'status' => 'posted',
         ])
