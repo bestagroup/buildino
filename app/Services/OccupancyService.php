@@ -18,10 +18,28 @@ class OccupancyService
             $data,
             $actor
         ): UnitOccupancy {
-            Unit::query()
+            $unit = Unit::query()
                 ->whereKey((int) $data['unit_id'])
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            if (
+                array_key_exists(
+                    'resident_count',
+                    $data
+                )
+            ) {
+                $unit->update([
+                    'resident_count' =>
+                        (int) $data[
+                            'resident_count'
+                        ],
+                ]);
+
+                unset(
+                    $data['resident_count']
+                );
+            }
 
             $duplicateExists = UnitOccupancy::query()
                 ->where('unit_id', $data['unit_id'])
@@ -66,10 +84,28 @@ class OccupancyService
             $occupancy,
             $data
         ): UnitOccupancy {
-            Unit::query()
+            $unit = Unit::query()
                 ->whereKey((int) $occupancy->unit_id)
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            if (
+                array_key_exists(
+                    'resident_count',
+                    $data
+                )
+            ) {
+                $unit->update([
+                    'resident_count' =>
+                        (int) $data[
+                            'resident_count'
+                        ],
+                ]);
+
+                unset(
+                    $data['resident_count']
+                );
+            }
 
             if (($data['is_primary'] ?? false) === true) {
                 UnitOccupancy::query()
@@ -98,7 +134,7 @@ class OccupancyService
             $actor,
             $endsAt
         ): UnitOccupancy {
-            Unit::query()
+            $unit = Unit::query()
                 ->whereKey((int) $occupancy->unit_id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -126,6 +162,35 @@ class OccupancyService
                 'is_primary' => false,
                 'ended_by' => $actor->getKey(),
             ]);
+
+            $hasActiveOccupancy =
+                UnitOccupancy::query()
+                    ->where(
+                        'unit_id',
+                        $occupancy->unit_id
+                    )
+                    ->whereKeyNot(
+                        $occupancy->getKey()
+                    )
+                    ->where('is_active', true)
+                    ->where(function (
+                        $query
+                    ): void {
+                        $query
+                            ->whereNull('ends_at')
+                            ->orWhereDate(
+                                'ends_at',
+                                '>=',
+                                now()->toDateString()
+                            );
+                    })
+                    ->exists();
+
+            if (! $hasActiveOccupancy) {
+                $unit->update([
+                    'resident_count' => 0,
+                ]);
+            }
 
             return $occupancy->refresh();
         });
