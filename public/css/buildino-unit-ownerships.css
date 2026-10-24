@@ -45,6 +45,7 @@
 .ownership-record__meta .is-primary { background: var(--success-soft); color: var(--success); }
 .ownership-record__actions { display: flex; flex-wrap: wrap; gap: 7px; }
 .ownership-history { margin-block-start: 18px; border-top: 1px solid var(--border); }
+.ownership-subheading { margin: 22px 0 12px; color: var(--text); font-size: 15px; font-weight: 800; }
 .ownership-history summary { padding-block: 16px; color: var(--primary-700); cursor: pointer; font-size: 13px; font-weight: 700; }
 .ownership-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-block-start: 20px; padding-block-start: 18px; border-top: 1px solid var(--border); }
 .ownership-actions span, .ownership-actions a { color: var(--muted); font-size: 12px; }

@@ -100,6 +100,10 @@ class ManagementOperationsController extends Controller
             return app(UnitOwnershipPageController::class)(request(), $permissions);
         }
 
+        if ($resource === 'occupancies') {
+            return app(UnitOccupancyPageController::class)(request(), $permissions);
+        }
+
         $inertiaResources = config(
             'management_ui.inertia_resources',
             []

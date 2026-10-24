@@ -265,7 +265,10 @@ class ManagementLookupController extends Controller
                 ),
 
             'ownership_candidates' =>
-                $this->ownershipCandidateLookup($request),
+                $this->residencyCandidateLookup($request, 'unit-ownerships.create'),
+
+            'occupancy_candidates' =>
+                $this->residencyCandidateLookup($request, 'unit-occupancies.create'),
 
             'invitable_users' =>
                 $this->invitableUserLookup(
@@ -618,7 +621,7 @@ class ManagementLookupController extends Controller
         ]);
     }
 
-    private function ownershipCandidateLookup(Request $request)
+    private function residencyCandidateLookup(Request $request, string $permission)
     {
         $unit = Unit::query()
             ->with('floor.block.building')
@@ -627,7 +630,7 @@ class ManagementLookupController extends Controller
 
         abort_unless(
             $building
-            && $this->permissions->allows($request->user(), 'unit-ownerships.create', $building),
+            && $this->permissions->allows($request->user(), $permission, $building),
             Response::HTTP_FORBIDDEN
         );
 
@@ -659,11 +662,14 @@ class ManagementLookupController extends Controller
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->limit(30)
-            ->get(['id', 'first_name', 'last_name', 'mobile', 'email'])
+            ->get(['id', 'first_name', 'last_name', 'mobile', 'email', 'mobile_verified_at', 'email_verified_at'])
             ->map(fn (User $candidate): array => [
                 'id' => $candidate->id,
                 'label' => trim("{$candidate->first_name} {$candidate->last_name}")
                     .' — '.($candidate->mobile ?: $candidate->email ?: "#{$candidate->id}"),
+                'hasMobile' => filled($candidate->mobile),
+                'mobileVerified' => $candidate->mobile_verified_at !== null,
+                'emailVerified' => $candidate->email_verified_at !== null,
             ]);
     }
 
