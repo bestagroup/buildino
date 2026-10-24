@@ -144,9 +144,9 @@ Also run the Laravel scheduler continuously.
 
 ---
 
-## 6. Mobile / Flutter Authentication
+## 6. API Client Authentication
 
-پیاده‌سازی مرجع این قرارداد در `mobile/` قرار دارد؛ دستورهای ایجاد platform و build release در `mobile/README.md` ثبت شده‌اند.
+این بخش قرارداد سمت Laravel برای کلاینت‌های API را مستند می‌کند. سورس اپلیکیشن بومی در محدوده این مخزن نیست.
 
 Existing endpoints:
 
@@ -162,7 +162,7 @@ POST /api/v1/auth/logout-all
 
 Login remains backward compatible.
 
-Flutter can optionally send:
+API clients can optionally send:
 
 ```json
 {

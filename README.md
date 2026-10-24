@@ -1,6 +1,6 @@
 # Buildino
 
-Buildino یک سامانه مدیریت ساختمان مبتنی بر Laravel 12 و PHP 8.2 است. محصول شامل پنل مدیریت، پرتال نقش‌محور ساکن/مالک/ارائه‌دهنده خدمت، API نسخه‌بندی‌شده و کلاینت Flutter ساکنان در پوشه `mobile/` است.
+Buildino یک سامانه مدیریت ساختمان مبتنی بر Laravel 12 و PHP 8.2 است. محصول شامل پنل مدیریت، پرتال نقش‌محور ساکن/مالک/ارائه‌دهنده خدمت و API نسخه‌بندی‌شده است.
 
 ## قابلیت‌ها
 
@@ -14,7 +14,6 @@ Buildino یک سامانه مدیریت ساختمان مبتنی بر Laravel 1
 - اسناد خصوصی با کنترل دسترسی و اسکن ClamAV
 - گزارش‌های صفی CSV/Excel/PDF و پاک‌سازی زمان‌بندی‌شده
 - ledger وفاداری، rule versioning، انقضای امتیاز و درخواست جایزه
-- کلاینت Flutter با ورود امن، انتخاب واحد، صورتحساب/اقساط، وفاداری و دریافت رسید
 - OpenAPI/Postman تولیدشده از route catalog، health، heartbeat و release gate
 
 ## نیازمندی توسعه محلی
@@ -119,7 +118,6 @@ docker compose --env-file .env.production -f compose.production.yml exec app php
 - `docs/architecture/COMPLETION_PLAN.md`: وضعیت قابلیت‌ها و معیار تحویل
 - `docs/authorization/ROLE_MATRIX.md`: نقش‌ها و scopeها
 - `docs/deployment/PRODUCTION_COMMUNICATION_MOBILE.md`: SMS، FCM، PSP و قرارداد موبایل
-- `mobile/README.md`: اجرای کلاینت Flutter و ساخت خروجی Android/iOS
 - `docs/production/INTEGRATION_ENV_CHECKLIST.md`: متغیرهای integration
 - `docs/production/DEPLOYMENT_RUNBOOK.md`: انتشار، مانیتورینگ، backup و rollback
 

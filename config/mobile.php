@@ -8,7 +8,7 @@ return [
     | Mobile release compatibility
     |--------------------------------------------------------------------------
     |
-    | Flutter should send X-App-Version and X-Device-Id on bootstrap.
+    | API clients should send X-App-Version and X-Device-Id on bootstrap.
     |
     */
     'minimum_supported_version' => env(

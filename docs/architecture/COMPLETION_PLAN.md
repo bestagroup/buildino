@@ -18,7 +18,7 @@
 | 11 | خدمات و پشتیبانی | تکمیل | request/quote/assign/pay، ticket/message/SLA/resolve/reopen و گزارش |
 | 12 | UI مدیریت | تکمیل | design system، CRUD پویا، DataTables server-side محلی، اقساط و وفاداری |
 | 13 | UI پرتال | تکمیل وب | داشبوردهای resident/provider، جزئیات عملیاتی و responsive web؛ پذیرش مرورگر واقعی staging لازم است |
-| 14 | موبایل | تکمیل source | auth/device/bootstrap/version/features/pagination و کلاینت Flutter با secure storage، واحدها، صورتحساب/اقساط، وفاداری و تست CI؛ تولید binary امضاشده به SDK و کلیدهای مالک وابسته است |
+| 14 | قرارداد کلاینت API | Backend موجود؛ اپلیکیشن بومی خارج از دامنه | auth/device/bootstrap/version/features/pagination در Laravel حفظ شده‌اند؛ سورس اپلیکیشن بومی و Job مربوط به آن از مخزن حذف شده‌اند |
 | 15 | OpenAPI/Postman | تکمیل | هر route-method از catalog runtime صادر و security drift خودکار audit می‌شود |
 | 16 | گزارش/خروجی | تکمیل | گزارش مالی/عملیاتی، export صفی CSV/Excel/PDF، retention و permission scope |
 | 17 | وفاداری | تکمیل | ledger idempotent، FIFO allocation، expiry، reversal، rule versioning و claim workflow |
@@ -59,7 +59,6 @@ php artisan release:gate --production
 - DNS، TLS، سرور، registry و سیاست secret manager مالک پروژه
 - بازنویسی تاریخچه Git و rotation کلیدهای قبلی بدون تأیید مالک
 - UAT مرورگر/دستگاه واقعی، تست sandbox PSP و restore drill staging
-- ایجاد scaffolding نهایی Android/iOS و ساخت/امضای binary native بدون Flutter SDK، keystore و Apple/Google accounts
 - IoT در این Release بنا بر تصمیم محصول عمداً خارج از Scope نهایی‌سازی است
 
 راهنمای اجرای این موارد در `docs/production/DEPLOYMENT_RUNBOOK.md` و `docs/production/SECURITY_ROTATION_CHECKLIST.md` قرار دارد.
