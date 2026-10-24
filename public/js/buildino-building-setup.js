@@ -10,7 +10,7 @@
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
     const fa = (number) => Number(number).toLocaleString('fa-IR');
     const digits = (value) => String(value).replace(/[۰-۹٠-٩]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.includes(digit) ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit) : '٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
-    const newBlock = (title = 'بلوک اصلی') => ({ title, startFloor: 0, unitsPerFloor: 2, defaultArea: '', defaultBedrooms: '', usage: 'residential', floors: [] });
+    const newBlock = (title = 'بلوک اصلی') => ({ title, startFloor: 1, unitsPerFloor: 2, defaultArea: '', defaultBedrooms: '', usage: 'residential', floors: [] });
     const freshDraft = () => {
         const chosen = config.buildings.find((building) => Number(building.id) === Number(config.initialBuildingId)) || (config.buildings.length === 1 ? config.buildings[0] : null);
         const block = newBlock(); engine.resizeFloors(block, 3);
@@ -24,11 +24,11 @@
     let restored = false;
     try {
         const saved = JSON.parse(sessionStorage.getItem(key) || 'null');
-        if (saved?.version === 1 && Array.isArray(saved.draft?.blocks) && saved.draft.blocks.length <= 20 && saved.draft.blocks.every((block) => Array.isArray(block.floors) && block.floors.length <= 100 && block.floors.every((floor) => Array.isArray(floor.units) && floor.units.length <= 2000))) {
+        if (saved?.version === 2 && Array.isArray(saved.draft?.blocks) && saved.draft.blocks.length <= 20 && saved.draft.blocks.every((block) => Array.isArray(block.floors) && block.floors.length <= 100 && block.floors.every((floor) => Array.isArray(floor.units) && floor.units.length <= 2000))) {
             draft = saved.draft; step = draft.started ? 3 : Math.max(0, Math.min(3, Number(saved.step) || 0)); furthest = step; restored = true;
         }
     } catch { /* A broken or unavailable browser draft does not block setup. */ }
-    const persist = () => { try { sessionStorage.setItem(key, JSON.stringify({ version: 1, draft, step })); } catch {} };
+    const persist = () => { try { sessionStorage.setItem(key, JSON.stringify({ version: 2, draft, step })); } catch {} };
     const clearError = () => { query('[data-setup-error]').hidden = true; };
     const errorMessage = (message, field) => {
         const error = query('[data-setup-error]'); error.textContent = message; error.hidden = false;
@@ -99,10 +99,9 @@
                 <div class="setup-field"><span>واحد در هر طبقه</span>${counter('data-block-field="unitsPerFloor"', block.unitsPerFloor, 0, 'واحدهای هر طبقه')}</div>
             </div>
             <details class="setup-block__more" data-block-options ${block.optionsOpen ? 'open' : ''}>
-                <summary>تنظیمات بیشتر <small>نام بلوک، طبقه شروع، کاربری و مشخصات واحد</small></summary>
+                <summary>تنظیمات بیشتر <small>نام بلوک، کاربری و مشخصات واحد</small></summary>
                 <div class="setup-fields">
                     ${block.existing ? '' : `<label class="setup-field setup-wide"><span>نام بلوک</span><input type="text" data-block-field="title" value="${esc(block.title)}" maxlength="255"></label>`}
-                    <label class="setup-field"><span>شروع طبقات از</span><select data-block-field="startFloor" data-required="1" ${block.floors.some((floor) => floor.existing) ? 'disabled' : ''}>${[...new Set([-3,-2,-1,0,1,Number(block.startFloor)])].sort((a,b) => a-b).map((number) => `<option value="${number}" ${Number(block.startFloor) === number ? 'selected' : ''}>${esc(engine.labelForFloor(number))}</option>`).join('')}</select></label>
                     <label class="setup-field"><span>کاربری واحدهای جدید</span><select data-block-field="usage" data-required="1">${Object.entries({ residential: 'مسکونی', commercial: 'تجاری', office: 'اداری', other: 'سایر' }).map(([value,label]) => `<option value="${value}" ${block.usage === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
                     <label class="setup-field"><span>متراژ معمول واحدها <small>اختیاری</small></span><input type="number" data-block-field="defaultArea" value="${esc(block.defaultArea)}" min="0" step="0.01" placeholder="مثلاً ۱۰۰ مترمربع"></label>
                     <label class="setup-field"><span>تعداد اتاق معمول <small>اختیاری</small></span><input type="number" data-block-field="defaultBedrooms" value="${esc(block.defaultBedrooms)}" min="0" max="50" step="1"></label>
@@ -214,7 +213,19 @@
         if (draft.started || !event.target.matches('[data-unit-field]')) return;
         const floor = draft.blocks[Number(event.target.closest('[data-block]').dataset.block)].floors[Number(event.target.closest('[data-floor]').dataset.floor)];
         const unit = floor.units[Number(event.target.closest('[data-unit]').dataset.unit)];
-        if (!unit.existing) unit[event.target.dataset.unitField] = event.target.dataset.unitField === 'unit_number' ? digits(event.target.value) : event.target.value;
+        if (!unit.existing) {
+            const field =
+                event.target.dataset.unitField;
+
+            unit[field] =
+                field === 'unit_number'
+                    ? digits(event.target.value)
+                    : event.target.value;
+
+            if (field === 'unit_number') {
+                unit.auto_numbered = false;
+            }
+        }
         clearError(); persist();
     });
     form.addEventListener('change', (event) => {
@@ -229,7 +240,6 @@
             const field = input.dataset.blockField;
             if (field === 'floorCount') engine.resizeFloors(block, input.value);
             else if (field === 'unitsPerFloor') { block.unitsPerFloor = Math.max(0, Math.min(100, Math.trunc(Number(input.value) || 0))); block.floors.forEach((floor) => engine.resizeUnits(block, floor, block.unitsPerFloor)); }
-            else if (field === 'startFloor') { block.startFloor = Number(input.value); block.floors.forEach((floor, index) => { if (!floor.existing) { floor.number = block.startFloor + index; floor.title = engine.labelForFloor(floor.number); } }); }
             else if (field === 'title') { if (!block.existing) block.title = input.value.trim(); }
             else {
                 const previous = block[field]; block[field] = input.value;
