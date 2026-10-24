@@ -29,6 +29,8 @@
 
     <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}">
 </head>
 
 @php
@@ -167,14 +169,8 @@
                 href="{{ route('management.dashboard') }}"
                 aria-label="Buildino"
             >
-                <div class="brand-mark">
-                    <span>B</span>
-                </div>
-
-                <div class="brand-copy">
-                    <strong>Buildino</strong>
-                    <span>سامانه مدیریت هوشمند ساختمان</span>
-                </div>
+                <img class="buildino-brand-image buildino-brand-image--horizontal-light" src="{{ asset('images/buildino-logo-horizontal-light.svg') }}" alt="بیلدینو Buildino" decoding="async">
+                <span class="buildino-brand-compact"><img class="buildino-brand-image buildino-brand-image--mark" src="{{ asset('images/buildino-mark.svg') }}" alt="" decoding="async"></span>
             </a>
 
             <button

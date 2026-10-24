@@ -30,6 +30,8 @@
     <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
 
     <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}">
 </head>
 
 @php
@@ -121,16 +123,8 @@
             href="{{ route('portal.dashboard') }}"
             class="portal-brand"
         >
-            <span class="portal-brand__mark">
-                B
-            </span>
-
-            <span class="portal-brand__copy">
-                <strong>Buildino</strong>
-                <small>
-                    پرتال کاربران
-                </small>
-            </span>
+            <img class="buildino-brand-image buildino-brand-image--horizontal-light" src="{{ asset('images/buildino-logo-horizontal-light.svg') }}" alt="بیلدینو Buildino" decoding="async">
+            <span class="buildino-brand-context">پرتال کاربران</span>
         </a>
 
         <div class="portal-user-card">
