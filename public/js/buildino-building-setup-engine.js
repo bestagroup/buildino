@@ -88,6 +88,8 @@
             block.floors.push(floor);
             resizeUnits(block, floor, block.unitsPerFloor ?? 2);
         }
+
+        renumberGeneratedUnits(block);
     };
     const validate = (draft) => {
         const errors = [];
@@ -152,7 +154,7 @@
             const entry = { title: block.title, existing: true, id: block.id, unitsPerFloor: 2, startFloor: 1, defaultArea: '', defaultBedrooms: '', usage: 'residential', floors: [] };
             for (const floor of floors) {
                 const units = await list(api, `floors/${floor.id}/units?per_page=100`);
-                entry.floors.push({ number: Number(floor.floor_number), title: floor.title || labelForFloor(Number(floor.floor_number)), existing: true, id: floor.id, units: units.map((unit) => ({ id: unit.id, unit_number: unit.unit_number, usage_type: unit.usage_type, existing: true, area: unit.area ?? '', bedrooms: unit.bedrooms ?? '' })) });
+                entry.floors.push({ number: Number(floor.floor_number), title: floor.title || labelForFloor(Number(floor.floor_number)), existing: true, id: floor.id, units: units.map((unit) => ({ id: unit.id, unit_number: unit.unit_number, auto_numbered: false, usage_type: unit.usage_type, existing: true, area: unit.area ?? '', bedrooms: unit.bedrooms ?? '' })) });
             }
             entry.floors.sort((a, b) => a.number - b.number);
             entry.startFloor =
