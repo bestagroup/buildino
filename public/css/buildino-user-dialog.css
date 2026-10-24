@@ -6,7 +6,7 @@
     height: min(740px, calc(100vh - 32px));
     height: min(740px, calc(100dvh - 32px));
     max-height: calc(100dvh - 32px);
-    min-height: 280px;
+    min-height: 0;
     border: 1px solid var(--border);
     border-radius: 18px;
     padding: 18px;

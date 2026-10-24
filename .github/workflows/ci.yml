@@ -148,6 +148,7 @@ jobs:
       - name: Run database integrity tests on MariaDB
         run: |
           php artisan test tests/Feature/System/DatabaseHardeningTest.php
+          php artisan test tests/Feature/Web/AdminCreatedUserOnboardingTest.php
           php artisan test tests/Feature/Financial
 
   backend-hardening:
