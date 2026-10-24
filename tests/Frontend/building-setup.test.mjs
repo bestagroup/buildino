@@ -7,7 +7,7 @@ const context = vm.createContext({});
 vm.runInContext(readFileSync(new URL('../../public/js/buildino-building-setup-engine.js', import.meta.url), 'utf8'), context);
 const engine = context.BuildinoBuildingSetupEngine;
 const draft = () => {
-    const block = { title: 'Main', startFloor: 0, unitsPerFloor: 2, defaultArea: 85, defaultBedrooms: 2, usage: 'residential', floors: [] };
+    const block = { title: 'Main', startFloor: 1, unitsPerFloor: 2, defaultArea: 85, defaultBedrooms: 2, usage: 'residential', floors: [] };
     engine.resizeFloors(block, 2);
     return { mode: 'new', token: '12345678-1234-1234-1234-123456789abc', title: 'Building', complexMode: 'standalone', province: 'تهران', city: 'تهران', blocks: [block] };
 };
@@ -38,6 +38,50 @@ const memoryApi = () => {
     };
     return { data, writes, api, loseNextUnit: () => { lost = true; }, denyUnits: () => { deny = true; } };
 };
+
+test('new setup starts at floor one and keeps generated unit numbers sequential', () => {
+    const plan = draft();
+    const block = plan.blocks[0];
+
+    assert.deepEqual(
+        block.floors.map((floor) => floor.number),
+        [1, 2]
+    );
+
+    assert.deepEqual(
+        block.floors.map((floor) =>
+            floor.units.map((unit) => unit.unit_number)
+        ),
+        [['1', '2'], ['3', '4']]
+    );
+
+    engine.resizeUnits(
+        block,
+        block.floors[0],
+        3
+    );
+
+    assert.deepEqual(
+        block.floors.map((floor) =>
+            floor.units.map((unit) => unit.unit_number)
+        ),
+        [['1', '2', '3'], ['4', '5']]
+    );
+
+    engine.resizeFloors(block, 3);
+
+    assert.deepEqual(
+        block.floors.map((floor) => floor.number),
+        [1, 2, 3]
+    );
+
+    assert.deepEqual(
+        block.floors.flatMap((floor) =>
+            floor.units.map((unit) => unit.unit_number)
+        ),
+        ['1', '2', '3', '4', '5', '6', '7']
+    );
+});
 
 test('bulk generation preserves edited and existing rows when counts change', () => {
     const plan = draft(); const block = plan.blocks[0];
