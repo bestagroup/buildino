@@ -112,6 +112,10 @@ class ManagementOperationsController extends Controller
             return app(FacilityConfigurationPageController::class)(request(), $permissions);
         }
 
+        if ($resource === 'reservations') {
+            return app(FacilityReservationPageController::class)(request(), $permissions);
+        }
+
         $inertiaResources = config(
             'management_ui.inertia_resources',
             []

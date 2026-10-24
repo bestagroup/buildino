@@ -1,0 +1,36 @@
+.reservation-page .ownership-flow { margin-block: 20px; }
+.reservation-page .ownership-form-hint { line-height: 1.9; }
+.reservation-page .ownership-record { gap: 16px; }
+.reservation-page .ownership-record__main { flex: 1; }
+.reservation-page .ownership-record__main small { line-height: 1.9; }
+.reservation-page .ownership-button { min-height: 44px; }
+.reservation-page .ownership-card:focus-within { scroll-margin-block: 24px; }
+.reservation-page [tabindex="-1"]:focus { outline: none; }
+.reservation-page [aria-invalid="true"] { border-color: var(--danger); }
+.reservation-page .ownership-alert { scroll-margin-block: 25px; line-height: 1.9; }
+.reservation-facilities { margin-block-start: 16px; }
+.reservation-facilities .ownership-record { padding: 20px; background: var(--surface); border-radius: 14px; }
+.reservation-facilities .ownership-record > button { border-color: var(--primary-500); color: var(--primary-700); background: var(--primary-50); }
+.reservation-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-block-start: 16px; }
+.reservation-slots .ownership-record { display: grid; align-content: start; gap: 14px; padding: 18px; border-radius: 14px; }
+.reservation-slots .ownership-record.is-unavailable { background: var(--surface-soft); }
+.reservation-slots .ownership-record:not(.is-unavailable) { background: var(--surface); border-color: var(--primary-100); }
+.reservation-slots .ownership-record:not(.is-unavailable) button { background: var(--primary-50); color: var(--primary-700); border-color: var(--primary-500); }
+.reservation-note { margin-block: 14px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; color: var(--text-soft); background: var(--surface-soft); font-size: 12px; line-height: 1.9; }
+.reservation-note p { margin: 0; }
+.reservation-date-shortcuts { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-block: 18px; }
+.reservation-date-shortcuts span { color: var(--muted); font-size: 12px; }
+.reservation-page .facility-block { border-radius: 12px; }
+.reservation-page [data-reservation-pay-form], .reservation-page [data-reservation-cancel-form], .reservation-page [data-reservation-decision-form] { padding: 20px; background: var(--surface-soft); border: 1px solid var(--border); }
+.reservation-status { display: inline-flex; padding: 5px 10px; border-radius: 8px; font-size: 11px; background: var(--surface-strong); color: var(--text-soft); }
+.reservation-status--approved, .reservation-status--confirmed { color: var(--success); background: var(--success-soft); }
+.reservation-status--payment_pending, .reservation-status--pending { color: var(--warning); background: var(--warning-soft); }
+@media (max-width: 600px) {
+    .reservation-slots { grid-template-columns: 1fr; }
+    .reservation-facilities .ownership-record > button { width: 100%; }
+    .reservation-page .ownership-editor__actions > button { flex: 1; }
+    .reservation-page .ownership-card__heading--split { gap: 10px; }
+    .reservation-page .ownership-card__heading--split > button { margin-inline-start: 0; flex: 1; }
+    .reservation-page .ownership-card__heading--split > div { flex-basis: 100%; }
+    .reservation-page [data-reservation-actions] > button { width: 100%; }
+}
