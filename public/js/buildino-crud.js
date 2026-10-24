@@ -275,6 +275,8 @@
             channel: { sms: 'پیامک', email: 'ایمیل' },
         } : bootstrap.resourceKey === 'units' ? {
             usage_type: { residential: 'مسکونی', commercial: 'تجاری', office: 'اداری', other: 'سایر' },
+        } : bootstrap.resourceKey === 'charge-formulas' ? {
+            calculation_type: { fixed: 'مبلغ ثابت هر واحد', area: 'متناسب با متراژ', persons: 'متناسب با نفرات', equal: 'تقسیم مساوی', floor_coefficient: 'ضریب طبقه' },
         } : {};
         const displayValue = processLabels[column.key]?.[value] ?? value;
 
@@ -295,7 +297,7 @@
 
             return `
                 <span class="crud-status crud-status--${boolValue ? "success" : "muted"}">
-                    ${boolValue ? "بله" : "خیر"}
+                    ${bootstrap.resourceKey === 'charge-formulas' && column.key === 'is_active' ? (boolValue ? 'فعال' : 'غیرفعال') : (boolValue ? "بله" : "خیر")}
                 </span>
             `;
         }
@@ -1718,6 +1720,19 @@
 
         syncVisibility();
 
+        if (window.BuildinoChargeFormulaUi) {
+            window.BuildinoChargeFormulaUi.mount(component, {
+                collect: () => collectChargeFormulaBuilder(component),
+                form: elements.form,
+                saveButton: elements.saveButton,
+                row,
+                reloadCategories: async () => {
+                    lookupCache.clear();
+                    await loadLookupOptions(categorySelect, { type: "select", lookup: "expense_categories" }, categorySelect.value || item?.financial_category_id || null);
+                },
+            });
+        }
+
         window.BuildinoSelect2
             ?.enhance(component);
 
@@ -2544,6 +2559,7 @@
         );
         elements.saveButton.disabled =
             loading;
+        if (!loading) $("[data-charge-formula-builder]", elements.formFields)?.syncFormulaFooter?.();
     };
 
     const lockPageScroll = () => {
@@ -2682,6 +2698,9 @@
     };
 
     const closeDrawer = () => {
+        const formulaWizard = $("[data-charge-formula-builder]", elements.formFields);
+        if (formulaWizard?.requestFormulaClose && !formulaWizard.requestFormulaClose()) return;
+        elements.form.chargeWizardDestroy?.();
         state.drawerRenderId += 1;
 
         elements.drawer
@@ -2723,6 +2742,8 @@
         event.preventDefault();
         if (elements.saveButton.disabled) return;
         if (coreResource) core?.showErrors(elements.formFields, {});
+        const formulaWizard = $("[data-charge-formula-builder]", elements.formFields);
+        if (formulaWizard?.prepareFormulaSubmit && !formulaWizard.prepareFormulaSubmit()) return;
 
         const mode =
             elements.form
@@ -2759,6 +2780,7 @@
                 true;
             elements.saveButton.textContent =
                 "در حال ذخیره...";
+            formulaWizard?.setFormulaBusy?.(true);
 
             const { payload: savedPayload } = await apiFetch(
                 endpoint,
@@ -2781,7 +2803,9 @@
             if (coreResource) core?.saved(bootstrap.resourceKey, savedPayload?.data || savedPayload, mode);
 
             toast(
-                bootstrap.resourceKey === "invitations"
+                bootstrap.resourceKey === "charge-formulas"
+                    ? payload.is_active ? "فرمول ذخیره و فعال شد؛ در محاسبه دوره‌های ساختمان استفاده می‌شود." : "فرمول به‌صورت غیرفعال ذخیره شد."
+                    : bootstrap.resourceKey === "invitations"
                 && mode === "create"
                 && savedPayload?.meta?.sent_count
                     ? `دعوت‌نامه برای ${formulaNumber(savedPayload.meta.sent_count)} کاربر ارسال شد.`
@@ -2794,6 +2818,8 @@
                     : "رکورد با موفقیت ثبت شد."
             );
 
+            formulaWizard?.markFormulaSaved?.();
+            formulaWizard?.setFormulaBusy?.(false);
             closeDrawer();
 
             if (resource.list) {
@@ -2803,15 +2829,18 @@
         } catch (error) {
             elements.formError
                 .textContent =
-                error.message;
+                formulaWizard ? "" : error.message;
             if (coreResource) core?.showErrors(elements.formFields, error.payload?.errors || {});
+            formulaWizard?.showFormulaErrors?.(error.payload?.errors || {}, error.message);
         } finally {
             elements.saveButton.disabled =
                 false;
+            formulaWizard?.setFormulaBusy?.(false);
             elements.saveButton.textContent =
                 mode === "edit"
                     ? "ذخیره تغییرات"
                     : "ثبت رکورد";
+            formulaWizard?.syncFormulaFooter?.();
         }
     };
 

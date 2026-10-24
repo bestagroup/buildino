@@ -6,6 +6,9 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/buildino-crud.css') }}">
+    @if ($resourceKey === 'charge-formulas')
+        <link rel="stylesheet" href="{{ asset('css/buildino-charge-formulas.css') }}?v={{ filemtime(public_path('css/buildino-charge-formulas.css')) }}">
+    @endif
 @endpush
 
 @php
@@ -54,6 +57,10 @@
     </div>
 
     <div data-core-flow-host hidden></div>
+
+    @if ($resourceKey === 'charge-formulas')
+        @include('management.partials.charge-formula-guide')
+    @endif
 
     <section class="crud-header">
         <div class="crud-header__copy">
@@ -250,7 +257,7 @@
     ></div>
 
     <aside
-        class="crud-drawer"
+        class="crud-drawer{{ $resourceKey === 'charge-formulas' ? ' charge-formula-dialog' : '' }}"
         id="crudDrawer"
         role="dialog"
         aria-modal="true"
@@ -396,6 +403,9 @@
         csrfToken: @json(csrf_token())
     };
 </script>
+@if ($resourceKey === 'charge-formulas')
+<script src="{{ asset('js/buildino-charge-formula-ui.js') }}?v={{ filemtime(public_path('js/buildino-charge-formula-ui.js')) }}" defer></script>
+@endif
 <script
     src="{{ asset('js/buildino-crud.js') }}"
     defer
