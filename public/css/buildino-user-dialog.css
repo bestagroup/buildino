@@ -1,0 +1,73 @@
+/* Scoped exclusively to /management/operations/users. */
+#crudDrawer.user-registration-dialog {
+    inset: 50% auto auto 50%;
+    width: min(720px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    height: min(740px, calc(100vh - 32px));
+    height: min(740px, calc(100dvh - 32px));
+    max-height: calc(100dvh - 32px);
+    min-height: 280px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px;
+    transform: translate(-50%, calc(-50% + 18px)) scale(.98);
+    box-shadow: 0 24px 84px rgba(4, 19, 35, .28);
+}
+#crudDrawer.user-registration-dialog.is-open {
+    transform: translate(-50%, -50%) scale(1);
+}
+#crudDrawer.user-registration-dialog > .crud-form {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    gap: 12px;
+}
+#crudDrawer.user-registration-dialog .crud-form-grid {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    overscroll-behavior: contain;
+    padding: 4px 4px 12px;
+    align-content: start;
+}
+#crudDrawer.user-registration-dialog .crud-form-actions {
+    flex: 0 0 auto;
+    position: relative;
+    margin: 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+}
+#crudDrawer.user-registration-dialog .crud-form-error {
+    max-height: 76px;
+    overflow-y: auto;
+}
+.user-registration-dialog__note {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--surface-soft);
+    color: var(--text-soft);
+    font-size: 12px;
+    line-height: 1.9;
+}
+@media (max-width: 650px) {
+    #crudDrawer.user-registration-dialog {
+        width: calc(100vw - 16px);
+        max-width: calc(100vw - 16px);
+        height: calc(100vh - 16px);
+        height: calc(100dvh - 16px);
+        max-height: calc(100dvh - 16px);
+        border-radius: 12px;
+        padding: 12px;
+    }
+    #crudDrawer.user-registration-dialog .crud-drawer__header {
+        margin: -12px -12px 12px;
+        padding: 12px;
+    }
+    #crudDrawer.user-registration-dialog .crud-form-actions {
+        flex-wrap: wrap;
+    }
+}

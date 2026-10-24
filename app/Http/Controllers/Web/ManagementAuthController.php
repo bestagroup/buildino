@@ -121,6 +121,10 @@ class ManagementAuthController extends Controller
             'last_login_ip' => $request->ip(),
         ])->save();
 
+        if ($user->must_change_password) {
+            return redirect()->route('password.first-change');
+        }
+
         $request->session()->flash('buildino.login_success', true);
 
         return redirect()
@@ -188,6 +192,10 @@ class ManagementAuthController extends Controller
 
         $request->session()->forget($sessionKey);
         $otp->login($request, $user);
+
+        if ($user->must_change_password) {
+            return redirect()->route('password.first-change');
+        }
 
         $request->session()->flash('buildino.login_success', true);
 

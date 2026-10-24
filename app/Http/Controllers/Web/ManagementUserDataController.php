@@ -130,12 +130,8 @@ class ManagementUserDataController extends Controller
                 'max:255',
                 'unique:users,email',
             ],
-            'password' => [
-                'required',
-                'string',
-                'min:8',
-                'max:255',
-            ],
+            // Password submitted by a browser or API client is ignored on creation.
+            'password' => ['sometimes', 'nullable', 'string'],
             'is_active' =>
                 ['sometimes', 'boolean'],
             'is_blocked' =>
@@ -165,9 +161,8 @@ class ManagementUserDataController extends Controller
                         $data['email']
                         ?? null,
                     'password' =>
-                        Hash::make(
-                            $data['password']
-                        ),
+                        Hash::make('123456789'),
+                    'must_change_password' => true,
                     'mobile_verified_at' =>
                         ($data[
                             'verify_mobile'
@@ -321,6 +316,7 @@ class ManagementUserDataController extends Controller
                         Hash::make(
                             $data['password']
                         );
+                    $user->must_change_password = true;
                 }
 
                 if (

@@ -178,6 +178,7 @@ class ManagementPasswordResetController extends Controller
                 $user->forceFill([
                     'password' =>
                         $data['password'],
+                    'must_change_password' => false,
 
                     'remember_token' =>
                         Str::random(

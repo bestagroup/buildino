@@ -29,6 +29,7 @@ class User extends Authenticatable
         'mobile_verified_at',
         'email_verified_at',
         'password',
+        'must_change_password',
         'avatar',
         'is_active',
         'is_blocked',
@@ -51,6 +52,7 @@ class User extends Authenticatable
             'is_blocked' => 'boolean',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
             'gender' => UserGender::class,
         ];
     }

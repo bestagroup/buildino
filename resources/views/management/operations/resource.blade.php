@@ -9,6 +9,9 @@
     @if ($resourceKey === 'charge-formulas')
         <link rel="stylesheet" href="{{ asset('css/buildino-charge-formulas.css') }}?v={{ filemtime(public_path('css/buildino-charge-formulas.css')) }}">
     @endif
+    @if ($resourceKey === 'users')
+        <link rel="stylesheet" href="{{ asset('css/buildino-user-dialog.css') }}?v=1">
+    @endif
 @endpush
 
 @php
@@ -257,7 +260,7 @@
     ></div>
 
     <aside
-        class="crud-drawer{{ $resourceKey === 'charge-formulas' ? ' charge-formula-dialog' : '' }}"
+        class="crud-drawer{{ $resourceKey === 'charge-formulas' ? ' charge-formula-dialog' : '' }}{{ $resourceKey === 'users' ? ' user-registration-dialog' : '' }}"
         id="crudDrawer"
         role="dialog"
         aria-modal="true"
@@ -294,6 +297,11 @@
                 type="hidden"
                 id="crudRecordId"
             >
+            @if ($resourceKey === 'users')
+                <p class="user-registration-dialog__note">
+                    کاربران جدید با رمز اولیه 123456789 ساخته می‌شوند و در اولین ورود باید رمز شخصی خود را تعیین کنند.
+                </p>
+            @endif
 
             <div
                 class="crud-form-grid"

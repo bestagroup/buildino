@@ -644,13 +644,7 @@ return [
                     'label' => 'ایمیل',
                     'type' => 'email'
                 ],
-                [
-                    'name' => 'password',
-                    'label' => 'رمز عبور',
-                    'type' => 'password',
-                    'required_on_create' => true
-                ],
-                [
+[
                     'name' => 'verify_mobile',
                     'label' => 'تأیید موبایل',
                     'type' => 'checkbox',

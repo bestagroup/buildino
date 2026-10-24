@@ -4,6 +4,7 @@ use App\Exceptions\ApiException;
 use App\Http\Middleware\ApplyApiSecurityHeaders;
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\EnsureBuildingAccess;
+use App\Http\Middleware\EnsureInitialPasswordChanged;
 use App\Http\Middleware\EnsureSubscriptionIsActive;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureVerifiedIdentity;
@@ -62,6 +63,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'user.active' => EnsureUserIsActive::class,
+            'password.changed' => EnsureInitialPasswordChanged::class,
             'identity.verified' => EnsureVerifiedIdentity::class,
             'building.context' => ResolveBuildingContext::class,
             'building.access' => EnsureBuildingAccess::class,
@@ -86,6 +88,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ],
             append: [
                 HandleInertiaRequests::class,
+                EnsureInitialPasswordChanged::class,
             ]
         );
 

@@ -49,6 +49,14 @@ class AuthenticationService
     {
         $this->ensureAccountAllowed($user);
 
+        if ($user->must_change_password) {
+            throw new ApiException(
+                'PASSWORD_CHANGE_REQUIRED',
+                'Change your initial password using the web portal before using the API.',
+                403
+            );
+        }
+
         $user->forceFill([
             'last_login_at' => now(),
             'last_login_ip' => $request->ip(),

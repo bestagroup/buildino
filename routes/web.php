@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\ManagementAuthController;
+use App\Http\Controllers\Web\InitialPasswordChangeController;
 use App\Http\Controllers\Web\BuildingSetupController;
 use App\Http\Controllers\Web\ManagementDashboardController;
 use App\Http\Controllers\Web\ManagementLookupController;
@@ -169,6 +170,18 @@ Route::middleware('guest')
             ->middleware('throttle:auth')
             ->name('password.update');
     });
+
+Route::middleware('auth')->group(function (): void {
+    Route::get(
+        '/account/change-initial-password',
+        [InitialPasswordChangeController::class, 'edit']
+    )->name('password.first-change');
+
+    Route::post(
+        '/account/change-initial-password',
+        [InitialPasswordChangeController::class, 'update']
+    )->middleware('throttle:auth')->name('password.first-change.update');
+});
 
 Route::middleware([
     'auth',
