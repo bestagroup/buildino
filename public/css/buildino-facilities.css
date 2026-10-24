@@ -1,0 +1,15 @@
+.facility-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-block-end: 22px; }
+.facility-steps button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 48px; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
+.facility-steps button[aria-current="step"] { background: var(--primary-50); border-color: var(--primary-500); color: var(--primary-700); font-weight: 800; }
+.facility-steps button:focus-visible { outline: 2px solid var(--primary-500); outline-offset: 2px; }
+.facility-steps button:disabled { opacity: .55; cursor: default; }
+.facility-days { display: flex; flex-wrap: wrap; gap: 8px; border: 0; padding: 0; margin: 0; }
+.facility-days legend { margin-block-end: 10px; color: var(--text-soft); font-size: 13px; }
+.facility-days label { display: flex; align-items: center; gap: 6px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-soft); color: var(--text-soft); font-size: 12px; cursor: pointer; }
+.facility-days label:has(input:checked) { border-color: var(--primary-500); background: var(--primary-50); color: var(--primary-700); }
+.facility-days input { accent-color: var(--primary-700); }
+.facility-block { margin-block-start: 25px; padding-block-start: 20px; border-top: 1px solid var(--border); }
+.facility-block h4 { margin: 0 0 14px; color: var(--text); font-size: 15px; }
+.facility-block .ownership-record-list { margin-block: 16px; }
+.facility-ready { color: var(--success); }
+@media (max-width: 600px) { .facility-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
