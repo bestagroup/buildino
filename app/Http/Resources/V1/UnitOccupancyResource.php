@@ -36,6 +36,9 @@ class UnitOccupancyResource extends JsonResource
                     'last_name' => $this->user->last_name,
                     'mobile' => $this->user->mobile,
                     'email' => $this->user->email,
+                    'account_active' => (bool) $this->user->is_active && ! (bool) $this->user->is_blocked,
+                    'mobile_verified' => $this->user->mobile_verified_at !== null,
+                    'email_verified' => $this->user->email_verified_at !== null,
                 ]
             ),
 

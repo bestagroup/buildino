@@ -30,6 +30,89 @@ class UnitInvitationFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_pending_occupancy_invitation_activates_only_after_acceptance(): void
+    {
+        $manager = $this->createUser('09121160001', 'manager-p08@example.test');
+        $resident = $this->createUser('09121160002', 'resident-p08@example.test');
+        $resident->forceFill(['mobile_verified_at' => null, 'email_verified_at' => null])->save();
+        $other = $this->createUser('09121160003', 'other-p08@example.test');
+        $building = $this->createStructure('P08');
+        $foreign = $this->createStructure('P08-OTHER');
+        $role = $this->createRoleWithPermissions('p08-manager', [
+            'unit-invitations.view', 'unit-invitations.create',
+            'unit-occupancies.view', 'unit-occupancies.create',
+        ]);
+        $this->assignRole($manager, $role, $building['building']);
+        $this->app->instance(SmsSender::class, new class implements SmsSender {
+            public function send(string $mobile, string $message): array { return ['accepted' => true]; }
+        });
+
+        Sanctum::actingAs($manager);
+        $payload = [
+            'user_ids' => [$resident->id],
+            'occupancy' => [
+                'occupancy_type' => 'tenant',
+                'starts_at' => now()->toDateString(),
+                'ends_at' => now()->addMonth()->toDateString(),
+                'is_primary' => true,
+                'notes' => 'P08 planned occupancy',
+            ],
+        ];
+        $this->postJson("/api/v1/units/{$foreign['unit']->id}/invitations", $payload)->assertForbidden();
+        $this->postJson("/api/v1/units/{$building['unit']->id}/invitations", [
+            ...$payload, 'occupancy' => [...$payload['occupancy'], 'occupancy_type' => 'owner'],
+        ])->assertUnprocessable();
+        $created = $this->postJson("/api/v1/units/{$building['unit']->id}/invitations", $payload)
+            ->assertCreated()
+            ->assertJsonPath('data.0.planned_occupancy.occupancy_type', 'tenant');
+        $this->assertDatabaseMissing('unit_occupancies', [
+            'unit_id' => $building['unit']->id, 'user_id' => $resident->id,
+        ]);
+        $this->getJson("/api/v1/units/{$building['unit']->id}/invitations")
+            ->assertOk()->assertJsonPath('data.0.invited_user.identity_verified', false);
+        $this->postJson("/api/v1/units/{$building['unit']->id}/invitations", $payload)->assertUnprocessable();
+        $token = $created->json("meta.accept_tokens.{$resident->id}");
+        $code = $created->json("meta.invitation_codes.{$resident->id}");
+        Sanctum::actingAs($other);
+        $this->postJson('/api/v1/unit-invitations/accept', ['token' => $token])->assertForbidden();
+        Sanctum::actingAs($resident);
+        $this->postJson('/api/v1/unit-invitations/accept', ['token' => $token])->assertForbidden();
+        $resident->forceFill(['mobile_verified_at' => now()])->save();
+        \Illuminate\Support\Facades\Auth::guard('web')->logout();
+        $this->post('/portal/login', ['login' => $resident->mobile, 'password' => 'TestPassword123!'])
+            ->assertRedirect(route('portal.dashboard'));
+        $this->actingAs($resident, 'web')->get('/portal/resident')->assertOk()->assertSee('data-invitation-code-form', false);
+        Sanctum::actingAs($resident);
+        $this->postJson('/api/v1/unit-invitations/resolve', ['token' => $code])
+            ->assertOk()->assertJsonPath('data.invited_user_id', $resident->id);
+        $this->postJson('/api/v1/unit-invitations/accept', ['token' => $code])
+            ->assertOk()->assertJsonPath('data.status', 'accepted');
+        $this->assertDatabaseHas('unit_occupancies', [
+            'unit_id' => $building['unit']->id,
+            'user_id' => $resident->id,
+            'occupancy_type' => 'tenant',
+            'is_primary' => true,
+            'is_active' => true,
+            'notes' => 'P08 planned occupancy',
+        ]);
+        $occupancy = UnitOccupancy::query()->where('unit_id', $building['unit']->id)
+            ->where('user_id', $resident->id)->firstOrFail();
+        $this->assertSame($payload['occupancy']['starts_at'], $occupancy->starts_at->toDateString());
+        $this->assertSame($payload['occupancy']['ends_at'], $occupancy->ends_at->toDateString());
+        $this->postJson('/api/v1/unit-invitations/accept', ['token' => $token])->assertOk();
+        $this->assertSame(1, UnitOccupancy::query()->where('unit_id', $building['unit']->id)
+            ->where('user_id', $resident->id)->count());
+
+        Sanctum::actingAs($manager);
+        $this->getJson("/api/v1/units/{$building['unit']->id}/occupancies")
+            ->assertOk()
+            ->assertJsonPath('data.0.user.account_active', true)
+            ->assertJsonPath('data.0.user.mobile_verified', true);
+        $resident->forceFill(['is_blocked' => true])->save();
+        $this->getJson("/api/v1/units/{$building['unit']->id}/occupancies")
+            ->assertOk()->assertJsonPath('data.0.user.account_active', false);
+    }
+
     public function test_invitation_uses_existing_unit_user_data_without_duplicate_form_fields(): void
     {
         config([

@@ -32,6 +32,7 @@ class UnitInvitation extends Model
         'accepted_at',
         'cancelled_at',
         'accepted_user_id',
+        'occupancy_data',
     ];
 
     protected function casts(): array
@@ -45,6 +46,7 @@ class UnitInvitation extends Model
             'expires_at' => 'datetime',
             'accepted_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'occupancy_data' => 'array',
         ];
     }
 

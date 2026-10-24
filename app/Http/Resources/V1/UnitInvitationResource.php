@@ -23,6 +23,13 @@ class UnitInvitationResource extends JsonResource
                 ? $this->relation_type->value
                 : $this->relation_type,
 
+            'planned_occupancy' => $this->occupancy_data === null ? null : [
+                'occupancy_type' => $this->occupancy_data['occupancy_type'],
+                'starts_at' => $this->occupancy_data['starts_at'],
+                'ends_at' => $this->occupancy_data['ends_at'] ?? null,
+                'is_primary' => (bool) ($this->occupancy_data['is_primary'] ?? false),
+            ],
+
             'channel' => is_object($this->channel)
                 ? $this->channel->value
                 : $this->channel,
@@ -70,6 +77,8 @@ class UnitInvitationResource extends JsonResource
                         ),
                         'mobile' => $this->invitedUser->mobile,
                         'email' => $this->invitedUser->email,
+                        'account_active' => (bool) $this->invitedUser->is_active && ! (bool) $this->invitedUser->is_blocked,
+                        'identity_verified' => $this->invitedUser->mobile_verified_at !== null || $this->invitedUser->email_verified_at !== null,
                     ]
                     : null
             ),

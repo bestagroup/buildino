@@ -172,6 +172,39 @@ final class UnitInvitationService
             ->all();
     }
 
+    /** @return array{invitation: UnitInvitation, raw_token: string, invitation_code: string} */
+    public function createForPendingOccupancy(Unit $unit, User $actor, User $recipient, array $occupancy, array $data = []): array
+    {
+        if (UnitOccupancy::query()->where('unit_id', $unit->getKey())
+            ->where('user_id', $recipient->getKey())->where('is_active', true)
+            ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()->toDateString()))
+            ->exists()) {
+            throw ValidationException::withMessages(['user_ids' => ['این شخص هم‌اکنون ساکن این واحد است.']]);
+        }
+
+        $duplicate = UnitInvitation::query()->where('unit_id', $unit->getKey())
+            ->where('invited_user_id', $recipient->getKey())
+            ->whereIn('status', [InvitationStatus::Pending->value, InvitationStatus::Sent->value])
+            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->exists();
+        if ($duplicate) {
+            throw ValidationException::withMessages(['user_ids' => ['برای این شخص دعوت فعال دیگری وجود دارد.']]);
+        }
+
+        $payload = $this->normalizeContactData([
+            'invited_user_id' => $recipient->getKey(),
+            'mobile' => $recipient->mobile,
+            'email' => $recipient->email,
+            'relation_type' => $occupancy['occupancy_type'],
+            'channel' => InvitationChannel::Sms->value,
+            'occupancy_data' => $occupancy,
+            'expires_in_hours' => (int) ($data['expires_in_hours'] ?? 72),
+        ]);
+        $this->assertContactMatchesChannel($payload);
+
+        return $this->createPrepared($unit, $actor, $payload);
+    }
+
     private function relationTypeForUser(
         Unit $unit,
         User $user
@@ -286,6 +319,8 @@ final class UnitInvitationService
                 $this->hashToken($invitationCode),
 
             'status' => InvitationStatus::Pending,
+
+            'occupancy_data' => $data['occupancy_data'] ?? null,
 
             'expires_at' => now()->addHours(
                 (int) ($data['expires_in_hours'] ?? 72)
@@ -473,6 +508,14 @@ final class UnitInvitationService
                 $user
             );
 
+            if ($invitation->occupancy_data !== null && (
+                ! $user->is_active || $user->is_blocked
+                || (config('api_security.require_verified_identity', true)
+                    && ! $user->mobile_verified_at && ! $user->email_verified_at)
+            )) {
+                throw ValidationException::withMessages(['token' => ['برای پذیرش دعوت، حساب فعال و هویت تأییدشده لازم است.']]);
+            }
+
             /*
              * Invitation acceptance creates residency/occupancy.
              *
@@ -501,23 +544,29 @@ final class UnitInvitationService
                 })
                 ->exists();
 
+            if ($activeOccupancyExists && $invitation->occupancy_data !== null) {
+                throw ValidationException::withMessages(['token' => ['سکونت این شخص پیش‌تر ثبت شده است.']]);
+            }
+
             if (! $activeOccupancyExists) {
                 $actor = $invitation->invitedBy
                     ?: $user;
+
+                $planned = $invitation->occupancy_data;
+                if ($planned !== null && ! empty($planned['ends_at']) && $planned['ends_at'] < now()->toDateString()) {
+                    throw ValidationException::withMessages(['token' => ['تاریخ پایان سکونت پیشنهادی گذشته است.']]);
+                }
 
                 $this->occupancies->assign(
                     [
                         'unit_id' => $invitation->unit_id,
                         'user_id' => $user->getKey(),
-                        'occupancy_type' => $invitation->relation_type->value,
-                        'starts_at' => now()->toDateString(),
-                        'ends_at' => null,
-                        'is_primary' => false,
+                        'occupancy_type' => $planned['occupancy_type'] ?? $invitation->relation_type->value,
+                        'starts_at' => $planned['starts_at'] ?? now()->toDateString(),
+                        'ends_at' => $planned['ends_at'] ?? null,
+                        'is_primary' => $planned['is_primary'] ?? false,
                         'is_active' => true,
-                        'notes' => sprintf(
-                            'Created from unit invitation #%d.',
-                            $invitation->getKey()
-                        ),
+                        'notes' => $planned['notes'] ?? sprintf('Created from unit invitation #%d.', $invitation->getKey()),
                     ],
                     $actor
                 );

@@ -4,9 +4,18 @@
     const card = document.querySelector('[data-pending-invitation]');
     if (!card) return;
     let pending;
-    try { pending = JSON.parse(sessionStorage.getItem(key) || 'null'); } catch { return; }
-    if (!/^[a-zA-Z0-9]{32,255}$/.test(pending?.token || '')) return;
+    try { pending = JSON.parse(sessionStorage.getItem(key) || 'null'); } catch { pending = null; }
+    const codeDigits = Number(window.BuildinoPortal?.invitationCodeDigits) || 8;
+    const validCredential = value => typeof value === 'string' && (/^[a-zA-Z0-9]{32,255}$/.test(value) || new RegExp(`^[0-9]{${codeDigits}}$`).test(value));
+    const normalizeDigits = value => String(value).replace(/[۰-۹٠-٩]/g, digit => String('۰۱۲۳۴۵۶۷۸۹'.includes(digit) ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit) : '٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+    if (!validCredential(pending?.token)) pending = null;
+    if (window.BuildinoPortal?.area !== 'resident' && !pending) return;
     card.hidden = false;
+    const entry = card.querySelector('[data-invitation-entry]');
+    const codeForm = card.querySelector('[data-invitation-code-form]');
+    const codeInput = card.querySelector('[data-invitation-code]');
+    codeInput.maxLength = codeDigits;
+    codeInput.pattern = `[0-9]{${codeDigits}}`;
     const status = card.querySelector('[role="status"]');
     const errorBox = card.querySelector('[role="alert"]');
     const details = card.querySelector('[data-invitation-details]');
@@ -18,6 +27,7 @@
     const setBusy = (value) => { busy = value; card.setAttribute('aria-busy', String(value)); accept.disabled = value; retry.disabled = value; cancel.disabled = value; };
     const fail = (error) => {
         status.textContent = '';
+        details.replaceChildren();
         errorBox.textContent = error.status === 404 ? 'دعوتی با این لینک پیدا نشد.'
             : error.status === 403 ? 'این دعوت برای حساب شما قابل پذیرش نیست.'
             : [410, 422].includes(error.status) ? 'این دعوت معتبر یا فعال نیست؛ از دعوت‌کننده لینک تازه دریافت کنید.'
@@ -27,6 +37,15 @@
             const hint = document.createElement('p'); hint.textContent = 'برای بررسی دسترسی یا دریافت دعوت تازه، با دعوت‌کننده تماس بگیرید.'; details.append(hint);
         } else { retry.hidden = false; }
     };
+    codeForm.addEventListener('submit', event => {
+        event.preventDefault();
+        const code = normalizeDigits(codeInput.value.trim());
+        if (!validCredential(code) || busy) return;
+        pending = { token: code };
+        try { sessionStorage.setItem(key, JSON.stringify(pending)); } catch { /* Storage is optional. */ }
+        entry.open = false;
+        void resolve();
+    });
     const resolve = async () => {
         if (busy) return;
         setBusy(true); errorBox.textContent = ''; status.textContent = 'در حال بررسی دعوت…'; accept.hidden = true; retry.hidden = true;
@@ -67,5 +86,5 @@
     });
     cancel.addEventListener('click', () => { if (!busy) { clear(); card.hidden = true; } });
     retry.addEventListener('click', resolve);
-    void resolve();
+    if (pending) void resolve();
 })();

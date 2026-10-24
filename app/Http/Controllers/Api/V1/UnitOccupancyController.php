@@ -36,7 +36,7 @@ class UnitOccupancyController extends Controller
         );
 
         $query = $unit->unitOccupancies()
-            ->with('user:id,first_name,last_name,mobile,email');
+            ->with('user:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at');
 
         if ($request->has('is_active')) {
             $query->where(
@@ -94,7 +94,7 @@ class UnitOccupancyController extends Controller
         );
 
         $occupancy->load([
-            'user:id,first_name,last_name,mobile,email',
+            'user:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'unit:id,floor_id,unit_number,title',
         ]);
 
@@ -112,7 +112,7 @@ class UnitOccupancyController extends Controller
         );
 
         $unitOccupancy->load([
-            'user:id,first_name,last_name,mobile,email',
+            'user:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'unit:id,floor_id,unit_number,title',
         ]);
 
@@ -137,7 +137,7 @@ class UnitOccupancyController extends Controller
         );
 
         $unitOccupancy->load([
-            'user:id,first_name,last_name,mobile,email',
+            'user:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'unit:id,floor_id,unit_number,title',
         ]);
 
@@ -163,7 +163,7 @@ class UnitOccupancyController extends Controller
         );
 
         $unitOccupancy->load([
-            'user:id,first_name,last_name,mobile,email',
+            'user:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'unit:id,floor_id,unit_number,title',
         ]);
 

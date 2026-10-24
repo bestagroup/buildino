@@ -40,7 +40,7 @@ class UnitInvitationController extends Controller
         $query = $unit->unitInvitations()
             ->with([
                 'invitedBy:id,first_name,last_name',
-                'invitedUser:id,first_name,last_name,mobile,email',
+                'invitedUser:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
                 'acceptedUser:id,first_name,last_name,mobile,email',
             ]);
 
@@ -92,6 +92,33 @@ class UnitInvitationController extends Controller
         );
 
         $data = $request->validated();
+
+        if (isset($data['occupancy'])) {
+            abort_unless($permissions->allows($request->user(), 'unit-occupancies.create', $building), 403);
+
+            $recipient = User::query()->whereKey(collect($data['user_ids'])->first())
+                ->where('is_active', true)->where('is_blocked', false)
+                ->whereNotNull('mobile')->where('mobile', '<>', '')->first();
+            if (! $recipient) {
+                throw ValidationException::withMessages(['user_ids' => ['حساب فعال با شماره موبایل معتبر پیدا نشد.']]);
+            }
+
+            $result = $service->createForPendingOccupancy(
+                $unit, $request->user(), $recipient, $data['occupancy'], $data
+            );
+            $invitation = $result['invitation']->load([
+                'unit:id,floor_id,unit_number,title',
+                'invitedBy:id,first_name,last_name',
+                'invitedUser:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
+            ]);
+            $response = ['data' => [(new UnitInvitationResource($invitation))->resolve($request)], 'meta' => ['sent_count' => 1]];
+            if (app()->environment(['local', 'testing'])) {
+                $response['meta']['accept_tokens'] = [(string) $recipient->id => $result['raw_token']];
+                $response['meta']['invitation_codes'] = [(string) $recipient->id => $result['invitation_code']];
+            }
+
+            return response()->json($response, 201);
+        }
 
         /*
          * Recipient identity, mobile and unit relationship are already stored
@@ -212,7 +239,7 @@ class UnitInvitationController extends Controller
             fn (UnitInvitation $invitation) => $invitation->load([
                 'unit:id,floor_id,unit_number,title',
                 'invitedBy:id,first_name,last_name',
-                'invitedUser:id,first_name,last_name,mobile,email',
+                'invitedUser:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
                 'acceptedUser:id,first_name,last_name,mobile,email',
             ])
         );
@@ -266,7 +293,7 @@ class UnitInvitationController extends Controller
         $unitInvitation->load([
             'unit:id,floor_id,unit_number,title',
             'invitedBy:id,first_name,last_name',
-            'invitedUser:id,first_name,last_name,mobile,email',
+            'invitedUser:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'acceptedUser:id,first_name,last_name,mobile,email',
         ]);
 
@@ -294,7 +321,7 @@ class UnitInvitationController extends Controller
         $invitation->load([
             'unit:id,floor_id,unit_number,title',
             'invitedBy:id,first_name,last_name',
-            'invitedUser:id,first_name,last_name,mobile,email',
+            'invitedUser:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'acceptedUser:id,first_name,last_name,mobile,email',
         ]);
 
@@ -339,7 +366,7 @@ class UnitInvitationController extends Controller
         $unitInvitation->load([
             'unit:id,floor_id,unit_number,title',
             'invitedBy:id,first_name,last_name',
-            'invitedUser:id,first_name,last_name,mobile,email',
+            'invitedUser:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'acceptedUser:id,first_name,last_name,mobile,email',
         ]);
 
@@ -360,7 +387,7 @@ class UnitInvitationController extends Controller
         $invitation->load([
             'unit:id,floor_id,unit_number,title',
             'invitedBy:id,first_name,last_name',
-            'invitedUser:id,first_name,last_name,mobile,email',
+            'invitedUser:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'acceptedUser:id,first_name,last_name,mobile,email',
         ]);
 
@@ -381,7 +408,7 @@ class UnitInvitationController extends Controller
         $invitation->load([
             'unit:id,floor_id,unit_number,title',
             'invitedBy:id,first_name,last_name',
-            'invitedUser:id,first_name,last_name,mobile,email',
+            'invitedUser:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'acceptedUser:id,first_name,last_name,mobile,email',
         ]);
 

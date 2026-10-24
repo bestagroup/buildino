@@ -33,7 +33,7 @@ final class RegisterRequest extends FormRequest
             );
 
         $invitationToken = $this->cleanText(
-            $this->input('invitation_token')
+            $this->normalizeDigits((string) $this->input('invitation_token'))
         );
 
         $invitedUser = null;
@@ -366,11 +366,9 @@ final class RegisterRequest extends FormRequest
         return $value === '' ? null : $value;
     }
 
-    private function normalizeMobile(mixed $value): string
+    private function normalizeDigits(string $value): string
     {
-        $value = strtr(
-            trim((string) $value),
-            [
+        return strtr($value, [
                 '۰' => '0', '۱' => '1',
                 '۲' => '2', '۳' => '3',
                 '۴' => '4', '۵' => '5',
@@ -381,8 +379,12 @@ final class RegisterRequest extends FormRequest
                 '٤' => '4', '٥' => '5',
                 '٦' => '6', '٧' => '7',
                 '٨' => '8', '٩' => '9',
-            ]
-        );
+        ]);
+    }
+
+    private function normalizeMobile(mixed $value): string
+    {
+        $value = $this->normalizeDigits(trim((string) $value));
 
         $value = preg_replace(
             '/[\s\-()]+/',

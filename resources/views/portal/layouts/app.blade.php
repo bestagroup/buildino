@@ -29,7 +29,7 @@
 
     <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
 
-    <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}?v={{ filemtime(public_path('css/buildino-core-flows.css')) }}">
 </head>
 
 @php
@@ -460,6 +460,13 @@
         <div class="portal-content">
             <section class="core-flow" data-pending-invitation data-resident-url="{{ route('portal.resident.dashboard') }}" hidden>
                 <h2>دعوت به واحد</h2>
+                <details class="core-invitation-entry" data-invitation-entry>
+                    <summary>کد دعوت دارید؟</summary>
+                    <form data-invitation-code-form>
+                        <label>کد دعوت پیامک‌شده <input type="text" data-invitation-code inputmode="numeric" autocomplete="one-time-code" dir="ltr" required></label>
+                        <button type="submit">بررسی دعوت</button>
+                    </form>
+                </details>
                 <div data-invitation-details></div>
                 <p role="status"></p>
                 <p class="core-flow__error" role="alert"></p>
@@ -476,6 +483,7 @@
 
 <script>
     window.BuildinoPortal = {
+        invitationCodeDigits: @json((int) config('unit_invitations.code_digits', 8)),
         csrfToken: @json($portalCsrfToken),
         area: @json($activeArea),
         notificationReadUrl: @json($portalNotificationReadUrl),
@@ -499,6 +507,6 @@
 
 @stack('scripts')
 @include('shared.core-flow-config')
-<script src="{{ asset('js/buildino-core-invitation.js') }}" defer></script>
+<script src="{{ asset('js/buildino-core-invitation.js') }}?v={{ filemtime(public_path('js/buildino-core-invitation.js')) }}" defer></script>
 </body>
 </html>

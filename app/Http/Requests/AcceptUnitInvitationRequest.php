@@ -17,7 +17,7 @@ class AcceptUnitInvitationRequest extends FormRequest
             'token' => [
                 'required',
                 'string',
-                'min:32',
+                'min:'.min(8, (int) config('unit_invitations.code_digits', 8)),
                 'max:255',
             ],
         ];

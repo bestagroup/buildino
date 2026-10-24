@@ -6,6 +6,7 @@ use App\Enums\OccupancyType;
 use App\Models\ServiceRequest;
 use App\Models\Unit;
 use App\Models\UnitOccupancy;
+use App\Models\UnitInvitation;
 use App\Models\UnitOwnership;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,8 +22,15 @@ final class PortalAccessService
 
     public function hasResidentAccess(User $user): bool
     {
-        return $this->residentUnits($user)
-            ->isNotEmpty();
+        if (! $user->is_active || $user->is_blocked) {
+            return false;
+        }
+
+        return $this->residentUnits($user)->isNotEmpty()
+            || UnitInvitation::query()->where('invited_user_id', $user->getKey())
+                ->whereIn('status', ['pending', 'sent'])
+                ->where(fn (Builder $query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                ->exists();
     }
 
     public function hasProviderAccess(User $user): bool

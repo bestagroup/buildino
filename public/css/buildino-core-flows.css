@@ -25,6 +25,13 @@
 .core-flow__status { font-size: 14px; }
 .core-flow__hint { color: var(--muted, var(--portal-muted, #718096)); }
 [data-pending-invitation] { scroll-margin-block-start: 100px; }
+.core-invitation-entry { margin-block: 10px; padding: 12px; border: 1px solid var(--border, var(--portal-border, #dfe6ef)); border-radius: 12px; }
+.core-invitation-entry summary { cursor: pointer; font-weight: 700; }
+.core-invitation-entry form { display: flex; align-items: end; flex-wrap: wrap; gap: 10px; margin-block-start: 12px; }
+.core-invitation-entry label { display: grid; gap: 5px; min-width: min(100%, 220px); font-size: 13px; }
+.core-invitation-entry input, .core-invitation-entry button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--border, var(--portal-border, #dfe6ef)); border-radius: 10px; background: var(--surface-soft, var(--portal-soft, #f8fafc)); color: inherit; font: inherit; }
+.core-invitation-entry button { cursor: pointer; }
+.core-invitation-entry input:focus-visible, .core-invitation-entry button:focus-visible { outline: 2px solid var(--primary-500, var(--portal-blue, #3b7dae)); outline-offset: 2px; }
 .core-flow button:disabled { opacity: .58; cursor: wait; }
 .core-form-details { grid-column: 1 / -1; border: 1px solid var(--border, #dfe6ef); border-radius: 12px; padding: 12px; }
 .core-form-details summary { cursor: pointer; font-size: 14px; font-weight: 700; }
