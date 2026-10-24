@@ -4,11 +4,55 @@
     const same = (a, b) => String(a).trim() === String(b).trim();
     const labelForFloor = (number) => number === 0 ? 'همکف' : number < 0 ? `زیرزمین ${Math.abs(number).toLocaleString('fa-IR')}` : `طبقه ${number.toLocaleString('fa-IR')}`;
     const totals = (blocks) => ({ blocks: blocks.length, floors: blocks.reduce((sum, block) => sum + block.floors.length, 0), units: blocks.reduce((sum, block) => sum + block.floors.reduce((count, floor) => count + floor.units.length, 0), 0) });
-    const makeUnit = (block) => {
-        const occupied = new Set(block.floors.flatMap((floor) => floor.units.map((unit) => String(unit.unit_number))));
-        let number = 1;
-        while (occupied.has(String(number))) number++;
-        return { unit_number: String(number), area: block.defaultArea ?? '', bedrooms: block.defaultBedrooms ?? '', usage_type: block.usage || 'residential' };
+    const makeUnit = (block) => ({
+        unit_number: '',
+        auto_numbered: true,
+        area: block.defaultArea ?? '',
+        bedrooms: block.defaultBedrooms ?? '',
+        usage_type: block.usage || 'residential',
+    });
+
+    const renumberGeneratedUnits = (block) => {
+        const reserved = new Set(
+            block.floors.flatMap((floor) =>
+                floor.units
+                    .filter(
+                        (unit) =>
+                            unit.existing
+                            || unit.auto_numbered === false
+                    )
+                    .map((unit) =>
+                        String(
+                            unit.unit_number
+                            ?? ''
+                        ).trim()
+                    )
+                    .filter(Boolean)
+            )
+        );
+
+        let next = 1;
+
+        for (const floor of block.floors) {
+            for (const unit of floor.units) {
+                if (
+                    unit.existing
+                    || unit.auto_numbered === false
+                ) {
+                    continue;
+                }
+
+                while (
+                    reserved.has(String(next))
+                ) {
+                    next++;
+                }
+
+                unit.unit_number = String(next);
+                reserved.add(String(next));
+                next++;
+            }
+        }
     };
     const resizeUnits = (block, floor, count) => {
         const minimum = floor.units.filter((unit) => unit.existing).length;
@@ -18,7 +62,11 @@
             if (index < 0) break;
             floor.units.splice(index, 1);
         }
-        while (floor.units.length < target) floor.units.push(makeUnit(block));
+        while (floor.units.length < target) {
+            floor.units.push(makeUnit(block));
+        }
+
+        renumberGeneratedUnits(block);
     };
     const resizeFloors = (block, count) => {
         const minimum = block.floors.filter((floor) => floor.existing).length;
@@ -29,11 +77,19 @@
             block.floors.splice(index, 1);
         }
         while (block.floors.length < target) {
-            const number = block.floors.length ? Math.max(...block.floors.map((floor) => floor.number)) + 1 : Number(block.startFloor || 0);
+            const number = block.floors.length
+                ? Math.max(
+                    ...block.floors.map(
+                        (floor) => floor.number
+                    )
+                ) + 1
+                : Number(block.startFloor ?? 1);
             const floor = { number, title: labelForFloor(number), units: [] };
             block.floors.push(floor);
             resizeUnits(block, floor, block.unitsPerFloor ?? 2);
         }
+
+        renumberGeneratedUnits(block);
     };
     const validate = (draft) => {
         const errors = [];
@@ -95,13 +151,14 @@
         const result = [];
         for (const block of blocks) {
             const floors = await list(api, `blocks/${block.id}/floors?per_page=100`);
-            const entry = { title: block.title, existing: true, id: block.id, unitsPerFloor: 2, startFloor: 0, defaultArea: '', defaultBedrooms: '', usage: 'residential', floors: [] };
+            const entry = { title: block.title, existing: true, id: block.id, unitsPerFloor: 2, startFloor: 1, defaultArea: '', defaultBedrooms: '', usage: 'residential', floors: [] };
             for (const floor of floors) {
                 const units = await list(api, `floors/${floor.id}/units?per_page=100`);
-                entry.floors.push({ number: Number(floor.floor_number), title: floor.title || labelForFloor(Number(floor.floor_number)), existing: true, id: floor.id, units: units.map((unit) => ({ id: unit.id, unit_number: unit.unit_number, usage_type: unit.usage_type, existing: true, area: unit.area ?? '', bedrooms: unit.bedrooms ?? '' })) });
+                entry.floors.push({ number: Number(floor.floor_number), title: floor.title || labelForFloor(Number(floor.floor_number)), existing: true, id: floor.id, units: units.map((unit) => ({ id: unit.id, unit_number: unit.unit_number, auto_numbered: false, usage_type: unit.usage_type, existing: true, area: unit.area ?? '', bedrooms: unit.bedrooms ?? '' })) });
             }
             entry.floors.sort((a, b) => a.number - b.number);
-            entry.startFloor = entry.floors[0]?.number || 0;
+            entry.startFloor =
+                entry.floors[0]?.number ?? 1;
             result.push(entry);
         }
         return result;
@@ -173,5 +230,5 @@
         }
         return { buildingId: building.id, firstUnitId, created, ...counts };
     };
-    root.BuildinoBuildingSetupEngine = Object.freeze({ labelForFloor, totals, resizeUnits, resizeFloors, validate, execute, readStructure, list });
+    root.BuildinoBuildingSetupEngine = Object.freeze({ labelForFloor, totals, resizeUnits, resizeFloors, renumberGeneratedUnits, validate, execute, readStructure, list });
 })(typeof window === 'undefined' ? globalThis : window);

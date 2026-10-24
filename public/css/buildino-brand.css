@@ -1,0 +1,47 @@
+/* Responsive, transparent Buildino brand artwork; no font-based logo fallback. */
+.buildino-brand-image {
+    display: block;
+    max-width: 100%;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.sidebar__brand .buildino-brand-image--horizontal-light {
+    width: 170px;
+    height: 76px;
+}
+.sidebar__brand .buildino-brand-compact { display: none; }
+body.sidebar-collapsed .sidebar__brand .buildino-brand-image--horizontal-light { display: none; }
+body.sidebar-collapsed .sidebar__brand .buildino-brand-compact { display: block; }
+.sidebar__brand .buildino-brand-image--mark { width: 40px; height: 48px; }
+.portal-brand {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+}
+.portal-brand .buildino-brand-image--horizontal-light { width: 162px; height: 88px; }
+.buildino-brand-context { color: rgba(255,255,255,.68); font-size: 12px; }
+.login-brand {
+    width: 90px;
+    height: 148px;
+    margin: 0 auto 12px;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+}
+.login-brand .buildino-brand-image--vertical { width: 90px; height: 148px; }
+.auth-recovery-brand .buildino-brand-image--horizontal,
+.registration-verify-card .buildino-brand-image--horizontal {
+    width: 152px;
+    height: 84px;
+}
+.buildino-public-brand { display: inline-flex; align-items: center; flex-shrink: 0; }
+.buildino-public-brand .buildino-brand-image--horizontal-light { width: 168px; height: 94px; }
+.registration-card__header .buildino-brand-image--horizontal {
+    width: 132px;
+    height: 73px;
+    margin-bottom: 8px;
+}
+@media (max-width: 560px) {
+    .buildino-public-brand .buildino-brand-image--horizontal-light { width: 124px; height: 72px; }
+    .login-brand, .login-brand .buildino-brand-image--vertical { width: 78px; height: 129px; }
+}

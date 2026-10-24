@@ -16,6 +16,8 @@
         rel="stylesheet"
         href="{{ asset('css/buildino-design-system.css') }}"
     >
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}">
 </head>
 
 <body class="login-page registration-verify-page">
@@ -25,12 +27,8 @@
             class="auth-recovery-brand"
             href="{{ route('register') }}"
         >
-            <div class="brand-mark">
-                <span>B</span>
-            </div>
-
+            <img class="buildino-brand-image buildino-brand-image--horizontal" src="{{ asset('images/buildino-logo-horizontal.svg') }}" alt="بیلدینو Buildino" decoding="async">
             <span>
-                <strong>Buildino</strong>
                 <small>تأیید ثبت‌نام</small>
             </span>
         </a>

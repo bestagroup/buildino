@@ -31,6 +31,8 @@
         href="{{ asset('css/buildino-design-system.css') }}"
     >
     <link rel="stylesheet" href="{{ asset('css/buildino-login.css') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}">
 </head>
 
 <body class="login-page">
@@ -38,12 +40,7 @@
 <div class="login-shell">
     <main class="login-form-area">
         <div class="login-card">
-            <div class="login-card__mobile-brand">
-                <div class="brand-mark">
-                    <span>B</span>
-                </div>
-                <strong>Buildino</strong>
-            </div>
+            
 
             @include('shared.login-brand')
             <div class="login-card__header">

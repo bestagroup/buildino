@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreUnitInvitationRequest extends FormRequest
@@ -21,9 +20,9 @@ class StoreUnitInvitationRequest extends FormRequest
              * to the selected unit.
              */
             'user_ids' => [
-                Rule::requiredIf(fn (): bool => $this->has('occupancy')),
+                'nullable',
                 'array',
-                $this->has('occupancy') ? 'size:1' : 'max:50',
+                'max:50',
             ],
 
             'user_ids.*' => [
@@ -49,12 +48,6 @@ class StoreUnitInvitationRequest extends FormRequest
                 'min:1',
                 'max:720',
             ],
-            'occupancy' => ['sometimes', 'required', 'array:occupancy_type,starts_at,ends_at,is_primary,notes'],
-            'occupancy.occupancy_type' => ['required_with:occupancy', Rule::in(['tenant', 'resident', 'family_member'])],
-            'occupancy.starts_at' => ['required_with:occupancy', 'date'],
-            'occupancy.ends_at' => ['nullable', 'date', 'after_or_equal:occupancy.starts_at'],
-            'occupancy.is_primary' => ['sometimes', 'boolean'],
-            'occupancy.notes' => ['nullable', 'string', 'max:5000'],
         ];
     }
 }

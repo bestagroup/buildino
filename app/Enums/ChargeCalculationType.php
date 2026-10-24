@@ -8,7 +8,7 @@ enum ChargeCalculationType: string
     case Area = 'area';
     case Persons = 'persons';
     case Equal = 'equal';
-    case Custom = 'custom';
+    case FloorCoefficient = 'floor_coefficient';
 
     public function label(): string
     {
@@ -17,7 +17,7 @@ enum ChargeCalculationType: string
             self::Area => 'Area',
             self::Persons => 'Persons',
             self::Equal => 'Equal',
-            self::Custom => 'Custom',
+            self::FloorCoefficient => 'Floor coefficient',
         };
     }
 

@@ -262,6 +262,27 @@ class ManagementCrudWebTest extends TestCase
             $fields->contains('name', 'items')
         );
 
+        $resource = config(
+            'management_crud.resources.charge-formulas',
+            []
+        );
+        $active = $fields->firstWhere(
+            'name',
+            'is_active'
+        );
+
+        $this->assertArrayNotHasKey(
+            'delete',
+            $resource
+        );
+        $this->assertSame(
+            'checkbox',
+            $active['type'] ?? null
+        );
+        $this->assertTrue(
+            $active['default'] ?? false
+        );
+
         $script = (string) file_get_contents(
             public_path('js/buildino-crud.js')
         );
@@ -396,6 +417,46 @@ class ManagementCrudWebTest extends TestCase
         $this->assertTrue($message['required'] ?? false);
         $this->assertFalse($fields->contains('name', 'mobile'));
         $this->assertFalse($fields->contains('name', 'email'));
+    }
+
+    public function test_occupancy_form_collects_unit_resident_count(): void
+    {
+        $resource = config(
+            'management_crud.resources.occupancies',
+            []
+        );
+
+        $fields = collect(
+            $resource['fields'] ?? []
+        );
+
+        $residentCount = $fields->firstWhere(
+            'name',
+            'resident_count'
+        );
+
+        $this->assertSame(
+            'number',
+            $residentCount['type'] ?? null
+        );
+        $this->assertTrue(
+            $residentCount['required'] ?? false
+        );
+        $this->assertSame(
+            0,
+            $residentCount['min'] ?? null
+        );
+
+        $columns = collect(
+            $resource['columns'] ?? []
+        );
+
+        $this->assertTrue(
+            $columns->contains(
+                'key',
+                'resident_count'
+            )
+        );
     }
 
     public function test_facility_schedule_create_form_uses_multi_day_selection(): void

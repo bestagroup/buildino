@@ -18,6 +18,8 @@
     <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-login.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-registration.css') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}">
 </head>
 
 @php
@@ -37,6 +39,7 @@
         <div class="registration-card">
             <div class="registration-card__header">
                 <div>
+                    <img class="buildino-brand-image buildino-brand-image--horizontal" src="{{ asset('images/buildino-logo-horizontal.svg') }}" alt="بیلدینو Buildino" decoding="async">
                     <span class="eyebrow">ایجاد حساب جدید</span>
                     <h2>به Buildino بپیوندید</h2>
                     <p>

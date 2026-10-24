@@ -29,6 +29,8 @@
         rel="stylesheet"
         href="{{ asset('css/buildino-design-system.css') }}"
     >
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}">
 </head>
 
 <body class="login-page auth-recovery-page">
@@ -38,12 +40,8 @@
             href="{{ route('login') }}"
             class="auth-recovery-brand"
         >
-            <div class="brand-mark">
-                <span>B</span>
-            </div>
-
+            <img class="buildino-brand-image buildino-brand-image--horizontal" src="{{ asset('images/buildino-logo-horizontal.svg') }}" alt="بیلدینو Buildino" decoding="async">
             <div>
-                <strong>Buildino</strong>
                 <span>بازیابی دسترسی حساب</span>
             </div>
         </a>

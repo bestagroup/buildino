@@ -60,6 +60,10 @@ class ChargeFormulaController extends Controller
 
         $data = $builder->normalize($request->validated());
         $this->validateCategories($building, $data['items']);
+        $this->validateUniqueCategory(
+            $building,
+            (int) $data['items'][0]['financial_category_id']
+        );
 
         $formula = DB::transaction(function () use ($building,$data): ChargeFormula {
             $formula = $building->chargeFormulas()->create([
@@ -104,6 +108,14 @@ class ChargeFormulaController extends Controller
                 $chargeFormula->building,
                 $data['items']
             );
+
+            $this->validateUniqueCategory(
+                $chargeFormula->building,
+                (int) $data['items'][0][
+                    'financial_category_id'
+                ],
+                $chargeFormula
+            );
         }
 
         DB::transaction(function () use ($chargeFormula,$data): void {
@@ -127,6 +139,38 @@ class ChargeFormulaController extends Controller
         return new ChargeFormulaResource($chargeFormula->refresh());
     }
 
+    private function validateUniqueCategory(
+        Building $building,
+        int $financialCategoryId,
+        ?ChargeFormula $ignore = null
+    ): void {
+        $query = ChargeFormula::query()
+            ->where(
+                'building_id',
+                $building->getKey()
+            )
+            ->whereHas(
+                'chargeItems',
+                fn ($query) => $query->where(
+                    'financial_category_id',
+                    $financialCategoryId
+                )
+            );
+
+        if ($ignore) {
+            $query->whereKeyNot(
+                $ignore->getKey()
+            );
+        }
+
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'builder.financial_category_id' =>
+                    'برای این دسته هزینه قبلاً فرمول محاسبه تعریف شده است.',
+            ]);
+        }
+    }
+
     private function validateCategories(
         Building $building,
         array $items
@@ -143,6 +187,7 @@ class ChargeFormulaController extends Controller
 
         $count = FinancialCategory::query()
             ->whereIn('id',$ids)
+            ->where('type', 'expense')
             ->where(function ($query) use ($building): void {
                 $query
                     ->whereNull('building_id')
@@ -152,7 +197,7 @@ class ChargeFormulaController extends Controller
 
         if ($count !== $ids->count()) {
             throw ValidationException::withMessages([
-                'items'=>'Charge item categories must be global or belong to the selected building.',
+                'items'=>'Charge formula categories must be expense categories that are global or belong to the selected building.',
             ]);
         }
     }

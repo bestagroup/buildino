@@ -48,6 +48,14 @@ class StoreUnitOccupancyRequest extends FormRequest
                 'boolean',
             ],
 
+            'resident_count' => [
+                'sometimes',
+                'required',
+                'integer',
+                'min:0',
+                'max:255',
+            ],
+
             'notes' => [
                 'nullable',
                 'string',

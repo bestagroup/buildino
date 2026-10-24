@@ -44,6 +44,8 @@
         href="{{ asset('css/buildino-design-system.css') }}"
     >
     <link rel="stylesheet" href="{{ asset('css/buildino-login.css') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}">
 </head>
 
 <body class="portal-login-body">

@@ -29,6 +29,8 @@
 
     <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}">
 </head>
 
 @php
@@ -47,6 +49,22 @@
             ] ?? 0
         );
     $currentResource = request()->route('resource');
+
+    $today = now()->toDateString();
+    $canSwitchToOwnerPortal =
+        $user->unitOwnershipsAsUser()
+            ->where('is_active', true)
+            ->whereDate('starts_at', '<=', $today)
+            ->where(function ($query) use ($today): void {
+                $query
+                    ->whereNull('ends_at')
+                    ->orWhereDate(
+                        'ends_at',
+                        '>=',
+                        $today
+                    );
+            })
+            ->exists();
 
     $resourceActive = static function (
         array $resources
@@ -151,14 +169,8 @@
                 href="{{ route('management.dashboard') }}"
                 aria-label="Buildino"
             >
-                <div class="brand-mark">
-                    <span>B</span>
-                </div>
-
-                <div class="brand-copy">
-                    <strong>Buildino</strong>
-                    <span>سامانه مدیریت هوشمند ساختمان</span>
-                </div>
+                <img class="buildino-brand-image buildino-brand-image--horizontal-light" src="{{ asset('images/buildino-logo-horizontal-light.svg') }}" alt="بیلدینو Buildino" decoding="async">
+                <span class="buildino-brand-compact"><img class="buildino-brand-image buildino-brand-image--mark" src="{{ asset('images/buildino-mark.svg') }}" alt="" decoding="async"></span>
             </a>
 
             <button
@@ -1348,6 +1360,22 @@
                                     </span>
                                 @endforeach
                             </div>
+                        @endif
+
+                        @if ($canSwitchToOwnerPortal)
+                            <a
+                                href="{{ route('portal.resident.dashboard') }}"
+                                class="popover-access-switch"
+                            >
+                                @include(
+                                    'management.partials.icon',
+                                    [
+                                        'name' => 'home',
+                                        'size' => 17,
+                                    ]
+                                )
+                                تغییر دسترسی
+                            </a>
                         @endif
 
                         <form

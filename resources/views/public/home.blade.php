@@ -7,12 +7,14 @@
     <title>Buildino | مدیریت هوشمند ساختمان</title>
     <link rel="stylesheet" href="{{ asset('css/buildino-fonts.css') }}">
     @vite('resources/css/app.css')
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}">
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
     <div class="absolute inset-x-0 top-0 -z-10 h-[34rem] bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,.18),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(14,165,233,.16),transparent_28%)]"></div>
 
     <header class="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
-        <a href="{{ route('public.home') }}" class="text-xl font-black tracking-tight">Buildino</a>
+        <a href="{{ route('public.home') }}" class="buildino-public-brand" aria-label="بیلدینو Buildino"><img class="buildino-brand-image buildino-brand-image--horizontal-light" src="{{ asset('images/buildino-logo-horizontal-light.svg') }}" alt="بیلدینو Buildino" decoding="async"></a>
         <nav class="flex items-center gap-3 text-sm">
             <a class="rounded-xl border border-white/10 px-4 py-2 hover:bg-white/5" href="{{ route('portal.login') }}">ورود ساکنین</a>
             <a class="rounded-xl bg-emerald-500 px-4 py-2 font-bold text-slate-950 hover:bg-emerald-400" href="{{ route('login') }}">پنل مدیریت</a>

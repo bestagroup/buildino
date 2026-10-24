@@ -13,9 +13,11 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\UnitUsageType;
 use App\Models\Block;
+use App\Models\BuildingExpense;
 use App\Models\Building;
 use App\Models\Complex;
 use App\Models\FinancialAccount;
+use App\Models\FinancialCategory;
 use App\Models\Floor;
 use App\Models\Permission;
 use App\Models\Role;
@@ -40,7 +42,7 @@ class FinancialCoreFlowTest extends TestCase
         Queue::fake();
     }
 
-    public function test_charge_period_calculation_and_issue_create_server_calculated_invoice(): void
+    public function test_charge_period_uses_persistent_formulas_for_expense_allocation_and_fixed_debt(): void
     {
         $manager = $this->createUser(
             '09123330001',
@@ -51,6 +53,49 @@ class FinancialCoreFlowTest extends TestCase
             'FIN',
             100
         );
+
+        $secondUnit = Unit::query()->create([
+            'floor_id' => $structure['floor']->id,
+            'unit_number' => '102-FIN',
+            'title' => 'Unit 102 FIN',
+            'area' => 50,
+            'bedrooms' => 2,
+            'usage_type' =>
+                UnitUsageType::cases()[0]->value,
+            'is_active' => true,
+        ]);
+
+        $gas = FinancialCategory::query()->create([
+            'building_id' =>
+                $structure['building']->id,
+            'title' => 'Gas',
+            'type' => 'expense',
+            'is_active' => true,
+        ]);
+
+        $fixedCategory =
+            FinancialCategory::query()->create([
+                'building_id' =>
+                    $structure['building']->id,
+                'title' => 'Fixed monthly charge',
+                'type' => 'expense',
+                'is_active' => true,
+            ]);
+
+        BuildingExpense::query()->create([
+            'building_id' =>
+                $structure['building']->id,
+            'financial_category_id' =>
+                $gas->id,
+            'title' => 'August gas bill',
+            'amount' => 300000,
+            'expense_date' => '2026-08-15',
+            'status' => 'posted',
+            'created_by' => $manager->id,
+            'approved_by' => $manager->id,
+            'approved_at' => now(),
+            'posted_at' => now(),
+        ]);
 
         $role = $this->createRoleWithPermissions(
             'finance-manager',
@@ -70,19 +115,15 @@ class FinancialCoreFlowTest extends TestCase
 
         Sanctum::actingAs($manager);
 
-        $formulaId = $this->postJson(
+        $areaFormulaId = $this->postJson(
             "/api/v1/buildings/{$structure['building']->id}/charge-formulas",
             [
-                'title' => 'Monthly charge',
+                'title' => 'Gas by area',
                 'builder' => [
                     'calculation_type' =>
                         ChargeCalculationType::Area->value,
-                    'items' => [
-                        [
-                            'title' => 'Common costs',
-                            'base_amount' => 1000,
-                        ],
-                    ],
+                    'financial_category_id' =>
+                        $gas->id,
                 ],
             ]
         )
@@ -92,16 +133,36 @@ class FinancialCoreFlowTest extends TestCase
                 ChargeCalculationType::Area->value
             )
             ->assertJsonPath(
-                'data.configuration.generated_by',
-                'guided_builder'
-            )
-            ->assertJsonPath(
                 'data.configuration.builder_version',
-                1
+                2
             )
             ->assertJsonPath(
-                'data.items.0.title',
-                'Common costs'
+                'data.items.0.financial_category_id',
+                $gas->id
+            )
+            ->assertJsonPath(
+                'data.items.0.base_amount',
+                0
+            )
+            ->json('data.id');
+
+        $fixedFormulaId = $this->postJson(
+            "/api/v1/buildings/{$structure['building']->id}/charge-formulas",
+            [
+                'title' => 'Fixed monthly debt',
+                'builder' => [
+                    'calculation_type' =>
+                        ChargeCalculationType::Fixed->value,
+                    'financial_category_id' =>
+                        $fixedCategory->id,
+                    'fixed_amount' => 50000,
+                ],
+            ]
+        )
+            ->assertCreated()
+            ->assertJsonPath(
+                'data.items.0.base_amount',
+                50000
             )
             ->json('data.id');
 
@@ -126,13 +187,51 @@ class FinancialCoreFlowTest extends TestCase
                 ChargePeriodStatus::Calculated->value
             );
 
+        /*
+         * Gas bill: 300,000 distributed by area 100:50.
+         * Unit A = 200,000, Unit B = 100,000.
+         */
+        $this->assertDatabaseHas(
+            'charge_expense_allocations',
+            [
+                'charge_period_id' => $periodId,
+                'building_expense_id' =>
+                    BuildingExpense::query()
+                        ->where('title', 'August gas bill')
+                        ->value('id'),
+                'unit_id' => $structure['unit']->id,
+                'allocated_amount' => 200000,
+            ]
+        );
+
+        $this->assertDatabaseHas(
+            'charge_expense_allocations',
+            [
+                'charge_period_id' => $periodId,
+                'unit_id' => $secondUnit->id,
+                'allocated_amount' => 100000,
+            ]
+        );
+
+        /*
+         * Variable formulas no longer create an independent charge.
+         * Only the fixed formula creates a direct calculation.
+         */
+        $this->assertDatabaseMissing(
+            'charge_calculations',
+            [
+                'charge_period_id' => $periodId,
+                'charge_formula_id' => $areaFormulaId,
+            ]
+        );
+
         $this->assertDatabaseHas(
             'charge_calculations',
             [
                 'charge_period_id' => $periodId,
                 'unit_id' => $structure['unit']->id,
-                'charge_formula_id' => $formulaId,
-                'calculated_amount' => 100000,
+                'charge_formula_id' => $fixedFormulaId,
+                'calculated_amount' => 50000,
             ]
         );
 
@@ -145,24 +244,199 @@ class FinancialCoreFlowTest extends TestCase
                 ChargePeriodStatus::Issued->value
             );
 
-        $invoice = UnitInvoice::query()
+        $invoiceA = UnitInvoice::query()
             ->where('charge_period_id', $periodId)
-            ->where('unit_id', $structure['unit']->id)
+            ->where(
+                'unit_id',
+                $structure['unit']->id
+            )
+            ->firstOrFail();
+
+        $invoiceB = UnitInvoice::query()
+            ->where('charge_period_id', $periodId)
+            ->where('unit_id', $secondUnit->id)
             ->firstOrFail();
 
         $this->assertSame(
-            InvoiceStatus::Issued,
-            $invoice->status
+            250000,
+            (int) $invoiceA->total_amount
         );
 
         $this->assertSame(
-            100000,
-            (int) $invoice->total_amount
+            150000,
+            (int) $invoiceB->total_amount
+        );
+    }
+
+    public function test_inactive_charge_formula_is_excluded_and_can_be_reactivated(): void
+    {
+        $manager = $this->createUser(
+            '09123330501',
+            'formula-activation@example.test'
         );
 
-        $this->assertSame(
-            100000,
-            (int) $invoice->outstanding_amount
+        $structure = $this->createStructure(
+            'FORMULA-ACTIVATION',
+            100
+        );
+
+        $gas = FinancialCategory::query()->create([
+            'building_id' =>
+                $structure['building']->id,
+            'title' => 'Gas activation test',
+            'type' => 'expense',
+            'is_active' => true,
+        ]);
+
+        $fixedCategory =
+            FinancialCategory::query()->create([
+                'building_id' =>
+                    $structure['building']->id,
+                'title' => 'Fixed activation test',
+                'type' => 'expense',
+                'is_active' => true,
+            ]);
+
+        BuildingExpense::query()->create([
+            'building_id' =>
+                $structure['building']->id,
+            'financial_category_id' =>
+                $gas->id,
+            'title' => 'August gas activation bill',
+            'amount' => 100000,
+            'expense_date' => '2026-08-15',
+            'status' => 'posted',
+            'created_by' => $manager->id,
+            'approved_by' => $manager->id,
+            'approved_at' => now(),
+            'posted_at' => now(),
+        ]);
+
+        $role = $this->createRoleWithPermissions(
+            'formula-activation-manager',
+            [
+                'charge-formulas.create',
+                'charge-formulas.update',
+                'charge-periods.create',
+                'charge-periods.calculate',
+            ]
+        );
+
+        $this->assignRole(
+            $manager,
+            $role,
+            $structure['building']
+        );
+
+        Sanctum::actingAs($manager);
+
+        $this->postJson(
+            "/api/v1/buildings/{$structure['building']->id}/charge-formulas",
+            [
+                'title' => 'Gas by area activation',
+                'builder' => [
+                    'calculation_type' =>
+                        ChargeCalculationType::Area->value,
+                    'financial_category_id' =>
+                        $gas->id,
+                ],
+            ]
+        )->assertCreated();
+
+        $fixedFormulaId = $this->postJson(
+            "/api/v1/buildings/{$structure['building']->id}/charge-formulas",
+            [
+                'title' => 'Fixed activation',
+                'builder' => [
+                    'calculation_type' =>
+                        ChargeCalculationType::Fixed->value,
+                    'financial_category_id' =>
+                        $fixedCategory->id,
+                    'fixed_amount' => 50000,
+                ],
+            ]
+        )
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->patchJson(
+            "/api/v1/charge-formulas/{$fixedFormulaId}",
+            [
+                'is_active' => false,
+            ]
+        )
+            ->assertOk()
+            ->assertJsonPath(
+                'data.is_active',
+                false
+            );
+
+        $augustPeriodId = $this->postJson(
+            "/api/v1/buildings/{$structure['building']->id}/charge-periods",
+            [
+                'title' => 'August activation',
+                'period_start' => '2026-08-01',
+                'period_end' => '2026-08-31',
+                'due_date' => '2026-09-10',
+            ]
+        )
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->postJson(
+            "/api/v1/charge-periods/{$augustPeriodId}/calculate"
+        )->assertOk();
+
+        $this->assertDatabaseMissing(
+            'charge_calculations',
+            [
+                'charge_period_id' =>
+                    $augustPeriodId,
+                'charge_formula_id' =>
+                    $fixedFormulaId,
+            ]
+        );
+
+        $this->patchJson(
+            "/api/v1/charge-formulas/{$fixedFormulaId}",
+            [
+                'is_active' => true,
+            ]
+        )
+            ->assertOk()
+            ->assertJsonPath(
+                'data.is_active',
+                true
+            );
+
+        $septemberPeriodId = $this->postJson(
+            "/api/v1/buildings/{$structure['building']->id}/charge-periods",
+            [
+                'title' => 'September activation',
+                'period_start' => '2026-09-01',
+                'period_end' => '2026-09-30',
+                'due_date' => '2026-10-10',
+            ]
+        )
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->postJson(
+            "/api/v1/charge-periods/{$septemberPeriodId}/calculate"
+        )->assertOk();
+
+        $this->assertDatabaseHas(
+            'charge_calculations',
+            [
+                'charge_period_id' =>
+                    $septemberPeriodId,
+                'unit_id' =>
+                    $structure['unit']->id,
+                'charge_formula_id' =>
+                    $fixedFormulaId,
+                'calculated_amount' =>
+                    50000,
+            ]
         );
     }
 
