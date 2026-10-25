@@ -14,10 +14,11 @@ class StoreUnitInvitationRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
             /*
              * Recipient data already exists in Buildino. The form only sends
-             * optional user ids; an empty list means all active users linked
-             * to the selected unit.
+             * recipient identifiers. Contact and relationship data are
+             * resolved from existing unit links by the controller.
              */
             'user_ids' => [
                 'nullable',
