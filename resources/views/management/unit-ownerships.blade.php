@@ -28,10 +28,10 @@
     <div class="ownership-alert ownership-alert--error" role="alert" data-ownership-error hidden></div>
     <div class="ownership-alert ownership-alert--success" role="status" aria-live="polite" data-ownership-success hidden></div>
 
-    <section class="ownership-card" aria-labelledby="ownership-unit-heading">
+    <section class="ownership-card" aria-labelledby="ownership-unit-heading" data-ownership-location>
         <div class="ownership-card__heading">
             <span class="ownership-card__index">۱</span>
-            <div><h3 id="ownership-unit-heading">واحد را انتخاب کنید</h3><p>فهرست‌ها فقط ساختمان‌ها و واحدهای قابل دسترسی شما را نشان می‌دهند.</p></div>
+            <div><h3 id="ownership-unit-heading" tabindex="-1">واحد را انتخاب کنید</h3><p>فهرست‌ها فقط ساختمان‌ها و واحدهای قابل دسترسی شما را نشان می‌دهند.</p></div>
         </div>
 
         @if ($ownershipConfig['buildings']->isEmpty())
@@ -44,13 +44,15 @@
                 <label class="ownership-field"><span>واحد</span><select data-ownership-unit aria-label="واحد" disabled><option value="">ابتدا طبقه را انتخاب کنید</option></select></label>
             </div>
             <p class="ownership-location-hint" data-ownership-location-hint aria-live="polite">برای شروع، ساختمان را انتخاب کنید.</p>
+            <div class="ownership-editor__actions"><button type="button" class="ownership-button ownership-button--primary" data-ownership-continue hidden>نمایش مالکیت‌های واحد</button></div>
         @endif
     </section>
 
     <section class="ownership-card" aria-labelledby="ownership-records-heading" data-ownership-records hidden>
         <div class="ownership-card__heading ownership-card__heading--split">
             <span class="ownership-card__index">۲</span>
-            <div><h3 id="ownership-records-heading">مالکیت‌های این واحد</h3><p data-ownership-unit-label></p></div>
+            <div><h3 id="ownership-records-heading" tabindex="-1">مالکیت‌های این واحد</h3><p data-ownership-unit-label></p></div>
+            <button type="button" class="ownership-button ownership-button--soft" data-ownership-back-unit>تغییر واحد</button>
             <button type="button" class="ownership-button ownership-button--soft" data-ownership-reload>به‌روزرسانی</button>
         </div>
         <div class="ownership-overview" data-ownership-overview aria-live="polite"></div>
@@ -67,7 +69,7 @@
     </section>
 
     <section class="ownership-card ownership-editor" aria-labelledby="ownership-editor-heading" data-ownership-editor hidden>
-        <div class="ownership-card__heading"><span class="ownership-card__index">۳</span><div><h3 id="ownership-editor-heading" tabindex="-1" data-ownership-editor-title>ثبت مالک جدید</h3><p>درصد مالکیت همه مالک‌های فعال نباید از ۱۰۰ بیشتر شود.</p></div></div>
+        <div class="ownership-card__heading"><span class="ownership-card__index">۳</span><div><h3 id="ownership-editor-heading" tabindex="-1" data-ownership-editor-title>ثبت مالک جدید</h3><p data-ownership-editor-unit-label></p><p>درصد مالکیت همه مالک‌های فعال نباید از ۱۰۰ بیشتر شود.</p></div></div>
         <form data-ownership-form novalidate>
             <div class="ownership-form-grid">
                 <div class="ownership-field ownership-field--wide" data-ownership-user-picker>
@@ -83,7 +85,7 @@
                 <details class="ownership-more ownership-field--wide" data-ownership-more><summary>اطلاعات تکمیلی <small>اختیاری</small></summary><div class="ownership-form-grid"><label class="ownership-field" data-ownership-create-end><span>تاریخ پایان مشخص است؟</span><input type="date" name="ends_at"></label><label class="ownership-field ownership-field--wide"><span>یادداشت داخلی</span><textarea name="notes" rows="3" maxlength="5000" placeholder="توضیحی برای پیگیری این تغییر"></textarea></label></div></details>
             </div>
             <p class="ownership-form-hint" data-ownership-share-hint></p>
-            <div class="ownership-editor__actions"><button type="button" class="ownership-button ownership-button--soft" data-ownership-cancel>انصراف</button><button type="submit" class="ownership-button ownership-button--primary" data-ownership-save>ثبت مالکیت</button></div>
+            <div class="ownership-editor__actions"><button type="button" class="ownership-button ownership-button--soft" data-ownership-cancel>بازگشت به مالک‌ها</button><button type="submit" class="ownership-button ownership-button--primary" data-ownership-save>ثبت مالکیت</button></div>
         </form>
     </section>
 

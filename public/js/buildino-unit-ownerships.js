@@ -27,6 +27,8 @@
     let searchTimer;
     let busy = false;
     let endTrigger = null;
+    let currentStep = 'unit';
+    let recordsLoading = false;
 
     const today = () => {
         const date = new Date();
@@ -119,16 +121,28 @@
     const building = () => buildings.get(fields.building.value);
     const unitId = () => safeId(fields.unit.value);
     const updateFlow = () => {
-        const hasUnit = Boolean(unitId());
-        root.querySelector('[data-ownership-flow="unit"]').className = hasUnit ? 'is-complete' : 'is-current';
-        root.querySelector('[data-ownership-flow="records"]').className = hasUnit ? ($('editor').hidden ? 'is-current' : 'is-complete') : '';
-        root.querySelector('[data-ownership-flow="change"]').className = !$('editor').hidden ? 'is-current' : '';
+        const steps = ['unit', 'records', 'change'];
+        for (const [index, step] of steps.entries()) {
+            const marker = root.querySelector(`[data-ownership-flow="${step}"]`);
+            marker.className = step === currentStep ? 'is-current' : index < steps.indexOf(currentStep) ? 'is-complete' : '';
+            if (step === currentStep) marker.setAttribute('aria-current', 'step'); else marker.removeAttribute('aria-current');
+        }
+    };
+    const showStep = (step, focus = false) => {
+        currentStep = step;
+        $('location').hidden = step !== 'unit';
+        $('records').hidden = step !== 'records';
+        $('editor').hidden = step !== 'change';
+        $('continue').hidden = !unitId();
+        updateFlow();
+        if (focus) document.getElementById(step === 'unit' ? 'ownership-unit-heading' : step === 'records' ? 'ownership-records-heading' : 'ownership-editor-heading').focus();
     };
     const hideRecords = () => {
         records = [];
-        $('records').hidden = true;
-        $('editor').hidden = true;
-        updateFlow();
+        editing = null;
+        ++userGeneration;
+        clearTimeout(searchTimer);
+        showStep('unit');
         const url = new URL(window.location.href);
         url.searchParams.delete('unit_id');
         window.history.replaceState(null, '', url);
@@ -219,14 +233,22 @@
         $('history-count').textContent = `(${number(history.length)})`;
         $('actions').hidden = !building()?.canCreate;
         $('create-user').hidden = !building()?.canCreateUser;
-        $('records').hidden = false;
-        updateFlow();
+        showStep('records', true);
     };
     const loadRecords = async () => {
         const selectedId = unitId();
         const ticket = ++generation;
         hideRecords();
         if (!selectedId) return;
+        recordsLoading = true;
+        $('records').setAttribute('aria-busy', 'true');
+        $('reload').disabled = true;
+        $('overview').replaceChildren();
+        $('active').replaceChildren(make('p', 'ownership-empty', 'در حال دریافت مالکیت‌های واحد…'));
+        $('history-wrap').hidden = true;
+        $('actions').hidden = true;
+        $('unit-label').textContent = `${fields.unit.selectedOptions[0]?.textContent || 'واحد'} · ${fields.building.selectedOptions[0]?.textContent || ''}`;
+        showStep('records', true);
         setHint('در حال دریافت مالکیت‌های واحد…');
         try {
             const rows = [];
@@ -247,9 +269,13 @@
             $('unit-label').textContent = `${fields.unit.selectedOptions[0]?.textContent || 'واحد'} · ${fields.building.selectedOptions[0]?.textContent || ''}`;
             const url = new URL(window.location.href); url.searchParams.set('unit_id', String(selectedId));
             window.history.replaceState(null, '', url);
-            setHint('واحد انتخاب شد. مالکیت‌ها را در بخش بعد ببینید.');
+            setHint('واحد انتخاب شد. برای ادامه، نمایش مالکیت‌ها را بزنید.');
             renderRecords();
-        } catch (error) { if (ticket === generation) report(error); }
+        } catch (error) {
+            if (ticket === generation) { $('active').replaceChildren(make('p', 'ownership-empty', 'دریافت مالکیت‌ها انجام نشد؛ به‌روزرسانی را بزنید یا واحد را تغییر دهید.')); report(error); }
+        } finally {
+            if (ticket === generation) { recordsLoading = false; $('records').setAttribute('aria-busy', 'false'); $('reload').disabled = false; }
+        }
     };
     const shareHint = () => {
         const other = records.filter((item) => item.id !== editing?.id && item.is_active && (!item.ends_at || item.ends_at >= today()));
@@ -259,7 +285,7 @@
             : `از سهم مشخص‌شدهٔ دیگر مالکان، ${number(Math.max(0, 100 - known))}٪ باقی مانده است.`;
     };
     const openEditor = (record = null) => {
-        if (!unitId() || !(record ? building()?.canUpdate : building()?.canCreate)) return;
+        if (busy || recordsLoading || !unitId() || !(record ? building()?.canUpdate : building()?.canCreate)) return;
         message(null, null);
         editing = record;
         form.reset();
@@ -279,12 +305,10 @@
         primaryField.checked = record?.is_primary || false;
         notesField.value = record?.notes || '';
         setDate(form, 'ends_at', '');
-        $('editor').hidden = false;
-        shareHint(); updateFlow();
-        $('editor-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        $('editor-title').focus({ preventScroll: true });
+        $('editor-unit-label').textContent = $('unit-label').textContent;
+        shareHint(); showStep('change', true);
     };
-    const closeEditor = () => { $('editor').hidden = true; editing = null; updateFlow(); };
+    const closeEditor = () => { editing = null; ++userGeneration; clearTimeout(searchTimer); showStep('records', true); };
     const closeEndDialog = () => {
         window.jalaliDatepicker?.hide();
         $('end-dialog').close();
@@ -370,7 +394,14 @@
     fields.unit.addEventListener('change', () => { message(null, null); loadRecords(); });
     $('reload').addEventListener('click', () => { message(null, null); loadRecords(); });
     $('add').addEventListener('click', () => openEditor());
-    $('cancel').addEventListener('click', closeEditor);
+    $('cancel').addEventListener('click', () => { if (!busy) closeEditor(); });
+    $('back-unit').addEventListener('click', () => {
+        if (busy) return;
+        ++generation; recordsLoading = false;
+        $('records').setAttribute('aria-busy', 'false'); $('reload').disabled = false;
+        message(null, null); showStep('unit', true);
+    });
+    $('continue').addEventListener('click', () => { if (!busy && unitId()) loadRecords(); });
     $('end-cancel').addEventListener('click', closeEndDialog);
     $('end-backdrop').addEventListener('click', closeEndDialog);
     $('end-dialog').addEventListener('close', () => {
@@ -409,5 +440,5 @@
     fields.building.value = String(initial?.buildingId || (buildings.size === 1 ? [...buildings.keys()][0] : ''));
     window.BuildinoSelect2?.refresh(fields.building);
     if (fields.building.value) loadBlocks(initial);
-    else updateFlow();
+    else showStep('unit');
 })();

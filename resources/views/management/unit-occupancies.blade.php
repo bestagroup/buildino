@@ -22,8 +22,8 @@
     <div class="ownership-alert ownership-alert--error" role="alert" data-occupancy-error hidden></div>
     <div class="ownership-alert ownership-alert--success" role="status" aria-live="polite" data-occupancy-success hidden></div>
 
-    <section class="ownership-card" aria-labelledby="occupancy-unit-heading">
-        <div class="ownership-card__heading"><span class="ownership-card__index">۱</span><div><h3 id="occupancy-unit-heading">واحد را انتخاب کنید</h3><p>فقط ساختمان‌ها و واحدهای قابل دسترسی شما نمایش داده می‌شوند.</p></div></div>
+    <section class="ownership-card" aria-labelledby="occupancy-unit-heading" data-occupancy-location>
+        <div class="ownership-card__heading"><span class="ownership-card__index">۱</span><div><h3 id="occupancy-unit-heading" tabindex="-1">واحد را انتخاب کنید</h3><p>فقط ساختمان‌ها و واحدهای قابل دسترسی شما نمایش داده می‌شوند.</p></div></div>
         @if ($occupancyConfig['buildings']->isEmpty())
             <p class="ownership-empty">ساختمانی با دسترسی مشاهده سکونت برای حساب شما پیدا نشد.</p>
         @else
@@ -34,11 +34,12 @@
                 <label class="ownership-field"><span>واحد</span><select data-occupancy-unit disabled><option value="">ابتدا طبقه را انتخاب کنید</option></select></label>
             </div>
             <p class="ownership-location-hint" data-occupancy-location-hint aria-live="polite">برای شروع، ساختمان را انتخاب کنید.</p>
+            <div class="ownership-editor__actions"><button type="button" class="ownership-button ownership-button--primary" data-occupancy-continue hidden>نمایش ساکنان واحد</button></div>
         @endif
     </section>
 
     <section class="ownership-card" data-occupancy-records hidden aria-labelledby="occupancy-records-heading">
-        <div class="ownership-card__heading ownership-card__heading--split"><span class="ownership-card__index">۲</span><div><h3 id="occupancy-records-heading">ساکنان این واحد</h3><p data-occupancy-unit-label></p></div><button type="button" class="ownership-button ownership-button--soft" data-occupancy-reload>به‌روزرسانی</button></div>
+        <div class="ownership-card__heading ownership-card__heading--split"><span class="ownership-card__index">۲</span><div><h3 id="occupancy-records-heading" tabindex="-1">ساکنان این واحد</h3><p data-occupancy-unit-label></p></div><button type="button" class="ownership-button ownership-button--soft" data-occupancy-back-unit>تغییر واحد</button><button type="button" class="ownership-button ownership-button--soft" data-occupancy-reload>به‌روزرسانی</button></div>
         <div class="ownership-overview" data-occupancy-overview aria-live="polite"></div>
         <div class="ownership-record-list" data-occupancy-active></div>
         <div data-occupancy-pending-wrap hidden><h4 class="ownership-subheading">در انتظار پذیرش دعوت</h4><div class="ownership-record-list" data-occupancy-pending></div></div>
@@ -47,7 +48,7 @@
     </section>
 
     <section class="ownership-card ownership-editor" data-occupancy-editor hidden aria-labelledby="occupancy-editor-heading">
-        <div class="ownership-card__heading"><span class="ownership-card__index">۳</span><div><h3 id="occupancy-editor-heading" data-occupancy-editor-title tabindex="-1">ثبت ساکن</h3><p>رابطه سکونت مستقل از مالکیت و نقش دسترسی است.</p></div></div>
+        <div class="ownership-card__heading"><span class="ownership-card__index">۳</span><div><h3 id="occupancy-editor-heading" data-occupancy-editor-title tabindex="-1">ثبت ساکن</h3><p data-occupancy-editor-unit-label></p><p>رابطه سکونت مستقل از مالکیت و نقش دسترسی است.</p></div></div>
         <form data-occupancy-form novalidate>
             <div class="ownership-form-grid">
                 <div class="ownership-field ownership-field--wide" data-occupancy-user-picker><label for="occupancy-user-search">شخص</label><input id="occupancy-user-search" type="search" data-occupancy-user-search placeholder="نام شخص یا شماره موبایل کامل" autocomplete="off"><select name="user_id" data-occupancy-user required aria-label="انتخاب ساکن"><option value="">ابتدا شخص را جست‌وجو کنید</option></select><small data-occupancy-user-hint>برای شخصی خارج از ساختمان، شماره موبایل ۱۱ رقمی یا ایمیل کامل را جست‌وجو کنید.</small><small data-occupancy-account-status role="status" aria-live="polite"></small></div>
@@ -59,7 +60,7 @@
                 <details class="ownership-more ownership-field--wide" data-occupancy-more><summary>اطلاعات تکمیلی <small>اختیاری</small></summary><div class="ownership-form-grid"><label class="ownership-field" data-occupancy-create-end><span>تاریخ پایان سکونت</span><input type="date" name="ends_at"></label><label class="ownership-field ownership-field--wide"><span>یادداشت داخلی</span><textarea name="notes" rows="3" maxlength="5000" placeholder="توضیحی برای پیگیری"></textarea></label></div></details>
             </div>
             <p class="ownership-form-hint">در حالت ثبت مستقیم، سکونت بلافاصله فعال است. در حالت دعوت، اطلاعات رابطه و تاریخ تا زمان پذیرش نگهداری می‌شود.</p>
-            <div class="ownership-editor__actions"><button type="button" class="ownership-button ownership-button--soft" data-occupancy-cancel>انصراف</button><button type="submit" class="ownership-button ownership-button--primary" data-occupancy-save>ثبت سکونت</button></div>
+            <div class="ownership-editor__actions"><button type="button" class="ownership-button ownership-button--soft" data-occupancy-cancel>بازگشت به ساکنان</button><button type="submit" class="ownership-button ownership-button--primary" data-occupancy-save>ثبت سکونت</button></div>
         </form>
     </section>
 

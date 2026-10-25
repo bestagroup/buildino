@@ -10,6 +10,7 @@
     const form = $('form'), endForm = $('end-form'), userSelect = $('user'), userSearch = $('user-search');
     let records = [], invitations = [], candidates = [], editing = null, ending = null;
     let generation = 0, userGeneration = 0, searchTimer, busy = false, endTrigger = null;
+    let currentStep = 'unit', recordsLoading = false;
     const safeId = value => /^[1-9]\d*$/.test(String(value || '')) ? Number(value) : null;
     const unitId = () => safeId(fields.unit.value);
     const building = () => buildings.get(fields.building.value);
@@ -63,13 +64,24 @@
         return select.value;
     };
     const flow = () => {
-        const selected = Boolean(unitId());
-        root.querySelector('[data-occupancy-flow="unit"]').className = selected ? 'is-complete' : 'is-current';
-        root.querySelector('[data-occupancy-flow="records"]').className = selected ? ($('editor').hidden ? 'is-current' : 'is-complete') : '';
-        root.querySelector('[data-occupancy-flow="change"]').className = !$('editor').hidden ? 'is-current' : '';
+        const steps = ['unit', 'records', 'change'];
+        for (const [index, step] of steps.entries()) {
+            const marker = root.querySelector(`[data-occupancy-flow="${step}"]`);
+            marker.className = step === currentStep ? 'is-current' : index < steps.indexOf(currentStep) ? 'is-complete' : '';
+            if (step === currentStep) marker.setAttribute('aria-current', 'step'); else marker.removeAttribute('aria-current');
+        }
+    };
+    const showStep = (step, focus = false) => {
+        currentStep = step;
+        $('location').hidden = step !== 'unit';
+        $('records').hidden = step !== 'records';
+        $('editor').hidden = step !== 'change';
+        $('continue').hidden = !unitId(); flow();
+        if (focus) document.getElementById(step === 'unit' ? 'occupancy-unit-heading' : step === 'records' ? 'occupancy-records-heading' : 'occupancy-editor-heading').focus();
     };
     const hideRecords = () => {
-        records = []; invitations = []; $('records').hidden = true; $('editor').hidden = true; editing = null; flow();
+        records = []; invitations = []; editing = null;
+        ++userGeneration; clearTimeout(searchTimer); showStep('unit');
         const url = new URL(location.href); url.searchParams.delete('unit_id'); history.replaceState(null, '', url);
     };
     const hint = value => { $('location-hint').textContent = value; };
@@ -160,24 +172,35 @@
         $('history').replaceChildren(...old.map(record => card(record, false)));
         $('history-wrap').hidden = !old.length; $('history-count').textContent = `(${number(old.length)})`;
         $('actions').hidden = !building()?.canCreate; $('create-user').hidden = !building()?.canCreateUser;
-        $('records').hidden = false; flow();
+        showStep('records', true);
     };
     const loadRecords = async () => {
         const id = unitId(), ticket = ++generation; hideRecords(); if (!id) return;
+        recordsLoading = true; $('records').setAttribute('aria-busy', 'true'); $('reload').disabled = true;
+        $('overview').replaceChildren();
+        $('active').replaceChildren(make('p', 'ownership-empty', 'در حال دریافت ساکنان واحد…'));
+        $('pending-wrap').hidden = true; $('history-wrap').hidden = true; $('actions').hidden = true;
+        $('unit-label').textContent = `${fields.unit.selectedOptions[0]?.textContent || 'واحد'} · ${fields.building.selectedOptions[0]?.textContent || ''}`;
+        showStep('records', true);
         hint('در حال دریافت ساکنان واحد…');
         try {
             const people = await paged(`${config.apiBase}/units/${id}/occupancies`);
+            if (ticket !== generation) return;
             let invites = [];
             if (building()?.canViewInvites) invites = await paged(`${config.apiBase}/units/${id}/invitations`);
             if (ticket !== generation) return;
             records = people; invitations = invites;
             $('unit-label').textContent = `${fields.unit.selectedOptions[0]?.textContent || 'واحد'} · ${fields.building.selectedOptions[0]?.textContent || ''}`;
             const url = new URL(location.href); url.searchParams.set('unit_id', String(id)); history.replaceState(null, '', url);
-            hint('واحد انتخاب شد. ساکنان را در بخش بعد ببینید.'); render();
-        } catch (error) { if (ticket === generation) report(error); }
+            hint('واحد انتخاب شد. برای ادامه، نمایش ساکنان را بزنید.'); render();
+        } catch (error) {
+            if (ticket === generation) { $('active').replaceChildren(make('p', 'ownership-empty', 'دریافت ساکنان انجام نشد؛ به‌روزرسانی را بزنید یا واحد را تغییر دهید.')); report(error); }
+        } finally {
+            if (ticket === generation) { recordsLoading = false; $('records').setAttribute('aria-busy', 'false'); $('reload').disabled = false; }
+        }
     };
     const openEditor = (record = null) => {
-        if (!unitId() || !(record ? building()?.canUpdate : building()?.canCreate)) return;
+        if (busy || recordsLoading || !unitId() || !(record ? building()?.canUpdate : building()?.canCreate)) return;
         message(null, null); editing = record; form.reset(); $('more').open = false;
         $('editor-title').textContent = record ? 'ویرایش سکونت' : 'ثبت ساکن جدید'; $('save').textContent = record ? 'ذخیره تغییرات' : 'ثبت سکونت';
         $('user-picker').hidden = Boolean(record); $('edit-person').hidden = !record; $('create-end').hidden = Boolean(record);
@@ -190,9 +213,10 @@
         setDate(form, 'starts_at', record?.starts_at || today()); setDate(form, 'ends_at', '');
         form.elements.namedItem('is_primary').checked = Boolean(record?.is_primary);
         form.elements.namedItem('notes').value = record?.notes || '';
-        $('editor').hidden = false; flow(); $('editor-title').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('editor-title').focus({ preventScroll: true });
+        $('editor-unit-label').textContent = $('unit-label').textContent;
+        showStep('change', true);
     };
-    const closeEditor = () => { $('editor').hidden = true; editing = null; flow(); };
+    const closeEditor = () => { editing = null; ++userGeneration; clearTimeout(searchTimer); showStep('records', true); };
     const searchUsers = async () => {
         const query = userSearch.value.trim(), ticket = ++userGeneration;
         resetSelect(userSelect, query.length < 2 ? 'حداقل دو حرف یا رقم وارد کنید' : 'در حال جست‌وجو…');
@@ -258,7 +282,13 @@
     fields.floor.addEventListener('change', () => { message(null, null); loadUnits(); });
     fields.unit.addEventListener('change', () => { message(null, null); loadRecords(); });
     $('reload').addEventListener('click', () => { message(null, null); loadRecords(); });
-    $('add').addEventListener('click', () => openEditor()); $('cancel').addEventListener('click', closeEditor);
+    $('add').addEventListener('click', () => openEditor()); $('cancel').addEventListener('click', () => { if (!busy) closeEditor(); });
+    $('back-unit').addEventListener('click', () => {
+        if (busy) return;
+        ++generation; recordsLoading = false; $('records').setAttribute('aria-busy', 'false'); $('reload').disabled = false;
+        message(null, null); showStep('unit', true);
+    });
+    $('continue').addEventListener('click', () => { if (!busy && unitId()) loadRecords(); });
     $('end-cancel').addEventListener('click', closeEnd); $('end-backdrop').addEventListener('click', closeEnd);
     $('end-dialog').addEventListener('close', () => { $('end-backdrop').hidden = true; document.body.classList.remove('ownership-modal-open'); ending = null; if (endTrigger?.isConnected) endTrigger.focus({ preventScroll: true }); endTrigger = null; });
     document.addEventListener('keydown', event => {
@@ -281,5 +311,5 @@
     const initial = config.initialUnit;
     fields.building.value = String(initial?.buildingId || (buildings.size === 1 ? [...buildings.keys()][0] : ''));
     window.BuildinoSelect2?.refresh(fields.building);
-    if (fields.building.value) loadBlocks(initial); else flow();
+    if (fields.building.value) loadBlocks(initial); else showStep('unit');
 })();
