@@ -10,8 +10,8 @@
     <header class="ownership-hero"><div class="ownership-hero__icon">@include('management.partials.icon', ['name' => 'users', 'size' => 27])</div><div><span class="eyebrow">فرآیند P09</span><h2>مراجعه مهمان، از ثبت تا خروج</h2><p>واحد میزبان را انتخاب کنید و مراجعه‌های آن را پیگیری کنید.</p></div></header>
     <div class="ownership-alert ownership-alert--error" data-guest-error role="alert" hidden></div>
     <div class="ownership-alert ownership-alert--success" data-guest-success role="status" aria-live="polite" hidden></div>
-    <section class="ownership-card" aria-labelledby="guest-location-title">
-        <div class="ownership-card__heading"><span class="ownership-card__index">۱</span><div><h3 id="guest-location-title">واحد میزبان</h3><p>فقط محدوده قابل دسترسی شما نمایش داده می‌شود.</p></div></div>
+    <section class="ownership-card" data-guest-location aria-labelledby="guest-location-title">
+        <div class="ownership-card__heading"><span class="ownership-card__index">۱</span><div><h3 id="guest-location-title" tabindex="-1">واحد میزبان</h3><p>فقط محدوده قابل دسترسی شما نمایش داده می‌شود.</p></div></div>
         @if ($guestConfig['buildings']->isEmpty())
             <p class="ownership-empty">ساختمان قابل دسترسی برای مشاهده مراجعه‌ها وجود ندارد.</p>
         @else
@@ -22,10 +22,11 @@
                 @endforeach
             </div>
             <p class="ownership-location-hint" data-guest-location-status role="status"></p>
+            <div class="ownership-actions"><button class="ownership-button ownership-button--primary" type="button" data-guest-location-continue hidden>نمایش مراجعه‌های واحد</button></div>
         @endif
     </section>
     <section class="ownership-card" data-guest-records hidden aria-labelledby="guest-records-title">
-        <div class="ownership-card__heading ownership-card__heading--split"><div><h3 id="guest-records-title">مراجعه‌های واحد</h3><p data-guest-unit-label></p></div><button class="ownership-button ownership-button--soft" type="button" data-guest-reload>به‌روزرسانی</button><button class="ownership-button ownership-button--primary" type="button" data-guest-add hidden>+ ثبت مراجعه</button></div>
+        <div class="ownership-card__heading ownership-card__heading--split"><div><h3 id="guest-records-title" tabindex="-1">مراجعه‌های واحد</h3><p data-guest-unit-label></p></div><button class="ownership-button" type="button" data-guest-change-unit>تغییر واحد</button><button class="ownership-button ownership-button--soft" type="button" data-guest-reload>به‌روزرسانی</button><button class="ownership-button ownership-button--primary" type="button" data-guest-add hidden>+ ثبت مراجعه</button></div>
         <div class="ownership-form-grid">
             <label class="ownership-field"><span>جست‌وجوی مهمان</span><input type="search" data-guest-search placeholder="نام، موبایل یا پلاک خودرو"></label>
             <label class="ownership-field"><span>وضعیت مراجعه</span><select data-guest-status><option value="">همه وضعیت‌ها</option><option value="invited">در انتظار مراجعه</option><option value="entered">داخل ساختمان</option><option value="exited">مراجعه پایان‌یافته</option><option value="expired">منقضی‌شده</option><option value="cancelled">لغوشده</option></select></label>
@@ -36,6 +37,7 @@
     </section>
     <section class="ownership-card ownership-editor" data-guest-editor hidden aria-labelledby="guest-editor-title">
         <div class="ownership-card__heading"><span class="ownership-card__index">۲</span><div><h3 id="guest-editor-title" data-guest-editor-title tabindex="-1">ثبت مراجعه مهمان</h3><p>مشخصات و زمان را وارد کنید؛ سپس درخواست را بررسی و ثبت کنید.</p></div></div>
+        <p class="ownership-location-hint" data-guest-editor-unit></p>
         <div class="ownership-flow" aria-label="مراحل ثبت مراجعه">@foreach (['مشخصات مهمان', 'زمان مراجعه', 'بررسی و ثبت'] as $title)<span data-guest-step-label="{{ $loop->index }}"><b>{{ $loop->iteration }}</b>{{ $title }}</span>@endforeach</div>
         <form data-guest-form novalidate>
             <div class="ownership-form-grid" data-guest-step="0">
@@ -50,11 +52,11 @@
                 <label class="ownership-field ownership-field--wide"><span>توضیحات (اختیاری)</span><textarea name="description" maxlength="5000" rows="3" placeholder="توضیحی برای هماهنگی مراجعه"></textarea></label>
             </div>
             <div data-guest-step="2" hidden><div class="ownership-record-list" data-guest-review></div><p class="ownership-form-hint">ثبت مراجعه به معنی ورود مهمان نیست؛ اعتبار مجوز هنگام ثبت ورود توسط سامانه بررسی می‌شود.</p></div>
-            <div class="ownership-editor__actions"><button class="ownership-button ownership-button--soft" type="button" data-guest-cancel>انصراف</button><button class="ownership-button" type="button" data-guest-back hidden>مرحله قبل</button><button class="ownership-button ownership-button--primary" type="submit" data-guest-continue>ادامه</button></div>
+            <div class="ownership-editor__actions"><button class="ownership-button ownership-button--soft" type="button" data-guest-cancel>بازگشت به مراجعه‌ها</button><button class="ownership-button" type="button" data-guest-back hidden>مرحله قبل</button><button class="ownership-button ownership-button--primary" type="submit" data-guest-continue>ادامه</button></div>
         </form>
     </section>
     <section class="ownership-card" data-guest-detail hidden aria-labelledby="guest-detail-title">
-        <div class="ownership-card__heading ownership-card__heading--split"><div><h3 id="guest-detail-title" data-guest-detail-title tabindex="-1">مجوز و سابقه مراجعه</h3><p data-guest-detail-status></p></div><button class="ownership-button" type="button" data-guest-close-detail>بستن جزئیات</button></div>
+        <div class="ownership-card__heading ownership-card__heading--split"><div><h3 id="guest-detail-title" data-guest-detail-title tabindex="-1">مجوز و سابقه مراجعه</h3><p data-guest-detail-status></p></div><button class="ownership-button" type="button" data-guest-close-detail>بازگشت به مراجعه‌ها</button></div>
         <div class="ownership-record-list" data-guest-detail-body></div>
         <h4 class="ownership-subheading">سابقه ورود و خروج</h4><div class="ownership-record-list" data-guest-logs></div>
         <nav class="ownership-actions" aria-label="صفحه‌بندی سوابق"><button class="ownership-button" type="button" data-guest-logs-prev disabled>قبلی</button><span data-guest-logs-page></span><button class="ownership-button" type="button" data-guest-logs-next disabled>بعدی</button></nav>

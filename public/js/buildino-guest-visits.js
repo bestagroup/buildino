@@ -30,6 +30,12 @@
         message('error', details.length ? details.map(text => translations[text] || text).join('؛ ') : error.status ? error.message : 'ارتباط با سرور برقرار نشد. فهرست را به‌روزرسانی و دوباره تلاش کنید.');
     };
     const refresh = select => window.BuildinoSelect2?.refresh(select);
+    const showPanel = (name, focus = false) => {
+        clearTimeout(searchTimer);
+        for (const key of ['location', 'records', 'editor', 'detail']) $(key).hidden = key !== name;
+        $('location-continue').hidden = !unit();
+        if (focus) root.querySelector(`#guest-${name}-title`)?.focus();
+    };
     const lock = state => {
         busy = state;
         root.setAttribute('aria-busy', String(state));
@@ -38,18 +44,21 @@
     };
     const closeDetail = () => { ++detailGeneration; selected = null; $('detail').hidden = true; accessForm.hidden = true; };
     const resetContext = () => {
-        ++listGeneration; closeDetail(); $('records').hidden = true; $('editor').hidden = true;
+        ++listGeneration; closeDetail(); showPanel('location');
         $('list').replaceChildren(); message('', '');
     };
     const loadChildren = async index => {
         const ticket = ++generation; resetContext();
         for (let i = index + 1; i < fields.length; i++) { fields[i].replaceChildren(new Option('ابتدا محدوده بالاتر را انتخاب کنید', '')); fields[i].disabled = true; refresh(fields[i]); }
+        $('location-continue').hidden = !unit();
         if (!fields[index].value) return;
         if (index === 3) {
             $('unit-label').textContent = fields.map(el => el.selectedOptions[0]?.textContent).join(' / ');
-            $('add').hidden = !building()?.canCreate; $('records').hidden = false;
+            $('add').hidden = !building()?.canCreate;
+            $('editor-unit').textContent = $('unit-label').textContent;
             $('search').value = ''; $('status').value = ''; refresh($('status'));
             $('location-status').textContent = 'واحد انتخاب شد.';
+            showPanel('records', true);
             await loadList(1); return;
         }
         const types = ['blocks', 'floors', 'units'], keys = ['building_id', 'block_id', 'floor_id'];
@@ -133,7 +142,7 @@
                 expected_exit_at: value('expected_exit_at') ? new Date(value('expected_exit_at')).toISOString() : null,
                 description: value('description') || null,
             }) });
-            $('editor').hidden = true; message('success', 'مراجعه ثبت شد و مجوز ایجاد شد.');
+            message('success', 'مراجعه ثبت شد و مجوز ایجاد شد.');
             await loadList(1); await openDetail(payload.data.id);
         } catch (error) { report(error); } finally { lock(false); syncPaging(); }
     });
@@ -157,7 +166,7 @@
     }
     async function openDetail(id) {
         const ticket = ++detailGeneration;
-        selected = null; accessForm.hidden = true; $('detail').hidden = false;
+        selected = null; accessForm.hidden = true; showPanel('detail', true);
         $('detail-body').replaceChildren(); $('detail-actions').replaceChildren(); $('logs').replaceChildren();
         $('detail-status').textContent = 'در حال دریافت مجوز…';
         try {
@@ -191,10 +200,15 @@
         finally { lock(false); syncPaging(); }
     });
     fields.forEach((el, index) => el.addEventListener('change', () => { if (!busy) loadChildren(index); }));
-    $('add').addEventListener('click', () => { if (busy || !building()?.canCreate) return; closeDetail(); form.reset(); $('editor').hidden = false; showStep(0); form.elements.first_name.focus(); });
-    $('cancel').addEventListener('click', () => { if (!busy) { $('editor').hidden = true; $('add').focus(); } });
+    $('change-unit').addEventListener('click', () => {
+        if (busy) return;
+        ++generation; ++listGeneration; closeDetail(); showPanel('location', true); message('', '');
+    });
+    $('location-continue').addEventListener('click', () => { if (!busy && unit()) { showPanel('records', true); loadList(); } });
+    $('add').addEventListener('click', () => { if (busy || !building()?.canCreate) return; closeDetail(); form.reset(); showPanel('editor'); showStep(0); form.elements.first_name.focus(); });
+    $('cancel').addEventListener('click', () => { if (!busy) { showPanel('records', true); $('add').focus(); } });
     $('back').addEventListener('click', () => { if (!busy) { showStep(Math.max(0, step - 1)); $('editor-title').focus(); } });
-    $('close-detail').addEventListener('click', () => { if (!busy) { closeDetail(); $('reload').focus(); } });
+    $('close-detail').addEventListener('click', () => { if (!busy) { closeDetail(); showPanel('records', true); } });
     $('access-cancel').addEventListener('click', () => { if (!busy) { accessForm.hidden = true; $('detail-title').focus(); } });
     $('reload').addEventListener('click', () => { if (!busy) loadList(); });
     $('prev').addEventListener('click', () => { if (!busy && page > 1) loadList(page - 1); });
