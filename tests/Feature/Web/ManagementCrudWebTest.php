@@ -396,7 +396,7 @@ class ManagementCrudWebTest extends TestCase
         );
     }
 
-    public function test_invitation_form_uses_scoped_multi_user_selection_and_custom_message(): void
+    public function test_invitation_form_matches_existing_recipient_and_validity_contract(): void
     {
         $fields = collect(
             config(
@@ -404,17 +404,19 @@ class ManagementCrudWebTest extends TestCase
                 []
             )
         );
-        $recipients = $fields->firstWhere('name', 'user_ids');
-        $message = $fields->firstWhere('name', 'message');
+        $recipients = $fields->firstWhere('name', 'user_id');
+        $validity = $fields->firstWhere('name', 'expires_in_hours');
 
-        $this->assertSame('multiselect', $recipients['type'] ?? null);
+        $this->assertSame('select', $recipients['type'] ?? null);
         $this->assertSame(
             'invitable_users',
             $recipients['lookup'] ?? null
         );
         $this->assertTrue($recipients['required'] ?? false);
-        $this->assertSame('textarea', $message['type'] ?? null);
-        $this->assertTrue($message['required'] ?? false);
+        $this->assertSame(1, $validity['min']);
+        $this->assertSame(720, $validity['max']);
+        $this->assertFalse($fields->contains('name', 'message'));
+        $this->assertFalse($fields->contains('name', 'user_ids'));
         $this->assertFalse($fields->contains('name', 'mobile'));
         $this->assertFalse($fields->contains('name', 'email'));
     }

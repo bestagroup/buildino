@@ -72,6 +72,7 @@
     }
 
     const inlineEditor = elements.drawer?.hasAttribute('data-inline-editor');
+    const invitationUi = bootstrap.resourceKey === 'invitations' ? window.BuildinoInvitationUi : null;
     const scopedFormula = bootstrap.resourceKey === 'charge-formulas' && Array.isArray(bootstrap.formulaBuildings);
     const formulaPermission = action => !scopedFormula || Boolean(bootstrap.formulaBuildings.find(row => String(row.id) === $("[data-context-name='building_id']")?.value)?.[action === 'create' ? 'canCreate' : 'canUpdate']);
     const editorVisibility = open => {
@@ -1165,7 +1166,7 @@
                     }
                 );
 
-            if (scopedFormula && renderId !== state.listRenderId) return;
+            if ((scopedFormula || invitationUi) && renderId !== state.listRenderId) return;
             state.rows =
                 transformRows(
                     rowsFromPayload(
@@ -1190,8 +1191,8 @@
                 );
             }
         } catch (error) {
-            if (scopedFormula && renderId !== state.listRenderId) return;
-            if (scopedFormula) setLoading(false);
+            if ((scopedFormula || invitationUi) && renderId !== state.listRenderId) return;
+            if (scopedFormula || invitationUi) setLoading(false);
             showState(
                 error.message,
                 "danger"
@@ -2585,6 +2586,7 @@
         elements.saveButton.disabled =
             loading;
         if (!loading) $("[data-charge-formula-builder]", elements.formFields)?.syncFormulaFooter?.();
+        if (!loading) invitationUi?.sync();
     };
 
     const lockPageScroll = () => {
@@ -2616,6 +2618,9 @@
         row = null
     ) => {
         if (!formulaPermission(mode === 'edit' ? 'update' : 'create')) return;
+        if (invitationUi?.busy) return;
+        invitationUi?.destroy();
+        if (invitationUi) lookupCache.clear();
         const renderId =
             ++state.drawerRenderId;
 
@@ -2703,7 +2708,9 @@
                         "input:not([disabled]), select:not([disabled]), textarea:not([disabled])"
                     );
 
-            const focusTarget = inlineEditor ? $(".charge-wizard__title", elements.drawer) || firstField : firstField;
+            invitationUi?.mountForm({ form: elements.form, fields: elements.formFields, saveButton: elements.saveButton, retry: () => openDrawer('create') });
+
+            const focusTarget = inlineEditor ? $(".charge-wizard__title, .invitation-step-title", elements.drawer) || firstField : firstField;
             focusTarget?.focus({
                 preventScroll: true,
             });
@@ -2726,10 +2733,12 @@
     };
 
     const closeDrawer = () => {
+        if (invitationUi?.busy) return;
         if (inlineEditor && !elements.drawer.classList.contains('is-open')) return;
         const formulaWizard = $("[data-charge-formula-builder]", elements.formFields);
         if (formulaWizard?.requestFormulaClose && !formulaWizard.requestFormulaClose()) return;
         elements.form.chargeWizardDestroy?.();
+        invitationUi?.destroy();
         state.drawerRenderId += 1;
 
         elements.drawer
@@ -2771,6 +2780,7 @@
     ) => {
         event.preventDefault();
         if (elements.saveButton.disabled) return;
+        if (invitationUi && !invitationUi.prepareSubmit()) return;
         if (coreResource) core?.showErrors(elements.formFields, {});
         const formulaWizard = $("[data-charge-formula-builder]", elements.formFields);
         if (formulaWizard?.prepareFormulaSubmit && !formulaWizard.prepareFormulaSubmit()) return;
@@ -2813,6 +2823,7 @@
             elements.saveButton.textContent =
                 "در حال ذخیره...";
             formulaWizard?.setFormulaBusy?.(true);
+            invitationUi?.setBusy(true);
 
             const { payload: savedPayload } = await apiFetch(
                 endpoint,
@@ -2852,6 +2863,7 @@
 
             formulaWizard?.markFormulaSaved?.();
             formulaWizard?.setFormulaBusy?.(false);
+            invitationUi?.setBusy(false);
             closeDrawer();
 
             if (resource.list) {
@@ -2864,16 +2876,19 @@
                 .textContent =
                 formulaWizard ? "" : error.message;
             if (coreResource) core?.showErrors(elements.formFields, error.payload?.errors || {});
+            invitationUi?.showErrors(error.payload?.errors || {});
             formulaWizard?.showFormulaErrors?.(error.payload?.errors || {}, error.message);
         } finally {
             elements.saveButton.disabled =
                 false;
+            invitationUi?.setBusy(false);
             formulaWizard?.setFormulaBusy?.(false);
             elements.saveButton.textContent =
                 mode === "edit"
                     ? "ذخیره تغییرات"
                     : "ثبت رکورد";
             formulaWizard?.syncFormulaFooter?.();
+            invitationUi?.sync();
         }
     };
 

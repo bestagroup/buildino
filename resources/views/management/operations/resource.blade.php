@@ -13,6 +13,10 @@
     @if ($resourceKey === 'users')
         <link rel="stylesheet" href="{{ asset('css/buildino-user-dialog.css') }}?v={{ filemtime(public_path('css/buildino-user-dialog.css')) }}">
     @endif
+    @if ($resourceKey === 'invitations')
+        <link rel="stylesheet" href="{{ asset('css/buildino-unit-ownerships.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/buildino-invitations.css') }}?v={{ filemtime(public_path('css/buildino-invitations.css')) }}">
+    @endif
 @endpush
 
 @php
@@ -44,12 +48,14 @@
 
 @section('content')
 <div
-    class="crud-page{{ $resourceKey === 'charge-formulas' ? ' ownership-page charge-formula-page' : '' }}"
+    class="crud-page{{ $resourceKey === 'charge-formulas' ? ' ownership-page charge-formula-page' : '' }}{{ $resourceKey === 'invitations' ? ' ownership-page invitation-page' : '' }}"
     id="buildinoCrudApp"
     data-resource="{{ $resourceKey }}"
 >
     @if ($resourceKey === 'charge-formulas')
         @include('management.partials.charge-formula-page')
+    @elseif ($resourceKey === 'invitations')
+        @include('management.partials.invitation-page')
     @else
     <div class="crud-breadcrumb">
         <a href="{{ route('management.dashboard') }}">
@@ -262,9 +268,9 @@
     ></div>
 
     <aside
-        class="crud-drawer{{ $resourceKey === 'charge-formulas' ? ' charge-formula-dialog' : '' }}{{ $resourceKey === 'users' ? ' user-registration-dialog' : '' }}"
+        class="crud-drawer{{ $resourceKey === 'charge-formulas' ? ' charge-formula-dialog' : '' }}{{ $resourceKey === 'invitations' ? ' invitation-editor' : '' }}{{ $resourceKey === 'users' ? ' user-registration-dialog' : '' }}"
         id="crudDrawer"
-        @if ($resourceKey === 'charge-formulas')
+        @if (in_array($resourceKey, ['charge-formulas', 'invitations'], true))
             data-inline-editor
             role="region"
             hidden
@@ -424,6 +430,9 @@
 </script>
 @if ($resourceKey === 'charge-formulas')
 <script src="{{ asset('js/buildino-charge-formula-ui.js') }}?v={{ filemtime(public_path('js/buildino-charge-formula-ui.js')) }}" defer></script>
+@endif
+@if ($resourceKey === 'invitations')
+<script src="{{ asset('js/buildino-invitations.js') }}?v={{ filemtime(public_path('js/buildino-invitations.js')) }}" defer></script>
 @endif
 <script
     src="{{ asset('js/buildino-crud.js') }}?v={{ filemtime(public_path('js/buildino-crud.js')) }}"

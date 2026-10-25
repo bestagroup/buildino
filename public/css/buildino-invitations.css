@@ -1,0 +1,35 @@
+.invitation-page [hidden] { display: none !important; }
+.invitation-page .ownership-card__heading--split { flex-wrap: wrap; }
+.invitation-page .ownership-card__heading > .ownership-actions { flex: 0 1 auto; }
+.invitation-hint, .invitation-note { color: var(--muted); font-size: 12px; line-height: 1.9; }
+.invitation-note { padding: 14px 16px; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 12px; }
+.invitation-search { margin-block: 20px 16px; }
+.invitation-page .crud-table { min-width: 800px; }
+.invitation-page .crud-table td { white-space: normal; overflow-wrap: anywhere; }
+.invitation-page .crud-row-action { min-height: 40px; }
+.invitation-page .invitation-editor[data-inline-editor] { position: relative; width: 100%; max-width: none; height: auto; max-height: none; transform: none; opacity: 1; visibility: visible; border: 1px solid var(--border); border-radius: 19px; background: var(--surface); box-shadow: var(--shadow-xs); padding: 25px; overflow: visible; }
+.invitation-editor .crud-drawer__header { position: static; margin: 0 0 18px; padding: 0 0 18px; flex-wrap: wrap; }
+.invitation-editor .crud-drawer__header h3 { font-size: 18px; }
+.invitation-editor .crud-close-button { width: auto; min-height: 40px; height: auto; padding: 8px 12px; font-size: 12px; }
+.invitation-editor .crud-form { display: block; overflow: visible; }
+.invitation-editor .crud-form-grid { padding: 0; overflow: visible; }
+.invitation-editor .crud-form-actions { position: static; margin-block-start: 22px; }
+.invitation-editor .crud-form-error { white-space: pre-line; }
+.invitation-step-title { grid-column: 1 / -1; margin: 4px 0 14px; font-size: 17px; }
+.invitation-steps { grid-column: 1 / -1; grid-template-columns: repeat(2, 1fr); }
+.invitation-review { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(100px, auto) 1fr; gap: 12px 18px; margin: 0; padding: 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-soft); font-size: 13px; }
+.invitation-review dt { color: var(--muted); }
+.invitation-review dd { margin: 0; overflow-wrap: anywhere; }
+.invitation-page #coreRemotePagination { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-block-start: 18px; font-size: 12px; }
+.invitation-page #coreRemotePagination button { min-height: 40px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.invitation-page #coreRemotePagination button:disabled { opacity: .5; cursor: default; }
+.invitation-page :is(button, a, input, select, [tabindex]):focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
+.invitation-page :is(h3, h4)[tabindex="-1"] { outline: none; scroll-margin-block-start: 100px; }
+.invitation-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 600px) {
+    .invitation-page .invitation-editor[data-inline-editor] { padding: 18px; }
+    .invitation-page .ownership-card__heading > .ownership-actions { width: 100%; }
+    .invitation-page .ownership-actions button { flex: 1 1 auto; }
+    .invitation-review { grid-template-columns: 1fr; gap: 8px; }
+    .invitation-review dd { margin-block-end: 10px; }
+}

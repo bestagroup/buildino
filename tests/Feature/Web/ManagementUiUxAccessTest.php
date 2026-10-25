@@ -54,6 +54,22 @@ class ManagementUiUxAccessTest extends TestCase
         return [['ownerships'], ['invitations'], ['reservations'], ['charge-formulas'], ['charge-periods']];
     }
 
+    public function test_invitation_page_reuses_crud_with_a_separate_inline_editor(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $manager = $this->createUser();
+        $this->grant($manager->id, ['reports.dashboard.view', 'unit-invitations.view', 'unit-invitations.create'], $graph['building']);
+
+        $this->actingAs($manager, 'web')->get('/management/operations/invitations')
+            ->assertOk()
+            ->assertSee('data-invitation-location', false)
+            ->assertSee('data-invitation-directory', false)
+            ->assertSee('data-inline-editor', false)
+            ->assertSee('buildino-invitations.js', false)
+            ->assertSee('دعوت جدید')
+            ->assertDontSee('crud-sibling-nav', false);
+    }
+
     public function test_scoped_building_manager_sees_building_navigation_but_not_global_user_admin(): void
     {
         $graph =
