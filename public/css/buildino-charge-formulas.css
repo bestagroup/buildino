@@ -1,6 +1,25 @@
 ﻿.charge-guide p, .charge-guide details { color: var(--muted); font-size: 12px; line-height: 1.9; }
 .charge-guide summary { cursor: pointer; color: var(--primary-700); }
 .charge-guide .crud-button { margin-block-start: 12px; }
+.charge-guide { padding: 17px 20px; border: 1px solid var(--border); border-inline-start: 3px solid var(--primary-500); border-radius: 12px; background: var(--surface-soft); }
+.charge-guide h4 { margin: 0; font-size: 14px; font-weight: 700; color: var(--text); }
+.charge-guide p { margin: 8px 0; }
+.charge-formula-page [hidden] { display: none !important; }
+.charge-page-toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.charge-formula-page .ownership-card__heading > .charge-page-toolbar { flex: 0 1 auto; }
+.charge-page-search { margin-block: 22px 16px; }
+.charge-page-table .crud-table { min-width: 560px; }
+.charge-page-table .crud-table td { padding: 16px 12px; white-space: normal; overflow-wrap: anywhere; }
+.charge-page-table .crud-table th { padding: 13px 12px; }
+.charge-page-table .crud-actions-column { min-width: 90px; }
+.charge-page-table .crud-row-action { min-height: 40px; padding: 8px 12px; }
+.charge-page-table:focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
+.charge-formula-page :is(h3, h4)[tabindex="-1"] { scroll-margin-block-start: 100px; outline: none; }
+.charge-formula-page #coreRemotePagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-block-start: 18px; }
+.charge-formula-page #coreRemotePagination button { min-height: 40px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: var(--text-soft); font: inherit; font-size: 12px; cursor: pointer; }
+.charge-formula-page #coreRemotePagination button:disabled { opacity: .55; cursor: default; }
+.charge-formula-page #coreRemotePagination span { color: var(--muted); font-size: 12px; }
+.charge-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .charge-formula-dialog.crud-drawer { inset: 0; margin: auto; width: min(820px, calc(100vw - 40px)); height: min(780px, 90dvh); max-height: 90dvh; padding: 24px; border: 1px solid var(--border); border-radius: 22px; box-shadow: var(--shadow-lg, 0 24px 80px #04132330); transform: translate3d(0, 18px, 0); opacity: 0; transition: opacity .18s ease, transform .18s ease, visibility .18s; }
 .charge-formula-dialog.crud-drawer.is-open { transform: translate3d(0, 0, 0); opacity: 1; }
 .charge-formula-dialog .crud-drawer__header { margin: -24px -24px 0; padding: 18px 24px; background: var(--surface); }
@@ -69,3 +88,24 @@
     .charge-wizard__review dt, .charge-wizard__review dd { padding: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .charge-formula-dialog.crud-drawer, .charge-wizard__progress::before, .charge-wizard .crud-formula-method > span { transition: none; } }
+
+/* Inline presentation reuses the existing form builder without modal behavior. */
+.charge-formula-page .charge-formula-dialog[data-inline-editor] {
+    position: static; inset: auto; z-index: auto; width: 100%; height: auto; max-height: none; margin: 0 0 18px; padding: 25px;
+    overflow: visible; border: 1px solid var(--border); border-radius: 19px; background: var(--surface); box-shadow: var(--shadow-xs); transform: none; opacity: 1; visibility: visible; transition: none;
+}
+.charge-formula-page .charge-formula-dialog .crud-drawer__header { position: static; margin: 0; padding: 0 0 20px; align-items: flex-start; gap: 16px; }
+.charge-formula-page .charge-formula-dialog .crud-close-button { width: auto; height: auto; min-height: 40px; flex-shrink: 0; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 10px; font-size: 12px; }
+.charge-formula-page .charge-formula-dialog > .crud-form { display: block; overflow: visible; }
+.charge-formula-page .charge-formula-dialog > .crud-form > .crud-form-grid { overflow: visible; padding: 0; }
+.charge-formula-page .charge-formula-dialog .crud-form-actions { position: static; margin-block-start: 22px; border-top: 1px solid var(--border); }
+.charge-formula-page .charge-formula-dialog .crud-form-error:empty { display: none; }
+.charge-formula-page :is(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
+@media (max-width: 600px) {
+    .charge-page-toolbar { width: 100%; }
+    .charge-page-toolbar .ownership-button { flex: 1 1 auto; }
+    .charge-formula-page .charge-formula-dialog[data-inline-editor] { padding: 18px; }
+    .charge-formula-page .charge-formula-dialog .crud-drawer__header { flex-wrap: wrap; }
+    .charge-formula-page .charge-formula-dialog .crud-close-button { margin-inline-start: auto; }
+    .charge-guide { padding: 16px; }
+}

@@ -11,6 +11,7 @@
             component.classList.add('charge-wizard');
             const $ = selector => component.querySelector(selector);
             const category = $('[data-formula-category]'), fixed = $('[data-formula-fixed-wrap]');
+            category.dataset.select2 = 'off';
             const originalFloor = $('[data-formula-floor-wrap]'), floor = make('div', originalFloor.className);
             floor.dataset.formulaFloorWrap = '';
             floor.replaceChildren(...originalFloor.childNodes); originalFloor.replaceWith(floor);
@@ -25,13 +26,17 @@
             const progress = make('div', 'charge-wizard__progress'); progress.setAttribute('aria-hidden', 'true');
             const panelHeading = make('h4', 'charge-wizard__title'); panelHeading.tabIndex = -1;
             const error = make('div', 'charge-wizard__error'); error.id = 'charge-error-' + ++sequence; error.setAttribute('role', 'alert'); error.hidden = true;
+            panelHeading.id = 'charge-stage-title-' + sequence;
             const panels = labels.map((label, index) => { const el = make('section', 'charge-wizard__panel'); el.dataset.chargePanel = index; return el; });
+            panels.forEach(panel => panel.setAttribute('aria-labelledby', panelHeading.id));
+            const announcement = make('p', 'charge-sr-only'); announcement.setAttribute('role', 'status'); announcement.setAttribute('aria-live', 'polite');
             const categoryField = category.closest('label'), categoryState = make('div', 'charge-wizard__empty');
             const retry = make('button', 'crud-button crud-button--soft', 'دریافت دوباره دسته‌ها'); retry.type = 'button';
             const changeBuilding = make('button', 'crud-button crud-button--soft', 'تغییر ساختمان'); changeBuilding.type = 'button';
             const categoryActions = make('div', 'charge-wizard__empty-actions'); categoryActions.append(retry, changeBuilding);
             panels[0].append(categoryField, categoryState, categoryActions);
             const methods = $('.crud-formula-methods');
+            methods.setAttribute('role', 'radiogroup'); methods.setAttribute('aria-label', 'روش تقسیم هزینه بین واحدها');
             if (!row) methods.querySelectorAll('input').forEach(input => input.checked = false);
             panels[1].append(methods);
             const parameterHint = make('div', 'charge-wizard__note'); panels[2].append(parameterHint, fixed, floor);
@@ -40,12 +45,12 @@
             const discard = make('div', 'charge-wizard__discard'); discard.hidden = true; discard.setAttribute('role', 'alert');
             const keep = make('button', 'crud-button crud-button--primary', 'ادامه ویرایش'), leave = make('button', 'crud-button crud-button--soft', 'خروج بدون ذخیره'); keep.type = leave.type = 'button';
             discard.append(make('strong', '', 'تغییرات شما هنوز ذخیره نشده است.'), keep, leave);
-            component.append(context, nav, progress, error, panelHeading, ...panels, discard);
+            component.append(context, nav, progress, announcement, error, panelHeading, ...panels, discard);
             const back = make('button', 'crud-button crud-button--soft charge-wizard__back', 'مرحله قبل'); back.type = 'button';
             saveButton.parentElement.insertBefore(back, saveButton);
             const method = () => $('[data-formula-method]:checked');
             const isActive = () => activeInput?.checked ?? row?.is_active ?? true;
-            const clearError = () => { error.hidden = true; error.textContent = ''; component.querySelectorAll('[aria-invalid="true"]').forEach(el => { el.removeAttribute('aria-invalid'); el.removeAttribute('aria-describedby'); }); };
+            const clearError = () => { error.hidden = true; error.textContent = ''; component.querySelectorAll('[aria-invalid="true"]').forEach(el => { el.removeAttribute('aria-invalid'); const ids = (el.getAttribute('aria-describedby') || '').split(/\s+/).filter(id => id && id !== error.id); if (ids.length) el.setAttribute('aria-describedby', ids.join(' ')); else el.removeAttribute('aria-describedby'); }); };
             const categoryAvailable = () => [...category.options].some(option => option.value);
             const categoryStatus = () => {
                 const available = categoryAvailable(), failed = [...category.options].some(option => option.textContent.includes('خطا در دریافت'));
@@ -122,6 +127,7 @@
                 nav.querySelectorAll('button').forEach(el => el.disabled = busy);
                 back.hidden = step === 0; back.disabled = busy;
                 saveButton.disabled = busy || loadingCategories || step === 0 && !categoryAvailable();
+                for (const id of ['crudDrawerClose', 'crudCancelButton']) { const button = document.getElementById(id); if (button) button.disabled = busy; }
                 saveButton.textContent = busy ? 'در حال اعتبارسنجی و ذخیره…' : step < 3 ? ['ادامه: انتخاب روش', 'ادامه: تنظیم پارامترها', 'مرور تنظیمات'][step] : isActive() ? 'ذخیره و فعال‌سازی فرمول' : 'ذخیره فرمول غیرفعال';
                 component.setAttribute('aria-busy', String(busy || loadingCategories));
                 window.BuildinoSelect2?.refresh(category);
@@ -131,6 +137,7 @@
                 panels.forEach((panel, index) => panel.hidden = index !== step);
                 [...nav.children].forEach((button, index) => { button.classList.toggle('is-complete', index < step); if (index === step) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current'); });
                 panelHeading.textContent = headings[step]; progress.style.setProperty('--charge-progress', ((step + 1) * 25) + '%');
+                announcement.textContent = `مرحله ${number(step + 1)} از ${number(labels.length)}: ${labels[step]}`;
                 parameterHint.textContent = method()?.value === 'fixed' ? 'مبلغی که هر واحد در هر دوره باید بپردازد را وارد کنید. این عدد مبلغ کل ساختمان نیست.' : method()?.value === 'floor_coefficient' ? 'ضریب ۱ سهم مبناست؛ عدد بزرگ‌تر سهم بیشتری می‌دهد. همکف را صفر و زیرزمین را با شماره منفی وارد کنید.' : 'این روش پارامتر دستی ندارد. سامانه هزینه ثبت‌شدهٔ دوره را بر اساس روش انتخابی بین واحدها تقسیم می‌کند.';
                 if (step === 3) renderSummary(); sync(); if (focus) panelHeading.focus();
             }
@@ -138,7 +145,7 @@
                 if (Number.isInteger(failure.step)) show(failure.step, false);
                 error.textContent = failure.message; error.hidden = false;
                 const input = failure.field;
-                if (input) { input.setAttribute('aria-invalid', 'true'); input.setAttribute('aria-describedby', error.id); input.focus(); }
+                if (input) { input.setAttribute('aria-invalid', 'true'); input.setAttribute('aria-describedby', [...new Set([...(input.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean), error.id])].join(' ')); input.focus(); }
                 else { error.tabIndex = -1; error.focus(); }
             };
             function navigate(next) {
@@ -155,7 +162,7 @@
             changeBuilding.addEventListener('click', () => {
                 if (busy) return;
                 document.getElementById('crudCancelButton')?.click();
-                if (!document.getElementById('crudDrawer')?.classList.contains('is-open')) document.querySelector('[data-context-name="building_id"]')?.focus();
+                if (!document.getElementById('crudDrawer')?.classList.contains('is-open')) { document.querySelector('[data-charge-change-building]')?.click(); document.querySelector('[data-context-name="building_id"]')?.focus(); }
             });
             keep.addEventListener('click', () => { discard.hidden = true; panelHeading.focus(); });
             leave.addEventListener('click', () => { allowDiscard = true; document.getElementById('crudCancelButton')?.click(); });
@@ -199,6 +206,31 @@
             show(0, false); categoryStatus();
         },
     };
+    const page = document.querySelector('.charge-formula-page');
+    if (page) {
+        const building = page.querySelector('[data-context-name="building_id"]');
+        const locationPanel = page.querySelector('[data-charge-location]'), directory = page.querySelector('[data-charge-directory]');
+        const drawer = document.getElementById('crudDrawer'), create = document.getElementById('crudCreateButton');
+        const resume = page.querySelector('[data-charge-resume]');
+        const show = (name, focus = false) => {
+            locationPanel.hidden = name !== 'location'; directory.hidden = name !== 'directory';
+            resume.hidden = !building.value;
+            if (focus) page.querySelector(`#charge-${name}-title`)?.focus();
+        };
+        const update = (focus = false) => {
+            const capability = window.BuildinoCrud?.formulaBuildings?.find(row => String(row.id) === building.value);
+            if (create) { create.hidden = !capability?.canCreate; create.disabled = !capability?.canCreate; }
+            page.querySelector('[data-charge-building-label]').textContent = (building.selectedOptions[0]?.textContent || '') + (capability && !capability.canCreate && !capability.canUpdate ? ' · دسترسی فقط مشاهده' : '');
+            const periodLink = page.querySelector('[data-charge-period-link]');
+            if (periodLink) { periodLink.hidden = !capability?.canViewPeriods; const url = new URL(periodLink.href, location.origin); if (building.value) url.searchParams.set('building_id', building.value); periodLink.href = url.href; }
+            if (!drawer.classList.contains('is-open')) show(building.value ? 'directory' : 'location', focus);
+        };
+        building.addEventListener('change', () => { document.getElementById('crudSearch').value = ''; update(true); });
+        page.querySelector('[data-charge-change-building]').addEventListener('click', () => show('location', true));
+        resume.addEventListener('click', () => { show('directory', true); document.getElementById('crudRefreshButton').click(); });
+        page.addEventListener('buildino:inline-editor', event => { if (event.detail.open) show('editor'); else update(); });
+        update();
+    }
     const create = document.getElementById('crudCreateButton'); if (create) create.textContent = '+ تعریف فرمول شارژ';
     document.addEventListener('change', event => {
         if (!event.target.matches('[data-context-name="building_id"]')) return;

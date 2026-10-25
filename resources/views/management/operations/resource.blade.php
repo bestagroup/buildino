@@ -7,6 +7,7 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/buildino-crud.css') }}">
     @if ($resourceKey === 'charge-formulas')
+        <link rel="stylesheet" href="{{ asset('css/buildino-unit-ownerships.css') }}?v={{ filemtime(public_path('css/buildino-unit-ownerships.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/buildino-charge-formulas.css') }}?v={{ filemtime(public_path('css/buildino-charge-formulas.css')) }}">
     @endif
     @if ($resourceKey === 'users')
@@ -43,10 +44,13 @@
 
 @section('content')
 <div
-    class="crud-page"
+    class="crud-page{{ $resourceKey === 'charge-formulas' ? ' ownership-page charge-formula-page' : '' }}"
     id="buildinoCrudApp"
     data-resource="{{ $resourceKey }}"
 >
+    @if ($resourceKey === 'charge-formulas')
+        @include('management.partials.charge-formula-page')
+    @else
     <div class="crud-breadcrumb">
         <a href="{{ route('management.dashboard') }}">
             داشبورد
@@ -60,10 +64,6 @@
     </div>
 
     <div data-core-flow-host hidden></div>
-
-    @if ($resourceKey === 'charge-formulas')
-        @include('management.partials.charge-formula-guide')
-    @endif
 
     <section class="crud-header">
         <div class="crud-header__copy">
@@ -253,6 +253,8 @@
         </section>
     @endif
 
+    @endif
+
     <div
         class="crud-drawer-backdrop"
         id="crudDrawerBackdrop"
@@ -262,8 +264,14 @@
     <aside
         class="crud-drawer{{ $resourceKey === 'charge-formulas' ? ' charge-formula-dialog' : '' }}{{ $resourceKey === 'users' ? ' user-registration-dialog' : '' }}"
         id="crudDrawer"
-        role="dialog"
-        aria-modal="true"
+        @if ($resourceKey === 'charge-formulas')
+            data-inline-editor
+            role="region"
+            hidden
+        @else
+            role="dialog"
+            aria-modal="true"
+        @endif
         aria-hidden="true"
         aria-labelledby="crudDrawerTitle"
         tabindex="-1"
@@ -282,9 +290,9 @@
                 type="button"
                 class="crud-close-button"
                 id="crudDrawerClose"
-                aria-label="بستن"
+                aria-label="{{ $resourceKey === 'charge-formulas' ? 'بازگشت به فرمول‌ها' : 'بستن' }}"
             >
-                ×
+                {{ $resourceKey === 'charge-formulas' ? 'بازگشت به فرمول‌ها' : '×' }}
             </button>
         </div>
 
@@ -317,7 +325,7 @@
                     class="crud-button crud-button--soft"
                     id="crudCancelButton"
                 >
-                    انصراف
+                    {{ $resourceKey === 'charge-formulas' ? 'انصراف و بازگشت' : 'انصراف' }}
                 </button>
 
                 <button
@@ -409,6 +417,9 @@
         resource: {{ \Illuminate\Support\Js::from($resource) }},
         lookupBase: @json(url('/management/lookups')),
         csrfToken: @json(csrf_token())
+        @if ($resourceKey === 'charge-formulas')
+        , formulaBuildings: {{ \Illuminate\Support\Js::from($formulaBuildings) }}
+        @endif
     };
 </script>
 @if ($resourceKey === 'charge-formulas')

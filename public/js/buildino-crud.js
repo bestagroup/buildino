@@ -71,6 +71,15 @@
         );
     }
 
+    const inlineEditor = elements.drawer?.hasAttribute('data-inline-editor');
+    const scopedFormula = bootstrap.resourceKey === 'charge-formulas' && Array.isArray(bootstrap.formulaBuildings);
+    const formulaPermission = action => !scopedFormula || Boolean(bootstrap.formulaBuildings.find(row => String(row.id) === $("[data-context-name='building_id']")?.value)?.[action === 'create' ? 'canCreate' : 'canUpdate']);
+    const editorVisibility = open => {
+        if (!inlineEditor) return;
+        elements.drawer.hidden = !open;
+        app.dispatchEvent(new CustomEvent('buildino:inline-editor', { detail: { open } }));
+    };
+
     const state = {
         rows: [],
         filteredRows: [],
@@ -85,6 +94,7 @@
         loading: false,
         drawerRenderId: 0,
         drawerTrigger: null,
+        listRenderId: 0,
     };
 
     const lookupCache = new Map();
@@ -1120,6 +1130,7 @@
     };
 
     const loadRows = async () => {
+        const renderId = ++state.listRenderId;
         if (! resource.list) {
             showState(
                 "برای این صفحه فهرست جداگانه تعریف نشده است."
@@ -1154,6 +1165,7 @@
                     }
                 );
 
+            if (scopedFormula && renderId !== state.listRenderId) return;
             state.rows =
                 transformRows(
                     rowsFromPayload(
@@ -1178,6 +1190,8 @@
                 );
             }
         } catch (error) {
+            if (scopedFormula && renderId !== state.listRenderId) return;
+            if (scopedFormula) setLoading(false);
             showState(
                 error.message,
                 "danger"
@@ -1249,10 +1263,10 @@
             columns
                 .map(
                     (column) =>
-                        `<th>${escapeHtml(column.label)}</th>`
+                        `<th scope="col">${escapeHtml(column.label)}</th>`
                 )
                 .join("")
-            + `<th class="crud-actions-column">عملیات</th>`;
+            + `<th scope="col" class="crud-actions-column">عملیات</th>`;
 
         const start =
             (state.currentPage - 1)
@@ -1281,13 +1295,14 @@
 
             const actions = [];
 
-            if (resource.update) {
+            if (resource.update && formulaPermission('update')) {
                 actions.push(`
                     <button
                         type="button"
                         class="crud-row-action crud-row-action--edit"
                         data-row-action="edit"
                         data-id="${escapeHtml(row.id)}"
+                        aria-label="ویرایش ${escapeHtml(row.title || resource.title)}"
                     >
                         ویرایش
                     </button>
@@ -2600,6 +2615,7 @@
         mode,
         row = null
     ) => {
+        if (!formulaPermission(mode === 'edit' ? 'update' : 'create')) return;
         const renderId =
             ++state.drawerRenderId;
 
@@ -2642,8 +2658,9 @@
         elements.drawer.classList.add(
             "is-open"
         );
+        editorVisibility(true);
 
-        elements.drawerBackdrop
+        if (!inlineEditor) elements.drawerBackdrop
             .classList.add(
                 "is-open"
             );
@@ -2653,13 +2670,13 @@
             "false"
         );
 
-        lockPageScroll();
+        if (!inlineEditor) lockPageScroll();
 
         elements.drawerClose.focus({
             preventScroll: true,
         });
 
-        await nextPaint();
+        if (!inlineEditor) await nextPaint();
 
         try {
             await renderFields(
@@ -2686,7 +2703,8 @@
                         "input:not([disabled]), select:not([disabled]), textarea:not([disabled])"
                     );
 
-            firstField?.focus({
+            const focusTarget = inlineEditor ? $(".charge-wizard__title", elements.drawer) || firstField : firstField;
+            focusTarget?.focus({
                 preventScroll: true,
             });
         } catch (error) {
@@ -2708,6 +2726,7 @@
     };
 
     const closeDrawer = () => {
+        if (inlineEditor && !elements.drawer.classList.contains('is-open')) return;
         const formulaWizard = $("[data-charge-formula-builder]", elements.formFields);
         if (formulaWizard?.requestFormulaClose && !formulaWizard.requestFormulaClose()) return;
         elements.form.chargeWizardDestroy?.();
@@ -2726,12 +2745,13 @@
                 "aria-hidden",
                 "true"
             );
+        editorVisibility(false);
 
         state.editRow =
             null;
 
         setDrawerLoading(false);
-        unlockPageScroll();
+        if (!inlineEditor) unlockPageScroll();
 
         if (
             state.drawerTrigger
@@ -2765,6 +2785,8 @@
             mode === "edit"
                 ? resource.update
                 : resource.create;
+
+        if (!formulaPermission(mode === 'edit' ? 'update' : 'create')) return;
 
         if (! endpointConfig) {
             return;
@@ -2834,6 +2856,7 @@
 
             if (resource.list) {
                 await loadRows();
+                if (inlineEditor) $("#charge-directory-title")?.focus();
             }
             if (event.submitter?.dataset.coreSaveAnother === '1') await openDrawer('create');
         } catch (error) {
@@ -3507,6 +3530,7 @@
 
                 if (
                     event.key !== "Tab"
+                    || inlineEditor
                     || ! elements.drawer
                         ?.classList
                         .contains("is-open")
@@ -3559,7 +3583,7 @@
     };
 
     const renderRemotePagination = () => {
-        if (!coreResource) return;
+        if (!coreResource && !scopedFormula) return;
         let pager = $("#coreRemotePagination");
         if (!pager) {
             pager = document.createElement("div"); pager.id = "coreRemotePagination"; pager.className = "core-flow__actions";

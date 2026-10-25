@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\Building;
 use App\Services\Web\ManagementUiContextService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Response;
@@ -120,6 +121,20 @@ class ManagementOperationsController extends Controller
             return app(ChargePeriodPageController::class)(request(), $permissions);
         }
 
+        $formulaBuildings = null;
+        if ($resource === 'charge-formulas') {
+            $user = request()->user();
+            $formulaBuildings = Building::query()->orderBy('title')->get()
+                ->filter(fn (Building $building): bool => $permissions->allows($user, 'charge-formulas.view', $building))
+                ->map(fn (Building $building): array => [
+                    'id' => $building->id,
+                    'title' => $building->title,
+                    'canCreate' => $permissions->allows($user, 'charge-formulas.create', $building),
+                    'canUpdate' => $permissions->allows($user, 'charge-formulas.update', $building),
+                    'canViewPeriods' => $permissions->allows($user, 'charge-periods.view', $building),
+                ])->values();
+        }
+
         $inertiaResources = config(
             'management_ui.inertia_resources',
             []
@@ -208,6 +223,7 @@ class ManagementOperationsController extends Controller
                 'user' => request()->user(),
                 'resourceKey' => $resource,
                 'resource' => $configuration,
+                'formulaBuildings' => $formulaBuildings,
                 'groups' => config(
                     'management_crud.groups',
                     []
