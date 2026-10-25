@@ -55,23 +55,52 @@ final class UnitOccupancyPageWebTest extends TestCase
             ->assertViewHas('occupancyConfig', fn (array $config): bool => $config['initialUnit']['unitId'] === $own['unit']->id);
     }
 
-    public function test_candidate_lookup_requires_occupancy_create_scope_and_exact_unlinked_contact(): void
+    public function test_candidate_lookup_lists_all_active_building_users_without_search(): void
     {
         $own = $this->createBuildingGraph();
         $other = $this->createBuildingGraph();
-        $candidate = $this->createUser(['mobile' => '09129990011']);
-        $this->createUser(['mobile' => '09129990012', 'is_blocked' => true]);
+        $manager = $this->assigned('building_manager', $own['building']);
+        UserRoleAssignment::query()->create([
+            'user_id' => $manager->id,
+            'role_id' => Role::query()->where('name', 'building_manager')->value('id'),
+            'scope_type' => $other['building']->getMorphClass(),
+            'scope_id' => $other['building']->id,
+            'is_active' => true,
+        ]);
+        $this->assigned('owner', $other['building']);
+        $unlinked = $this->createUser(['mobile' => '09129990011']);
+        $this->assigned('owner', $own['building'])->update(['is_blocked' => true]);
+        $this->assigned('owner', $own['building'])->update(['is_active' => false]);
+        $expected = [$manager->id];
+        for ($index = 0; $index < 35; $index++) {
+            $candidate = $this->createUser();
+            $candidate->managedUserScopes()->create([
+                'scope_type' => $own['building']->getMorphClass(),
+                'scope_id' => $own['building']->id,
+                'assigned_by' => $manager->id,
+            ]);
+            $expected[] = $candidate->id;
+        }
+        $response = $this->actingAs($manager)
+            ->getJson('/management/lookups/occupancy_candidates?unit_id='.$own['unit']->id)
+            ->assertOk()->assertJsonCount(36, 'data');
+        $this->assertEqualsCanonicalizing($expected, array_column($response->json('data'), 'id'));
+        $this->getJson('/management/lookups/occupancy_candidates?unit_id='.$own['unit']->id.'&search='.$unlinked->mobile)
+            ->assertOk()->assertJsonCount(0, 'data');
+        $this->get('/management/operations/occupancies?unit_id='.$own['unit']->id)
+            ->assertOk()->assertSee('id="occupancy-user"', false)
+            ->assertDontSee('data-occupancy-user-search', false);
+    }
+
+    public function test_candidate_lookup_requires_create_permission_for_the_unit_building(): void
+    {
+        $own = $this->createBuildingGraph();
+        $other = $this->createBuildingGraph();
         $this->actingAs($this->assigned('building_manager', $own['building']))
-            ->getJson('/management/lookups/occupancy_candidates?unit_id='.$own['unit']->id.'&search=09129990011')
-            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $candidate->id);
-        $this->getJson('/management/lookups/occupancy_candidates?unit_id='.$own['unit']->id.'&search=0912999001')
-            ->assertOk()->assertJsonCount(0, 'data');
-        $this->getJson('/management/lookups/occupancy_candidates?unit_id='.$own['unit']->id.'&search=09129990012')
-            ->assertOk()->assertJsonCount(0, 'data');
-        $this->getJson('/management/lookups/occupancy_candidates?unit_id='.$other['unit']->id.'&search=09129990011')
+            ->getJson('/management/lookups/occupancy_candidates?unit_id='.$other['unit']->id)
             ->assertForbidden();
         $this->actingAs($this->assigned('support_agent', $own['building']))
-            ->getJson('/management/lookups/occupancy_candidates?unit_id='.$own['unit']->id.'&search=09129990011')
+            ->getJson('/management/lookups/occupancy_candidates?unit_id='.$own['unit']->id)
             ->assertForbidden();
     }
 

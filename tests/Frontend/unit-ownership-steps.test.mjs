@@ -55,9 +55,7 @@ for (const kind of ['ownership', 'occupancy']) test(kind + ' steps replace one a
         $('back-unit').click(); only('location'); expect(!$('continue').hidden, 'Selected unit must be resumable');
         $('continue').click(); await until(() => $('active').querySelector('button'), 'Owners did not resume'); only('records');
         $('add').click(); only('editor');
-        if ('${kind}' === 'occupancy') {
-            $('user-search').value = '09129990011'; $('user-search').dispatchEvent(new Event('input', { bubbles: true }));
-        } else expect(!$('user-search'), 'Owner selection must not have a separate search input');
+        expect(!$('user-search'), 'Person selection must not have a separate search input');
         await until(() => $('user').querySelector('option[value="2"]'), 'Candidate lookup did not finish');
         $('user').value = '2'; $('user').dispatchEvent(new Event('change', { bubbles: true }));
         if ('${kind}' === 'occupancy') $('form').elements.occupancy_type.value = 'resident';

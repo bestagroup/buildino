@@ -7,9 +7,9 @@
     const $ = name => root.querySelector(`[data-occupancy-${name}]`);
     const fields = { building: $('building'), block: $('block'), floor: $('floor'), unit: $('unit') };
     if (!fields.building) return;
-    const form = $('form'), endForm = $('end-form'), userSelect = $('user'), userSearch = $('user-search');
+    const form = $('form'), endForm = $('end-form'), userSelect = $('user');
     let records = [], invitations = [], candidates = [], editing = null, ending = null;
-    let generation = 0, userGeneration = 0, searchTimer, busy = false, endTrigger = null;
+    let generation = 0, userGeneration = 0, busy = false, endTrigger = null;
     let currentStep = 'unit', recordsLoading = false;
     const safeId = value => /^[1-9]\d*$/.test(String(value || '')) ? Number(value) : null;
     const unitId = () => safeId(fields.unit.value);
@@ -81,7 +81,7 @@
     };
     const hideRecords = () => {
         records = []; invitations = []; editing = null;
-        ++userGeneration; clearTimeout(searchTimer); showStep('unit');
+        ++userGeneration; showStep('unit');
         const url = new URL(location.href); url.searchParams.delete('unit_id'); history.replaceState(null, '', url);
     };
     const hint = value => { $('location-hint').textContent = value; };
@@ -206,8 +206,9 @@
         $('user-picker').hidden = Boolean(record); $('edit-person').hidden = !record; $('create-end').hidden = Boolean(record);
         $('invite-wrap').hidden = Boolean(record) || !building()?.canInvite;
         $('owner-option').hidden = !record || record.occupancy_type !== 'owner';
-        userSelect.required = !record; resetSelect(userSelect, 'ابتدا شخص را جست‌وجو کنید'); userSearch.value = ''; candidates = [];
-        $('user-hint').textContent = 'برای شخصی خارج از ساختمان، شماره موبایل ۱۱ رقمی یا ایمیل کامل را جست‌وجو کنید.';
+        ++userGeneration;
+        userSelect.required = !record; resetSelect(userSelect, 'در حال دریافت کاربران ساختمان…'); candidates = [];
+        $('user-hint').textContent = 'در حال دریافت کاربران ساختمان…';
         $('account-status').textContent = ''; $('edit-name').textContent = record ? nameOf(record) : '';
         form.elements.namedItem('occupancy_type').value = record?.occupancy_type || '';
         setDate(form, 'starts_at', record?.starts_at || today()); setDate(form, 'ends_at', '');
@@ -215,19 +216,30 @@
         form.elements.namedItem('notes').value = record?.notes || '';
         $('editor-unit-label').textContent = $('unit-label').textContent;
         showStep('change', true);
+        if (!record) void loadUsers();
     };
-    const closeEditor = () => { editing = null; ++userGeneration; clearTimeout(searchTimer); showStep('records', true); };
-    const searchUsers = async () => {
-        const query = userSearch.value.trim(), ticket = ++userGeneration;
-        resetSelect(userSelect, query.length < 2 ? 'حداقل دو حرف یا رقم وارد کنید' : 'در حال جست‌وجو…');
-        $('account-status').textContent = '';
-        if (query.length < 2 || !unitId()) return;
+    const closeEditor = () => { editing = null; ++userGeneration; showStep('records', true); };
+    const loadUsers = async () => {
+        const ticket = ++userGeneration;
         try {
-            const url = new URL(`${config.lookupBase}/occupancy_candidates`, location.origin); url.searchParams.set('unit_id', String(unitId())); url.searchParams.set('search', query);
-            const rows = (await request(url)).data || []; if (ticket !== userGeneration) return;
-            candidates = rows; setOptions(userSelect, rows, rows.length ? 'شخص را انتخاب کنید' : 'حسابی پیدا نشد'); userSelect.value = ''; window.BuildinoSelect2?.refresh(userSelect);
-            $('user-hint').textContent = rows.length ? `${number(rows.length)} حساب پیدا شد.` : 'حسابی پیدا نشد؛ اطلاعات دیگری جست‌وجو کنید یا حساب جدید بسازید.';
-        } catch (error) { if (ticket === userGeneration) report(error); }
+            const url = new URL(`${config.lookupBase}/occupancy_candidates`, location.origin);
+            url.searchParams.set('unit_id', String(unitId()));
+            const rows = (await request(url)).data || [];
+            if (ticket !== userGeneration) return;
+            candidates = rows;
+            setOptions(userSelect, rows, rows.length ? 'جست‌وجو و انتخاب ساکن' : 'کاربری برای این ساختمان ثبت نشده است');
+            userSelect.value = '';
+            window.BuildinoSelect2?.refresh(userSelect);
+            $('user-hint').textContent = rows.length
+                ? `${number(rows.length)} کاربر ساختمان؛ برای جست‌وجوی نام یا شماره تماس، فهرست را باز کنید.`
+                : 'ابتدا کاربر را از بخش مدیریت کاربران برای این ساختمان ثبت کنید.';
+        } catch (error) {
+            if (ticket !== userGeneration) return;
+            resetSelect(userSelect, 'دریافت کاربران انجام نشد');
+            window.BuildinoSelect2?.refresh(userSelect);
+            $('user-hint').textContent = 'برای تلاش مجدد، به فهرست ساکنان برگردید و ثبت ساکن جدید را بزنید.';
+            report(error);
+        }
     };
     const save = async event => {
         event.preventDefault(); if (busy || !unitId()) return; message(null, null);
@@ -301,7 +313,6 @@
         }
     });
     form.addEventListener('submit', save); endForm.addEventListener('submit', end);
-    userSearch.addEventListener('input', () => { userSelect.value = ''; candidates = []; $('account-status').textContent = ''; clearTimeout(searchTimer); searchTimer = setTimeout(searchUsers, 280); });
     userSelect.addEventListener('change', () => {
         const candidate = candidates.find(item => Number(item.id) === safeId(userSelect.value));
         $('invite-wrap').hidden = !building()?.canInvite || !candidate?.hasMobile;
