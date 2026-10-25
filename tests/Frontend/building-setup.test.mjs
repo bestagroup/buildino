@@ -50,7 +50,7 @@ test('new setup starts at floor one and keeps generated unit numbers sequential'
 
     assert.deepEqual(
         block.floors.map((floor) =>
-            floor.units.map((unit) => unit.unit_number)
+            Array.from(floor.units, (unit) => unit.unit_number)
         ),
         [['1', '2'], ['3', '4']]
     );
@@ -63,7 +63,7 @@ test('new setup starts at floor one and keeps generated unit numbers sequential'
 
     assert.deepEqual(
         block.floors.map((floor) =>
-            floor.units.map((unit) => unit.unit_number)
+            Array.from(floor.units, (unit) => unit.unit_number)
         ),
         [['1', '2', '3'], ['4', '5']]
     );
