@@ -1295,6 +1295,7 @@
                     <div
                         class="popover-menu popover-menu--user"
                         data-popover-menu
+                        aria-label="اطلاعات حساب و دسترسی‌ها"
                     >
                         <div class="user-popover__identity">
                             <div class="avatar avatar--popover">
@@ -1315,7 +1316,7 @@
                                             . ' '
                                             . ($user->last_name ?? '')
                                         )
-                                        ?: $user->mobile
+                                        ?: ($user->mobile ?: $user->email ?: 'کاربر')
                                     }}
                                 </strong>
 
@@ -1348,6 +1349,7 @@
                         </div>
 
                         @if (! empty($ui['roles']))
+                            <p class="user-popover__roles-title">نقش‌ها و محدوده‌های دسترسی</p>
                             <div class="role-chip-list">
                                 @foreach ($ui['roles'] as $role)
                                     <span class="role-chip">
@@ -1374,7 +1376,7 @@
                                         'size' => 17,
                                     ]
                                 )
-                                تغییر دسترسی
+                                ورود به پرتال ساکن / مالک
                             </a>
                         @endif
 
