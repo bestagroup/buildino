@@ -151,7 +151,7 @@
 @endphp
 
 @section('content')
-@if (count(array_intersect(['buildings.create', 'blocks.create'], $managementUi['permissions'] ?? [])) || (in_array('users.create', $managementUi['global_permissions'] ?? [], true) && in_array('users.update', $managementUi['global_permissions'] ?? [], true)))
+@if ($buildings->isEmpty() && (count(array_intersect(['buildings.create', 'blocks.create'], $managementUi['permissions'] ?? [])) || (in_array('users.create', $managementUi['global_permissions'] ?? [], true) && in_array('users.update', $managementUi['global_permissions'] ?? [], true))))
 <section class="core-flow">
     <h2>تکمیل اطلاعات ساختمان</h2>
     <p>ساختمان خود را انتخاب کنید، واحدها را اضافه کنید و کاربران را دعوت کنید.</p>
