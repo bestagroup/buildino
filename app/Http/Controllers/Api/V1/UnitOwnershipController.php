@@ -9,6 +9,9 @@ use App\Http\Requests\UpdateUnitOwnershipRequest;
 use App\Http\Resources\V1\UnitOwnershipResource;
 use App\Models\Unit;
 use App\Models\UnitOwnership;
+use App\Models\User;
+use App\Services\Web\ScopedUserManagementService;
+use Illuminate\Validation\ValidationException;
 use App\Services\UnitOwnershipService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Request;
@@ -115,17 +118,27 @@ class UnitOwnershipController extends Controller
     public function update(
         UpdateUnitOwnershipRequest $request,
         UnitOwnership $unitOwnership,
-        UnitOwnershipService $service
+        UnitOwnershipService $service,
+        ScopedUserManagementService $scopedUsers
     ): UnitOwnershipResource {
         $this->authorize(
             'update',
             $unitOwnership
         );
 
-        $unitOwnership = $service->update(
-            $unitOwnership,
-            $request->validated()
-        );
+        $data = $request->validated();
+        if (isset($data['user_id']) && (int) $data['user_id'] !== (int) $unitOwnership->user_id) {
+            $building = $this->resolveBuilding($unitOwnership->unit);
+            $candidate = User::query()->whereKey($data['user_id'])
+                ->where('is_active', true)->where('is_blocked', false);
+            if (! $building || ! $scopedUsers->applyBuildingUsers($candidate, $building)->exists()) {
+                throw ValidationException::withMessages([
+                    'user_id' => ['مالک جدید باید از کاربران فعال همین ساختمان باشد.'],
+                ]);
+            }
+        }
+
+        $unitOwnership = $service->update($unitOwnership, $data);
 
         $unitOwnership->load([
             'user:id,first_name,last_name,mobile,email',

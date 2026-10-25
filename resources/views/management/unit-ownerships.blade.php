@@ -73,10 +73,9 @@
         <form data-ownership-form novalidate>
             <div class="ownership-form-grid">
                 <div class="ownership-field ownership-field--wide" data-ownership-user-picker>
-                    <label for="ownership-user-search">مالک</label>
-                    <input id="ownership-user-search" type="search" data-ownership-user-search placeholder="نام کاربر موجود یا شماره موبایل کامل" autocomplete="off">
-                    <select name="user_id" data-ownership-user aria-label="انتخاب مالک" required><option value="">ابتدا مالک را جست‌وجو کنید</option></select>
-                    <small data-ownership-user-hint>برای حسابی که هنوز به ساختمان وصل نیست، شماره موبایل ۱۱ رقمی یا ایمیل کامل او را وارد کنید.</small>
+                    <label for="ownership-user">مالک</label>
+                    <select id="ownership-user" name="user_id" data-ownership-user data-placeholder="جست‌وجو و انتخاب مالک" aria-describedby="ownership-user-hint" required><option value="">جست‌وجو و انتخاب مالک</option></select>
+                    <small id="ownership-user-hint" data-ownership-user-hint role="status">کاربران ساختمان را در همین فهرست جست‌وجو و انتخاب کنید.</small>
                 </div>
                 <div class="ownership-field ownership-field--wide" data-ownership-edit-owner hidden><span>مالک</span><strong data-ownership-edit-name></strong></div>
                 <label class="ownership-field"><span>درصد مالکیت</span><input type="number" name="ownership_percentage" min="0" max="100" step="0.01" inputmode="decimal" dir="ltr" placeholder="مثلاً ۵۰"></label>

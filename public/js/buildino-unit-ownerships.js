@@ -15,7 +15,6 @@
     const form = $('form');
     const endForm = $('end-form');
     const userSelect = $('user');
-    const userSearch = $('user-search');
     const percentField = form.elements.namedItem('ownership_percentage');
     const primaryField = form.elements.namedItem('is_primary');
     const notesField = form.elements.namedItem('notes');
@@ -24,7 +23,6 @@
     let ending = null;
     let generation = 0;
     let userGeneration = 0;
-    let searchTimer;
     let busy = false;
     let endTrigger = null;
     let currentStep = 'unit';
@@ -141,7 +139,6 @@
         records = [];
         editing = null;
         ++userGeneration;
-        clearTimeout(searchTimer);
         showStep('unit');
         const url = new URL(window.location.href);
         url.searchParams.delete('unit_id');
@@ -292,13 +289,13 @@
         $('more').open = false;
         $('editor-title').textContent = record ? 'ویرایش مالکیت' : 'ثبت مالک جدید';
         $('save').textContent = record ? 'ذخیره تغییرات' : 'ثبت مالکیت';
-        $('user-picker').hidden = Boolean(record);
-        $('edit-owner').hidden = !record;
+        $('user-picker').hidden = false;
+        $('edit-owner').hidden = true;
         $('create-end').hidden = Boolean(record);
-        userSelect.required = !record;
-        userSelect.replaceChildren(new Option('ابتدا مالک را جست‌وجو کنید', ''));
-        userSearch.value = '';
-        $('user-hint').textContent = 'برای حسابی که هنوز به ساختمان وصل نیست، شماره موبایل ۱۱ رقمی یا ایمیل کامل او را وارد کنید.';
+        userSelect.required = true;
+        ++userGeneration;
+        resetSelect(userSelect, 'در حال دریافت کاربران ساختمان…');
+        $('user-hint').textContent = 'در حال دریافت کاربران ساختمان…';
         $('edit-name').textContent = record ? ownerName(record) : '';
         setDate(form, 'starts_at', record?.starts_at || today());
         percentField.value = record?.ownership_percentage ?? '';
@@ -307,8 +304,9 @@
         setDate(form, 'ends_at', '');
         $('editor-unit-label').textContent = $('unit-label').textContent;
         shareHint(); showStep('change', true);
+        void loadUsers(record);
     };
-    const closeEditor = () => { editing = null; ++userGeneration; clearTimeout(searchTimer); showStep('records', true); };
+    const closeEditor = () => { editing = null; ++userGeneration; showStep('records', true); };
     const closeEndDialog = () => {
         window.jalaliDatepicker?.hide();
         $('end-dialog').close();
@@ -328,7 +326,7 @@
         if (busy || !unitId()) return;
         message(null, null);
         if (!form.reportValidity()) return;
-        if (!editing && !safeId(userSelect.value)) { userSelect.focus(); message('error', 'یک حساب کاربری را برای مالک انتخاب کنید.'); return; }
+        if (!safeId(userSelect.value)) { userSelect.focus(); message('error', 'یک حساب کاربری را برای مالک انتخاب کنید.'); return; }
         const percentage = percentField.value.trim();
         const payload = {
             ownership_percentage: percentage === '' ? null : Number(percentage),
@@ -336,8 +334,8 @@
             is_primary: primaryField.checked,
             notes: notesField.value.trim() || null,
         };
+        payload.user_id = safeId(userSelect.value);
         if (!editing) {
-            payload.user_id = safeId(userSelect.value);
             payload.is_active = true;
             if (readDate(form, 'ends_at')) payload.ends_at = readDate(form, 'ends_at');
             if (records.some((item) => item.user_id === payload.user_id && item.is_active && (!item.ends_at || item.ends_at >= today()))) {
@@ -371,21 +369,31 @@
         } catch (error) { closeEndDialog(); report(error); }
         finally { busy = false; $('end-confirm').disabled = false; }
     };
-    const searchUsers = async () => {
-        const query = userSearch.value.trim();
+    const loadUsers = async (record = null) => {
         const ticket = ++userGeneration;
-        resetSelect(userSelect, query.length < 2 ? 'حداقل دو حرف یا رقم وارد کنید' : 'در حال جست‌وجو…');
-        if (query.length < 2) return;
         try {
             const url = new URL(`${config.lookupBase}/ownership_candidates`, window.location.origin);
             url.searchParams.set('unit_id', String(unitId()));
-            url.searchParams.set('search', query);
+            if (record) url.searchParams.set('ownership_id', String(record.id));
             const rows = (await request(url)).data || [];
             if (ticket !== userGeneration) return;
-            setOptions(userSelect, rows, rows.length ? 'مالک را انتخاب کنید' : 'حسابی پیدا نشد');
-            userSelect.value = '';
-            $('user-hint').textContent = rows.length ? `${number(rows.length)} حساب پیدا شد.` : 'حسابی پیدا نشد؛ نام یا موبایل دیگری را جست‌وجو کنید.';
-        } catch (error) { if (ticket === userGeneration) report(error); }
+            setOptions(userSelect, rows, rows.length ? 'جست‌وجو و انتخاب مالک' : 'کاربری برای این ساختمان ثبت نشده است');
+            if (record && !rows.some((row) => Number(row.id) === Number(record.user_id))) {
+                userSelect.add(new Option(ownerName(record), String(record.user_id)));
+                userSelect.disabled = false;
+            }
+            userSelect.value = record ? String(record.user_id) : '';
+            window.BuildinoSelect2?.refresh(userSelect);
+            $('user-hint').textContent = rows.length
+                ? `${number(rows.length)} کاربر ساختمان؛ برای جست‌وجوی نام یا شماره تماس، فهرست را باز کنید.`
+                : 'ابتدا کاربر را از بخش مدیریت کاربران برای این ساختمان ثبت کنید.';
+        } catch (error) {
+            if (ticket !== userGeneration) return;
+            resetSelect(userSelect, 'دریافت کاربران انجام نشد');
+            window.BuildinoSelect2?.refresh(userSelect);
+            $('user-hint').textContent = 'برای تلاش مجدد، به فهرست مالک‌ها برگردید و ثبت مالک جدید را بزنید.';
+            report(error);
+        }
     };
 
     fields.building.addEventListener('change', () => { message(null, null); loadBlocks(); });
@@ -430,11 +438,6 @@
     });
     form.addEventListener('submit', save);
     endForm.addEventListener('submit', end);
-    userSearch.addEventListener('input', () => {
-        userSelect.value = '';
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(searchUsers, 280);
-    });
 
     const initial = config.initialUnit;
     fields.building.value = String(initial?.buildingId || (buildings.size === 1 ? [...buildings.keys()][0] : ''));

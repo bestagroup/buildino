@@ -627,6 +627,12 @@ class ManagementLookupController extends Controller
             ->with('floor.block.building')
             ->find($request->integer('unit_id'));
         $building = $unit?->floor?->block?->building;
+        $buildingOwners = $permission === 'unit-ownerships.create';
+        if ($buildingOwners && $request->filled('ownership_id')) {
+            $ownership = $unit?->unitOwnerships()->find($request->integer('ownership_id'));
+            abort_unless($ownership, Response::HTTP_FORBIDDEN);
+            $permission = 'unit-ownerships.update';
+        }
 
         abort_unless(
             $building
@@ -635,7 +641,7 @@ class ManagementLookupController extends Controller
         );
 
         $search = trim((string) $request->query('search', ''));
-        if (mb_strlen($search) < 2) {
+        if (! $buildingOwners && mb_strlen($search) < 2) {
             return collect();
         }
 
@@ -643,7 +649,16 @@ class ManagementLookupController extends Controller
             ->where('is_active', true)
             ->where('is_blocked', false);
 
-        if (preg_match('/^09[0-9]{9}$/', $search)) {
+        if ($buildingOwners) {
+            $this->scopedUsers->applyBuildingUsers($candidates, $building);
+            if ($search !== '') {
+                $candidates->where(function (Builder $query) use ($search): void {
+                    $query->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('mobile', 'like', "%{$search}%");
+                });
+            }
+        } elseif (preg_match('/^09[0-9]{9}$/', $search)) {
             $candidates->where('mobile', $search);
         } elseif (filter_var($search, FILTER_VALIDATE_EMAIL)) {
             $candidates->where('email', $search);
@@ -661,7 +676,7 @@ class ManagementLookupController extends Controller
         return $candidates
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->limit(30)
+            ->when(! $buildingOwners, fn (Builder $query) => $query->limit(30))
             ->get(['id', 'first_name', 'last_name', 'mobile', 'email', 'mobile_verified_at', 'email_verified_at'])
             ->map(fn (User $candidate): array => [
                 'id' => $candidate->id,

@@ -14,6 +14,8 @@ class UpdateUnitOwnershipRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'user_id' => ['sometimes', 'required', 'integer', 'exists:users,id'],
+
             'ownership_percentage' => [
                 'sometimes',
                 'nullable',

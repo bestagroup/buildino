@@ -47,6 +47,21 @@ final class UnitOwnershipService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            if (isset($data['user_id']) && (int) $data['user_id'] !== (int) $ownership->user_id) {
+                $duplicate = UnitOwnership::query()
+                    ->where('unit_id', $ownership->unit_id)
+                    ->where('user_id', $data['user_id'])
+                    ->whereKeyNot($ownership->getKey())
+                    ->where('is_active', true)
+                    ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()->toDateString()))
+                    ->exists();
+                if ($duplicate) {
+                    throw ValidationException::withMessages([
+                        'user_id' => ['این کاربر هم‌اکنون مالک این واحد است؛ مالکیت فعلی او را ویرایش کنید.'],
+                    ]);
+                }
+            }
+
             if (array_key_exists('ownership_percentage', $data)) {
                 $this->validateOwnershipPercentage(
                     unitId: (int) $ownership->unit_id,

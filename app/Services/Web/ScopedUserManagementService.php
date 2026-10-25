@@ -86,6 +86,21 @@ final class ScopedUserManagementService
         );
     }
 
+    public function applyBuildingUsers(Builder $query, Building $building): Builder
+    {
+        $buckets = $this->scopeBuckets($building->newCollection([$building]));
+
+        return $query->where(function (Builder $users) use ($buckets): void {
+            $users->whereHas('managedUserScopes', fn (Builder $scopes) => $this->applyScopeBuckets($scopes, $buckets))
+                ->orWhereHas('userRoleAssignments', function (Builder $assignments) use ($buckets): void {
+                    $assignments->active();
+                    $this->applyScopeBuckets($assignments, $buckets);
+                })
+                ->orWhereHas('unitOwnershipsAsUser.unit.floor', fn (Builder $floors) => $floors->whereIn('block_id', $buckets['blocks']))
+                ->orWhereHas('unitOccupanciesAsUser.unit.floor', fn (Builder $floors) => $floors->whereIn('block_id', $buckets['blocks']));
+        });
+    }
+
     public function canManage(
         User $actor,
         User $target,

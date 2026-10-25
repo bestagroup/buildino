@@ -75,39 +75,93 @@ final class UnitOwnershipPageWebTest extends TestCase
         $this->actingAs($user)->get('/management/operations/ownerships')->assertForbidden();
     }
 
-    public function test_owner_search_finds_unlinked_active_account_only_inside_create_scope(): void
+    public function test_owner_picker_lists_all_building_users_without_search_and_excludes_other_scopes(): void
     {
         $own = $this->createBuildingGraph();
         $foreign = $this->createBuildingGraph();
-        $candidate = $this->createUser(['mobile' => '09129990011']);
-        $this->createUser(['mobile' => '09129990012', 'is_blocked' => true]);
         $manager = $this->assigned('building_manager', $own['building']);
+        // Even when the manager can access both buildings, the picker is unit-scoped.
+        UserRoleAssignment::query()->create([
+            'user_id' => $manager->id,
+            'role_id' => Role::query()->where('name', 'building_manager')->value('id'),
+            'scope_type' => $foreign['building']->getMorphClass(),
+            'scope_id' => $foreign['building']->id,
+            'is_active' => true,
+        ]);
+        $foreignUser = $this->assigned('owner', $foreign['building']);
+        $unlinked = $this->createUser(['mobile' => '09129990011']);
+        $blocked = $this->assigned('owner', $own['building']);
+        $blocked->update(['is_blocked' => true]);
+        $inactive = $this->assigned('owner', $own['building']);
+        $inactive->update(['is_active' => false]);
+        $expected = [$manager->id];
+        for ($index = 0; $index < 35; $index++) {
+            $candidate = $this->createUser();
+            $candidate->managedUserScopes()->create([
+                'scope_type' => $own['building']->getMorphClass(),
+                'scope_id' => $own['building']->id,
+                'assigned_by' => $manager->id,
+            ]);
+            $expected[] = $candidate->id;
+        }
 
+        $response = $this->actingAs($manager)
+            ->getJson('/management/lookups/ownership_candidates?unit_id='.$own['unit']->id)
+            ->assertOk()->assertJsonCount(36, 'data');
+        $this->assertEqualsCanonicalizing($expected, array_column($response->json('data'), 'id'));
+        $this->getJson('/management/lookups/ownership_candidates?unit_id='.$own['unit']->id.'&search='.$unlinked->mobile)
+            ->assertOk()->assertJsonCount(0, 'data');
+        $this->get('/management/operations/ownerships?unit_id='.$own['unit']->id)
+            ->assertOk()->assertSee('id="ownership-user"', false)
+            ->assertDontSee('data-ownership-user-search', false);
+    }
+
+    public function test_owner_picker_rejects_unauthorized_unit_and_view_only_role(): void
+    {
+        $own = $this->createBuildingGraph();
+        $foreign = $this->createBuildingGraph();
+        $manager = $this->assigned('building_manager', $own['building']);
         $this->actingAs($manager)
-            ->getJson('/management/lookups/ownership_candidates?unit_id='.$own['unit']->id.'&search=09129990011')
-            ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.id', $candidate->id);
-
-        $this->getJson('/management/lookups/ownership_candidates?unit_id='.$own['unit']->id.'&search=0912999001')
-            ->assertOk()
-            ->assertJsonCount(0, 'data');
-
-        $this->getJson('/management/lookups/ownership_candidates?unit_id='.$own['unit']->id.'&search=09129990012')
-            ->assertOk()
-            ->assertJsonCount(0, 'data');
-
-        $this->getJson('/management/lookups/ownership_candidates?unit_id='.$own['unit']->id.'&search=0')
-            ->assertOk()
-            ->assertJsonCount(0, 'data');
-
-        $this->getJson('/management/lookups/ownership_candidates?unit_id='.$foreign['unit']->id.'&search=0912999001')
+            ->getJson('/management/lookups/ownership_candidates?unit_id='.$foreign['unit']->id)
             ->assertForbidden();
-
         $viewer = $this->assigned('support_agent', $own['building']);
         $this->actingAs($viewer)
-            ->getJson('/management/lookups/ownership_candidates?unit_id='.$own['unit']->id.'&search=0912999001')
+            ->getJson('/management/lookups/ownership_candidates?unit_id='.$own['unit']->id)
             ->assertForbidden();
+    }
+
+    public function test_manager_can_change_owner_but_cannot_select_a_foreign_or_duplicate_owner(): void
+    {
+        $own = $this->createBuildingGraph();
+        $foreign = $this->createBuildingGraph();
+        $manager = $this->assigned('building_manager', $own['building']);
+        $old = $this->assigned('owner', $own['building']);
+        $replacement = $this->assigned('owner', $own['building']);
+        $outside = $this->assigned('owner', $foreign['building']);
+        $ownership = \App\Models\UnitOwnership::query()->create([
+            'unit_id' => $own['unit']->id, 'user_id' => $old->id,
+            'starts_at' => '2026-01-01', 'is_active' => true,
+            'is_primary' => true, 'ownership_percentage' => 50, 'created_by' => $manager->id,
+        ]);
+        \Laravel\Sanctum\Sanctum::actingAs($manager);
+        $url = '/api/v1/unit-ownerships/'.$ownership->id;
+        $this->patchJson($url, ['user_id' => $replacement->id])->assertOk();
+        $this->assertDatabaseHas('unit_ownerships', [
+            'id' => $ownership->id, 'user_id' => $replacement->id,
+            'unit_id' => $own['unit']->id, 'is_primary' => true,
+        ]);
+        $this->patchJson($url, ['user_id' => $outside->id])->assertUnprocessable()->assertJsonValidationErrors('user_id');
+        $old->update(['is_blocked' => true]);
+        $this->patchJson($url, ['user_id' => $old->id])->assertUnprocessable()->assertJsonValidationErrors('user_id');
+        $old->update(['is_blocked' => false]);
+        \App\Models\UnitOwnership::query()->create([
+            'unit_id' => $own['unit']->id, 'user_id' => $old->id,
+            'starts_at' => '2026-01-01', 'is_active' => true, 'ownership_percentage' => 50,
+        ]);
+        $this->patchJson($url, ['user_id' => $old->id])->assertUnprocessable()->assertJsonValidationErrors('user_id');
+        $this->assertSame($replacement->id, $ownership->refresh()->user_id);
+        \Laravel\Sanctum\Sanctum::actingAs($this->assigned('building_manager', $foreign['building']));
+        $this->patchJson($url, ['user_id' => $outside->id])->assertForbidden();
     }
 
     private function assigned(string $role, $scope): User
