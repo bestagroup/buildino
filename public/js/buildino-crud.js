@@ -61,6 +61,16 @@
         toastStack: $("#crudToastStack"),
     };
 
+    // Escape transformed/overflow-clipped layout ancestors on the users page.
+    // Keep the same nodes so form listeners and focus restoration still work.
+    if (bootstrap.resourceKey === "users") {
+        document.body.append(elements.drawerBackdrop, elements.drawer);
+        elements.drawerBackdrop.classList.add("user-registration-backdrop");
+        resource.fields = (resource.fields || []).filter(
+            (field) => !["password", "password_confirmation"].includes(field.name)
+        );
+    }
+
     const state = {
         rows: [],
         filteredRows: [],

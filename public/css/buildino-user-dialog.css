@@ -1,6 +1,10 @@
 /* Scoped exclusively to /management/operations/users. */
 #crudDrawer.user-registration-dialog {
-    inset: 50% auto auto 50%;
+    position: fixed;
+    z-index: 11001;
+    inset: 0;
+    margin: auto;
+    box-sizing: border-box;
     width: min(720px, calc(100vw - 32px));
     max-width: calc(100vw - 32px);
     height: min(740px, calc(100vh - 32px));
@@ -10,21 +14,26 @@
     border: 1px solid var(--border);
     border-radius: 18px;
     padding: 18px;
-    transform: translate(-50%, calc(-50% + 18px)) scale(.98);
+    transform: none;
+    will-change: auto;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 24px 84px rgba(4, 19, 35, .28);
 }
 #crudDrawer.user-registration-dialog.is-open {
-    transform: translate(-50%, -50%) scale(1);
+    transform: none;
 }
 #crudDrawer.user-registration-dialog > .crud-form {
     min-height: 0;
     flex: 1 1 auto;
     overflow: hidden;
-    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    display: flex;
+    flex-direction: column;
     gap: 12px;
 }
 #crudDrawer.user-registration-dialog .crud-form-grid {
     min-height: 0;
+    flex: 1 1 auto;
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-width: thin;
@@ -41,10 +50,12 @@
     background: var(--surface);
 }
 #crudDrawer.user-registration-dialog .crud-form-error {
+    flex: 0 0 auto;
     max-height: 76px;
     overflow-y: auto;
 }
 .user-registration-dialog__note {
+    flex: 0 0 auto;
     margin: 0;
     padding: 10px 12px;
     border-radius: 10px;
@@ -69,5 +80,37 @@
     }
     #crudDrawer.user-registration-dialog .crud-form-actions {
         flex-wrap: wrap;
+    }
+}
+
+#crudDrawerBackdrop.user-registration-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 11000;
+}
+#crudDrawer.user-registration-dialog .crud-drawer__header {
+    margin: -18px -18px 12px;
+    padding: 16px 18px;
+}
+#crudDrawer.user-registration-dialog .crud-form-error:empty {
+    display: none;
+}
+@media (max-width: 650px) {
+    #crudDrawer.user-registration-dialog .crud-drawer__header {
+        margin: -12px -12px 10px;
+        padding: 12px;
+    }
+    #crudDrawer.user-registration-dialog .crud-form-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    #crudDrawer.user-registration-dialog .crud-form-actions > button {
+        flex: 1;
+        min-height: 44px;
+    }
+}
+@media (max-height: 480px) {
+    #crudDrawer.user-registration-dialog .user-registration-dialog__note {
+        max-height: 48px;
+        overflow-y: auto;
     }
 }

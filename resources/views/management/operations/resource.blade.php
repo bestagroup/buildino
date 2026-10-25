@@ -10,7 +10,7 @@
         <link rel="stylesheet" href="{{ asset('css/buildino-charge-formulas.css') }}?v={{ filemtime(public_path('css/buildino-charge-formulas.css')) }}">
     @endif
     @if ($resourceKey === 'users')
-        <link rel="stylesheet" href="{{ asset('css/buildino-user-dialog.css') }}?v=1">
+        <link rel="stylesheet" href="{{ asset('css/buildino-user-dialog.css') }}?v={{ filemtime(public_path('css/buildino-user-dialog.css')) }}">
     @endif
 @endpush
 
@@ -415,7 +415,7 @@
 <script src="{{ asset('js/buildino-charge-formula-ui.js') }}?v={{ filemtime(public_path('js/buildino-charge-formula-ui.js')) }}" defer></script>
 @endif
 <script
-    src="{{ asset('js/buildino-crud.js') }}"
+    src="{{ asset('js/buildino-crud.js') }}?v={{ filemtime(public_path('js/buildino-crud.js')) }}"
     defer
 ></script>
 @endpush

@@ -131,7 +131,8 @@ class ManagementUserDataController extends Controller
                 'unique:users,email',
             ],
             // Password submitted by a browser or API client is ignored on creation.
-            'password' => ['sometimes', 'nullable', 'string'],
+            'password' => ['exclude'],
+            'password_confirmation' => ['exclude'],
             'is_active' =>
                 ['sometimes', 'boolean'],
             'is_blocked' =>
