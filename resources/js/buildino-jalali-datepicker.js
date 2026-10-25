@@ -346,6 +346,7 @@ const boot = () => {
 
     window.jalaliDatepicker?.startWatch({
         autoReadOnlyInput: false,
+        time: true,
         hasSecond: 'attr',
         hideAfterChange: true,
         hideAfterChangeWithTime: false,
