@@ -116,6 +116,10 @@ class ManagementOperationsController extends Controller
             return app(FacilityReservationPageController::class)(request(), $permissions);
         }
 
+        if ($resource === 'charge-periods') {
+            return app(ChargePeriodPageController::class)(request(), $permissions);
+        }
+
         $inertiaResources = config(
             'management_ui.inertia_resources',
             []

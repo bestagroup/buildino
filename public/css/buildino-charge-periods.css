@@ -1,0 +1,49 @@
+.period-toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.period-page .ownership-card__heading > .period-toolbar { flex: 0 1 auto; }
+.period-guide { padding: 17px 20px; border: 1px solid var(--border); border-inline-start: 3px solid var(--primary-500); border-radius: 12px; background: var(--surface-soft); }
+.period-guide strong, .period-guide h4 { margin: 0; color: var(--text); font-size: 14px; font-weight: 700; }
+.period-guide p, .period-description, .period-confirm p { margin: 7px 0 0; color: var(--muted); font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; }
+.period-description { margin-block: 0 22px; }
+.period-link { display: inline-block; color: var(--primary-700); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.period-guide .period-link { margin-block-start: 9px; }
+.period-filters, .period-list { margin-block-start: 22px; }
+.period-record { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 20px; border: 1px solid var(--border); border-radius: 14px; }
+.period-record h4 { margin: 0 0 10px; color: var(--text); font-size: 15px; overflow-wrap: anywhere; }
+.period-record p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.9; }
+.period-record__actions { display: grid; justify-items: end; gap: 12px; }
+.period-badge { display: inline-flex; align-items: center; width: fit-content; padding: 5px 10px; border-radius: 8px; background: var(--surface-strong); color: var(--text-soft); font-size: 12px; font-weight: 600; }
+.period-badge[data-state="calculated"] { background: var(--primary-50); color: var(--primary-700); }
+.period-badge[data-state="issued"], .period-badge[data-state="closed"] { background: var(--success-soft); color: var(--success); }
+.period-badge[data-state="calculating"] { background: var(--warning-soft, #fff6e5); color: var(--warning, #946500); }
+.period-badge[data-state="cancelled"] { background: var(--danger-soft); color: var(--danger); }
+.period-fields { min-width: 0; border: 0; padding: 0; margin: 0; }
+.period-page .ownership-field .period-field-error { color: var(--danger); }
+.period-page [aria-invalid="true"] { border-color: var(--danger); }
+.period-overview { padding: 20px; border: 1px solid var(--border); border-radius: 14px; }
+.period-dates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 18px 0 0; }
+.period-dates dt { color: var(--muted); font-size: 12px; font-weight: 400; }
+.period-dates dd { margin: 7px 0 0; color: var(--text); font-size: 14px; font-weight: 600; }
+.period-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-block: 18px; }
+.period-metrics > div { display: grid; gap: 12px; padding: 18px; border-radius: 12px; background: var(--surface-soft); }
+.period-metrics span { color: var(--muted); font-size: 12px; }
+.period-metrics strong { color: var(--text); font-size: 24px; font-variant-numeric: tabular-nums; }
+.period-pagination { justify-content: space-between; }
+.period-confirm { margin-block-start: 20px; padding: 20px; border: 1px solid var(--primary-500); border-radius: 14px; background: var(--primary-50); }
+.period-confirm h4 { margin: 0; color: var(--text); font-size: 16px; }
+.period-page :is(h3, h4)[tabindex="-1"] { scroll-margin-block-start: 100px; outline: none; }
+/* The picker has a delayed opening animation; keep it out of views without date fields. */
+body:has([data-period-editor][hidden]) jdp-container { display: none !important; }
+@media (max-width: 600px) {
+    .period-toolbar { width: 100%; }
+    .period-toolbar .ownership-button { flex: 1 1 auto; }
+    .period-record { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+    .period-record__actions { display: flex; justify-content: space-between; align-items: center; }
+    .period-dates { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .period-dates > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+    .period-dates dd { margin: 0; }
+    .period-metrics { gap: 7px; }
+    .period-metrics > div { padding: 12px 8px; }
+    .period-metrics span { font-size: 10px; line-height: 1.8; }
+    .period-metrics strong { font-size: 21px; }
+    .period-guide, .period-overview, .period-confirm { padding: 16px; }
+}
