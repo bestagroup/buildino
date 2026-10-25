@@ -12,4 +12,20 @@
 .facility-block h4 { margin: 0 0 14px; color: var(--text); font-size: 15px; }
 .facility-block .ownership-record-list { margin-block: 16px; }
 .facility-ready { color: var(--success); }
+.facility-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.facility-step-heading { margin-block-end: 24px; padding-block-end: 18px; border-bottom: 1px solid var(--border); }
+.facility-step-heading h4, .facility-form-section h4 { margin: 0; color: var(--text); font-size: 16px; font-weight: 700; }
+.facility-form-section { margin-block-start: 22px; padding: 20px; border: 1px solid var(--border); border-radius: 14px; }
+.facility-form-section > .ownership-form-hint { margin-block: 8px 18px; }
+.facility-schedule-group { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; }
+.facility-schedule-group > .ownership-record:first-child { background: var(--primary-50); border-color: transparent; }
+.facility-navigation { justify-content: space-between; }
+.facility-rule-hint { margin-block: 0 18px; }
+.facility-step-heading > .ownership-button { margin-block-start: 12px; }
+@media (max-width: 600px) {
+    .facility-toolbar { width: 100%; }
+    .facility-toolbar .ownership-button { flex: 1 1 auto; }
+    .facility-form-section { padding: 14px; }
+    .facility-schedule-group { padding: 8px; }
+}
 @media (max-width: 600px) { .facility-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
