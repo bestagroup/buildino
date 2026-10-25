@@ -105,6 +105,8 @@
                 )
         );
 
+    $financeResources = ['invoices', 'expenses', 'incomes', 'payments', 'bank-accounts', 'wallet-payouts', 'bill-payments'];
+    $financeTarget = collect($financeResources)->first(fn (string $key): bool => $visibleResources->has($key));
     $quickCreate = collect([
         'complexes',
         'buildings',
@@ -316,7 +318,7 @@
             )
                 <section
                     class="nav-group {{
-                        $resourceActive([
+                        request()->routeIs('management.building-setup') || $resourceActive([
                             'complexes',
                             'buildings',
                             'blocks',
@@ -394,97 +396,17 @@
                             </a>
                         @endif
 
-                        @if ($nav['residents'] ?? false)
-                            <a
-                                href="{{
-                                    route(
-                                        'management.operations.show',
-                                        'occupancies'
-                                    )
-                                }}"
-                                class="nav-link {{
-                                    $resourceActive([
-                                        'ownerships',
-                                        'occupancies',
-                                        'invitations',
-                                    ])
-                                        ? 'is-active'
-                                        : ''
-                                }}"
-                                data-nav-key="residents"
-                            >
-                                <span class="nav-link__icon">
-                                    @include(
-                                        'management.partials.icon',
-                                        ['name' => 'users']
-                                    )
-                                </span>
-                                <span class="nav-link__label">
-                                    مالکین و ساکنین
-                                </span>
-                            </a>
-                        @endif
-
-                        @if ($nav['guests'] ?? false)
-                            <a
-                                href="{{
-                                    route(
-                                        'management.operations.show',
-                                        'guest-visits'
-                                    )
-                                }}"
-                                class="nav-link {{
-                                    $currentResource === 'guest-visits'
-                                        ? 'is-active'
-                                        : ''
-                                }}"
-                                data-nav-key="guests"
-                            >
-                                <span class="nav-link__icon">
-                                    @include(
-                                        'management.partials.icon',
-                                        ['name' => 'user-plus']
-                                    )
-                                </span>
-                                <span class="nav-link__label">
-                                    مهمان و تردد
-                                </span>
-                            </a>
-                        @endif
-
-                        @if ($nav['facilities'] ?? false)
-                            <a
-                                href="{{
-                                    route(
-                                        'management.operations.show',
-                                        'facilities'
-                                    )
-                                }}"
-                                class="nav-link {{
-                                    $resourceActive([
-                                        'facilities',
-                                        'facility-schedules',
-                                        'facility-time-slots',
-                                        'facility-rules',
-                                        'facility-blackouts',
-                                        'reservations',
-                                    ])
-                                        ? 'is-active'
-                                        : ''
-                                }}"
-                                data-nav-key="facilities"
-                            >
-                                <span class="nav-link__icon">
-                                    @include(
-                                        'management.partials.icon',
-                                        ['name' => 'calendar']
-                                    )
-                                </span>
-                                <span class="nav-link__label">
-                                    امکانات و رزرو
-                                </span>
-                            </a>
-                        @endif
+                        @include('management.partials.process-navigation', ['processLinks' => [
+                            'ownerships' => ['title' => 'مدیریت مالکیت واحد', 'icon' => 'users'],
+                            'occupancies' => ['title' => 'سکونت و ساکنان', 'icon' => 'home'],
+                            'invitations' => ['title' => 'دعوت‌نامه‌ها', 'icon' => 'mail'],
+                            'guest-visits' => ['title' => 'مهمان و مراجعه', 'icon' => 'user-plus'],
+                            'facilities' => [
+                                'title' => 'تعریف و تنظیم امکانات', 'icon' => 'settings',
+                                'active_resources' => ['facilities', 'facility-schedules', 'facility-time-slots', 'facility-rules', 'facility-blackouts'],
+                            ],
+                            'reservations' => ['title' => 'رزرو امکانات', 'icon' => 'calendar'],
+                        ]])
                     </div>
                 </section>
             @endif
@@ -532,43 +454,20 @@
                     </button>
 
                     <div class="nav-group__items">
-                        @if ($nav['finance'] ?? false)
-                            <a
-                                href="{{
-                                    route(
-                                        'management.operations.show',
-                                        'invoices'
-                                    )
-                                }}"
-                                class="nav-link {{
-                                    $resourceActive([
-                                        'charge-formulas',
-                                        'charge-periods',
-                                        'invoices',
-                                        'expenses',
-                                        'incomes',
-                                        'payments',
-                                        'bank-accounts',
-                                        'wallet-payouts',
-                                        'bill-payments',
-                                    ])
-                                        ? 'is-active'
-                                        : ''
-                                }}"
-                                data-nav-key="finance"
-                            >
-                                <span class="nav-link__icon">
-                                    @include(
-                                        'management.partials.icon',
-                                        ['name' => 'wallet']
-                                    )
-                                </span>
-                                <span class="nav-link__label">
-                                    مالی و کیف پول
-                                </span>
+                        @include('management.partials.process-navigation', ['processLinks' => [
+                            'charge-formulas' => ['title' => 'تعریف فرمول شارژ', 'icon' => 'settings'],
+                            'charge-periods' => ['title' => 'دوره‌های شارژ', 'icon' => 'calendar'],
+                        ]])
+
+                        @if ($financeTarget)
+                            <a href="{{ route('management.operations.show', $financeTarget) }}"
+                               class="nav-link {{ $resourceActive($financeResources) ? 'is-active' : '' }}"
+                               data-nav-key="finance"
+                               @if ($resourceActive($financeResources)) aria-current="page" @endif>
+                                <span class="nav-link__icon">@include('management.partials.icon', ['name' => 'wallet'])</span>
+                                <span class="nav-link__label">مالی و کیف پول</span>
                             </a>
                         @endif
-
                         @if ($nav['services'] ?? false)
                             <a
                                 href="{{

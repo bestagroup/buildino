@@ -6,6 +6,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\UserRoleAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\CreatesBuildingDomainData;
 use Tests\TestCase;
 
@@ -13,6 +14,45 @@ class ManagementUiUxAccessTest extends TestCase
 {
     use RefreshDatabase;
     use CreatesBuildingDomainData;
+
+    public function test_management_processes_have_separate_sidebar_links(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $manager = $this->createUser();
+        $resources = ['ownerships', 'occupancies', 'invitations', 'guest-visits', 'facilities', 'reservations', 'charge-formulas', 'charge-periods'];
+        $permissions = array_map(fn (string $key): string => config("management_crud.resources.$key.permission"), $resources);
+        $this->grant($manager->id, ['reports.dashboard.view', ...$permissions], $graph['building']);
+
+        $response = $this->actingAs($manager, 'web')->get('/management')->assertOk();
+        foreach ($resources as $resource) {
+            $response->assertSee('data-nav-key="'.$resource.'"', false);
+            $response->assertSee(route('management.operations.show', $resource), false);
+        }
+    }
+
+    #[DataProvider('limitedNavigationResources')]
+    public function test_sidebar_links_match_the_accessible_process(string $resource): void
+    {
+        $graph = $this->createBuildingGraph();
+        $manager = $this->createUser();
+        $this->grant($manager->id, [
+            'reports.dashboard.view', config("management_crud.resources.$resource.permission"),
+        ], $graph['building']);
+
+        $response = $this->actingAs($manager, 'web')->get('/management')->assertOk();
+        $response->assertSee('data-nav-key="'.$resource.'"', false);
+        foreach (['ownerships', 'occupancies', 'invitations', 'guest-visits', 'facilities', 'reservations', 'charge-formulas', 'charge-periods'] as $other) {
+            if ($other !== $resource) {
+                $response->assertDontSee('data-nav-key="'.$other.'"', false);
+            }
+        }
+        $response->assertDontSee('data-nav-key="finance"', false);
+    }
+
+    public static function limitedNavigationResources(): array
+    {
+        return [['ownerships'], ['invitations'], ['reservations'], ['charge-formulas'], ['charge-periods']];
+    }
 
     public function test_scoped_building_manager_sees_building_navigation_but_not_global_user_admin(): void
     {

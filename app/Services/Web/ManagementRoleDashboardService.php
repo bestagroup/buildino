@@ -246,6 +246,7 @@ final class ManagementRoleDashboardService
             'finance' => [
                 'invoices',
                 'charge-periods',
+                'charge-formulas',
                 'expenses',
                 'incomes',
             ],

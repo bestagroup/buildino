@@ -391,6 +391,9 @@ final class ManagementUiContextService
                 || $has(
                     $permissions,
                     [
+                        'charge-formulas.view',
+                        'charge-periods.view',
+                        'building-bank-accounts.view',
                         'invoices.view',
                         'expenses.view',
                         'incomes.view',
