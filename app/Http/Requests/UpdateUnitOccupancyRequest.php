@@ -16,6 +16,8 @@ class UpdateUnitOccupancyRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'user_id' => ['sometimes', 'required', 'integer', 'exists:users,id'],
+
             'occupancy_type' => [
                 'sometimes',
                 'required',
