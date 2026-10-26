@@ -43,7 +43,7 @@
         if (endpoint.origin !== window.location.origin) throw new Error('آدرس درخواست معتبر نیست.');
         let response;
         try {
-            response = await fetch(endpoint, { credentials: 'same-origin', ...options, headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken || '', ...options.headers } });
+            response = await fetch(endpoint, { credentials: 'same-origin', cache: 'no-store', ...options, headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken || '', ...options.headers } });
         } catch { throw new Error('ارتباط با سرور برقرار نشد. پیش از تکرار عملیات، فهرست را به‌روزرسانی کنید.'); }
         const payload = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
         if (!response.ok) {
@@ -121,7 +121,7 @@
         const main = make('div', 'ownership-record__main');
         main.append(make('strong', '', nameOf(record)), make('small', '', record.user?.mobile || record.user?.email || 'اطلاعات تماس ثبت نشده'));
         const meta = make('div', 'ownership-record__meta');
-        meta.append(make('span', '', typeLabels[record.occupancy_type] || record.occupancy_type));
+        meta.append(make('span', '', active && record.occupancy_type === 'owner' && !record.is_current_owner ? 'ساکن (فاقد مالکیت فعلی)' : typeLabels[record.occupancy_type] || record.occupancy_type));
         if (record.is_primary && active) meta.append(make('span', 'is-primary', 'ساکن اصلی'));
         meta.append(make('span', '', accountLabel(record.user || {})));
         meta.append(make('span', '', `از ${displayDate(record.starts_at)}${record.ends_at ? ` تا ${displayDate(record.ends_at)}` : ''}`));
@@ -205,12 +205,12 @@
         $('editor-title').textContent = record ? 'ویرایش سکونت' : 'ثبت ساکن جدید'; $('save').textContent = record ? 'ذخیره تغییرات' : 'ثبت سکونت';
         $('user-picker').hidden = Boolean(record); $('edit-person').hidden = !record; $('create-end').hidden = Boolean(record);
         $('invite-wrap').hidden = Boolean(record) || !building()?.canInvite;
-        $('owner-option').hidden = !record || record.occupancy_type !== 'owner';
+        $('owner-option').hidden = !record?.is_current_owner;
         ++userGeneration;
         userSelect.required = !record; resetSelect(userSelect, 'در حال دریافت کاربران ساختمان…'); candidates = [];
         $('user-hint').textContent = 'در حال دریافت کاربران ساختمان…';
         $('account-status').textContent = ''; $('edit-name').textContent = record ? nameOf(record) : '';
-        form.elements.namedItem('occupancy_type').value = record?.occupancy_type || '';
+        form.elements.namedItem('occupancy_type').value = record?.occupancy_type === 'owner' && !record.is_current_owner ? 'resident' : record?.occupancy_type || '';
         setDate(form, 'starts_at', record?.starts_at || today()); setDate(form, 'ends_at', '');
         form.elements.namedItem('is_primary').checked = Boolean(record?.is_primary);
         form.elements.namedItem('resident_count').value = record?.resident_count ?? records[0]?.resident_count ?? '';
@@ -228,7 +228,8 @@
             const rows = (await request(url)).data || [];
             if (ticket !== userGeneration) return;
             candidates = rows;
-            setOptions(userSelect, rows, rows.length ? 'جست‌وجو و انتخاب ساکن' : 'کاربری برای این ساختمان ثبت نشده است');
+            const options = rows.map(row => ({ ...row, label: row.label + (row.isCurrentOwner ? ' — مالک فعلی این واحد' : '') }));
+            setOptions(userSelect, options, rows.length ? 'جست‌وجو و انتخاب ساکن' : 'کاربری برای این ساختمان ثبت نشده است');
             userSelect.value = '';
             window.BuildinoSelect2?.refresh(userSelect);
             $('user-hint').textContent = rows.length
@@ -316,6 +317,10 @@
     form.addEventListener('submit', save); endForm.addEventListener('submit', end);
     userSelect.addEventListener('change', () => {
         const candidate = candidates.find(item => Number(item.id) === safeId(userSelect.value));
+        $('owner-option').hidden = !candidate?.isCurrentOwner;
+        if (!candidate?.isCurrentOwner && form.elements.namedItem('occupancy_type').value === 'owner') {
+            form.elements.namedItem('occupancy_type').value = '';
+        }
         $('invite-wrap').hidden = !building()?.canInvite || !candidate?.hasMobile;
         if ($('invite-wrap').hidden) form.elements.namedItem('send_invitation').checked = false;
         $('account-status').textContent = candidate ? candidate.mobileVerified || candidate.emailVerified ? 'هویت این حساب تأیید شده است.' : candidate.hasMobile ? 'هویت این حساب هنوز تأیید نشده است؛ برای پذیرش دعوت باید آن را تأیید کند.' : 'برای این حساب شماره موبایل ثبت نشده و امکان دعوت پیامکی وجود ندارد.' : '';
