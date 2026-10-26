@@ -89,6 +89,38 @@ class OccupancyService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            $occupancy->refresh();
+            if (isset($data['user_id']) && (int) $data['user_id'] !== (int) $occupancy->user_id) {
+                $building = $unit->floor?->block?->building;
+                $candidate = User::query()->whereKey($data['user_id'])
+                    ->where('is_active', true)->where('is_blocked', false);
+                if (! $building || ! app(\App\Services\Web\ScopedUserManagementService::class)
+                    ->applyBuildingUsers($candidate, $building)->exists()) {
+                    throw ValidationException::withMessages([
+                        'user_id' => ['ساکن جدید باید کاربر فعال و غیرمسدود همین ساختمان باشد.'],
+                    ]);
+                }
+                if (UnitOccupancy::query()->where('unit_id', $unit->id)
+                    ->where('user_id', $data['user_id'])->whereKeyNot($occupancy->id)
+                    ->where('is_active', true)
+                    ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()->toDateString()))
+                    ->exists()) {
+                    throw ValidationException::withMessages([
+                        'user_id' => ['این کاربر از قبل سکونت فعال در همین واحد دارد.'],
+                    ]);
+                }
+                $type = $data['occupancy_type'] ?? $occupancy->occupancy_type->value;
+                if ($type === 'owner' && ! $unit->unitOwnerships()
+                    ->where('user_id', $data['user_id'])->where('is_active', true)
+                    ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()->toDateString()))
+                    ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()->toDateString()))
+                    ->exists()) {
+                    throw ValidationException::withMessages([
+                        'occupancy_type' => ['کاربر انتخاب‌شده مالک فعلی این واحد نیست؛ نوع سکونت را اصلاح کنید.'],
+                    ]);
+                }
+            }
+
             if (
                 array_key_exists(
                     'resident_count',
