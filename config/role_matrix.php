@@ -254,6 +254,7 @@ return [
 
                 'users.view',
                 'users.create',
+                'users.update',
 
                 'guests.view',
                 'guests.create',
