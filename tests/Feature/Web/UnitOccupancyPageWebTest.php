@@ -148,6 +148,48 @@ final class UnitOccupancyPageWebTest extends TestCase
         $this->assertFalse($candidates[$replacement->id]['isCurrentOwner']);
     }
 
+
+    public function test_manager_can_replace_resident_only_with_an_eligible_building_user(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $other = $this->createBuildingGraph();
+        $manager = $this->assigned('building_manager', $graph['building']);
+        $old = $this->assigned('owner', $graph['building']);
+        $replacement = $this->assigned('owner', $graph['building']);
+        $outside = $this->assigned('owner', $other['building']);
+        $occupancy = $graph['unit']->unitOccupancies()->create([
+            'user_id' => $old->id, 'occupancy_type' => 'resident',
+            'starts_at' => now()->subDay()->toDateString(), 'is_active' => true,
+            'is_primary' => true, 'created_by' => $manager->id,
+        ]);
+        $this->actingAs($manager);
+        $lookup = '/management/lookups/occupancy_candidates?unit_id='.$graph['unit']->id.'&occupancy_id='.$occupancy->id;
+        $this->getJson($lookup)->assertOk();
+        $url = '/api/v1/unit-occupancies/'.$occupancy->id;
+        $this->patchJson($url, ['user_id' => $replacement->id])->assertOk()
+            ->assertJsonPath('data.user_id', $replacement->id);
+        $this->assertDatabaseHas('unit_occupancies', [
+            'id' => $occupancy->id, 'user_id' => $replacement->id, 'is_primary' => true,
+        ]);
+        $this->patchJson($url, ['user_id' => $outside->id])->assertUnprocessable()->assertJsonValidationErrors('user_id');
+        $old->update(['is_active' => false]);
+        $this->patchJson($url, ['user_id' => $old->id])->assertUnprocessable()->assertJsonValidationErrors('user_id');
+        $old->update(['is_active' => true, 'is_blocked' => true]);
+        $this->patchJson($url, ['user_id' => $old->id])->assertUnprocessable()->assertJsonValidationErrors('user_id');
+        $old->update(['is_blocked' => false]);
+        $graph['unit']->unitOccupancies()->create([
+            'user_id' => $old->id, 'occupancy_type' => 'resident',
+            'starts_at' => now()->toDateString(), 'is_active' => true,
+        ]);
+        $this->patchJson($url, ['user_id' => $old->id])->assertUnprocessable()->assertJsonValidationErrors('user_id');
+        $this->assertDatabaseHas('unit_occupancies', ['id' => $occupancy->id, 'user_id' => $replacement->id]);
+        $this->getJson('/management/lookups/occupancy_candidates?unit_id='.$other['unit']->id.'&occupancy_id='.$occupancy->id)
+            ->assertForbidden();
+        $this->actingAs($this->assigned('building_manager', $other['building']));
+        $this->getJson($lookup)->assertForbidden();
+        $this->patchJson($url, ['user_id' => $outside->id])->assertForbidden();
+    }
+
     private function assigned(string $role, $scope): User
     {
         $user = $this->createUser();
