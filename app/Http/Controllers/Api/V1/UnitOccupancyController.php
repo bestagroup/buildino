@@ -39,6 +39,7 @@ class UnitOccupancyController extends Controller
             ->with([
                 'user:id,first_name,last_name,mobile,email',
                 'unit:id,floor_id,unit_number,title,resident_count',
+                'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
             ]);
 
         if ($request->has('is_active')) {
@@ -99,6 +100,7 @@ class UnitOccupancyController extends Controller
         $occupancy->load([
             'user:id,first_name,last_name,mobile,email',
             'unit:id,floor_id,unit_number,title,resident_count',
+                'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
         ]);
 
         return (new UnitOccupancyResource($occupancy))
@@ -117,6 +119,7 @@ class UnitOccupancyController extends Controller
         $unitOccupancy->load([
             'user:id,first_name,last_name,mobile,email',
             'unit:id,floor_id,unit_number,title,resident_count',
+                'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
         ]);
 
         return new UnitOccupancyResource(
@@ -142,6 +145,7 @@ class UnitOccupancyController extends Controller
         $unitOccupancy->load([
             'user:id,first_name,last_name,mobile,email',
             'unit:id,floor_id,unit_number,title,resident_count',
+                'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
         ]);
 
         return new UnitOccupancyResource(
@@ -168,6 +172,7 @@ class UnitOccupancyController extends Controller
         $unitOccupancy->load([
             'user:id,first_name,last_name,mobile,email',
             'unit:id,floor_id,unit_number,title,resident_count',
+                'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
         ]);
 
         return new UnitOccupancyResource(
