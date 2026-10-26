@@ -213,6 +213,7 @@
         form.elements.namedItem('occupancy_type').value = record?.occupancy_type || '';
         setDate(form, 'starts_at', record?.starts_at || today()); setDate(form, 'ends_at', '');
         form.elements.namedItem('is_primary').checked = Boolean(record?.is_primary);
+        form.elements.namedItem('resident_count').value = record?.resident_count ?? records[0]?.resident_count ?? '';
         form.elements.namedItem('notes').value = record?.notes || '';
         $('editor-unit-label').textContent = $('unit-label').textContent;
         showStep('change', true);
@@ -250,7 +251,7 @@
         if (!editing && end && end < start) { $('more').open = true; message('error', 'تاریخ پایان نمی‌تواند پیش از تاریخ شروع باشد.'); return; }
         if (!editing && records.some(record => Number(record.user_id) === selectedId && record.is_active && (!record.ends_at || record.ends_at >= today()))) { message('error', 'این شخص هم‌اکنون ساکن همین واحد است. برای تغییر رابطه، رکورد فعلی را ویرایش کنید.'); return; }
         if (!editing && invitations.some(invitation => Number(invitation.invited_user_id) === selectedId && invitation.planned_occupancy && ['pending', 'sent'].includes(invitation.status) && !invitationExpired(invitation))) { message('error', 'برای این شخص دعوت در انتظار پذیرش وجود دارد. ابتدا آن را لغو کنید.'); return; }
-        const payload = { occupancy_type: form.elements.namedItem('occupancy_type').value, starts_at: start, is_primary: form.elements.namedItem('is_primary').checked, notes: form.elements.namedItem('notes').value.trim() || null };
+        const payload = { resident_count: Number(form.elements.namedItem('resident_count').value), occupancy_type: form.elements.namedItem('occupancy_type').value, starts_at: start, is_primary: form.elements.namedItem('is_primary').checked, notes: form.elements.namedItem('notes').value.trim() || null };
         if (!editing) { payload.user_id = selectedId; payload.is_active = true; if (end) payload.ends_at = end; }
         const inviteFirst = !editing && form.elements.namedItem('send_invitation').checked;
         if (inviteFirst && (!building()?.canInvite || !candidates.find(candidate => Number(candidate.id) === selectedId)?.hasMobile)) {
@@ -259,7 +260,7 @@
         busy = true; $('save').disabled = true;
         try {
             const endpoint = inviteFirst ? `${config.apiBase}/units/${unitId()}/invitations` : editing ? `${config.apiBase}/unit-occupancies/${editing.id}` : `${config.apiBase}/units/${unitId()}/occupancies`;
-            const body = inviteFirst ? { user_ids: [selectedId], occupancy: { occupancy_type: payload.occupancy_type, starts_at: payload.starts_at, ends_at: payload.ends_at || null, is_primary: payload.is_primary, notes: payload.notes } } : payload;
+            const body = inviteFirst ? { user_ids: [selectedId], occupancy: { resident_count: payload.resident_count, occupancy_type: payload.occupancy_type, starts_at: payload.starts_at, ends_at: payload.ends_at || null, is_primary: payload.is_primary, notes: payload.notes } } : payload;
             await request(endpoint, { method: editing ? 'PATCH' : 'POST', body: JSON.stringify(body) });
             const success = inviteFirst ? 'دعوت ثبت شد. سکونت پس از پذیرش دعوت فعال می‌شود.' : editing ? 'تغییرات سکونت ذخیره شد.' : 'سکونت واحد ثبت شد.';
             closeEditor(); await loadRecords(); message('success', success);
