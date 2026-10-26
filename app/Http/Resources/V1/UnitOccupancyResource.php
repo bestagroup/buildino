@@ -23,6 +23,14 @@ class UnitOccupancyResource extends JsonResource
 
             'is_primary' => (bool) $this->is_primary,
             'is_active' => (bool) $this->is_active,
+            'is_current_owner' => $this->relationLoaded('unit')
+                && $this->unit?->relationLoaded('unitOwnerships')
+                && $this->unit->unitOwnerships->contains(fn ($ownership): bool =>
+                    (int) $ownership->user_id === (int) $this->user_id
+                    && $ownership->is_active
+                    && (! $ownership->starts_at || $ownership->starts_at->toDateString() <= now()->toDateString())
+                    && (! $ownership->ends_at || $ownership->ends_at->toDateString() >= now()->toDateString())
+                ),
             'resident_count' =>
                 $this->relationLoaded('unit')
                     ? (int) $this->unit->resident_count
