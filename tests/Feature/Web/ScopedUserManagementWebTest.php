@@ -18,6 +18,45 @@ class ScopedUserManagementWebTest extends TestCase
     use CreatesBuildingDomainData;
     use RefreshDatabase;
 
+
+    public function test_building_manager_can_edit_existing_building_users(): void
+    {
+        $this->seed(RoleMatrixSeeder::class);
+        $graph = $this->createBuildingGraph();
+        $manager = $this->createUser(['mobile_verified_at' => now()]);
+        $target = $this->createUser();
+        UserRoleAssignment::query()->create([
+            'user_id' => $manager->id,
+            'role_id' => Role::query()->where('name', 'building_manager')->value('id'),
+            'scope_type' => $graph['building']->getMorphClass(),
+            'scope_id' => $graph['building']->id,
+            'is_active' => true,
+        ]);
+        ManagedUserScope::query()->create([
+            'user_id' => $target->id,
+            'scope_type' => $graph['building']->getMorphClass(),
+            'scope_id' => $graph['building']->id,
+        ]);
+        $this->actingAs($manager, 'web')
+            ->get('/management/operations/users')->assertOk()
+            ->assertViewHas('resource', fn (array $resource): bool =>
+                ($resource['update']['method'] ?? null) === 'PATCH'
+                && ! isset($resource['delete'])
+            );
+        $this->patchJson('/management/data/users/'.$target->id, [
+            'first_name' => 'نام اصلاح‌شده',
+            'last_name' => 'کاربر ساختمان',
+        ])->assertOk();
+        $this->assertDatabaseHas('users', [
+            'id' => $target->id, 'first_name' => 'نام اصلاح‌شده',
+            'last_name' => 'کاربر ساختمان',
+        ]);
+        $outside = $this->createUser();
+        $this->patchJson('/management/data/users/'.$outside->id, [
+            'first_name' => 'غیرمجاز',
+        ])->assertForbidden();
+    }
+
     public function test_complex_building_and_block_managers_can_define_users_in_their_own_scope(): void
     {
         $graph = $this->createBuildingGraph();
