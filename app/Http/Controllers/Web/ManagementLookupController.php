@@ -633,6 +633,11 @@ class ManagementLookupController extends Controller
             abort_unless($ownership, Response::HTTP_FORBIDDEN);
             $permission = 'unit-ownerships.update';
         }
+        if (! $buildingOwners && $request->filled('occupancy_id')) {
+            $occupancy = $unit?->unitOccupancies()->find($request->integer('occupancy_id'));
+            abort_unless($occupancy, Response::HTTP_FORBIDDEN);
+            $permission = 'unit-occupancies.update';
+        }
 
         abort_unless(
             $building
