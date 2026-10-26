@@ -640,6 +640,12 @@ class ManagementLookupController extends Controller
             Response::HTTP_FORBIDDEN
         );
 
+        $currentOwnerIds = $unit->unitOwnerships()
+            ->where('is_active', true)
+            ->where(fn (Builder $query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()->toDateString()))
+            ->where(fn (Builder $query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()->toDateString()))
+            ->pluck('user_id')->map(fn ($id): int => (int) $id);
+
         $search = trim((string) $request->query('search', ''));
         $candidates = User::query()
             ->where('is_active', true)
@@ -662,6 +668,7 @@ class ManagementLookupController extends Controller
                 'id' => $candidate->id,
                 'label' => trim("{$candidate->first_name} {$candidate->last_name}")
                     .' — '.($candidate->mobile ?: $candidate->email ?: "#{$candidate->id}"),
+                'isCurrentOwner' => $currentOwnerIds->contains((int) $candidate->id),
                 'hasMobile' => filled($candidate->mobile),
                 'mobileVerified' => $candidate->mobile_verified_at !== null,
                 'emailVerified' => $candidate->email_verified_at !== null,
