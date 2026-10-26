@@ -104,6 +104,50 @@ final class UnitOccupancyPageWebTest extends TestCase
             ->assertForbidden();
     }
 
+
+    public function test_owner_replacement_updates_occupancy_identity_without_transferring_residency(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $manager = $this->assigned('building_manager', $graph['building']);
+        $old = $this->assigned('owner', $graph['building']);
+        $replacement = $this->assigned('owner', $graph['building']);
+        $ownership = $graph['unit']->unitOwnerships()->create([
+            'user_id' => $old->id, 'is_active' => true,
+            'starts_at' => now()->subDay()->toDateString(),
+            'created_by' => $manager->id,
+        ]);
+        $occupancy = $graph['unit']->unitOccupancies()->create([
+            'user_id' => $old->id, 'occupancy_type' => 'owner',
+            'is_active' => true, 'starts_at' => now()->subDay()->toDateString(),
+            'created_by' => $manager->id,
+        ]);
+        $this->actingAs($manager);
+        $listUrl = '/api/v1/units/'.$graph['unit']->id.'/occupancies';
+        $this->getJson($listUrl)->assertOk()->assertJsonPath('data.0.is_current_owner', true);
+        $this->patchJson('/api/v1/unit-ownerships/'.$ownership->id, [
+            'user_id' => $replacement->id,
+        ])->assertOk();
+        $this->getJson($listUrl)->assertOk()
+            ->assertJsonPath('data.0.user_id', $old->id)
+            ->assertJsonPath('data.0.is_current_owner', false);
+        $candidates = collect($this->getJson('/management/lookups/occupancy_candidates?unit_id='.$graph['unit']->id)
+            ->assertOk()->json('data'))->keyBy('id');
+        $this->assertTrue($candidates[$replacement->id]['isCurrentOwner']);
+        $this->assertFalse($candidates[$old->id]['isCurrentOwner']);
+        $this->assertDatabaseHas('unit_occupancies', [
+            'id' => $occupancy->id, 'user_id' => $old->id, 'is_active' => true,
+        ]);
+
+        $ownership->refresh()->update(['starts_at' => now()->addDay()->toDateString()]);
+        $candidates = collect($this->getJson('/management/lookups/occupancy_candidates?unit_id='.$graph['unit']->id)
+            ->assertOk()->json('data'))->keyBy('id');
+        $this->assertFalse($candidates[$replacement->id]['isCurrentOwner']);
+        $ownership->update(['starts_at' => now()->subDays(2)->toDateString(), 'ends_at' => now()->subDay()->toDateString()]);
+        $candidates = collect($this->getJson('/management/lookups/occupancy_candidates?unit_id='.$graph['unit']->id)
+            ->assertOk()->json('data'))->keyBy('id');
+        $this->assertFalse($candidates[$replacement->id]['isCurrentOwner']);
+    }
+
     private function assigned(string $role, $scope): User
     {
         $user = $this->createUser();
