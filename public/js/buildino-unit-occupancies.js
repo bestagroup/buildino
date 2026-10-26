@@ -203,11 +203,11 @@
         if (busy || recordsLoading || !unitId() || !(record ? building()?.canUpdate : building()?.canCreate)) return;
         message(null, null); editing = record; form.reset(); $('more').open = false;
         $('editor-title').textContent = record ? 'ویرایش سکونت' : 'ثبت ساکن جدید'; $('save').textContent = record ? 'ذخیره تغییرات' : 'ثبت سکونت';
-        $('user-picker').hidden = Boolean(record); $('edit-person').hidden = !record; $('create-end').hidden = Boolean(record);
+        $('user-picker').hidden = false; $('edit-person').hidden = true; $('create-end').hidden = Boolean(record);
         $('invite-wrap').hidden = Boolean(record) || !building()?.canInvite;
         $('owner-option').hidden = !record?.is_current_owner;
         ++userGeneration;
-        userSelect.required = !record; resetSelect(userSelect, 'در حال دریافت کاربران ساختمان…'); candidates = [];
+        userSelect.required = true; resetSelect(userSelect, 'در حال دریافت کاربران ساختمان…'); candidates = [];
         $('user-hint').textContent = 'در حال دریافت کاربران ساختمان…';
         $('account-status').textContent = ''; $('edit-name').textContent = record ? nameOf(record) : '';
         form.elements.namedItem('occupancy_type').value = record?.occupancy_type === 'owner' && !record.is_current_owner ? 'resident' : record?.occupancy_type || '';
@@ -217,20 +217,25 @@
         form.elements.namedItem('notes').value = record?.notes || '';
         $('editor-unit-label').textContent = $('unit-label').textContent;
         showStep('change', true);
-        if (!record) void loadUsers();
+        void loadUsers(record);
     };
     const closeEditor = () => { editing = null; ++userGeneration; showStep('records', true); };
-    const loadUsers = async () => {
+    const loadUsers = async (record = null) => {
         const ticket = ++userGeneration;
         try {
             const url = new URL(`${config.lookupBase}/occupancy_candidates`, location.origin);
             url.searchParams.set('unit_id', String(unitId()));
+            if (record) url.searchParams.set('occupancy_id', String(record.id));
             const rows = (await request(url)).data || [];
             if (ticket !== userGeneration) return;
             candidates = rows;
             const options = rows.map(row => ({ ...row, label: row.label + (row.isCurrentOwner ? ' — مالک فعلی این واحد' : '') }));
             setOptions(userSelect, options, rows.length ? 'جست‌وجو و انتخاب ساکن' : 'کاربری برای این ساختمان ثبت نشده است');
-            userSelect.value = '';
+            if (record && !rows.some(row => Number(row.id) === Number(record.user_id))) {
+                userSelect.add(new Option(nameOf(record) + ' — ساکن فعلی', String(record.user_id)));
+                userSelect.disabled = false;
+            }
+            userSelect.value = record ? String(record.user_id) : '';
             window.BuildinoSelect2?.refresh(userSelect);
             $('user-hint').textContent = rows.length
                 ? `${number(rows.length)} کاربر ساختمان؛ برای جست‌وجوی نام یا شماره تماس، فهرست را باز کنید.`
@@ -247,12 +252,12 @@
         event.preventDefault(); if (busy || !unitId()) return; message(null, null);
         if (!form.reportValidity()) return;
         const selectedId = safeId(userSelect.value);
-        if (!editing && !candidates.some(candidate => Number(candidate.id) === selectedId)) { message('error', 'یک حساب کاربری معتبر را انتخاب کنید.'); userSelect.focus(); return; }
+        if (userSelect.disabled || (!candidates.some(candidate => Number(candidate.id) === selectedId) && selectedId !== Number(editing?.user_id))) { message('error', 'یک حساب کاربری معتبر را انتخاب کنید.'); userSelect.focus(); return; }
         const start = readDate(form, 'starts_at'), end = readDate(form, 'ends_at');
         if (!editing && end && end < start) { $('more').open = true; message('error', 'تاریخ پایان نمی‌تواند پیش از تاریخ شروع باشد.'); return; }
-        if (!editing && records.some(record => Number(record.user_id) === selectedId && record.is_active && (!record.ends_at || record.ends_at >= today()))) { message('error', 'این شخص هم‌اکنون ساکن همین واحد است. برای تغییر رابطه، رکورد فعلی را ویرایش کنید.'); return; }
+        if (records.some(record => Number(record.id) !== Number(editing?.id) && Number(record.user_id) === selectedId && record.is_active && (!record.ends_at || record.ends_at >= today()))) { message('error', 'این شخص هم‌اکنون ساکن همین واحد است. برای تغییر رابطه، رکورد فعلی را ویرایش کنید.'); return; }
         if (!editing && invitations.some(invitation => Number(invitation.invited_user_id) === selectedId && invitation.planned_occupancy && ['pending', 'sent'].includes(invitation.status) && !invitationExpired(invitation))) { message('error', 'برای این شخص دعوت در انتظار پذیرش وجود دارد. ابتدا آن را لغو کنید.'); return; }
-        const payload = { resident_count: Number(form.elements.namedItem('resident_count').value), occupancy_type: form.elements.namedItem('occupancy_type').value, starts_at: start, is_primary: form.elements.namedItem('is_primary').checked, notes: form.elements.namedItem('notes').value.trim() || null };
+        const payload = { user_id: selectedId, resident_count: Number(form.elements.namedItem('resident_count').value), occupancy_type: form.elements.namedItem('occupancy_type').value, starts_at: start, is_primary: form.elements.namedItem('is_primary').checked, notes: form.elements.namedItem('notes').value.trim() || null };
         if (!editing) { payload.user_id = selectedId; payload.is_active = true; if (end) payload.ends_at = end; }
         const inviteFirst = !editing && form.elements.namedItem('send_invitation').checked;
         if (inviteFirst && (!building()?.canInvite || !candidates.find(candidate => Number(candidate.id) === selectedId)?.hasMobile)) {
@@ -317,11 +322,12 @@
     form.addEventListener('submit', save); endForm.addEventListener('submit', end);
     userSelect.addEventListener('change', () => {
         const candidate = candidates.find(item => Number(item.id) === safeId(userSelect.value));
-        $('owner-option').hidden = !candidate?.isCurrentOwner;
-        if (!candidate?.isCurrentOwner && form.elements.namedItem('occupancy_type').value === 'owner') {
+        const isOwner = candidate?.isCurrentOwner || (Number(editing?.user_id) === safeId(userSelect.value) && editing?.is_current_owner);
+        $('owner-option').hidden = !isOwner;
+        if (!isOwner && form.elements.namedItem('occupancy_type').value === 'owner') {
             form.elements.namedItem('occupancy_type').value = '';
         }
-        $('invite-wrap').hidden = !building()?.canInvite || !candidate?.hasMobile;
+        $('invite-wrap').hidden = Boolean(editing) || !building()?.canInvite || !candidate?.hasMobile;
         if ($('invite-wrap').hidden) form.elements.namedItem('send_invitation').checked = false;
         $('account-status').textContent = candidate ? candidate.mobileVerified || candidate.emailVerified ? 'هویت این حساب تأیید شده است.' : candidate.hasMobile ? 'هویت این حساب هنوز تأیید نشده است؛ برای پذیرش دعوت باید آن را تأیید کند.' : 'برای این حساب شماره موبایل ثبت نشده و امکان دعوت پیامکی وجود ندارد.' : '';
     });
