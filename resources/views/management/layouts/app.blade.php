@@ -285,7 +285,7 @@
                         </span>
                     </a>
 
-                    @if (app(\App\Support\Authorization\PermissionChecker::class)->allowsAnyScope($user, 'reports.financial.view'))
+                    @if (\Illuminate\Support\Facades\Route::has('management.at-a-glance') && app(\App\Support\Authorization\PermissionChecker::class)->allowsAnyScope($user, 'reports.financial.view'))
                         <a href="{{ route('management.at-a-glance') }}" class="nav-link {{ request()->routeIs('management.at-a-glance') ? 'is-active' : '' }}" data-nav-key="at-a-glance" @if(request()->routeIs('management.at-a-glance')) aria-current="page" @endif>
                             <span class="nav-link__icon">@include('management.partials.icon', ['name' => 'building'])</span>
                             <span class="nav-link__label">در یک نگاه</span>
