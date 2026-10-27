@@ -25,6 +25,9 @@ export interface CrudField {
     step?: string | number;
     placeholder?: string;
     help?: string;
+    min?: number;
+    max?: number;
+    maxlength?: number;
     lookup?: string;
     depends_on?: string;
     multiple?: boolean;
@@ -50,6 +53,7 @@ export interface CrudResource {
     delete?: CrudOperation;
     columns?: CrudColumn[];
     fields?: CrudField[];
+    context?: { name: string; label: string; lookup: string; required?: boolean }[];
 }
 
 export interface ResourceLink {

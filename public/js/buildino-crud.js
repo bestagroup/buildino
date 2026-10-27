@@ -2082,33 +2082,22 @@
             input.checked =
                 checked;
 
-            const line =
-                document.createElement(
-                    "div"
-                );
-
-            line.className =
-                "crud-checkbox-line";
-
-            line.appendChild(
-                input
-            );
-
-            const hint =
-                document.createElement(
-                    "small"
-                );
-
-            hint.textContent =
-                "فعال";
-
-            line.appendChild(
-                hint
-            );
-
-            wrapper.appendChild(
-                line
-            );
+            const line = document.createElement('span');
+            line.className = 'buildino-switch';
+            title.className = 'buildino-switch__label';
+            title.textContent = field.name === 'is_active' ? 'وضعیت' : field.label;
+            input.classList.add('buildino-switch__input');
+            input.setAttribute('role', 'switch');
+            input.setAttribute('aria-label', field.label);
+            const track = document.createElement('span');
+            track.className = 'buildino-switch__track'; track.setAttribute('aria-hidden', 'true');
+            const status = document.createElement('span');
+            status.className = 'buildino-switch__state'; status.setAttribute('aria-hidden', 'true');
+            for (const [className, text] of [['on', field.name === 'is_active' ? 'فعال' : 'بله'], ['off', field.name === 'is_active' ? 'غیرفعال' : 'خیر']]) {
+                const stateLabel = document.createElement('span'); stateLabel.className = 'buildino-switch__' + className; stateLabel.textContent = text; status.append(stateLabel);
+            }
+            line.append(input, track, title, status);
+            wrapper.appendChild(line);
         } else {
             if (
                 field.type === "json"

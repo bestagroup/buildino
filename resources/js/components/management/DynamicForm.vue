@@ -7,6 +7,7 @@ import {
     type PropType,
 } from 'vue';
 import { apiRequest, rowsFromPayload } from '../../lib/management-api';
+import UiSwitch from './UiSwitch.vue';
 import type {
     CrudField,
     CrudOption,
@@ -311,7 +312,8 @@ watch(
 
 <template>
     <div class="ui-form-grid">
-        <label
+        <component
+            :is="field.type === 'checkbox' ? 'div' : 'label'"
             v-for="field in visibleFields"
             :key="field.name"
             class="ui-field"
@@ -321,7 +323,7 @@ watch(
                 'has-error': errors?.[field.name]?.length,
             }"
         >
-            <span class="ui-field__label">
+            <span v-if="field.type !== 'checkbox'" class="ui-field__label">
                 {{ field.label }}
                 <b v-if="field.required || (mode === 'create' && field.required_on_create)">*</b>
             </span>
@@ -343,6 +345,7 @@ watch(
 
             <select
                 v-else-if="field.type === 'select' || field.type === 'multiselect'"
+                data-select2="off"
                 :id="fieldDomId(field)"
                 :name="field.name"
                 :aria-invalid="hasFieldError(field)"
@@ -368,22 +371,19 @@ watch(
                 >{{ option.label }}</option>
             </select>
 
-            <span
+            <UiSwitch
                 v-else-if="field.type === 'checkbox'"
-                class="ui-checkbox"
-            >
-                <input
-                    :id="fieldDomId(field)"
-                    :name="field.name"
-                    :aria-invalid="hasFieldError(field)"
-                    :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
-                    type="checkbox"
-                    :checked="Boolean(fieldValue(field))"
-                    :disabled="mode === 'edit' && field.readonly_on_edit"
-                    @change="setFieldValue(field, ($event.target as HTMLInputElement).checked)"
-                >
-                <span>فعال</span>
-            </span>
+                :id="fieldDomId(field)"
+                :name="field.name"
+                :label="field.name === 'is_active' ? 'وضعیت' : field.label"
+                :on-label="field.name === 'is_active' ? 'فعال' : 'بله'"
+                :off-label="field.name === 'is_active' ? 'غیرفعال' : 'خیر'"
+                :aria-invalid="hasFieldError(field)"
+                :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
+                :model-value="Boolean(fieldValue(field))"
+                :disabled="mode === 'edit' && field.readonly_on_edit"
+                @update:model-value="setFieldValue(field, $event)"
+            />
 
             <input
                 v-else
@@ -399,6 +399,9 @@ watch(
                 :dir="inputDirection(field)"
                 :inputmode="inputMode(field)"
                 :autocomplete="autoComplete(field)"
+                :min="field.min"
+                :max="field.max"
+                :maxlength="field.maxlength"
                 :value="fieldValue(field) as string | number"
                 @input="setFieldValue(field, ($event.target as HTMLInputElement).value)"
             >
@@ -415,7 +418,7 @@ watch(
                 class="ui-field__help"
             >{{ field.help }}</small>
             <button v-if="lookupErrors[field.name]" type="button" class="crud-button crud-button--soft" @click="loadLookup(field)">تلاش مجدد</button>
-        </label>
+        </component>
         <details v-if="additionalFields.length" class="core-form-details" :open="additionalInvalid">
             <summary>اطلاعات تکمیلی (اختیاری)</summary>
             <DynamicForm

@@ -231,6 +231,25 @@ input[type="radio"] {
 
 /* ---------- Buttons ---------- */
 
+/* Shared switch: native checkbox semantics, compact row and RTL support. */
+.buildino-switch { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 46px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); color: var(--text); cursor: pointer; box-sizing: border-box; }
+.buildino-switch .buildino-switch__input { position: absolute; width: 1px; height: 1px; min-height: 0; margin: 0; padding: 0; opacity: 0; border: 0; }
+.buildino-switch__track { position: relative; display: inline-block; flex: 0 0 40px; width: 40px; height: 24px; border: 1px solid var(--border-strong, var(--border)); border-radius: 99px; background: var(--muted-2, #94a3b8); transition: background-color .16s ease, border-color .16s ease; }
+.buildino-switch__track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px #0f172a26; transition: transform .16s ease; }
+.buildino-switch__input:checked + .buildino-switch__track { border-color: var(--primary-700); background: var(--primary-700); }
+.buildino-switch__input:checked + .buildino-switch__track::after { transform: translateX(16px); }
+[dir="rtl"] .buildino-switch__track::after { left: auto; right: 2px; }
+[dir="rtl"] .buildino-switch__input:checked + .buildino-switch__track::after { transform: translateX(-16px); }
+.buildino-switch .buildino-switch__label { flex: 1; min-width: 0; font-size: 12px; font-weight: 600; line-height: 1.6; }
+.buildino-switch .buildino-switch__state { flex: 0 0 auto; color: var(--muted); font-size: 11px; font-weight: 500; line-height: 1.6; }
+.buildino-switch__on { display: none; }
+.buildino-switch__input:checked ~ .buildino-switch__state .buildino-switch__on { display: inline; color: var(--primary-700); }
+.buildino-switch__input:checked ~ .buildino-switch__state .buildino-switch__off { display: none; }
+.buildino-switch__input:focus-visible + .buildino-switch__track { outline: 2px solid var(--primary-500); outline-offset: 3px; }
+.buildino-switch:has(.buildino-switch__input:disabled) { cursor: not-allowed; opacity: .55; }
+.buildino-switch:has(.buildino-switch__input[aria-invalid="true"]) { border-color: var(--danger); }
+@media (prefers-reduced-motion: reduce) { .buildino-switch__track, .buildino-switch__track::after { transition: none; } }
+
 .btn,
 .crud-button,
 .login-submit,

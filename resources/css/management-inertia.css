@@ -289,11 +289,9 @@ body.ui-overlay-open {
 }
 
 .ui-field--checkbox {
-    min-height: 76px;
-    padding: 10px 11px;
-    border: 1px solid var(--border);
-    border-radius: 11px;
-    background: var(--surface-soft);
+    align-self: start;
+    min-height: 0;
+    padding: 0;
 }
 
 .ui-checkbox {

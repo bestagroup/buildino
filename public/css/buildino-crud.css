@@ -978,11 +978,9 @@ body.crud-overlay-open {
 }
 
 .crud-field--checkbox {
-    min-height: 65px;
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--surface-soft);
+    align-self: start;
+    min-height: 0;
+    padding: 0;
 }
 
 .crud-checkbox-line {
