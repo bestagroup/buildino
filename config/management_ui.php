@@ -9,6 +9,9 @@ return [
     'inertia_resources' => [
         'complexes',
         'buildings',
+        'blocks',
+        'floors',
+        'units',
     ],
 
     'libraries' => [

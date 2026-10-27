@@ -4,6 +4,11 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Building;
+use App\Models\Block;
+use App\Models\Complex;
+use App\Models\Floor;
+use App\Services\System\IranLocations;
+use App\Services\Web\ManagementDashboardAccessService;
 use App\Services\Web\ManagementUiContextService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Response;
@@ -213,6 +218,7 @@ class ManagementOperationsController extends Controller
                         '/management/lookups'
                     ),
                     'csrfToken' => csrf_token(),
+                    'structureUi' => $this->structureUi($resource, $permissions),
                 ]
             );
         }
@@ -230,5 +236,65 @@ class ManagementOperationsController extends Controller
                 ),
             ]
         );
+    }
+
+    private function structureUi(string $resource, PermissionChecker $permissions): array
+    {
+        $user = request()->user();
+        $buildingIds = app(ManagementDashboardAccessService::class)->accessibleBuildings($user)->pluck('id')->all();
+        $abilities = fn ($scope): array => collect(['create', 'update', 'delete'])
+            ->mapWithKeys(fn (string $action): array => [$action => $permissions->allows($user, "$resource.$action", $scope)])->all();
+        $childPermission = match ($resource) {
+            'complexes' => 'buildings.view', 'buildings' => 'blocks.view',
+            'blocks' => 'floors.view', 'floors' => 'units.view', default => null,
+        };
+        $childAccess = fn ($scope): bool => $childPermission !== null && $permissions->allows($user, $childPermission, $scope);
+        $parents = match ($resource) {
+            'blocks' => Building::query()->whereIn('id', $buildingIds)->with('complex')->orderBy('title')->get(),
+            'floors' => Block::query()->whereIn('building_id', $buildingIds)->with('building.complex')->orderBy('sort_order')->get(),
+            'units' => Floor::query()->whereHas('block', fn ($query) => $query->whereIn('building_id', $buildingIds))->with('block.building.complex')->orderBy('floor_number')->get(),
+            default => collect(),
+        };
+        $parentBuilding = fn ($parent) => match ($resource) {
+            'blocks' => $parent,
+            'floors' => $parent->building,
+            default => $parent->block->building,
+        };
+        $contexts = $parents->filter(fn ($parent): bool => $permissions->allows($user, "$resource.view", $parentBuilding($parent)))
+            ->map(function ($parent) use ($resource, $abilities, $parentBuilding, $childAccess): array {
+                $building = $parentBuilding($parent);
+                $block = $resource === 'floors' ? $parent : ($resource === 'units' ? $parent->block : null);
+                return [
+                    'id' => $parent->id,
+                    'label' => collect([$building->title, $block?->title, $resource === 'units' ? ($parent->title ?: 'طبقه '.$parent->floor_number) : null])->filter()->implode(' / '),
+                    'building_id' => $building->id,
+                    'block_id' => $block?->id,
+                    'complex_id' => $building->complex_id,
+                    ...$abilities($building),
+                    'childView' => $childAccess($building),
+                ];
+            })->values();
+        $roots = match ($resource) {
+            'complexes' => Complex::query()->get(),
+            'buildings' => Building::query()->whereIn('id', $buildingIds)->get(),
+            default => collect(),
+        };
+
+        return [
+            'contexts' => $contexts,
+            'abilities' => $roots->filter(fn ($model): bool => $permissions->allows($user, "$resource.view", $model))
+                ->mapWithKeys(fn ($model): array => [$model->id => [...$abilities($model), 'childView' => $childAccess($model)]])->all(),
+            'globalAbilities' => [...$abilities(null), 'childView' => $childAccess(null)],
+            'parentAbilities' => $resource === 'buildings' ? Complex::query()->get()
+                ->mapWithKeys(fn ($complex): array => [$complex->id => [...$abilities($complex), 'childView' => $childAccess($complex)]])->filter(fn (array $actions): bool => in_array(true, $actions, true))->all() : [],
+            'canCreate' => $permissions->allowsAnyScope($user, "$resource.create"),
+            'createParents' => $resource === 'buildings'
+                ? Complex::query()->orderBy('title')->get()->filter(fn ($complex): bool => $permissions->allows($user, 'buildings.create', $complex))
+                    ->map(fn ($complex): array => ['value' => $complex->id, 'label' => $complex->title])->values()
+                : [],
+            'canSetup' => $permissions->allowsAnyScope($user, 'buildings.create') || $permissions->allowsAnyScope($user, 'blocks.create'),
+            'setupUrl' => route('management.building-setup'),
+            'locations' => $resource === 'complexes' ? app(IranLocations::class)->forForm() : [],
+        ];
     }
 }

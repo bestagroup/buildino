@@ -1,630 +1,209 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import {
-    computed,
-    onMounted,
-    onUnmounted,
-    nextTick,
-    ref,
-    watch,
-    type PropType,
-} from 'vue';
+import { Head } from '@inertiajs/vue3';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import DynamicForm from '../../../components/management/DynamicForm.vue';
 import UiConfirmDialog from '../../../components/management/UiConfirmDialog.vue';
-import UiDrawer from '../../../components/management/UiDrawer.vue';
 import { ApiError, apiRequest, rowsFromPayload } from '../../../lib/management-api';
-import type {
-    CrudField,
-    CrudRecord,
-    CrudResource,
-    ResourceLink,
-} from '../../../types/management';
+import { display, payloadFor, primaryFields, readValue, structure, type StructureKey, type StructureUi } from '../../../lib/building-structure';
+import type { CrudField, CrudRecord, ResourcePageProps } from '../../../types/management';
 
-const props = defineProps({
-    resourceKey: {
-        type: String,
-        required: true,
-    },
-    resource: {
-        type: Object as PropType<CrudResource>,
-        required: true,
-    },
-    groupTitle: {
-        type: String,
-        required: true,
-    },
-    siblingResources: {
-        type: Array as PropType<ResourceLink[]>,
-        required: true,
-    },
-    operationsUrl: {
-        type: String,
-        required: true,
-    },
-    lookupBase: {
-        type: String,
-        required: true,
-    },
-    csrfToken: {
-        type: String,
-        required: true,
-    },
+const props = defineProps<ResourcePageProps & { structureUi: StructureUi }>();
+const meta = computed(() => structure[props.resourceKey as StructureKey]);
+const root = ref<HTMLElement | null>(null), editor = ref(false), mode = ref<'create' | 'edit'>('create');
+const rows = ref<CrudRecord[]>([]), loading = ref(false), pageError = ref(''), search = ref('');
+const page = ref(1), lastPage = ref(1), total = ref(0), contextId = ref('');
+const form = ref<CrudRecord>({}), selected = ref<CrudRecord | null>(null), step = ref(0);
+const formErrors = ref<Record<string, string[]>>({}), formError = ref(''), saving = ref(false), lookupsLoading = ref(false);
+const deleteTarget = ref<CrudRecord | null>(null), deleting = ref(false), discard = ref(false), snapshot = ref('');
+const notice = ref('');
+let listTicket = 0, initializing = false, disposed = false;
+const context = computed(() => props.structureUi.contexts.find(row => String(row.id) === contextId.value));
+const child = computed(() => props.siblingResources.find(row => row.key === meta.value.child));
+const parent = computed(() => props.siblingResources.find(row => row.key === meta.value.parent));
+const ready = computed(() => !meta.value.context || Boolean(context.value));
+const canCreate = computed(() => Boolean(props.resource.create && props.structureUi.canCreate && ready.value && (!meta.value.context || context.value?.create) && (props.resourceKey !== 'buildings' || props.structureUi.createParents.length)));
+const allowed = (row: CrudRecord, action: 'update' | 'delete') => Boolean(props.resource[action] && (meta.value.context ? context.value?.[action] : (props.structureUi.abilities[String(row.id)] ?? props.structureUi.parentAbilities[String(row.complex_id)] ?? props.structureUi.globalAbilities)?.[action]));
+const canViewChild = (row: CrudRecord) => Boolean(child.value && (meta.value.context ? context.value?.childView : (props.structureUi.abilities[String(row.id)] ?? props.structureUi.parentAbilities[String(row.complex_id)] ?? props.structureUi.globalAbilities)?.childView));
+const labels = computed(() => ['complexes', 'buildings'].includes(props.resourceKey) ? ['مشخصات اصلی', 'نشانی و تنظیمات', 'بررسی نهایی'] : ['اطلاعات ' + meta.value.singular, 'بررسی نهایی']);
+const reviewStep = computed(() => labels.value.length - 1);
+const visibleRows = computed(() => rows.value.filter(row => JSON.stringify(row).toLocaleLowerCase('fa').includes(search.value.trim().toLocaleLowerCase('fa'))));
+const rowTitle = (row: CrudRecord) => String(row.title || (props.resourceKey === 'floors' ? 'طبقه ' + row.floor_number : props.resourceKey === 'units' ? 'واحد ' + row.unit_number : row.code || 'بدون عنوان'));
+const operationUrl = (template: string, row: CrudRecord | null = null) => template.replace(/\{([^}]+)}/g, (_, name: string) => {
+    const value = name === 'id' ? row?.id : name === meta.value.context ? contextId.value : row?.[name];
+    if (value === null || value === undefined || value === '') throw new Error('ابتدا محدوده عملیات را انتخاب کنید.');
+    return encodeURIComponent(String(value));
 });
-
-const rows = ref<CrudRecord[]>([]);
-const loading = ref(true);
-const pageError = ref('');
-const search = ref('');
-const currentPage = ref(1);
-const pageSize = 25;
-const remotePage = ref(1);
-const remoteLastPage = ref(1);
-const totalRows = ref<number | null>(null);
-const core = window.BuildinoCoreFlows;
-const canCreate = computed(() => Boolean(props.resource.create && core?.allowed(props.resourceKey, 'create')));
-const canUpdate = computed(() => Boolean(props.resource.update && core?.allowed(props.resourceKey, 'update')));
-
-const drawerOpen = ref(false);
-const drawerMode = ref<'create' | 'edit'>('create');
-const selectedRow = ref<CrudRecord | null>(null);
-const form = ref<CrudRecord>({});
-const formErrors = ref<Record<string, string[]>>({});
-const formError = ref('');
-const lookupsLoading = ref(false);
-const saving = ref(false);
-
-const deleteTarget = ref<CrudRecord | null>(null);
-const deleting = ref(false);
-const toast = ref<{ message: string; tone: 'success' | 'danger' } | null>(null);
-let toastTimer: number | undefined;
-
-const filteredRows = computed(() => {
-    const term = search.value.trim().toLocaleLowerCase('fa');
-
-    if (!term) {
-        return rows.value;
-    }
-
-    return rows.value.filter((row) =>
-        JSON.stringify(row).toLocaleLowerCase('fa').includes(term),
-    );
-});
-
-const pageCount = computed(() => Math.max(
-    1,
-    Math.ceil(filteredRows.value.length / pageSize),
-));
-
-const visibleRows = computed(() => {
-    const safePage = Math.min(currentPage.value, pageCount.value);
-    const start = (safePage - 1) * pageSize;
-
-    return filteredRows.value.slice(start, start + pageSize);
-});
-
-const getByPath = (record: CrudRecord, path: string): unknown => {
-    const read = (keyPath: string): unknown => keyPath.split('.').reduce<unknown>((value, key) => {
-        if (!value || typeof value !== 'object') {
-            return null;
-        }
-
-        return (value as Record<string, unknown>)[key];
-    }, record);
-    return read(path) ?? (path.includes('.') ? null : read(`location.${path}`) ?? read(`statistics.${path}`));
-};
-
-const displayValue = (value: unknown): string => {
-    if (value === null || value === undefined || value === '') {
-        return '—';
-    }
-
-    if (typeof value === 'boolean') {
-        return value ? 'بله' : 'خیر';
-    }
-
-    if (Array.isArray(value)) {
-        return value.length ? value.map(displayValue).join('، ') : '—';
-    }
-
-    if (typeof value === 'object') {
-        const data = value as Record<string, unknown>;
-        return String(data.title ?? data.name ?? data.label ?? data.id ?? '—');
-    }
-
-    return String(value);
-};
-
-const interpolate = (template: string, record?: CrudRecord | null): string =>
-    template.replace(/\{([^}]+)}/g, (_, name: string) => {
-        const value = name === 'id' ? record?.id : getByPath(record ?? {}, name);
-
-        if (value === undefined || value === null || value === '') {
-            throw new Error(`مقدار «${name}» برای این عملیات موجود نیست.`);
-        }
-
-        return encodeURIComponent(String(value));
-    });
-
-const notify = (message: string, tone: 'success' | 'danger' = 'success'): void => {
-    toast.value = { message, tone };
-    window.clearTimeout(toastTimer);
-    toastTimer = window.setTimeout(() => {
-        toast.value = null;
-    }, 4500);
-};
-
-const loadRows = async (page = remotePage.value): Promise<void> => {
-    if (!props.resource.list) {
-        loading.value = false;
-        return;
-    }
-
-    loading.value = true;
-    pageError.value = '';
-
-    try {
-        const endpoint = new URL(props.resource.list.url, window.location.origin);
-        endpoint.searchParams.set('page', String(page));
-        const payload = await apiRequest<{ data?: CrudRecord[]; meta?: { current_page?: number; last_page?: number; total?: number } }>(
-            endpoint.toString(),
-            {
-                method: props.resource.list.method ?? 'GET',
-                csrfToken: props.csrfToken,
-            },
-        );
-
-        rows.value = rowsFromPayload<CrudRecord>(payload);
-        remotePage.value = payload.meta?.current_page ?? 1;
-        remoteLastPage.value = payload.meta?.last_page ?? 1;
-        totalRows.value = payload.meta?.total ?? null;
-        core?.setRows(rows.value);
-        currentPage.value = 1;
-    } catch (error) {
-        pageError.value = error instanceof Error
-            ? error.message
-            : 'خطا در بارگذاری اطلاعات.';
-    } finally {
-        loading.value = false;
-    }
-};
-
-const initialFieldValue = (
-    field: CrudField,
-    record: CrudRecord | null,
-): unknown => {
-    const value = record ? (getByPath(record, field.name)
-        ?? getByPath(record, `location.${field.name}`)
-        ?? getByPath(record, `statistics.${field.name}`)) : undefined;
-
-    if (value !== undefined && value !== null) {
-        if (field.type === 'json' && typeof value !== 'string') {
-            return JSON.stringify(value, null, 2);
-        }
-
-        return value;
-    }
-
-    if (field.default !== undefined) {
-        return field.default;
-    }
-
-    return field.type === 'checkbox' ? false : '';
-};
-
-const openDrawer = (
-    mode: 'create' | 'edit',
-    record: CrudRecord | null = null,
-): void => {
-    drawerMode.value = mode;
-    selectedRow.value = record;
-    formErrors.value = {};
-    formError.value = '';
-    form.value = Object.fromEntries(
-        (props.resource.fields ?? []).map((field) => [
-            field.name,
-            initialFieldValue(field, record),
-        ]),
-    );
-    form.value = core?.defaults(props.resourceKey, form.value, mode) ?? form.value;
-    drawerOpen.value = true;
-};
-
-const closeDrawer = (): void => {
-    if (!saving.value) {
-        drawerOpen.value = false;
-    }
-};
-
-const buildPayload = (): CrudRecord => {
-    const payload: CrudRecord = {};
-
-    for (const field of props.resource.fields ?? []) {
-        if (
-            (drawerMode.value === 'edit' && (field.create_only || field.readonly_on_edit))
-            || (drawerMode.value === 'create' && field.edit_only)
-        ) {
-            continue;
-        }
-
-        let value = form.value[field.name];
-
-        if (field.type === 'password' && drawerMode.value === 'edit' && !value) {
-            continue;
-        }
-
-        if (field.type === 'number') {
-            value = value === '' || value === null || value === undefined
-                ? null
-                : Number(value);
-        } else if (field.type === 'multiselect') {
-            value = Array.isArray(value)
-                ? value.map((item) => {
-                    const number = Number(item);
-                    return Number.isFinite(number) ? number : item;
-                })
-                : [];
-        } else if (field.type === 'json') {
-            const source = String(value ?? '').trim();
-            if (!source) {
-                continue;
-            }
-            value = JSON.parse(source) as unknown;
-        } else if (
-            field.type !== 'checkbox'
-            && value === ''
-            && !(field.required || (drawerMode.value === 'create' && field.required_on_create))
-        ) {
-            value = null;
-        }
-
-        payload[field.name] = value;
-    }
-
-    return payload;
-};
-
-const save = async (): Promise<void> => {
-    if (saving.value || lookupsLoading.value) return;
-    const operation = drawerMode.value === 'edit'
-        ? props.resource.update
-        : props.resource.create;
-
-    if (!operation) {
-        return;
-    }
-
-    saving.value = true;
-    formErrors.value = {};
-    formError.value = '';
-
-    try {
-        const endpoint = interpolate(operation.url, selectedRow.value);
-        const payload = buildPayload();
-
-        const result = await apiRequest<{ data: CrudRecord }>(endpoint, {
-            method: operation.method ?? (drawerMode.value === 'edit' ? 'PATCH' : 'POST'),
-            csrfToken: props.csrfToken,
-            body: JSON.stringify(payload),
-        });
-
-        core?.saved(props.resourceKey, result.data, drawerMode.value);
-        drawerOpen.value = false;
-        notify(drawerMode.value === 'edit' ? 'تغییرات با موفقیت ذخیره شد.' : 'رکورد جدید با موفقیت ثبت شد.');
-        await loadRows();
-    } catch (error) {
-        if (error instanceof ApiError) {
-            formErrors.value = error.errors;
-            formError.value = error.message;
-            await nextTick();
-            document.querySelector<HTMLElement>('#inertiaCrudForm [aria-invalid="true"]')?.focus();
-        } else {
-            formError.value = error instanceof Error
-                ? error.message
-                : 'ذخیره اطلاعات انجام نشد.';
-        }
-    } finally {
-        saving.value = false;
-    }
-};
-
-const remove = async (): Promise<void> => {
-    if (!props.resource.delete || !deleteTarget.value) {
-        return;
-    }
-
-    deleting.value = true;
-
-    try {
-        await apiRequest<unknown>(
-            interpolate(props.resource.delete.url, deleteTarget.value),
-            {
-                method: props.resource.delete.method ?? 'DELETE',
-                csrfToken: props.csrfToken,
-            },
-        );
-
-        deleteTarget.value = null;
-        notify('رکورد با موفقیت حذف شد.');
-        await loadRows();
-    } catch (error) {
-        notify(
-            error instanceof Error ? error.message : 'حذف رکورد انجام نشد.',
-            'danger',
-        );
-    } finally {
-        deleting.value = false;
-    }
-};
-
-const openRequestedDrawer = (): void => {
+const focus = async (selector: string) => { await nextTick(); root.value?.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true }); };
+const updateUrl = () => {
     const url = new URL(window.location.href);
-    if (url.searchParams.get('create') === '1' && canCreate.value) {
-        openDrawer('create');
-        url.searchParams.delete('create');
-        window.history.replaceState({}, '', url);
+    if (meta.value.context) contextId.value ? url.searchParams.set(meta.value.context, contextId.value) : url.searchParams.delete(meta.value.context);
+    if (meta.value.context === 'building_id') url.searchParams.delete('block_id');
+    if (['building_id', 'block_id'].includes(meta.value.context)) url.searchParams.delete('floor_id');
+    url.searchParams.delete('create'); window.history.replaceState(window.history.state, '', url);
+};
+const loadRows = async (requestedPage = 1) => {
+    const ticket = ++listTicket;
+    if (!ready.value || !props.resource.list) { rows.value = []; loading.value = false; return; }
+    loading.value = true; pageError.value = ''; rows.value = [];
+    try {
+        const url = new URL(operationUrl(props.resource.list.url), window.location.origin);
+        if (props.resourceKey === 'buildings') {
+            const complex = new URL(window.location.href).searchParams.get('complex_id');
+            if (complex && /^\d+$/.test(complex)) url.searchParams.set('complex_id', complex);
+        }
+        url.searchParams.set('page', String(requestedPage));
+        const result = await apiRequest<{ data: CrudRecord[]; meta?: { current_page?: number; last_page?: number; total?: number } }>(url.toString(), { csrfToken: props.csrfToken });
+        if (ticket !== listTicket || disposed) return;
+        rows.value = rowsFromPayload<CrudRecord>(result); page.value = result.meta?.current_page ?? 1; lastPage.value = result.meta?.last_page ?? 1; total.value = result.meta?.total ?? rows.value.length;
+    } catch (error) { if (ticket === listTicket && !disposed) pageError.value = error instanceof Error ? error.message : 'اطلاعات دریافت نشد.'; }
+    finally { if (ticket === listTicket && !disposed) loading.value = false; }
+};
+const changeContext = () => { search.value = ''; notice.value = ''; updateUrl(); void loadRows(); };
+const relatedUrl = (row: CrudRecord) => {
+    const url = new URL(child.value?.url || window.location.href, window.location.origin);
+    for (const key of ['complex_id', 'building_id', 'block_id', 'floor_id']) {
+        const value = context.value?.[key as 'building_id' | 'block_id' | 'complex_id'] ?? new URL(window.location.href).searchParams.get(key);
+        if (value) url.searchParams.set(key, String(value));
     }
+    url.searchParams.set(meta.value.childContext, String(row.id));
+    return url.pathname + url.search;
 };
-
-watch(
-    () => [props.resource.title, props.resource.description] as const,
-    ([title, description]) => {
-        const heading = document.querySelector<HTMLElement>(
-            '.page-heading h1',
-        );
-        const subtitle = document.querySelector<HTMLElement>(
-            '.page-heading p',
-        );
-
-        if (heading) {
-            heading.textContent = title;
-        }
-
-        if (subtitle) {
-            subtitle.textContent = description ?? '';
-        }
-    },
-    { immediate: true },
-);
-
-watch(
-    () => props.resourceKey,
-    async (resourceKey, previousResourceKey) => {
-        if (!previousResourceKey || resourceKey === previousResourceKey) {
-            return;
-        }
-
-        drawerOpen.value = false;
-        deleteTarget.value = null;
-        search.value = '';
-        currentPage.value = 1;
-        remotePage.value = 1;
-        await nextTick();
-        await core?.mount(props.resourceKey);
-        await loadRows();
-        openRequestedDrawer();
-    },
-);
-
-const flowCreate = (event: Event): void => {
-    if ((event as CustomEvent<{ resourceKey: string }>).detail.resourceKey === props.resourceKey && canCreate.value) openDrawer('create');
-};
-onMounted(async () => {
-    window.addEventListener('buildino:flow-create', flowCreate);
-    await core?.mount(props.resourceKey);
-    await loadRows();
-    openRequestedDrawer();
+const parentUrl = computed(() => {
+    const url = new URL(parent.value?.url || '/management/operations/buildings', window.location.origin);
+    if (props.resourceKey === 'floors' && context.value) url.searchParams.set('building_id', String(context.value.building_id));
+    if (props.resourceKey === 'units' && context.value?.block_id) url.searchParams.set('block_id', String(context.value.block_id));
+    return url.pathname + url.search;
 });
-onUnmounted(() => window.removeEventListener('buildino:flow-create', flowCreate));
+const fields = computed<CrudField[]>(() => (props.resource.fields ?? []).map(field => {
+    let result = { ...field };
+    if (field.name === 'complex_id') {
+        result = { ...result, lookup: undefined, options: [...props.structureUi.createParents] };
+        if (mode.value === 'edit' && form.value.complex_id && !result.options?.some(option => String(option.value) === String(form.value.complex_id))) result.options?.push({ value: String(form.value.complex_id), label: display(readValue(selected.value || {}, 'complex.title')) });
+    }
+    if (field.name === 'province' && props.structureUi.locations.length) result = { ...result, type: 'select', options: props.structureUi.locations.map(row => ({ value: row.name, label: row.name })) };
+    if (field.name === 'city' && props.structureUi.locations.length) result = { ...result, type: 'select', options: (props.structureUi.locations.find(row => row.name === form.value.province)?.cities ?? []).map(row => ({ value: row.name, label: row.label })) };
+    if (['province', 'city'].includes(field.name) && result.options && form.value[field.name] && !result.options.some(row => row.value === form.value[field.name])) result.options.push({ value: String(form.value[field.name]), label: String(form.value[field.name]) });
+    if (field.type === 'number') {
+        if (field.name !== 'floor_number' && !['latitude', 'longitude'].includes(field.name)) result.min = 0;
+        if (field.name === 'latitude') { result.min = -90; result.max = 90; }
+        if (field.name === 'longitude') { result.min = -180; result.max = 180; }
+        if (field.name === 'bedrooms') result.max = 50;
+    }
+    return result;
+}));
+const groupFields = (index: number) => labels.value.length === 2 ? fields.value : fields.value.filter(field => primaryFields.has(field.name) === (index === 0));
+const activeFields = computed(() => groupFields(step.value));
+const review = computed(() => fields.value.filter(field => form.value[field.name] !== '' && form.value[field.name] !== null && form.value[field.name] !== undefined).map(field => ({ label: field.label, value: field.options?.find(option => String(option.value) === String(form.value[field.name]))?.label ?? display(form.value[field.name]) })));
+watch(() => form.value.province, (value, old) => { if (editor.value && !initializing && value !== old) form.value.city = ''; });
+const openEditor = async (requestedMode: 'create' | 'edit', row: CrudRecord | null = null) => {
+    if (saving.value || (requestedMode === 'create' ? !canCreate.value : !row || !allowed(row, 'update'))) return;
+    initializing = true; mode.value = requestedMode; selected.value = row; step.value = 0; formError.value = ''; formErrors.value = {}; discard.value = false; notice.value = '';
+    form.value = Object.fromEntries((props.resource.fields ?? []).map(field => [field.name, row ? readValue(row, field.name) ?? field.default ?? (field.type === 'checkbox' ? false : '') : field.default ?? (field.type === 'checkbox' ? false : '')]));
+    const complex = new URL(window.location.href).searchParams.get('complex_id');
+    if (requestedMode === 'create' && props.resourceKey === 'buildings') form.value.complex_id = props.structureUi.createParents.find(row => String(row.value) === complex)?.value ?? (props.structureUi.createParents.length === 1 ? props.structureUi.createParents[0].value : '');
+    snapshot.value = JSON.stringify(form.value); editor.value = true;
+    await focus('#structure-editor-title'); initializing = false;
+};
+const closeEditor = (force = false) => {
+    if (saving.value) return;
+    if (!force && JSON.stringify(form.value) !== snapshot.value) { discard.value = true; return; }
+    editor.value = false; discard.value = false; void focus('#structure-list-title');
+};
+const validate = (index: number) => {
+    const errors: Record<string, string[]> = {};
+    for (const field of groupFields(index)) {
+        const value = form.value[field.name];
+        if ((field.required || (mode.value === 'create' && field.required_on_create)) && (value === '' || value === null || value === undefined)) errors[field.name] = ['این فیلد را تکمیل کنید.'];
+        else if (field.type === 'number' && value !== '' && value !== null && value !== undefined) {
+            const number = Number(value);
+            if (!Number.isFinite(number) || (field.min !== undefined && number < field.min) || (field.max !== undefined && number > field.max) || ((!field.step || String(field.step) === '1') && !Number.isInteger(number))) errors[field.name] = ['مقدار عددی معتبر وارد کنید.'];
+        }
+    }
+    formErrors.value = errors; return Object.keys(errors).length === 0;
+};
+const submit = async () => {
+    if (saving.value || lookupsLoading.value) return;
+    formError.value = '';
+    if (step.value < reviewStep.value) {
+        if (validate(step.value)) { step.value++; await focus('#structure-step-title'); } else await focus('[aria-invalid="true"]');
+        return;
+    }
+    for (let index = 0; index < reviewStep.value; index++) if (!validate(index)) { step.value = index; await focus('[aria-invalid="true"]'); return; }
+    const operation = mode.value === 'edit' ? props.resource.update : props.resource.create;
+    if (!operation || (mode.value === 'edit' ? !selected.value || !allowed(selected.value, 'update') : !canCreate.value)) return;
+    saving.value = true;
+    try {
+        await apiRequest(operationUrl(operation.url, selected.value), { method: operation.method ?? (mode.value === 'edit' ? 'PATCH' : 'POST'), csrfToken: props.csrfToken, body: JSON.stringify(payloadFor(fields.value, form.value, mode.value)) });
+        saving.value = false; closeEditor(true); notice.value = 'اطلاعات ' + meta.value.singular + ' ذخیره شد.'; await loadRows(page.value);
+    } catch (error) {
+        formError.value = error instanceof Error ? error.message : 'اطلاعات ذخیره نشد.';
+        if (error instanceof ApiError) formErrors.value = error.errors;
+        const invalid = Object.keys(formErrors.value)[0]; step.value = invalid && labels.value.length === 3 && !primaryFields.has(invalid) ? 1 : 0;
+        await focus(Object.keys(formErrors.value).length ? '[aria-invalid="true"]' : '#structure-step-title');
+    } finally { saving.value = false; }
+};
+const remove = async () => {
+    if (deleting.value || !deleteTarget.value || !allowed(deleteTarget.value, 'delete') || !props.resource.delete) return;
+    deleting.value = true;
+    try {
+        await apiRequest(operationUrl(props.resource.delete.url, deleteTarget.value), { method: 'DELETE', csrfToken: props.csrfToken });
+        deleteTarget.value = null; notice.value = meta.value.singular + ' حذف شد.'; await loadRows(page.value);
+        if (!rows.value.length && page.value > 1) await loadRows(page.value - 1);
+    } catch (error) { pageError.value = error instanceof Error ? error.message : 'حذف انجام نشد.'; deleteTarget.value = null; }
+    finally { deleting.value = false; }
+};
+const beforeLeave = (event: BeforeUnloadEvent) => { if (editor.value && (saving.value || JSON.stringify(form.value) !== snapshot.value)) { event.preventDefault(); event.returnValue = ''; } };
+onMounted(async () => {
+    const url = new URL(window.location.href), requested = url.searchParams.get(meta.value.context);
+    contextId.value = props.structureUi.contexts.some(row => String(row.id) === requested) ? requested! : !requested && props.structureUi.contexts.length === 1 ? String(props.structureUi.contexts[0].id) : '';
+    await loadRows();
+    if (disposed) return;
+    if (url.searchParams.get('create') === '1' && canCreate.value) { updateUrl(); await openEditor('create'); }
+    window.addEventListener('beforeunload', beforeLeave);
+});
+onBeforeUnmount(() => { disposed = true; listTicket++; window.removeEventListener('beforeunload', beforeLeave); });
 </script>
 
 <template>
     <Head :title="resource.title" />
-
-    <div class="crud-page ui-crud-page" data-core-process-ui>
-        <nav class="crud-breadcrumb" aria-label="مسیر صفحه">
-            <a href="/management">داشبورد</a>
-            <span>/</span>
-            <a :href="operationsUrl">عملیات</a>
-            <span>/</span>
-            <strong>{{ resource.title }}</strong>
-        </nav>
-
-        <section class="crud-header ui-page-header">
-            <div class="crud-header__copy">
-                <span class="eyebrow">{{ groupTitle }}</span>
-                <h2>{{ resource.title }}</h2>
-                <p>{{ resource.description }}</p>
-                <div v-if="resource.note" class="crud-inline-note">{{ resource.note }}</div>
-            </div>
-
-            <div class="crud-header__actions">
-                <a :href="operationsUrl" class="crud-button crud-button--soft">همه ماژول‌ها</a>
-                <button
-                    v-if="canCreate"
-                    type="button"
-                    class="crud-button crud-button--primary"
-                    @click="openDrawer('create')"
-                >+ افزودن {{ core?.labels[resourceKey] ?? 'رکورد جدید' }}</button>
-            </div>
-        </section>
-
-        <div data-core-flow-host hidden />
-
-        <nav
-            v-if="siblingResources.length > 1"
-            class="crud-sibling-nav"
-            aria-label="زیرماژول‌های مرتبط"
-        >
-            <template v-for="sibling in siblingResources" :key="sibling.key">
-                <Link
-                    v-if="sibling.inertia"
-                    :href="sibling.url"
-                    :class="{ 'is-active': sibling.key === resourceKey }"
-                    prefetch
-                >{{ sibling.title }}</Link>
-                <a
-                    v-else
-                    :href="sibling.url"
-                    :class="{ 'is-active': sibling.key === resourceKey }"
-                >{{ sibling.title }}</a>
-            </template>
-        </nav>
-
-        <section class="crud-panel ui-data-panel">
-            <div class="crud-toolbar">
-                <div class="crud-search">
-                    <input
-                        v-model="search"
-                        type="search"
-                        placeholder="جستجو در رکوردها..."\n                        aria-label="جستجو در رکوردهای این بخش"
-                        @input="currentPage = 1"
-                    >
+    <div ref="root" class="ownership-page structure-page" data-structure-page>
+        <nav class="structure-breadcrumb" aria-label="مسیر صفحه"><a href="/management">داشبورد</a><span>/</span><a v-if="parent" :href="parentUrl">{{ parent.title }}</a><span v-if="parent">/</span><strong>{{ resource.title }}</strong></nav>
+        <header class="ownership-hero"><div class="ownership-hero__icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 21V5l8-2v18M12 8h8v13M7 8h2M7 12h2M7 16h2M15 11h2M15 15h2M2 21h20"/></svg></div><div><h2>{{ resource.title }}</h2><p>{{ resource.description }}</p></div></header>
+        <template v-if="!editor">
+            <section v-if="meta.context" class="ownership-card" aria-labelledby="structure-context-title">
+                <div class="ownership-card__heading"><div><h3 id="structure-context-title">انتخاب {{ resource.context?.[0]?.label }}</h3><p>اطلاعات فقط برای محدوده انتخاب‌شده نمایش داده می‌شود.</p></div></div>
+                <label class="ownership-field"><span>{{ resource.context?.[0]?.label }}</span><select v-model="contextId" data-select2="off" @change="changeContext"><option value="">انتخاب کنید</option><option v-for="item in structureUi.contexts" :key="item.id" :value="String(item.id)">{{ item.label }}</option></select></label>
+                <p v-if="!structureUi.contexts.length" class="ownership-empty">محدوده قابل دسترسی برای این بخش وجود ندارد.</p>
+            </section>
+            <section class="ownership-card" aria-labelledby="structure-list-title">
+                <div class="ownership-card__heading ownership-card__heading--split structure-toolbar"><div><h3 id="structure-list-title" tabindex="-1">فهرست {{ resource.title }}</h3><p>{{ context?.label || (resourceKey === 'buildings' ? 'اطلاعات ساختمان و دسترسی به بلوک‌ها، طبقات و واحدها' : 'ساختار و اطلاعات ثبت‌شده') }}</p></div><div class="ownership-actions"><a v-if="resourceKey === 'buildings' && structureUi.canSetup" class="ownership-button" :href="structureUi.setupUrl">راه‌اندازی ساختمان</a><button v-if="canCreate" type="button" class="ownership-button ownership-button--primary" data-structure-add @click="openEditor('create')">+ افزودن {{ meta.singular }}</button></div></div>
+                <div v-if="notice" class="structure-success" role="status">{{ notice }}</div>
+                <div v-if="ready" class="structure-tools"><label class="ownership-field"><span class="structure-sr-only">جست‌وجو در همین صفحه</span><input v-model="search" type="search" placeholder="جست‌وجو در همین صفحه"></label><button type="button" class="ownership-button" :disabled="loading" @click="loadRows(page)">به‌روزرسانی</button></div>
+                <div v-if="loading" class="ownership-empty" role="status" aria-live="polite">در حال دریافت اطلاعات…</div>
+                <div v-else-if="pageError" class="structure-error" role="alert"><p>{{ pageError }}</p><button class="ownership-button" type="button" @click="loadRows(page)">تلاش مجدد</button></div>
+                <div v-else-if="!ready" class="ownership-empty">ابتدا {{ resource.context?.[0]?.label }} را انتخاب کنید.</div>
+                <div v-else-if="!visibleRows.length" class="ownership-empty"><strong>{{ search ? 'نتیجه‌ای پیدا نشد.' : 'هنوز ' + meta.singular + ' ثبت نشده است.' }}</strong><p>{{ search ? 'عبارت جست‌وجو را تغییر دهید.' : canCreate ? 'با دکمه افزودن، اطلاعات را ثبت کنید.' : 'اطلاعات ثبت‌شده در این بخش نمایش داده می‌شود.' }}</p></div>
+                <div v-else class="structure-records">
+                    <article v-for="row in visibleRows" :key="String(row.id)" class="structure-record" :aria-label="rowTitle(row)">
+                        <div class="structure-record__heading"><div><span v-if="row.code" class="structure-code" dir="ltr">{{ row.code }}</span><h4>{{ rowTitle(row) }}</h4></div><span v-if="row.is_active !== undefined" class="structure-status" :class="{ 'is-inactive': !row.is_active }">{{ display(row.is_active) }}</span></div>
+                        <dl class="structure-record__info"><template v-for="column in (resource.columns ?? []).filter(column => !['id', 'title', 'code', 'is_active', 'sort_order', 'currency'].includes(column.key))" :key="column.key"><dt>{{ column.label }}</dt><dd>{{ column.key === 'usage_type' ? ({ residential: 'مسکونی', commercial: 'تجاری', office: 'اداری', other: 'سایر' } as Record<string, string>)[String(readValue(row, column.key))] || display(readValue(row, column.key)) : display(readValue(row, column.key)) }}</dd></template></dl>
+                        <div class="structure-record__actions"><a v-if="canViewChild(row) && child" :href="relatedUrl(row)" class="ownership-button ownership-button--primary" data-structure-child>مدیریت {{ child.title }}</a><button v-if="allowed(row, 'update')" type="button" class="ownership-button" data-structure-edit @click="openEditor('edit', row)">ویرایش اطلاعات</button><button v-if="allowed(row, 'delete')" type="button" class="ownership-button structure-delete" @click="deleteTarget = row">حذف</button></div>
+                    </article>
                 </div>
-                <div class="crud-toolbar__actions">
-                    <span class="ui-record-count">{{ totalRows ?? filteredRows.length }} رکورد؛ جستجو در صفحهٔ فعلی</span>
-                    <button
-                        type="button"
-                        class="crud-button crud-button--soft"
-                        :disabled="loading"
-                        @click="loadRows()"
-                    >{{ loading ? 'در حال بارگذاری...' : 'به‌روزرسانی' }}</button>
-                </div>
-            </div>
-
-            <div v-if="loading" class="ui-table-skeleton" aria-live="polite">
-                <span class="crud-state__loader" />
-                <p>در حال بارگذاری اطلاعات...</p>
-            </div>
-
-            <div v-else-if="pageError" class="crud-empty crud-empty--danger">
-                {{ pageError }}
-                <button type="button" class="crud-button crud-button--soft" @click="loadRows()">تلاش مجدد</button>
-            </div>
-
-            <div v-else-if="!filteredRows.length" class="ui-empty-state">
-                <div class="ui-empty-state__icon">⌕</div>
-                <strong>{{ search ? 'نتیجه‌ای پیدا نشد' : 'هنوز رکوردی ثبت نشده است' }}</strong>
-                <p>{{ search ? 'عبارت جستجو را تغییر دهید.' : 'برای شروع یک رکورد جدید ایجاد کنید.' }}</p>
-            </div>
-
-            <div v-else class="crud-table-wrap ui-table-wrap">
-                <table class="crud-table">
-                    <thead>
-                        <tr>
-                            <th v-for="column in resource.columns ?? []" :key="column.key">{{ column.label }}</th>
-                            <th class="crud-actions-column">عملیات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="row in visibleRows" :key="String(row.id)">
-                            <td v-for="column in resource.columns ?? []" :key="column.key">
-                                <span
-                                    v-if="typeof getByPath(row, column.key) === 'boolean'"
-                                    class="ui-status"
-                                    :class="getByPath(row, column.key) ? 'is-active' : 'is-inactive'"
-                                >{{ displayValue(getByPath(row, column.key)) }}</span>
-                                <template v-else>{{ displayValue(getByPath(row, column.key)) }}</template>
-                            </td>
-                            <td class="crud-actions-column">
-                                <div class="crud-row-actions">
-                                    <button
-                                        v-if="canUpdate"
-                                        type="button"
-                                        class="crud-row-action crud-row-action--edit"
-                                        @click="openDrawer('edit', row)"
-                                    >ویرایش</button>
-                                    <button
-                                        v-if="resource.delete"
-                                        type="button"
-                                        class="crud-row-action crud-row-action--danger"
-                                        @click="deleteTarget = row"
-                                    >حذف</button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div v-if="pageCount > 1" class="ui-pagination">
-                <button
-                    type="button"
-                    class="crud-button crud-button--soft"
-                    :disabled="currentPage <= 1"
-                    @click="currentPage--"
-                >قبلی</button>
-                <span>صفحه {{ currentPage }} از {{ pageCount }}</span>
-                <button
-                    type="button"
-                    class="crud-button crud-button--soft"
-                    :disabled="currentPage >= pageCount"
-                    @click="currentPage++"
-                >بعدی</button>
-            </div>
-        </section>
-        <nav v-if="remoteLastPage > 1" class="core-flow__actions" aria-label="صفحه‌بندی فهرست">
-            <button type="button" :disabled="loading || remotePage <= 1" @click="loadRows(remotePage - 1)">صفحهٔ قبلی فهرست</button>
-            <span>صفحه {{ remotePage }} از {{ remoteLastPage }}</span>
-            <button type="button" :disabled="loading || remotePage >= remoteLastPage" @click="loadRows(remotePage + 1)">صفحهٔ بعدی فهرست</button>
-        </nav>
-    </div>
-
-    <UiDrawer
-        :open="drawerOpen"
-        :title="drawerMode === 'edit' ? `ویرایش ${resource.title}` : `ثبت ${resource.title}`"
-        :eyebrow="drawerMode === 'edit' ? 'ویرایش رکورد' : 'رکورد جدید'"
-        :busy="saving || lookupsLoading"
-        :close-disabled="saving"
-        @close="closeDrawer"
-    >
-        <form id="inertiaCrudForm" @submit.prevent="save">
-            <DynamicForm
-                v-model="form"
-                :fields="resource.fields ?? []"
-                :mode="drawerMode"
-                :lookup-base="lookupBase"
-                :csrf-token="csrfToken"
-                :errors="formErrors"
-                @loading="lookupsLoading = $event"
-            />
-            <div v-if="formError" class="crud-form-error" role="alert">{{ formError }}</div>
-        </form>
-
-        <template #footer>
-            <button
-                type="button"
-                class="crud-button crud-button--soft"
-                :disabled="saving"
-                @click="closeDrawer"
-            >انصراف</button>
-            <button
-                type="submit"
-                form="inertiaCrudForm"
-                class="crud-button crud-button--primary"
-                :disabled="saving || lookupsLoading"
-            >{{ saving ? 'در حال ذخیره...' : (drawerMode === 'edit' ? 'ذخیره تغییرات' : 'ثبت رکورد') }}</button>
+                <nav v-if="ready && lastPage > 1" class="structure-pagination" aria-label="صفحه‌بندی"><button class="ownership-button" type="button" :disabled="loading || page <= 1" @click="loadRows(page - 1)">صفحه قبل</button><span>صفحه {{ page }} از {{ lastPage }} · {{ total }} مورد</span><button class="ownership-button" type="button" :disabled="loading || page >= lastPage" @click="loadRows(page + 1)">صفحه بعد</button></nav>
+            </section>
         </template>
-    </UiDrawer>
-
-    <UiConfirmDialog
-        :open="Boolean(deleteTarget)"
-        title="حذف رکورد"
-        message="این رکورد حذف می‌شود و ممکن است بازیابی آن امکان‌پذیر نباشد. آیا ادامه می‌دهید؟"
-        confirm-label="حذف رکورد"
-        :busy="deleting"
-        @cancel="!deleting && (deleteTarget = null)"
-        @confirm="remove"
-    />
-
-    <Transition name="ui-toast">
-        <div
-            v-if="toast"
-            class="ui-toast"
-            :class="`is-${toast.tone}`"
-            role="status"
-        >
-            <span>{{ toast.message }}</span>
-            <button type="button" aria-label="بستن" @click="toast = null">×</button>
-        </div>
-    </Transition>
+        <section v-else class="ownership-card structure-editor" aria-labelledby="structure-editor-title" :aria-busy="saving">
+            <div class="ownership-card__heading ownership-card__heading--split structure-toolbar"><div><h3 id="structure-editor-title" tabindex="-1">{{ mode === 'edit' ? 'ویرایش' : 'افزودن' }} {{ meta.singular }}</h3><p>{{ context?.label || 'اطلاعات موردنیاز را تکمیل کنید.' }}</p></div><button type="button" class="ownership-button" :disabled="saving" @click="closeEditor()">بازگشت به فهرست</button></div>
+            <nav class="ownership-flow structure-steps" :style="{ '--structure-steps': labels.length }" aria-label="مراحل ثبت اطلاعات"><span v-for="(label, index) in labels" :key="label" :class="{ 'is-current': index === step, 'is-complete': index < step }" :aria-current="index === step ? 'step' : undefined"><b>{{ index + 1 }}</b>{{ label }}</span></nav>
+            <h4 id="structure-step-title" tabindex="-1">{{ labels[step] }}</h4>
+            <form id="structure-form" novalidate @submit.prevent="submit">
+                <fieldset :disabled="saving"><DynamicForm v-if="step < reviewStep" v-model="form" :fields="activeFields" :mode="mode" :lookup-base="lookupBase" :csrf-token="csrfToken" :errors="formErrors" @loading="lookupsLoading = $event" /><dl v-else class="structure-review"><template v-for="item in review" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></template></dl></fieldset>
+                <div v-if="formError" class="structure-error" role="alert">{{ formError }}</div>
+                <div v-if="discard" class="structure-discard" role="alert"><p>تغییرات ذخیره نشده‌اند. از فرم خارج می‌شوید؟</p><button type="button" class="ownership-button" @click="discard = false">ادامه ویرایش</button><button type="button" class="ownership-button structure-delete" @click="closeEditor(true)">خروج بدون ذخیره</button></div>
+                <div class="ownership-actions structure-form-actions"><button v-if="step > 0" type="button" class="ownership-button" :disabled="saving" @click="step--; formError = ''; focus('#structure-step-title')">مرحله قبل</button><button type="submit" class="ownership-button ownership-button--primary" :disabled="saving || lookupsLoading" data-structure-next>{{ saving ? 'در حال ذخیره…' : step === reviewStep ? 'تأیید و ذخیره' : 'ادامه' }}</button></div>
+            </form>
+        </section>
+        <UiConfirmDialog :open="Boolean(deleteTarget)" :title="'حذف ' + meta.singular" :message="'«' + (deleteTarget ? rowTitle(deleteTarget) : '') + '» حذف شود؟ حذف موارد دارای زیرمجموعه ممکن است مجاز نباشد.'" confirm-label="حذف" :busy="deleting" @cancel="!deleting && (deleteTarget = null)" @confirm="remove" />
+    </div>
 </template>

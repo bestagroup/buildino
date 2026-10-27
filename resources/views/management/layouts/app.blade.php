@@ -93,8 +93,8 @@
 
     $structureTarget =
         collect([
-            'complexes',
             'buildings',
+            'complexes',
             'blocks',
             'floors',
             'units',
@@ -398,7 +398,7 @@
                                     )
                                 </span>
                                 <span class="nav-link__label">
-                                    ساختار مجتمع
+                                    ساختار ساختمان
                                 </span>
                             </a>
                         @endif

@@ -19,6 +19,8 @@
 @endpush
 
 @push('styles')
+    <link rel="stylesheet" href="{{ asset('css/buildino-unit-ownerships.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-building-structure.css') }}?v={{ filemtime(public_path('css/buildino-building-structure.css')) }}">
     <link
         rel="stylesheet"
         href="{{ asset('css/buildino-crud.css') }}"

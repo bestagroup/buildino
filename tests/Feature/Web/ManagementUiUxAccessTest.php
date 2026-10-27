@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\UserRoleAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Support\CreatesBuildingDomainData;
 use Tests\TestCase;
 
@@ -70,6 +71,29 @@ class ManagementUiUxAccessTest extends TestCase
             ->assertDontSee('crud-sibling-nav', false);
     }
 
+    public function test_structure_pages_share_the_new_interface_and_scope_contexts_and_actions(): void
+    {
+        $inside = $this->createBuildingGraph();
+        $outside = $this->createBuildingGraph();
+        $manager = $this->createUser();
+        $this->grant($manager->id, ['reports.dashboard.view', 'buildings.view', 'buildings.update', 'blocks.view', 'blocks.create', 'floors.view', 'units.view'], $inside['building']);
+        $this->actingAs($manager, 'web');
+        $this->get('/management/operations/buildings')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('management/operations/Resource')
+            ->where('structureUi.abilities.'.$inside['building']->id.'.update', true)
+            ->missing('structureUi.abilities.'.$outside['building']->id)
+            ->where('structureUi.canCreate', false));
+        foreach (['blocks', 'floors', 'units'] as $resource) {
+            $this->get('/management/operations/'.$resource)->assertOk()->assertInertia(fn (Assert $page) => $page
+                ->component('management/operations/Resource')
+                ->where('resourceKey', $resource)
+                ->has('structureUi.contexts', 1)
+                ->where('structureUi.contexts.0.building_id', $inside['building']->id)
+                ->where('structureUi.contexts.0.create', $resource === 'blocks')
+                ->where('structureUi.contexts.0.delete', false));
+        }
+    }
+
     public function test_scoped_building_manager_sees_building_navigation_but_not_global_user_admin(): void
     {
         $graph =
@@ -102,7 +126,7 @@ class ManagementUiUxAccessTest extends TestCase
         )
             ->assertOk()
             ->assertSee(
-                'ساختار مجتمع'
+                'ساختار ساختمان'
             )
             ->assertSee(
                 'مالی و کیف پول'
