@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'map' => [
+        'tileUrl' => env('MAP_TILE_URL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
+        'attribution' => env('MAP_TILE_ATTRIBUTION', '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'),
+        'center' => [32.4, 53.7],
+        'zoom' => 5,
+        'maxZoom' => 19,
+    ],
     /*
      * Resources move to Vue/Inertia one at a time. Keeping this list explicit
      * prevents an unfinished frontend component from changing an existing

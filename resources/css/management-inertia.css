@@ -101,6 +101,12 @@ body.ui-overlay-open {
     padding-inline-end: var(--ui-scrollbar-compensation, 0);
 }
 
+.ui-drawer.ui-drawer--dialog { inset: 0; margin: auto; width: min(960px, calc(100vw - 32px)); height: fit-content; max-height: calc(100dvh - 32px); border: 1px solid var(--border); border-radius: 20px; }
+.ui-drawer-fade-leave-active { pointer-events: none; }
+.ui-drawer-fade-enter-from .ui-drawer.ui-drawer--dialog,
+.ui-drawer-fade-leave-to .ui-drawer.ui-drawer--dialog { transform: translateY(12px); }
+@media (max-width: 600px) { .ui-drawer.ui-drawer--dialog { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); border-radius: 16px; } .ui-drawer--dialog .ui-drawer__body { padding: 14px; } }
+
 .ui-drawer-layer,
 .ui-dialog-layer {
     position: fixed;

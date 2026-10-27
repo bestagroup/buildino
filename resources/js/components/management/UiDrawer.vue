@@ -7,10 +7,12 @@ const props = withDefaults(defineProps<{
     eyebrow?: string;
     busy?: boolean;
     closeDisabled?: boolean;
+    presentation?: 'drawer' | 'dialog';
 }>(), {
     eyebrow: '',
     busy: false,
     closeDisabled: false,
+    presentation: 'drawer',
 });
 
 const emit = defineEmits<{
@@ -85,6 +87,8 @@ const unlockBody = (): void => {
 
 watch(() => props.open, async (open) => {
     if (!open) {
+        const drawer = drawerElement();
+        if (drawer) drawer.inert = true;
         unlockBody();
         returnFocus?.focus({ preventScroll: true });
         returnFocus = null;
@@ -108,6 +112,7 @@ watch(() => props.open, async (open) => {
     await nextTick();
 
     const drawer = drawerElement();
+    if (drawer) drawer.inert = false;
     const firstField = drawer?.querySelector<HTMLElement>(
         'input:not([disabled]), select:not([disabled]), textarea:not([disabled])',
     );
@@ -135,6 +140,7 @@ onBeforeUnmount(unlockBody);
 
                 <aside
                     class="ui-drawer"
+                    :class="{ 'ui-drawer--dialog': presentation === 'dialog' }"
                     role="dialog"
                     aria-modal="true"
                     :aria-labelledby="titleId"

@@ -1,0 +1,27 @@
+.location-picker { grid-column: 1 / -1; min-width: 0; }
+.location-picker__label { margin-block-end: 8px; color: var(--text-soft); font-size: 12px; font-weight: 700; }
+.location-picker__control { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface-soft); }
+.location-picker__control.has-error { border-color: var(--danger); }
+.location-picker__open { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; border: 0; padding: 0; background: transparent; color: var(--primary-700); text-align: start; font: inherit; cursor: pointer; }
+.location-picker__open > svg { flex: 0 0 auto; }
+.location-picker__open > span:first-of-type { flex: 1; min-width: 0; }
+.location-picker__open strong { display: block; font-size: 12px; font-weight: 700; }
+.location-picker__open small { display: block; margin-block-start: 5px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.location-picker__action { font-size: 12px; }
+.location-picker__clear { border: 0; padding: 8px; background: transparent; color: var(--danger); font: inherit; font-size: 11px; cursor: pointer; }
+.location-picker__error { display: block; margin-block: 8px; color: var(--danger); font-size: 12px; line-height: 1.8; }
+.location-dialog { min-width: 0; }
+.location-dialog__hint { margin-block: 0 12px; color: var(--muted); font-size: 12px; line-height: 1.9; }
+.location-dialog__tools { display: flex; flex-wrap: wrap; gap: 8px; margin-block-end: 12px; }
+.location-dialog__map-wrap { position: relative; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.location-dialog__map { height: clamp(260px, 46dvh, 480px); min-height: 260px; width: 100%; background: var(--surface-soft); direction: ltr; }
+.location-dialog__loading { position: absolute; top: 12px; left: 50%; z-index: 500; transform: translateX(-50%); padding: 8px 14px; max-width: 85%; border-radius: 10px; background: var(--surface); color: var(--text); box-shadow: var(--shadow-xs); font-size: 12px; pointer-events: none; }
+.location-dialog__error { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-block-start: 12px; color: var(--danger); font-size: 12px; }
+.location-dialog__selection { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 14px 0; color: var(--muted); font-size: 12px; line-height: 1.9; }
+.location-dialog__selection b { color: var(--text); font-size: 12px; font-weight: 600; }
+.location-dialog .leaflet-control-attribution { max-width: 100%; font-size: 10px; }
+.location-marker { background: none; border: 0; }
+.location-marker > span { position: relative; box-sizing: border-box; display: block; width: 28px; height: 28px; border: 3px solid #fff; border-radius: 50% 50% 50% 0; background: var(--primary-700, #1f527f); box-shadow: 0 3px 9px #0f172a40; transform: rotate(-45deg); }
+.location-marker > span::after { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: #fff; }
+.location-picker :is(button):focus-visible, .location-dialog :is(button):focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
+@media (max-width: 600px) { .location-dialog__map { height: 38dvh; } .location-picker__control { padding: 12px; } }

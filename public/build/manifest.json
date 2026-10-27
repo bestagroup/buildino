@@ -1,6 +1,34 @@
 {
+  "__commonjsHelpers-CqkleIqs.js": {
+    "file": "assets/_commonjsHelpers-CqkleIqs.js",
+    "name": "_commonjsHelpers"
+  },
+  "_leaflet-src-BkyRHh36.js": {
+    "file": "assets/leaflet-src-BkyRHh36.js",
+    "name": "leaflet-src",
+    "isDynamicEntry": true,
+    "imports": [
+      "__commonjsHelpers-CqkleIqs.js"
+    ]
+  },
+  "node_modules/leaflet/dist/images/layers-2x.png": {
+    "file": "assets/layers-2x-Bpkbi35X.png",
+    "src": "node_modules/leaflet/dist/images/layers-2x.png"
+  },
+  "node_modules/leaflet/dist/images/layers.png": {
+    "file": "assets/layers-BWBAp2CZ.png",
+    "src": "node_modules/leaflet/dist/images/layers.png"
+  },
+  "node_modules/leaflet/dist/images/marker-icon.png": {
+    "file": "assets/marker-icon-hN30_KVU.png",
+    "src": "node_modules/leaflet/dist/images/marker-icon.png"
+  },
+  "node_modules/leaflet/dist/leaflet.css": {
+    "file": "assets/leaflet-CLLlcC51.css",
+    "src": "node_modules/leaflet/dist/leaflet.css"
+  },
   "resources/css/app.css": {
-    "file": "assets/app-DLzXCxD3.css",
+    "file": "assets/app-DRN_UK8w.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -9,16 +37,19 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-COEe_HeM.js",
+    "file": "assets/app-QrUA0nUF.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
+    "imports": [
+      "__commonjsHelpers-CqkleIqs.js"
+    ],
     "css": [
       "assets/app-C9m1TAYK.css"
     ]
   },
   "resources/js/management.ts": {
-    "file": "assets/management-B1nB7zjq.js",
+    "file": "assets/management-CniLvWEf.js",
     "name": "management",
     "src": "resources/js/management.ts",
     "isEntry": true,
@@ -26,16 +57,22 @@
       "resources/js/pages/management/operations/Resource.vue"
     ],
     "css": [
-      "assets/management-K-X-oscF.css"
+      "assets/management-j_FooSGj.css"
     ]
   },
   "resources/js/pages/management/operations/Resource.vue": {
-    "file": "assets/Resource-DhQFsXfa.js",
+    "file": "assets/Resource-Bwsy0VkH.js",
     "name": "Resource",
     "src": "resources/js/pages/management/operations/Resource.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/management.ts"
+    ],
+    "dynamicImports": [
+      "_leaflet-src-BkyRHh36.js"
+    ],
+    "css": [
+      "assets/Resource-CDDWXYNe.css"
     ]
   }
 }

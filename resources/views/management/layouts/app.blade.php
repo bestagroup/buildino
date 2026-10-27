@@ -1420,6 +1420,7 @@
 ></script>
 
 @include('shared.core-flow-config')
+@include('shared.map-config')
 @stack('scripts')
 </body>
 </html>

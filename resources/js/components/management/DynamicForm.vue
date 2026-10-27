@@ -8,6 +8,8 @@ import {
 } from 'vue';
 import { apiRequest, rowsFromPayload } from '../../lib/management-api';
 import UiSwitch from './UiSwitch.vue';
+import UiLocationPicker from './UiLocationPicker.vue';
+import { asMapPoint } from '../../lib/location-picker';
 import type {
     CrudField,
     CrudOption,
@@ -52,7 +54,7 @@ const loadingFields = ref(new Set<string>());
 const requestIds = new Map<string, number>();
 const lookupCache = new Map<string, Promise<CrudOption[]>>();
 const lookupErrors = reactive<Record<string, string[]>>({});
-const optionalNames = new Set(['address', 'postal_code', 'latitude', 'longitude', 'sort_order', 'building_number', 'timezone', 'currency', 'floors_count', 'units_count', 'parking_count', 'storage_count', 'construction_year', 'bedrooms']);
+const optionalNames = new Set(['address', 'postal_code', 'sort_order', 'building_number', 'timezone', 'currency', 'floors_count', 'units_count', 'parking_count', 'storage_count', 'construction_year', 'bedrooms']);
 
 const eligibleFields = computed(() => props.fields.filter((field) => {
     if (props.mode === 'edit' && field.create_only) {
@@ -63,6 +65,9 @@ const eligibleFields = computed(() => props.fields.filter((field) => {
 }));
 const additionalFields = computed(() => props.groupOptional ? eligibleFields.value.filter((field) => optionalNames.has(field.name) && !field.required && !(props.mode === 'create' && field.required_on_create)) : []);
 const visibleFields = computed(() => eligibleFields.value.filter((field) => !additionalFields.value.includes(field)));
+const locationFields = computed(() => ['latitude', 'longitude'].every(name => visibleFields.value.some(field => field.name === name)));
+const inputFields = computed(() => visibleFields.value.filter(field => !locationFields.value || !['latitude', 'longitude'].includes(field.name)));
+const locationDisabled = computed(() => props.mode === 'edit' && props.fields.some(field => ['latitude', 'longitude'].includes(field.name) && field.readonly_on_edit));
 const additionalInvalid = computed(() => additionalFields.value.some((field) => props.errors[field.name]?.length));
 
 const inputDirection = (field: CrudField): 'ltr' | undefined => {
@@ -314,7 +319,7 @@ watch(
     <div class="ui-form-grid">
         <component
             :is="field.type === 'checkbox' ? 'div' : 'label'"
-            v-for="field in visibleFields"
+            v-for="field in inputFields"
             :key="field.name"
             class="ui-field"
             :class="{
@@ -419,6 +424,12 @@ watch(
             >{{ field.help }}</small>
             <button v-if="lookupErrors[field.name]" type="button" class="crud-button crud-button--soft" @click="loadLookup(field)">تلاش مجدد</button>
         </component>
+        <UiLocationPicker v-if="locationFields"
+            :model-value="asMapPoint(modelValue.latitude, modelValue.longitude)"
+            :disabled="locationDisabled"
+            :error="[...(errors.latitude ?? []), ...(errors.longitude ?? [])].join(' ')"
+            @update:model-value="emit('update:modelValue', { ...modelValue, latitude: $event?.latitude ?? null, longitude: $event?.longitude ?? null })"
+        />
         <details v-if="additionalFields.length" class="core-form-details" :open="additionalInvalid">
             <summary>اطلاعات تکمیلی (اختیاری)</summary>
             <DynamicForm
