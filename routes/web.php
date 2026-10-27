@@ -198,6 +198,9 @@ Route::middleware([
             ]
         )->name('dashboard');
 
+        Route::get('/at-a-glance', \App\Http\Controllers\Web\BuildingAtGlanceController::class)
+            ->name('at-a-glance');
+
         Route::get('/building-setup', BuildingSetupController::class)
             ->name('building-setup');
 
