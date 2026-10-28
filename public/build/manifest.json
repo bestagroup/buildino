@@ -49,7 +49,7 @@
     ]
   },
   "resources/js/management.ts": {
-    "file": "assets/management-CniLvWEf.js",
+    "file": "assets/management-CTNwXANo.js",
     "name": "management",
     "src": "resources/js/management.ts",
     "isEntry": true,
@@ -57,11 +57,11 @@
       "resources/js/pages/management/operations/Resource.vue"
     ],
     "css": [
-      "assets/management-j_FooSGj.css"
+      "assets/management-BIkFgU77.css"
     ]
   },
   "resources/js/pages/management/operations/Resource.vue": {
-    "file": "assets/Resource-Bwsy0VkH.js",
+    "file": "assets/Resource-CsHlcdwx.js",
     "name": "Resource",
     "src": "resources/js/pages/management/operations/Resource.vue",
     "isDynamicEntry": true,

@@ -3,11 +3,20 @@
 .structure-breadcrumb a { color: var(--primary-700); text-decoration: none; }
 .structure-toolbar { flex-wrap: wrap; }
 .structure-toolbar > .ownership-actions { flex: 0 1 auto; margin: 0; padding: 0; border: 0; }
+.structure-toolbar > div:first-child { flex: 1 1 220px; }
+.structure-context-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); align-items: start; gap: 16px; }
+.structure-context .ownership-empty { margin-block-start: 18px; }
+.structure-context-actions { justify-content: space-between; }
+.structure-context-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.structure-context-summary > div { display: grid; gap: 7px; min-width: 0; }
+.structure-context-summary span { color: var(--muted); font-size: 12px; }
+.structure-context-summary strong { color: var(--text); font-size: 14px; overflow-wrap: anywhere; }
 .structure-tools { display: flex; align-items: center; gap: 12px; margin-block-end: 20px; }
 .structure-tools .ownership-field { flex: 1; }
 .structure-records { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .structure-record { min-width: 0; padding: 20px; border: 1px solid var(--border); border-radius: 15px; background: var(--surface); }
 .structure-record__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.structure-record__heading > div { min-width: 0; }
 .structure-record h4 { margin: 5px 0 16px; color: var(--text); font-size: 17px; font-weight: 800; overflow-wrap: anywhere; }
 .structure-code { display: inline-block; color: var(--muted); font-size: 11px; }
 .structure-status { padding: 5px 10px; border-radius: 20px; color: var(--success); background: var(--success-soft); font-size: 11px; white-space: nowrap; }

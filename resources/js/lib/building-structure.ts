@@ -10,10 +10,14 @@ export const structure = {
 export type StructureKey = keyof typeof structure;
 export interface Abilities { create: boolean; update: boolean; delete: boolean; childView?: boolean }
 export interface StructureContext extends Abilities {
-    id: number; label: string; building_id: number; block_id: number | null; complex_id: number;
+    id: number; label: string; title?: string; building_id: number; block_id: number | null; complex_id: number;
 }
 export interface StructureUi {
     contexts: StructureContext[];
+    hierarchy?: {
+        buildings: { id: number; title: string; complex_id: number }[];
+        blocks: { id: number; title: string; building_id: number }[];
+    };
     abilities: Record<string, Abilities>;
     globalAbilities: Abilities;
     parentAbilities: Record<string, Abilities>;

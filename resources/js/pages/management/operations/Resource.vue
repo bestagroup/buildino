@@ -5,6 +5,7 @@ import DynamicForm from '../../../components/management/DynamicForm.vue';
 import UiConfirmDialog from '../../../components/management/UiConfirmDialog.vue';
 import { ApiError, apiRequest, rowsFromPayload } from '../../../lib/management-api';
 import { display, payloadFor, primaryFields, readValue, structure, type StructureKey, type StructureUi } from '../../../lib/building-structure';
+import { useStructureScope } from '../../../lib/structure-scope';
 import type { CrudField, CrudRecord, ResourcePageProps } from '../../../types/management';
 
 const props = defineProps<ResourcePageProps & { structureUi: StructureUi }>();
@@ -15,9 +16,10 @@ const page = ref(1), lastPage = ref(1), total = ref(0), contextId = ref('');
 const form = ref<CrudRecord>({}), selected = ref<CrudRecord | null>(null), step = ref(0);
 const formErrors = ref<Record<string, string[]>>({}), formError = ref(''), saving = ref(false), lookupsLoading = ref(false);
 const deleteTarget = ref<CrudRecord | null>(null), deleting = ref(false), discard = ref(false), snapshot = ref('');
-const notice = ref('');
+const notice = ref(''), choosingScope = ref(false);
 let listTicket = 0, initializing = false, disposed = false;
-const context = computed(() => props.structureUi.contexts.find(row => String(row.id) === contextId.value));
+const scope = useStructureScope(props.resourceKey as StructureKey, props.structureUi, contextId);
+const { buildingId, blockId, buildings, blocks, floors, context } = scope;
 const child = computed(() => props.siblingResources.find(row => row.key === meta.value.child));
 const parent = computed(() => props.siblingResources.find(row => row.key === meta.value.parent));
 const ready = computed(() => !meta.value.context || Boolean(context.value));
@@ -27,7 +29,11 @@ const canViewChild = (row: CrudRecord) => Boolean(child.value && (meta.value.con
 const labels = computed(() => ['complexes', 'buildings'].includes(props.resourceKey) ? ['مشخصات اصلی', 'نشانی و تنظیمات', 'بررسی نهایی'] : ['اطلاعات ' + meta.value.singular, 'بررسی نهایی']);
 const reviewStep = computed(() => labels.value.length - 1);
 const visibleRows = computed(() => rows.value.filter(row => JSON.stringify(row).toLocaleLowerCase('fa').includes(search.value.trim().toLocaleLowerCase('fa'))));
-const rowTitle = (row: CrudRecord) => String(row.title || (props.resourceKey === 'floors' ? 'طبقه ' + row.floor_number : props.resourceKey === 'units' ? 'واحد ' + row.unit_number : row.code || 'بدون عنوان'));
+const rowTitle = (row: CrudRecord) => {
+    const title = String(row.title || '');
+    const number = props.resourceKey === 'floors' ? 'طبقه ' + row.floor_number : props.resourceKey === 'units' ? 'واحد ' + row.unit_number : '';
+    return number ? number + (title && title !== number ? ' · ' + title : '') : title || String(row.code || 'بدون عنوان');
+};
 const operationUrl = (template: string, row: CrudRecord | null = null) => template.replace(/\{([^}]+)}/g, (_, name: string) => {
     const value = name === 'id' ? row?.id : name === meta.value.context ? contextId.value : row?.[name];
     if (value === null || value === undefined || value === '') throw new Error('ابتدا محدوده عملیات را انتخاب کنید.');
@@ -36,9 +42,10 @@ const operationUrl = (template: string, row: CrudRecord | null = null) => templa
 const focus = async (selector: string) => { await nextTick(); root.value?.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true }); };
 const updateUrl = () => {
     const url = new URL(window.location.href);
-    if (meta.value.context) contextId.value ? url.searchParams.set(meta.value.context, contextId.value) : url.searchParams.delete(meta.value.context);
-    if (meta.value.context === 'building_id') url.searchParams.delete('block_id');
-    if (['building_id', 'block_id'].includes(meta.value.context)) url.searchParams.delete('floor_id');
+    if (meta.value.context) {
+        for (const key of ['complex_id', 'building_id', 'block_id', 'floor_id']) url.searchParams.delete(key);
+        scope.query().forEach((value, key) => url.searchParams.set(key, value));
+    }
     url.searchParams.delete('create'); window.history.replaceState(window.history.state, '', url);
 };
 const loadRows = async (requestedPage = 1) => {
@@ -58,24 +65,33 @@ const loadRows = async (requestedPage = 1) => {
     } catch (error) { if (ticket === listTicket && !disposed) pageError.value = error instanceof Error ? error.message : 'اطلاعات دریافت نشد.'; }
     finally { if (ticket === listTicket && !disposed) loading.value = false; }
 };
-const changeContext = () => { search.value = ''; notice.value = ''; updateUrl(); void loadRows(); };
+const changeContext = (level: 'building' | 'block' | 'floor') => {
+    if (level === 'building') scope.selectBuilding();
+    if (level === 'block') scope.selectBlock();
+    listTicket++; rows.value = []; loading.value = false; pageError.value = ''; search.value = ''; notice.value = '';
+};
+const confirmContext = () => { if (ready.value) { choosingScope.value = false; updateUrl(); void loadRows(); void focus('#structure-list-title'); } };
 const relatedUrl = (row: CrudRecord) => {
     const url = new URL(child.value?.url || window.location.href, window.location.origin);
-    for (const key of ['complex_id', 'building_id', 'block_id', 'floor_id']) {
-        const value = context.value?.[key as 'building_id' | 'block_id' | 'complex_id'] ?? new URL(window.location.href).searchParams.get(key);
-        if (value) url.searchParams.set(key, String(value));
-    }
+    url.search = '';
+    if (meta.value.context) scope.query().forEach((value, key) => url.searchParams.set(key, value));
+    else if (props.resourceKey === 'buildings' && row.complex_id) url.searchParams.set('complex_id', String(row.complex_id));
     url.searchParams.set(meta.value.childContext, String(row.id));
     return url.pathname + url.search;
 };
 const parentUrl = computed(() => {
     const url = new URL(parent.value?.url || '/management/operations/buildings', window.location.origin);
-    if (props.resourceKey === 'floors' && context.value) url.searchParams.set('building_id', String(context.value.building_id));
-    if (props.resourceKey === 'units' && context.value?.block_id) url.searchParams.set('block_id', String(context.value.block_id));
+    if (props.resourceKey === 'floors' && buildingId.value) url.searchParams.set('building_id', buildingId.value);
+    if (props.resourceKey === 'units') {
+        if (buildingId.value) url.searchParams.set('building_id', buildingId.value);
+        if (blockId.value) url.searchParams.set('block_id', blockId.value);
+    }
     return url.pathname + url.search;
 });
 const fields = computed<CrudField[]>(() => (props.resource.fields ?? []).map(field => {
     let result = { ...field };
+    if (field.type === 'text' && ['unit_number', 'code', 'title'].includes(field.name)) result.maxlength = field.name === 'title' ? 255 : 100;
+    if (field.name === 'floor_number') result.help = 'همکف: ۰؛ طبقات زیرزمین: عدد منفی؛ طبقات بالاتر: عدد مثبت.';
     if (field.name === 'complex_id') {
         result = { ...result, lookup: undefined, options: [...props.structureUi.createParents] };
         if (mode.value === 'edit' && form.value.complex_id && !result.options?.some(option => String(option.value) === String(form.value.complex_id))) result.options?.push({ value: String(form.value.complex_id), label: display(readValue(selected.value || {}, 'complex.title')) });
@@ -113,7 +129,7 @@ const validate = (index: number) => {
     const errors: Record<string, string[]> = {};
     for (const field of groupFields(index)) {
         const value = form.value[field.name];
-        if ((field.required || (mode.value === 'create' && field.required_on_create)) && (value === '' || value === null || value === undefined)) errors[field.name] = ['این فیلد را تکمیل کنید.'];
+        if ((field.required || (mode.value === 'create' && field.required_on_create)) && (typeof value === 'string' ? !value.trim() : value === null || value === undefined)) errors[field.name] = ['این فیلد را تکمیل کنید.'];
         else if (field.type === 'number' && value !== '' && value !== null && value !== undefined) {
             const number = Number(value);
             if (!Number.isFinite(number) || (field.min !== undefined && number < field.min) || (field.max !== undefined && number > field.max) || ((!field.step || String(field.step) === '1') && !Number.isInteger(number))) errors[field.name] = ['مقدار عددی معتبر وارد کنید.'];
@@ -154,8 +170,10 @@ const remove = async () => {
 };
 const beforeLeave = (event: BeforeUnloadEvent) => { if (editor.value && (saving.value || JSON.stringify(form.value) !== snapshot.value)) { event.preventDefault(); event.returnValue = ''; } };
 onMounted(async () => {
-    const url = new URL(window.location.href), requested = url.searchParams.get(meta.value.context);
-    contextId.value = props.structureUi.contexts.some(row => String(row.id) === requested) ? requested! : !requested && props.structureUi.contexts.length === 1 ? String(props.structureUi.contexts[0].id) : '';
+    const url = new URL(window.location.href);
+    scope.initialize(url.searchParams);
+    choosingScope.value = !ready.value;
+    if (ready.value && meta.value.context) updateUrl();
     await loadRows();
     if (disposed) return;
     if (url.searchParams.get('create') === '1' && canCreate.value) { updateUrl(); await openEditor('create'); }
@@ -170,12 +188,21 @@ onBeforeUnmount(() => { disposed = true; listTicket++; window.removeEventListene
         <nav class="structure-breadcrumb" aria-label="مسیر صفحه"><a href="/management">داشبورد</a><span>/</span><a v-if="parent" :href="parentUrl">{{ parent.title }}</a><span v-if="parent">/</span><strong>{{ resource.title }}</strong></nav>
         <header class="ownership-hero"><div class="ownership-hero__icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 21V5l8-2v18M12 8h8v13M7 8h2M7 12h2M7 16h2M15 11h2M15 15h2M2 21h20"/></svg></div><div><h2>{{ resource.title }}</h2><p>{{ resource.description }}</p></div></header>
         <template v-if="!editor">
-            <section v-if="meta.context" class="ownership-card" aria-labelledby="structure-context-title">
-                <div class="ownership-card__heading"><div><h3 id="structure-context-title">انتخاب {{ resource.context?.[0]?.label }}</h3><p>اطلاعات فقط برای محدوده انتخاب‌شده نمایش داده می‌شود.</p></div></div>
-                <label class="ownership-field"><span>{{ resource.context?.[0]?.label }}</span><select v-model="contextId" data-select2="off" @change="changeContext"><option value="">انتخاب کنید</option><option v-for="item in structureUi.contexts" :key="item.id" :value="String(item.id)">{{ item.label }}</option></select></label>
-                <p v-if="!structureUi.contexts.length" class="ownership-empty">محدوده قابل دسترسی برای این بخش وجود ندارد.</p>
+            <section v-if="meta.context" class="ownership-card structure-context" aria-labelledby="structure-context-title">
+                <template v-if="choosingScope">
+                    <div class="ownership-card__heading"><div><h3 id="structure-context-title">انتخاب {{ resource.context?.[0]?.label }}</h3><p>از ساختمان شروع کنید و محل {{ meta.singular }} را مشخص کنید.</p></div></div>
+                    <div class="structure-context-grid">
+                        <label class="ownership-field"><span>ساختمان</span><select v-model="buildingId" data-structure-building data-select2="off" @change="changeContext('building')"><option value="">انتخاب ساختمان</option><option v-for="item in buildings" :key="item.id" :value="String(item.id)">{{ item.title }}</option></select></label>
+                        <label v-if="resourceKey !== 'blocks'" class="ownership-field"><span>بلوک</span><select v-model="blockId" data-structure-block data-select2="off" :disabled="!buildingId || !blocks.length" @change="changeContext('block')"><option value="">{{ !buildingId ? 'ابتدا ساختمان را انتخاب کنید' : blocks.length ? 'انتخاب بلوک' : 'بلوکی ثبت نشده است' }}</option><option v-for="item in blocks" :key="item.id" :value="String(item.id)">{{ item.title }}</option></select></label>
+                        <label v-if="resourceKey === 'units'" class="ownership-field"><span>طبقه</span><select v-model="contextId" data-structure-floor data-select2="off" :disabled="!blockId || !floors.length" @change="changeContext('floor')"><option value="">{{ !blockId ? 'ابتدا بلوک را انتخاب کنید' : floors.length ? 'انتخاب طبقه' : 'طبقه‌ای ثبت نشده است' }}</option><option v-for="item in floors" :key="item.id" :value="String(item.id)">{{ item.title || item.label }}</option></select></label>
+                    </div>
+                    <p v-if="!buildings.length" class="ownership-empty">ساختمان قابل دسترسی برای این بخش وجود ندارد.</p>
+                    <p v-else-if="buildingId && !ready && ((resourceKey !== 'blocks' && !blocks.length) || (resourceKey === 'units' && blockId && !floors.length))" class="ownership-empty">{{ resourceKey === 'units' && blocks.length ? 'طبقه‌ای' : 'بلوکی' }} ثبت نشده است. {{ parent ? 'ابتدا آن را در بخش مربوط ثبت کنید.' : 'برای تکمیل ساختار با مدیر ساختمان هماهنگ کنید.' }}</p>
+                    <div class="ownership-actions structure-context-actions"><a v-if="parent" class="ownership-button" :href="parentUrl">مدیریت {{ parent.title }}</a><button type="button" class="ownership-button ownership-button--primary" data-structure-context-confirm :disabled="!ready" @click="confirmContext">نمایش {{ resource.title }}</button></div>
+                </template>
+                <div v-else class="structure-context-summary"><div><span id="structure-context-title">{{ resource.context?.[0]?.label }} انتخاب‌شده</span><strong>{{ context?.label }}</strong></div><button type="button" class="ownership-button" data-structure-change-context @click="choosingScope = true; focus('[data-structure-building]')">تغییر محدوده</button></div>
             </section>
-            <section class="ownership-card" aria-labelledby="structure-list-title">
+            <section v-if="!choosingScope" class="ownership-card" aria-labelledby="structure-list-title">
                 <div class="ownership-card__heading ownership-card__heading--split structure-toolbar"><div><h3 id="structure-list-title" tabindex="-1">فهرست {{ resource.title }}</h3><p>{{ context?.label || (resourceKey === 'buildings' ? 'اطلاعات ساختمان و دسترسی به بلوک‌ها، طبقات و واحدها' : 'ساختار و اطلاعات ثبت‌شده') }}</p></div><div class="ownership-actions"><a v-if="resourceKey === 'buildings' && structureUi.canSetup" class="ownership-button" :href="structureUi.setupUrl">راه‌اندازی ساختمان</a><button v-if="canCreate" type="button" class="ownership-button ownership-button--primary" data-structure-add @click="openEditor('create')">+ افزودن {{ meta.singular }}</button></div></div>
                 <div v-if="notice" class="structure-success" role="status">{{ notice }}</div>
                 <div v-if="ready" class="structure-tools"><label class="ownership-field"><span class="structure-sr-only">جست‌وجو در همین صفحه</span><input v-model="search" type="search" placeholder="جست‌وجو در همین صفحه"></label><button type="button" class="ownership-button" :disabled="loading" @click="loadRows(page)">به‌روزرسانی</button></div>

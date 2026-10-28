@@ -87,11 +87,20 @@ class ManagementUiUxAccessTest extends TestCase
             $this->get('/management/operations/'.$resource)->assertOk()->assertInertia(fn (Assert $page) => $page
                 ->component('management/operations/Resource')
                 ->where('resourceKey', $resource)
+                ->has('structureUi.hierarchy.buildings', 1)
+                ->where('structureUi.hierarchy.buildings.0.id', $inside['building']->id)
                 ->has('structureUi.contexts', 1)
                 ->where('structureUi.contexts.0.building_id', $inside['building']->id)
                 ->where('structureUi.contexts.0.create', $resource === 'blocks')
                 ->where('structureUi.contexts.0.delete', false));
         }
+        $emptyBlock = $inside['building']->blocks()->create(['title' => 'بلوک بدون طبقه', 'sort_order' => 1, 'is_active' => true]);
+        $this->get('/management/operations/units?building_id='.$inside['building']->id.'&block_id='.$emptyBlock->id)
+            ->assertOk()->assertInertia(fn (Assert $page) => $page
+                ->component('management/operations/Resource')
+                ->has('structureUi.contexts', 1)
+                ->has('structureUi.hierarchy.blocks', 2)
+                ->where('structureUi.hierarchy.blocks.1.id', $emptyBlock->id));
     }
 
     public function test_scoped_building_manager_sees_building_navigation_but_not_global_user_admin(): void

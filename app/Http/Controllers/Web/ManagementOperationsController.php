@@ -241,7 +241,8 @@ class ManagementOperationsController extends Controller
     private function structureUi(string $resource, PermissionChecker $permissions): array
     {
         $user = request()->user();
-        $buildingIds = app(ManagementDashboardAccessService::class)->accessibleBuildings($user)->pluck('id')->all();
+        $accessibleBuildings = app(ManagementDashboardAccessService::class)->accessibleBuildings($user);
+        $buildingIds = $accessibleBuildings->pluck('id')->all();
         $abilities = fn ($scope): array => collect(['create', 'update', 'delete'])
             ->mapWithKeys(fn (string $action): array => [$action => $permissions->allows($user, "$resource.$action", $scope)])->all();
         $childPermission = match ($resource) {
@@ -270,6 +271,7 @@ class ManagementOperationsController extends Controller
                     'building_id' => $building->id,
                     'block_id' => $block?->id,
                     'complex_id' => $building->complex_id,
+                    'title' => $resource === 'units' ? ($parent->title ?: 'طبقه '.$parent->floor_number) : $parent->title,
                     ...$abilities($building),
                     'childView' => $childAccess($building),
                 ];
@@ -282,6 +284,17 @@ class ManagementOperationsController extends Controller
 
         return [
             'contexts' => $contexts,
+            'hierarchy' => [
+                'buildings' => in_array($resource, ['blocks', 'floors', 'units'], true)
+                    ? $accessibleBuildings->filter(fn (Building $building): bool => $permissions->allows($user, "$resource.view", $building))
+                        ->map(fn (Building $building): array => ['id' => $building->id, 'title' => $building->title, 'complex_id' => $building->complex_id])->values()
+                    : [],
+                'blocks' => $resource === 'units'
+                    ? Block::query()->whereIn('building_id', $buildingIds)->orderBy('sort_order')->orderBy('id')->get()
+                        ->filter(fn (Block $block): bool => $permissions->allows($user, 'units.view', $accessibleBuildings->firstWhere('id', $block->building_id)))
+                        ->map(fn (Block $block): array => ['id' => $block->id, 'title' => $block->title, 'building_id' => $block->building_id])->values()
+                    : [],
+            ],
             'abilities' => $roots->filter(fn ($model): bool => $permissions->allows($user, "$resource.view", $model))
                 ->mapWithKeys(fn ($model): array => [$model->id => [...$abilities($model), 'childView' => $childAccess($model)]])->all(),
             'globalAbilities' => [...$abilities(null), 'childView' => $childAccess(null)],

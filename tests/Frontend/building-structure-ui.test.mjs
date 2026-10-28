@@ -60,7 +60,8 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
         return reply({ data: [{ ...samples[activeKey], title: url.pathname.includes('/2/') ? 'محدوده دوم' : samples[activeKey].title }], meta: { current_page: 1, last_page: 1, total: 1 } });
     };
     const props = key => ({ resourceKey: key, resource: configs[key], groupTitle: 'ساختار ساختمان', operationsUrl: '/management/operations', lookupBase: '/management/lookups', csrfToken: 'test', siblingResources: keys.map(key => ({ key, title: configs[key].title, url: '/management/operations/' + key, inertia: true })), structureUi: {
-        contexts: ['blocks','floors','units'].includes(key) ? [1,2].map(id => ({ id, label: 'ساختمان ' + id + ' / محدوده ' + id, building_id: id, block_id: id, complex_id: 4, ...abilities })) : [],
+        contexts: ['blocks','floors','units'].includes(key) ? [1,2].map(id => ({ id, title: key === 'units' ? 'طبقه ' + id : 'بلوک ' + id, label: 'ساختمان ' + id + ' / محدوده ' + id, building_id: id, block_id: id, complex_id: 4, ...abilities })) : [],
+        hierarchy: { buildings: [1,2].map(id => ({ id, title:'ساختمان ' + id, complex_id:4 })), blocks:[1,2].map(id => ({ id, title:'بلوک ' + id, building_id:id })) },
         abilities: { 11: abilities }, globalAbilities: abilities, parentAbilities: { 4: abilities }, canCreate: true, createParents: [{ value: 4, label: 'مجتمع بهار' }], canSetup: true, setupUrl: '/management/building-setup',
         locations: [{ name: 'تهران', cities: [{ name: 'تهران', label: 'تهران' }] }, { name: 'اصفهان', cities: [{ name: 'کاشان', label: 'کاشان' }] }],
     } });
@@ -117,7 +118,7 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
         expect($('[name="city"]').value === 'تهران', 'Existing city lost'); await input('province','اصفهان'); await tick(); expect($('[name="city"]').value === '', 'City did not reset with province'); submit(); await tick(); expect(!$('.structure-review'), 'City validation skipped'); await input('city','کاشان'); submit(); await tick(); submit(); await until(() => $('[data-structure-edit]')); expect(posts.at(-1).body.city === 'کاشان', 'City name not submitted');
         for (const key of ['blocks','floors','units']) {
             const before = requests.length; await mount(key); expect(!$('[data-structure-add]') && requests.length === before, 'Unselected context issued request');
-            { const el = $('.structure-page select'); el.value = '1'; el.dispatchEvent(new Event('change', { bubbles: true })); }
+            { const el = $('[data-structure-building]'); el.value = '1'; el.dispatchEvent(new Event('change', { bubbles: true })); await tick(); $('[data-structure-context-confirm]').click(); }
             await until(() => $('[data-structure-edit]')); expect(!requests.at(-1).includes('{'), 'Context placeholder not interpolated');
             if (key !== 'units') expect($('[data-structure-child]').href.includes(key === 'blocks' ? 'block_id=11' : 'floor_id=11'), 'Child scope missing');
             $('[data-structure-add]').click(); await tick();
@@ -127,7 +128,28 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
             submit(); await tick(); expect($('.structure-review'), 'Child form cannot advance: ' + key); submit(); await until(() => $('[data-structure-edit]')); expect(posts.at(-1).path.includes('/1/'), 'Saved under wrong parent');
         }
         await mount('blocks','?building_id=1'); await until(() => $('[data-structure-edit]'));
-        holdList = true; $('.structure-tools button').click(); await until(() => releaseList); const select = $('.structure-page select'); select.value = '2'; select.dispatchEvent(new Event('change', { bubbles: true })); await until(() => $('.structure-record h4')?.textContent.includes('دوم')); releaseList(); await tick(); expect($('.structure-record h4').textContent.includes('دوم'), 'Stale response replaced new scope');
+        holdList = true; $('.structure-tools button').click(); await until(() => releaseList); $('[data-structure-change-context]').click(); await tick(); const select = $('[data-structure-building]'); select.value = '2'; select.dispatchEvent(new Event('change', { bubbles: true })); await tick(); $('[data-structure-context-confirm]').click(); await until(() => $('.structure-record h4')?.textContent.includes('دوم')); releaseList(); await tick(); expect($('.structure-record h4').textContent.includes('دوم'), 'Stale response replaced new scope');
+        holdList = false;
+        for (const [key, query] of [['floors','?building_id=1'],['units','?building_id=1&block_id=1'],['units','?block_id=1'],['units','?floor_id=1']]) {
+            await mount(key, query); await until(() => $('[data-structure-edit]')); expect(requests.at(-1).includes('/1/'), 'Ancestor scope ignored');
+            expect($('.structure-context-summary') && !$('[data-structure-building]'), 'Selected context must be compact');
+        }
+        for (const [key, query] of [['floors','?building_id=2&block_id=1'],['units','?building_id=2&block_id=1&floor_id=1'],['units','?floor_id=999']]) {
+            const before = requests.length; await mount(key, query); expect(requests.length === before && !$('[data-structure-edit]') && $('[data-structure-context-confirm]').disabled, 'Invalid or conflicting branch loaded records');
+        }
+        {
+            const multi = props('units'); multi.structureUi.contexts.push({ ...multi.structureUi.contexts[0], id:3, label:'طبقه دوم' });
+            history.replaceState({},'', '/management/operations/units?building_id=1&block_id=1'); const before = requests.length; window.mountStructure(multi); await tick();
+            expect(requests.length === before && !$('[data-structure-floor]').disabled && $('[data-structure-context-confirm]').disabled, 'Multiple floors must require explicit choice');
+            const floor = $('[data-structure-floor]'); floor.value = '3'; floor.dispatchEvent(new Event('change', { bubbles:true })); await tick(); $('[data-structure-context-confirm]').click(); await until(() => $('[data-structure-edit]'));
+            expect(requests.at(-1).includes('/floors/3/units') && location.search.includes('building_id=1') && location.search.includes('block_id=1') && location.search.includes('floor_id=3'), 'Selected floor hierarchy lost');
+        }
+        {
+            const empty = props('units'); empty.structureUi.hierarchy.blocks.push({ id:3, title:'بلوک بدون طبقه', building_id:1 });
+            history.replaceState({},'', '/management/operations/units?building_id=1&block_id=3'); const before = requests.length; window.mountStructure(empty); await tick();
+            expect(requests.length === before && $('[data-structure-floor]').disabled && $('#app').textContent.includes('طبقه‌ای ثبت نشده'), 'Empty branch needs an accurate message');
+            expect($('.structure-context-actions a').href.includes('block_id=3'), 'Parent creation link lost empty block');
+        }
         const limited = props('blocks'); limited.structureUi.contexts[0] = { ...limited.structureUi.contexts[0], create:false, update:false, delete:false }; history.replaceState({},'', '/management/operations/blocks?building_id=1'); holdList = false; window.mountStructure(limited); await until(() => $('.structure-record')); expect(!$('[data-structure-add]') && !$('[data-structure-edit]'), 'Read-only context exposed write actions');
         await mount('buildings'); await until(() => $('[data-structure-edit]')); $('[data-structure-edit]').click(); await tick(); await input('title','تغییر ذخیره‌نشده'); $('.structure-toolbar button').click(); await tick(); expect($('.structure-discard'), 'Unsaved changes discarded silently');
         expect(document.documentElement.scrollWidth <= innerWidth, 'Layout overflow');
@@ -139,6 +161,13 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
         const readonly = await window.makeLegacySwitch('edit'); document.body.append(readonly); readonly.querySelector('input').click(); expect(readonly.querySelector('input').checked && readonly.querySelector('input').disabled, 'Readonly switch is interactive'); readonly.remove();
         if (['editor', 'switch', 'map'].includes(${JSON.stringify(process.env.STRUCTURE_CAPTURE || '')})) { $('.structure-discard button').click(); if (['switch', 'map'].includes(${JSON.stringify(process.env.STRUCTURE_CAPTURE || '')})) { submit(); await tick(); } if (${JSON.stringify(process.env.STRUCTURE_CAPTURE || '')} === 'map') { $('[data-location-open]').click(); await tick(); await until(() => !$('[data-location-center]').disabled); $('[data-location-center]').click(); await new Promise(resolve => setTimeout(resolve, 300)); } }
         else { $('.structure-discard button:last-child').click(); }
+        const captureKey = ${JSON.stringify(process.env.STRUCTURE_CAPTURE || '')};
+        if (['blocks','floors','units','block-editor','scope'].includes(captureKey)) {
+            await mount(captureKey === 'block-editor' ? 'blocks' : captureKey === 'scope' ? 'units' : captureKey, captureKey === 'scope' ? '' : '?building_id=1&block_id=1&floor_id=1');
+            if (captureKey !== 'scope') await until(() => $('[data-structure-edit]'));
+            if (captureKey === 'block-editor') { $('[data-structure-edit]').click(); await tick(); }
+            window.scrollTo(0,0);
+        }
         $('#result').dataset.ok = 'true'; $('#result').textContent = 'Passed';
     })().catch(error => { $('#result').textContent = error.stack; });
     </script></html>`;
