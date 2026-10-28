@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="robots" content="noindex,nofollow">
     <meta name="color-scheme" content="light dark">
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-logo.svg') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
 
     <title>
         @yield('title', 'پرتال Buildino')
@@ -29,6 +29,7 @@
     @stack('styles')
 
     <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}?v={{ filemtime(public_path('css/buildino-brand.css')) }}">
 
     <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
 </head>
@@ -122,16 +123,8 @@
             href="{{ route('portal.dashboard') }}"
             class="portal-brand"
         >
-            <span class="portal-brand__mark">
-                B
-            </span>
-
-            <span class="portal-brand__copy">
-                <strong>Buildino</strong>
-                <small>
-                    پرتال کاربران
-                </small>
-            </span>
+            <img class="buildino-brand-image buildino-brand-image--horizontal-light" src="{{ asset('images/buildino-logo-horizontal-light.svg') }}" alt="بیلدینو Buildino" decoding="async">
+            <span class="buildino-brand-context">پرتال کاربران</span>
         </a>
 
         <div class="portal-user-card">

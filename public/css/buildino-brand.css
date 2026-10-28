@@ -5,7 +5,8 @@
     object-fit: contain;
     flex-shrink: 0;
 }
-.sidebar__brand .buildino-brand-image--horizontal-light {
+.sidebar__brand .buildino-brand-image--horizontal-light,
+.portal-brand .buildino-brand-image--horizontal-light {
     width: 170px;
     height: 76px;
 }
@@ -18,7 +19,6 @@ body.sidebar-collapsed .sidebar__brand .buildino-brand-compact { display: block;
     align-items: center;
     gap: 0;
 }
-.portal-brand .buildino-brand-image--horizontal-light { width: 162px; height: 88px; }
 .buildino-brand-context { color: rgba(255,255,255,.68); font-size: 12px; }
 .login-brand {
     width: 90px;
