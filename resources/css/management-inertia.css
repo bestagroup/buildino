@@ -300,6 +300,15 @@ body.ui-overlay-open {
     padding: 0;
 }
 
+.ui-field--checkbox .buildino-switch {
+    height: var(--ui-control-height, 46px);
+    min-height: var(--ui-control-height, 46px);
+}
+
+.ui-field--checkbox .buildino-switch__state {
+    margin-inline-start: auto;
+}
+
 .ui-checkbox {
     display: inline-flex;
     align-items: center;

@@ -328,8 +328,8 @@ watch(
                 'has-error': errors?.[field.name]?.length,
             }"
         >
-            <span v-if="field.type !== 'checkbox'" class="ui-field__label">
-                {{ field.label }}
+            <span class="ui-field__label">
+                {{ field.name === 'is_active' ? 'وضعیت' : field.label }}
                 <b v-if="field.required || (mode === 'create' && field.required_on_create)">*</b>
             </span>
 
@@ -378,6 +378,7 @@ watch(
 
             <UiSwitch
                 v-else-if="field.type === 'checkbox'"
+                hide-label
                 :id="fieldDomId(field)"
                 :name="field.name"
                 :label="field.name === 'is_active' ? 'وضعیت' : field.label"
