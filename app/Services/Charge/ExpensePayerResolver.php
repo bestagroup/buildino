@@ -8,6 +8,7 @@ use App\Models\Unit;
 use App\Models\UnitOccupancy;
 use App\Models\UnitOwnership;
 use App\Models\User;
+use App\Support\Jalali\JalaliDateFormatter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
 
@@ -28,11 +29,18 @@ final class ExpensePayerResolver
                 ?? $this->owner($unit, $period);
 
         if (! $payer) {
+            $dates = new JalaliDateFormatter();
+            $unit->loadMissing('floor.block.building');
+
             throw ValidationException::withMessages([
                 'payer_responsibility' => sprintf(
-                    'برای واحد %d هیچ %s معتبری در بازه دوره شارژ یافت نشد.',
+                    'برای واحد %s (شناسه %d) در ساختمان «%s»، مسئول پرداخت %s در بازهٔ %s تا %s یافت نشد. تاریخ شروع و پایان سابقهٔ سکونت یا مالکیت باید با این دوره هم‌پوشانی داشته باشد؛ وجود ساکن فعلی به‌تنهایی کافی نیست. اگر تاریخ ثبت اطلاعات به‌جای تاریخ واقعی شروع وارد شده، سابقه را اصلاح کنید.',
+                    $unit->unit_number,
                     $unit->getKey(),
-                    $responsibility->label()
+                    $unit->floor?->block?->building?->title ?? 'نامشخص',
+                    $responsibility->label(),
+                    $dates->date($period->period_start),
+                    $dates->date($period->period_end)
                 ),
             ]);
         }
