@@ -1,31 +1,62 @@
 .facility-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-block-end: 22px; }
-.facility-steps button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 48px; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
+.facility-steps button { display: flex; align-items: center; justify-content: flex-start; gap: 9px; min-width: 0; min-height: 54px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); color: var(--muted); font: inherit; font-size: 12px; text-align: start; line-height: 1.7; cursor: pointer; }
+.facility-steps button b { display: grid; place-items: center; flex: 0 0 27px; height: 27px; border-radius: 50%; background: var(--surface-strong, var(--surface)); font-size: 12px; }
+.facility-steps button[aria-current="step"] b { background: var(--primary-700); color: #fff; }
 .facility-steps button[aria-current="step"] { background: var(--primary-50); border-color: var(--primary-500); color: var(--primary-700); font-weight: 800; }
 .facility-steps button:focus-visible { outline: 2px solid var(--primary-500); outline-offset: 2px; }
 .facility-steps button:disabled { opacity: .55; cursor: default; }
-.facility-days { display: flex; flex-wrap: wrap; gap: 8px; border: 0; padding: 0; margin: 0; }
+.facility-days { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; min-width: 0; border: 0; padding: 0; margin: 0; }
 .facility-days legend { margin-block-end: 10px; color: var(--text-soft); font-size: 13px; }
-.facility-days label { display: flex; align-items: center; gap: 6px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-soft); color: var(--text-soft); font-size: 12px; cursor: pointer; }
+.facility-days label { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; margin: 0; padding: 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-soft); color: var(--text-soft); font-size: 12px; cursor: pointer; }
 .facility-days label:has(input:checked) { border-color: var(--primary-500); background: var(--primary-50); color: var(--primary-700); }
-.facility-days input { accent-color: var(--primary-700); }
+.facility-days input { flex: 0 0 16px; width: 16px; height: 16px; margin: 0; accent-color: var(--primary-700); }
+.facility-days label:focus-within { outline: 2px solid var(--primary-500); outline-offset: 2px; }
+.facility-days:disabled label { opacity: .6; cursor: not-allowed; }
 .facility-block { margin-block-start: 25px; padding-block-start: 20px; border-top: 1px solid var(--border); }
 .facility-block h4 { margin: 0 0 14px; color: var(--text); font-size: 15px; }
 .facility-block .ownership-record-list { margin-block: 16px; }
 .facility-ready { color: var(--success); }
-.facility-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.ownership-card__heading > .facility-toolbar { display: flex; flex: 0 1 auto; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 .facility-step-heading { margin-block-end: 24px; padding-block-end: 18px; border-bottom: 1px solid var(--border); }
 .facility-step-heading h4, .facility-form-section h4 { margin: 0; color: var(--text); font-size: 16px; font-weight: 700; }
-.facility-form-section { margin-block-start: 22px; padding: 20px; border: 1px solid var(--border); border-radius: 14px; }
+.facility-planning-forms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 18px; margin-block-start: 22px; }
+.facility-form-section { min-width: 0; margin: 0; padding: 20px; border: 1px solid var(--border); border-radius: 14px; }
 .facility-form-section > .ownership-form-hint { margin-block: 8px 18px; }
 .facility-schedule-group { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; }
 .facility-schedule-group > .ownership-record:first-child { background: var(--primary-50); border-color: transparent; }
 .facility-navigation { justify-content: space-between; }
 .facility-rule-hint { margin-block: 0 18px; }
 .facility-step-heading > .ownership-button { margin-block-start: 12px; }
+.facility-step-heading > .ownership-form-hint { margin-block-start: 8px; }
+.facility-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; margin-block-start: 8px; padding-block-start: 20px; border-block-start: 1px solid var(--border); }
+.facility-settings > :is(h4, p) { grid-column: 1 / -1; margin: 0; }
+.facility-settings > h4 { color: var(--text); font-size: 14px; font-weight: 700; }
+.facility-search { max-width: 560px; }
+.facility-pagination { justify-content: space-between; }
+[data-facility-page] .ownership-card__heading { flex-wrap: wrap; }
+[data-facility-page] .ownership-card__heading > div:first-child { flex: 1 1 220px; }
+[data-facility-page] .ownership-form-grid { align-items: start; }
+[data-facility-page] form > fieldset { min-width: 0; width: 100%; margin: 0; padding: 0; border: 0; }
+[data-facility-page] .ownership-field > span:first-child { min-height: 23px; line-height: 1.75; }
+[data-facility-page] .ownership-field :is(input:not([type="checkbox"]), select) { height: var(--ui-control-height, 46px); min-height: var(--ui-control-height, 46px); }
+[data-facility-page] .ownership-field .select2-container { width: 100% !important; min-width: 0; }
+[data-facility-page] .ownership-field .select2-selection--single { height: var(--ui-control-height, 46px); min-height: var(--ui-control-height, 46px); }
+[data-facility-page] .buildino-switch { min-height: var(--ui-control-height, 46px); margin: 0; }
+[data-facility-page] .buildino-switch:has(input:disabled), [data-facility-page] fieldset:disabled .buildino-switch { opacity: .6; cursor: not-allowed; }
+[data-facility-page] .ownership-record__main { flex: 1 1 200px; overflow-wrap: anywhere; }
+[data-facility-page] .ownership-record > .ownership-button { flex: 0 0 auto; }
+[data-facility-page] .ownership-editor__actions { padding-block-start: 18px; border-block-start: 1px solid var(--border); }
+[data-facility-page] :is(.ownership-record-list, .facility-form-section, .facility-settings) { min-width: 0; }
+[data-facility-page] :is(h3, h4)[tabindex="-1"] { scroll-margin-block-start: 100px; outline: none; }
+@media (max-width: 1050px) { .facility-planning-forms { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 600px) {
     .facility-toolbar { width: 100%; }
     .facility-toolbar .ownership-button { flex: 1 1 auto; }
     .facility-form-section { padding: 14px; }
     .facility-schedule-group { padding: 8px; }
+    .facility-settings { grid-template-columns: minmax(0, 1fr); }
+    [data-facility-page] .ownership-editor__actions > .ownership-button { flex: 1 1 140px; }
+    [data-facility-page] .ownership-record > .ownership-button { width: 100%; }
+    .facility-steps button { gap: 7px; padding: 8px; font-size: 11px; }
 }
 @media (max-width: 600px) { .facility-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -13,10 +13,10 @@ test('facility configuration: separate views, saved context, dirty forms, time s
     const view = readFileSync(join(project, 'resources/views/management/facility-configuration.blade.php'), 'utf8');
     const loops = [
         '<option value="4">ساختمان آزمایشی</option>',
-        ['اطلاعات و هزینه', 'برنامه و سانس‌ها', 'قوانین رزرو', 'بررسی و فعال‌سازی'].map((label, i) => `<button type="button" data-facility-step-button="${i}">${label}</button>`).join(''),
-        '<label><input name="days" type="checkbox" value="6">شنبه</label>',
-        '<input name="min_duration_minutes" type="number" min="1"><input name="max_duration_minutes" type="number" min="1" value="60">',
-        '<input name="max_reservations_per_day" type="number" min="1">',
+        ['اطلاعات و هزینه', 'برنامه و سانس‌ها', 'قوانین رزرو', 'بررسی و فعال‌سازی'].map((label, i) => `<button type="button" data-facility-step-button="${i}"><b aria-hidden="true">${i + 1}</b><span>${label}</span></button>`).join(''),
+        ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'].map((day, i) => `<label><input name="days" type="checkbox" value="${(i + 6) % 7}">${day}</label>`).join(''),
+        [['min_duration_minutes','حداقل مدت رزرو (دقیقه)',1,''],['max_duration_minutes','حداکثر مدت رزرو (دقیقه)',1,60],['min_advance_minutes','فاصله رزرو تا شروع (دقیقه)',0,0],['max_advance_days','امکان رزرو تا چند روز آینده',1,''],['max_reservation_per_unit','حداکثر رزرو فعال هر واحد',1,1],['cancel_before_minutes','مهلت لغو پیش از شروع (دقیقه)',0,0]].map(([name,label,min,value]) => `<label class="ownership-field"><span>${label}</span><input name="${name}" type="number" min="${min}" value="${value}" step="1" placeholder="بدون محدودیت"></label>`).join(''),
+        [['max_reservations_per_day','حداکثر رزرو روزانه'],['max_reservations_per_week','حداکثر رزرو هفتگی'],['max_reservations_per_month','حداکثر رزرو ماهانه']].map(([name,label]) => `<label class="ownership-field"><span>${label}</span><input name="${name}" type="number" min="1" placeholder="بدون محدودیت"></label>`).join(''),
     ];
     let loop = 0;
     const markup = view.slice(view.indexOf('<div class="ownership-page'), view.indexOf('@endsection'))
@@ -28,7 +28,7 @@ test('facility configuration: separate views, saved context, dirty forms, time s
     const asset = name => pathToFileURL(join(project, 'public', name)).href;
     const fixture = join(directory, 'fixture.html');
     writeFileSync(fixture, `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><style>:root{--surface:#fff;--surface-soft:#f5f8fc;--border:#dde4ed;--text:#182434;--muted:#708090}*{box-sizing:border-box}body{margin:16px}</style>
-    <link rel="stylesheet" href="${asset('css/buildino-unit-ownerships.css')}"><link rel="stylesheet" href="${asset('css/buildino-facilities.css')}">
+    <link rel="stylesheet" href="${asset('css/buildino-fonts.css')}"><link rel="stylesheet" href="${asset('css/buildino-management.css')}"><link rel="stylesheet" href="${asset('css/buildino-design-system.css')}"><link rel="stylesheet" href="${asset('css/buildino-unit-ownerships.css')}"><link rel="stylesheet" href="${asset('css/buildino-facilities.css')}">
     ${markup}<pre id="result"></pre><script>
     const $ = key => document.querySelector('[data-facility-' + key + ']');
     let allowDiscard = false, holdDetail = false, releaseDetail, failDetail = false, failReadAfterWrite = false, writes = 0;
@@ -46,6 +46,13 @@ test('facility configuration: separate views, saved context, dirty forms, time s
     </script><script>${source}</script><script>
     const until = async predicate => { for (let i = 0; i < 100; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 5)); } throw Error('Timed out'); };
     const expect = (condition, text) => { if (!condition) throw Error(text); };
+    const layoutFits = () => {
+        expect(document.documentElement.scrollWidth <= window.innerWidth, 'Layout must fit viewport');
+        for (const el of document.querySelectorAll('[data-facility-editor] input, [data-facility-editor] select, .facility-steps button, .facility-settings .buildino-switch')) {
+            const rect = el.getBoundingClientRect();
+            if (rect.width > 1 && rect.height) expect(rect.left >= 0 && rect.right <= innerWidth, 'Control outside viewport: ' + (el.name || el.textContent));
+        }
+    };
     const only = name => expect(['location', 'directory', 'editor'].filter(key => !$(key).hidden).join() === name, 'Only ' + name + ' should be visible');
     const go = index => document.querySelector('[data-facility-step-button="' + index + '"]').click();
     (async () => {
@@ -56,12 +63,18 @@ test('facility configuration: separate views, saved context, dirty forms, time s
         $('close').click(); only('directory'); await until(() => $('list').querySelector('button'));
         $('list').querySelector('button').click(); only('editor'); await until(() => !$('base-fields').disabled);
         expect($('editor-title').textContent.includes('استخر'), 'Facility title missing');
+        layoutFits();
+        const price = $('base-form').elements.default_price.getBoundingClientRect(), payment = $('base-form').elements.requires_payment.closest('.buildino-switch').getBoundingClientRect();
+        expect(Math.abs(price.height - payment.height) <= 1, 'Payment switch must match input height');
+        if (innerWidth > 700) expect(Math.abs(price.top - payment.top) <= 1, 'Price and payment must align');
         go(1); expect(!document.querySelector('[data-facility-panel="1"]').hidden, 'Schedule panel missing');
+        layoutFits();
         expect(document.querySelectorAll('.facility-schedule-group').length === 1, 'Schedule and slots must be grouped');
         expect(!$('slot-fields').disabled, 'Existing schedules must enable slot form');
         $('schedules').querySelectorAll('button')[1].click();
         expect($('slot-form').elements.start_time.value === '10:00' && $('slot-form').elements.schedule_id.disabled, 'Existing slot edit must retain its schedule');
         go(2); expect(document.querySelector('[data-facility-step-button="2"]').getAttribute('aria-current') === 'step', 'Progress not updated');
+        layoutFits();
         const rule = $('rule-form');
         rule.elements.min_duration_minutes.value = '90';
         rule.dispatchEvent(new Event('submit', { cancelable: true }));
@@ -79,6 +92,7 @@ test('facility configuration: separate views, saved context, dirty forms, time s
         allowDiscard = true; $('close').click(); await until(() => $('list').querySelector('button'));
         $('list').querySelector('button').click(); await until(() => !$('base-fields').disabled);
         go(3); expect(!$('activate').disabled, 'Complete stored configuration must remain activatable');
+        layoutFits();
         allowDiscard = false;
         go(0); const title = $('base-form').elements.title; title.value = 'عنوان جدید'; title.dispatchEvent(new Event('input', { bubbles: true }));
         $('close').click(); only('editor'); expect(title.value === 'عنوان جدید', 'Declining discard must preserve form');
@@ -113,13 +127,24 @@ test('facility configuration: separate views, saved context, dirty forms, time s
         go(3); expect($('activate').hidden, 'Viewers must not be offered activation');
         expect(!document.querySelector('[data-facility-flow]'), 'Directory must not become a configuration step');
         expect(document.documentElement.scrollWidth <= window.innerWidth, 'Layout must fit mobile viewport');
+        if (${JSON.stringify(process.env.FACILITY_CAPTURE || '')}) {
+            access.canCreate = true; access.canUpdate = true; $('close').click(); await until(() => $('list').querySelector('button'));
+            if (${JSON.stringify(process.env.FACILITY_CAPTURE || '')} !== 'directory') {
+                $('list').querySelector('button').click(); await until(() => !$('base-fields').disabled);
+                go(({base:0,schedule:1,rules:2,review:3})[${JSON.stringify(process.env.FACILITY_CAPTURE || '')}] ?? 0);
+            }
+            window.scrollTo(0, 0);
+        }
         document.getElementById('result').dataset.ok = 'true';
     })().catch(error => document.getElementById('result').textContent = error.stack);
     </script></html>`);
     try {
-        const output = execFileSync(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--no-first-run', '--allow-file-access-from-files', '--window-size=500,900', '--user-data-dir=' + join(directory, 'profile'), '--virtual-time-budget=3000', '--dump-dom', pathToFileURL(fixture).href], { encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
-        const result = output.match(/<pre id="result"[^>]*>[\s\S]*?<\/pre>/)?.[0] || output.slice(-1000);
-        assert.match(result, /data-ok="true"/, result);
+        for (const width of [1280, 500]) {
+            const capture = process.env.FACILITY_CAPTURE ? ['--screenshot=' + join(tmpdir(), 'buildino-facilities-' + process.env.FACILITY_CAPTURE + '-' + width + '.png')] : [];
+            const output = execFileSync(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--no-first-run', '--allow-file-access-from-files', '--window-size=' + width + ',1100', '--user-data-dir=' + join(directory, 'profile-' + width), '--virtual-time-budget=3000', '--dump-dom', ...capture, pathToFileURL(fixture).href], { encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+            const result = output.match(/<pre id="result"[^>]*>[\s\S]*?<\/pre>/)?.[0] || output.slice(-1000);
+            assert.match(result, /data-ok="true"/, result);
+        }
     } finally {
         if (dirname(resolve(directory)) === resolve(tmpdir()) && directory.includes('buildino-facilities-')) rmSync(directory, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
