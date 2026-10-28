@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="robots" content="noindex,nofollow">
     <meta name="color-scheme" content="light dark">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-logo.svg') }}">
 
     <title>
         @yield('title', 'پرتال Buildino')
@@ -460,6 +461,18 @@
         <div class="portal-content">
             <section class="core-flow" data-pending-invitation data-resident-url="{{ route('portal.resident.dashboard') }}" hidden>
                 <h2>دعوت به واحد</h2>
+                <details data-invitation-entry>
+                    <summary>کد دعوت دارید؟</summary>
+                    <form data-invitation-code-form>
+                        <div class="portal-form-grid">
+                            <label class="portal-field">
+                                <span>کد دعوت</span>
+                                <input data-invitation-code name="invitation_code" type="text" inputmode="numeric" dir="ltr" autocomplete="off" required>
+                            </label>
+                        </div>
+                        <div class="core-flow__actions"><button type="submit" class="is-primary">بررسی دعوت</button></div>
+                    </form>
+                </details>
                 <div data-invitation-details></div>
                 <p role="status"></p>
                 <p class="core-flow__error" role="alert"></p>
@@ -481,7 +494,8 @@
         notificationReadUrl: @json($portalNotificationReadUrl),
         notificationReadAllUrl: @json($portalNotificationReadAllUrl),
         defaultGateway: @json($portalDefaultGateway),
-        gatewayEnabled: @json($portalGatewayEnabled)
+        gatewayEnabled: @json($portalGatewayEnabled),
+        invitationCodeDigits: {{ (int) config('unit_invitations.code_digits', 8) }}
     };
 </script>
 
@@ -499,6 +513,6 @@
 
 @stack('scripts')
 @include('shared.core-flow-config')
-<script src="{{ asset('js/buildino-core-invitation.js') }}" defer></script>
+<script src="{{ asset('js/buildino-core-invitation.js') }}?v={{ filemtime(public_path('js/buildino-core-invitation.js')) }}" defer></script>
 </body>
 </html>

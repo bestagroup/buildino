@@ -14,8 +14,15 @@
     const entry = card.querySelector('[data-invitation-entry]');
     const codeForm = card.querySelector('[data-invitation-code-form]');
     const codeInput = card.querySelector('[data-invitation-code]');
-    codeInput.maxLength = codeDigits;
-    codeInput.pattern = `[0-9]{${codeDigits}}`;
+    if (codeInput) {
+        codeInput.maxLength = codeDigits;
+        // Normalize Persian/Arabic digits before applying numeric validation.
+        codeInput.addEventListener('input', () => {
+            codeInput.value = normalizeDigits(codeInput.value);
+            codeInput.setCustomValidity('');
+        });
+        codeInput.pattern = `[0-9]{${codeDigits}}`;
+    }
     const status = card.querySelector('[role="status"]');
     const errorBox = card.querySelector('[role="alert"]');
     const details = card.querySelector('[data-invitation-details]');
@@ -24,7 +31,7 @@
     const retry = card.querySelector('[data-invitation-retry]');
     const clear = () => { try { sessionStorage.removeItem(key); } catch {} };
     let busy = false;
-    const setBusy = (value) => { busy = value; card.setAttribute('aria-busy', String(value)); accept.disabled = value; retry.disabled = value; cancel.disabled = value; };
+    const setBusy = (value) => { busy = value; card.setAttribute('aria-busy', String(value)); accept.disabled = value; retry.disabled = value; cancel.disabled = value; codeForm?.querySelectorAll('input, button').forEach(element => element.disabled = value); };
     const fail = (error) => {
         status.textContent = '';
         details.replaceChildren();
@@ -37,17 +44,22 @@
             const hint = document.createElement('p'); hint.textContent = 'برای بررسی دسترسی یا دریافت دعوت تازه، با دعوت‌کننده تماس بگیرید.'; details.append(hint);
         } else { retry.hidden = false; }
     };
-    codeForm.addEventListener('submit', event => {
+    codeForm?.addEventListener('submit', event => {
         event.preventDefault();
+        if (!codeInput || busy) return;
         const code = normalizeDigits(codeInput.value.trim());
-        if (!validCredential(code) || busy) return;
+        if (!new RegExp(`^[0-9]{${codeDigits}}$`).test(code)) {
+            codeInput.setCustomValidity(`کد دعوت باید ${codeDigits} رقم باشد.`);
+            codeInput.reportValidity();
+            return;
+        }
         pending = { token: code };
         try { sessionStorage.setItem(key, JSON.stringify(pending)); } catch { /* Storage is optional. */ }
-        entry.open = false;
+        if (entry) entry.open = false;
         void resolve();
     });
     const resolve = async () => {
-        if (busy) return;
+        if (busy || !pending) return;
         setBusy(true); errorBox.textContent = ''; status.textContent = 'در حال بررسی دعوت…'; accept.hidden = true; retry.hidden = true;
         try {
             const result = await window.BuildinoCoreFlows.request('/api/v1/unit-invitations/resolve', { method: 'POST', body: JSON.stringify({ token: pending.token }) });

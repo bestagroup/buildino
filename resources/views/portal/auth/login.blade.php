@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-logo.svg') }}">
     <meta charset="utf-8">
     <meta
         name="viewport"

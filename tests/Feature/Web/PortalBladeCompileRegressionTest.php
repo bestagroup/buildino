@@ -83,6 +83,7 @@ class PortalBladeCompileRegressionTest extends TestCase
             $this->assertSame(1, $xpath->query(
                 '//main[@id="mainContent"]/div[contains(@class,"portal-content")]/section[1][@data-pending-invitation]'
             )->length);
+            $this->assertSame(1, $xpath->query('//section[@data-pending-invitation]//form[@data-invitation-code-form]//input[@data-invitation-code]')->length);
         } finally {
             libxml_clear_errors();
             libxml_use_internal_errors($previous);
