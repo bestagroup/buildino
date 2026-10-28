@@ -27,7 +27,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ config('management_ui.libraries.bootstrap.css') }}"
+        href="{{ \App\Support\UiAssets::url('bootstrap.css') }}"
         crossorigin="anonymous"
     >
 

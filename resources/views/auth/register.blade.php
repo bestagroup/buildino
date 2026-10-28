@@ -10,7 +10,7 @@
     <title>ساخت حساب Buildino</title>
 
     <link rel="stylesheet" href="{{ asset('css/buildino-fonts.css') }}">
-    <link rel="stylesheet" href="{{ config('management_ui.libraries.bootstrap.css') }}" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ \App\Support\UiAssets::url('bootstrap.css') }}" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ asset('css/buildino-foundation.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-management.css') }}">
 

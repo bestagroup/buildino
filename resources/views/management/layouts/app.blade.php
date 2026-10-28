@@ -11,9 +11,9 @@
 
     <link rel="stylesheet" href="{{ asset('css/buildino-fonts.css') }}">
 
-    <link rel="stylesheet" href="{{ config('management_ui.libraries.bootstrap.css') }}" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ \App\Support\UiAssets::url('bootstrap.css') }}" crossorigin="anonymous">
 
-    <link rel="stylesheet" href="{{ config('management_ui.libraries.sweetalert2.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\UiAssets::url('sweetalert2.css') }}">
 
     @vite('resources/js/app.js')
 
@@ -1388,14 +1388,14 @@
 </script>
 
 <script
-    src="{{ config('management_ui.libraries.bootstrap.js') }}"
-    integrity="{{ config('management_ui.libraries.bootstrap.js_integrity') }}"
+    src="{{ \App\Support\UiAssets::url('bootstrap.js') }}"
+    integrity="{{ \App\Support\UiAssets::integrity('bootstrap.js') }}"
     crossorigin="anonymous"
     defer
 ></script>
 
 <script
-    src="{{ config('management_ui.libraries.sweetalert2.js') }}"
+    src="{{ \App\Support\UiAssets::url('sweetalert2.js') }}"
     defer
 ></script>
 
@@ -1405,7 +1405,7 @@
 ></script>
 
 <script
-    src="{{ config('management_ui.libraries.jdate.js') }}"
+    src="{{ \App\Support\UiAssets::url('jdate.js') }}"
     defer
 ></script>
 

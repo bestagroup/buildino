@@ -11,6 +11,33 @@ class PortalBladeCompileRegressionTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_portal_uses_local_assets_even_when_cached_library_urls_and_integrity_are_stale(): void
+    {
+        $this->seed(AccessScenarioSeeder::class);
+        foreach (['bootstrap' => ['css', 'js'], 'sweetalert2' => ['css', 'js'], 'jdate' => ['js']] as $library => $types) {
+            foreach ($types as $type) {
+                config(["management_ui.libraries.$library.$type" => "https://panel.buildino.ir/missing/$library.$type"]);
+            }
+        }
+        config(['management_ui.libraries.bootstrap.js_integrity' => 'sha384-stale']);
+
+        foreach (['/portal/login', '/management/login'] as $url) {
+            $this->get($url)->assertOk()
+                ->assertSee('/css/buildino-bootstrap.rtl.min.css?v=', false)
+                ->assertDontSee('https://panel.buildino.ir/missing/', false);
+        }
+        $this->actingAs($this->user('role.owner@buildino.local'), 'web');
+        $response = $this->get('/portal/resident')->assertOk()
+            ->assertSee('/css/buildino-bootstrap.rtl.min.css?v=', false)
+            ->assertSee('/css/buildino-sweetalert2.min.css?v=', false)
+            ->assertSee('/js/buildino-bootstrap.bundle.min.js?v=', false)
+            ->assertSee('/js/buildino-sweetalert2.all.min.js?v=', false)
+            ->assertSee('/js/buildino-jdate.js?v=', false)
+            ->assertDontSee('https://panel.buildino.ir/missing/', false)
+            ->assertDontSee('sha384-stale', false);
+        $response->assertSee('sha384-'.base64_encode(hash_file('sha384', public_path('js/buildino-bootstrap.bundle.min.js'), true)), false);
+    }
+
     public function test_resident_portal_layout_compiles_and_renders(): void
     {
         $this->seed(
