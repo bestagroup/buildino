@@ -41,6 +41,10 @@
                 ? null
                 : value;
 
+    // Bootstrap backdrops live under body. Keep dialogs there as well so the
+    // animated portal content cannot trap them below the backdrop.
+    $$('.portal-content .modal').forEach(modal => document.body.append(modal));
+
     const api =
         async (
             url,

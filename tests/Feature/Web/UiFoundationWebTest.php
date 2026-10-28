@@ -6,6 +6,22 @@ use Tests\TestCase;
 
 class UiFoundationWebTest extends TestCase
 {
+    public function test_critical_ui_assets_are_available_locally_with_valid_bootstrap_integrity(): void
+    {
+        foreach (['bootstrap' => ['css', 'js'], 'sweetalert2' => ['css', 'js'], 'jdate' => ['js']] as $library => $types) {
+            foreach ($types as $type) {
+                $url = config("management_ui.libraries.$library.$type");
+                $this->assertStringStartsWith('/', $url);
+                $this->assertNull(parse_url($url, PHP_URL_HOST), 'Core UI assets must be served by this application.');
+                $this->assertFileExists(public_path(ltrim($url, '/')));
+            }
+        }
+        $this->assertSame(
+            'sha384-'.base64_encode(hash_file('sha384', public_path(ltrim(config('management_ui.libraries.bootstrap.js'), '/')), true)),
+            config('management_ui.libraries.bootstrap.js_integrity')
+        );
+    }
+
     public function test_management_login_loads_shared_ui_foundation(): void
     {
         $this->get('/management/login')

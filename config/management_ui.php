@@ -24,21 +24,21 @@ return [
     'libraries' => [
         'bootstrap' => [
             'version' => '5.3.8',
-            'css' => 'https://panel.buildino.ir/css/bootstrap.rtl.min.css',
+            'css' => '/css/buildino-bootstrap.rtl.min.css',
             'css_integrity' => null,
-            'js' => 'https://panel.buildino.ir/js/bootstrap.bundle.min.js',
-            'js_integrity' => 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI',
+            'js' => '/js/buildino-bootstrap.bundle.min.js',
+            'js_integrity' => 'sha384-oS8SVSrDDW5/9x7aYbtH+Z5NO+5Oh3BIpN/w6DYbnXw/rksXZ1A5+GP6eHeZu06r',
         ],
 
         'sweetalert2' => [
             'version' => '11.26.25',
-            'css' => 'https://panel.buildino.ir/css/sweetalert2.min.css',
-            'js' => 'https://panel.buildino.ir/js/sweetalert2.all.min.js',
+            'css' => '/css/buildino-sweetalert2.min.css',
+            'js' => '/js/buildino-sweetalert2.all.min.js',
         ],
 
         'jdate' => [
             'version' => '1.5.0',
-            'js' => 'https://panel.buildino.ir/js/jdate.min.js',
+            'js' => '/js/buildino-jdate.js',
         ],
 
         'morilog_jalali' => [

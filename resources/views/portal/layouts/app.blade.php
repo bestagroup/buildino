@@ -495,7 +495,7 @@
 
 <script src="{{ asset('js/buildino-datatables.js') }}" defer></script>
 
-<script src="{{ asset('js/buildino-portal.js') }}" defer></script>
+<script src="{{ asset('js/buildino-portal.js') }}?v={{ filemtime(public_path('js/buildino-portal.js')) }}" defer></script>
 
 @stack('scripts')
 @include('shared.core-flow-config')
