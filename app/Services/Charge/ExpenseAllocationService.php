@@ -43,6 +43,17 @@ final class ExpenseAllocationService
             );
         }
 
+        // Vacant units must not receive a persons share or a rounding remainder.
+        if ($rule->allocation_method === ExpenseAllocationMethod::Persons) {
+            $units = $units->filter(
+                fn (Unit $unit): bool => $weights[$unit->getKey()] > 0
+            );
+
+            if ($units->isEmpty()) {
+                return [];
+            }
+        }
+
         $totalWeight = array_sum($weights);
 
         if ($totalWeight <= 0) {
@@ -152,6 +163,17 @@ final class ExpenseAllocationService
                     $unit,
                     $period
                 );
+        }
+
+        // Vacant units must not receive a persons share or a rounding remainder.
+        if ($type === ChargeCalculationType::Persons) {
+            $units = $units->filter(
+                fn (Unit $unit): bool => $weights[$unit->getKey()] > 0
+            );
+
+            if ($units->isEmpty()) {
+                return [];
+            }
         }
 
         $totalWeight = array_sum($weights);
@@ -321,9 +343,10 @@ final class ExpenseAllocationService
         Unit $unit,
         ChargePeriod $period
     ): int {
-        return max(
-            0,
-            (int) ($unit->resident_count ?? 0)
+        return (new PeriodResidentCount())->count(
+            $unit,
+            $period->period_start,
+            $period->period_end
         );
     }
 

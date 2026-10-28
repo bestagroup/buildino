@@ -1,0 +1,127 @@
+/* Management-only visual layer. Keep plugin positioning and Bootstrap z-index intact. */
+body.management-body {
+    --glass-surface: rgba(255,255,255,.92);
+    --glass-border: rgba(116,145,174,.28);
+    --glass-shadow: 0 8px 28px rgba(18,50,83,.07);
+    --glass-radius: 18px;
+    --glass-blur: 10px;
+    --muted: #52647a;
+    --muted-2: #52647a;
+    --font-ui: "IRANYekanRd", Tahoma, sans-serif;
+    background: linear-gradient(135deg, #eaf2fa, #f7f9fc 55%, #edf5f5);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-weight: 400;
+    font-synthesis: none;
+    line-height: 1.8;
+}
+html[data-theme="dark"] body.management-body {
+    --glass-surface: rgba(21,31,46,.96);
+    --glass-border: #35475e;
+    --muted: #b4c1d2;
+    --muted-2: #b4c1d2;
+    background: linear-gradient(135deg, #101c2a, #151f2e);
+}
+/* Text elements only: do not replace icon fonts or SVG geometry. */
+.management-body :is(h1,h2,h3,h4,h5,h6,p,a,span,div,label,legend,th,td,dt,dd,
+    strong,b,small,button,input,select,textarea,option,.badge,.tooltip-inner,.popover-body,
+    .fw-bold,.fw-semibold,.fw-bolder,.fw-medium,.fw-light,.fw-lighter) {
+    font-weight: 400 !important;
+    font-synthesis: none;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+    font-stretch: normal;
+    text-transform: none !important;
+    text-shadow: none !important;
+}
+.management-body :is(em,cite,.fst-italic) { font-style: normal; }
+.management-body :is(button,input,select,textarea,.select2-container,.tooltip,.popover,.swal2-popup) {
+    font-family: var(--font-ui);
+}
+.management-body :is(.topbar,.kpi-card,.glance-card,.hero-panel,.popover-menu,.dropdown-menu,.modal-content,.offcanvas) {
+    background: var(--surface);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--glass-radius);
+    box-shadow: var(--glass-shadow);
+}
+.management-body .sidebar {
+    background: #123253;
+    border-inline-end: 1px solid rgba(255,255,255,.18);
+    box-shadow: var(--glass-shadow);
+}
+.management-body .sidebar :is(.nav-link,.nav-group__title,.sidebar__scope,.sidebar__identity-copy span) {
+    color: #e4edf7;
+}
+.management-body .sidebar .nav-link:is(:hover,.is-active) {
+    color: #fff;
+    background: rgba(255,255,255,.14);
+    border-inline-start: 3px solid #b9daf6;
+}
+.management-body :is(.panel,.module-card,.operation-card,.role-workspace) {
+    background: var(--surface);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--glass-radius);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .management-body :is(.kpi-card,.glance-card,.popover-menu,.dropdown-menu,.modal-content) {
+        background: var(--glass-surface);
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+    }
+    .management-body .sidebar {
+        background: rgba(18,50,83,.97);
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+    }
+}
+/* Header stays opaque: its floating menus must not nest backdrop filters. */
+.management-body .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; }
+.management-body :is(.table,.table-responsive,.form-control,.form-select,.select2-dropdown) {
+    background-color: var(--surface);
+    color: var(--text);
+}
+.management-body :is(.form-control,.form-select,.select2-selection) {
+    border-color: var(--border-strong);
+    border-radius: 10px;
+    min-height: 42px;
+}
+.management-body :is(input,textarea)::placeholder { color: var(--muted); opacity: 1; }
+.management-body :is(input[type="email"],input[type="url"],code,.ltr,[dir="ltr"]) {
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+.management-body :is(a,button,input,select,textarea,[tabindex]):focus-visible {
+    outline: 3px solid var(--primary-600) !important;
+    outline-offset: 3px;
+}
+.management-body .table-responsive { overflow-x: auto; max-inline-size: 100%; }
+.management-body :is(.main-area,.panel,.topbar__start,.topbar__center) { min-inline-size: 0; }
+.management-body :is(.dropdown-menu,.popover-menu,.modal-dialog) { max-inline-size: calc(100vw - 24px); }
+.management-body :is(.btn,.nav-link,.page-link) { transition: background-color .15s, border-color .15s; }
+.management-body :is(.kpi-card,.module-card,.operation-card,.role-quick-action):hover { transform: none; }
+.management-body :is(button:disabled,input:disabled,select:disabled) { cursor: not-allowed; }
+.management-body :is(.text-muted,.form-text) { color: var(--muted) !important; }
+@media (max-width: 600px) {
+    .management-body .topbar { gap: 8px; }
+    .management-body :is(.panel,.hero-panel,.role-workspace) { padding: 14px; }
+    .management-body .role-workspace { grid-template-columns: minmax(0,1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .management-body *, .management-body *::before, .management-body *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
+@media print {
+    body.management-body { background: white !important; color: black !important; }
+    .management-body :is(.sidebar,.topbar) { display: none !important; }
+    .management-body .main-area { margin: 0 !important; width: 100% !important; }
+    .management-body :is(.panel,.kpi-card,.glance-card,.hero-panel,.table) {
+        background: white !important; color: black !important;
+        box-shadow: none !important; backdrop-filter: none !important;
+    }
+}

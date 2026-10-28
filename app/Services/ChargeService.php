@@ -6,6 +6,7 @@ use App\Enums\ChargeCalculationType;
 use App\Models\ChargeFormula;
 use App\Models\ChargeItem;
 use App\Models\Unit;
+use App\Services\Charge\PeriodResidentCount;
 use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
 
@@ -159,9 +160,6 @@ class ChargeService
         CarbonInterface $periodStart,
         CarbonInterface $periodEnd
     ): int {
-        return max(
-            0,
-            (int) ($unit->resident_count ?? 0)
-        );
+        return (new PeriodResidentCount())->count($unit, $periodStart, $periodEnd);
     }
 }
