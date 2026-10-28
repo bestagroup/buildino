@@ -31,6 +31,7 @@
     <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-management-glass.css') }}?v=1">
 </head>
 
 @php
