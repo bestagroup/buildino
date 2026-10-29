@@ -15,7 +15,7 @@ const chrome = process.env.CHROME_BIN || 'C:/Program Files/Google/Chrome/Applica
 
 test('finance: real Vue workflows, Jalali dates, financial safeguards, permissions and responsive layout', { skip: !existsSync(chrome) }, async () => {
     const configs = JSON.parse(execFileSync('php', ['-r', '$r=(require "config/management_crud.php")["resources"]; echo json_encode(array_filter($r, fn($v)=>$v["group"]==="finance"));'], { cwd: project, encoding: 'utf8' }));
-    const groups = JSON.parse(execFileSync('php', ['-r', 'echo json_encode((require "config/management_finance.php")["groups"]);'], { cwd: project, encoding: 'utf8' }));
+    const groups = JSON.parse(execFileSync('php', ['-r', 'require "vendor/autoload.php"; echo json_encode(\\App\\Support\\ManagementPageCatalog::FINANCE_GROUPS);'], { cwd: project, encoding: 'utf8' }));
     const bundle = await build({
         absWorkingDir: project, bundle: true, write: false, format: 'iife', define: { 'process.env.NODE_ENV': '"production"' },
         stdin: { contents: `import {createApp} from 'vue'; import Invoices from './resources/js/pages/management/finance/Invoices.vue'; import Records from './resources/js/pages/management/finance/Records.vue'; import './resources/js/buildino-jalali-datepicker.js'; let app; window.mountFinance = props => { app?.unmount(); app=createApp(['invoices','invoice-installments','payments'].includes(props.resourceKey)?Invoices:Records,props); app.mount('#app'); };`, resolveDir: project },
@@ -64,6 +64,7 @@ test('finance: real Vue workflows, Jalali dates, financial safeguards, permissio
     const mount=async(key,override)=>{active=key;history.replaceState({},'','/management/operations/'+key);window.mountFinance(override||props(key));await until(()=>$('[data-finance-open]'));};
     const fillRequired=async()=>{for(const el of $$('.finance-editor [required]')){if(el.type==='checkbox'||el.disabled)continue;const value=el.tagName==='SELECT'?[...el.options].find(o=>o.value)?.value:el.dataset.buildinoDateType?'۱۴۰۵/۰۸/۰۷':el.type==='number'?'100':el.name==='iban'?'IR123456789012345678901234':'نمونه آزمایشی';await input(el.name||el.nextElementSibling?.name,value);}};
     (async()=>{
+        for(const key of ['invoices','expenses']){const cached=props(key);cached.workspace.groups=null;await mount(key,cached);expect($('[data-finance-create]'),'Missing groups blanked workspace '+key);}
         await mount('invoices'); expect($$('.finance-tabs a').length===3,'Related navigation must be grouped');
         await click('[data-finance-create]');expect(!$('.finance-table'),'Editor did not replace list');await submit();expect($('[aria-invalid="true"]')&&posts.length===0,'Missing unit accepted');
         await input('unit_id','101');await input('issue_date','۱۴۰۵/۰۸/۰۷');await input('due_date','۱۴۰۵/۰۹/۰۹');

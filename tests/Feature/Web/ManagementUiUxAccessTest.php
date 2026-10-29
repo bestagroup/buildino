@@ -73,6 +73,8 @@ class ManagementUiUxAccessTest extends TestCase
 
     public function test_structure_pages_share_the_new_interface_and_scope_contexts_and_actions(): void
     {
+        // Simulate a server whose cached rollout list predates blocks/floors/units.
+        config(['management_ui.inertia_resources' => ['complexes', 'buildings']]);
         $inside = $this->createBuildingGraph();
         $outside = $this->createBuildingGraph();
         $manager = $this->createUser();

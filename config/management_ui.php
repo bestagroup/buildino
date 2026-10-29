@@ -8,19 +8,6 @@ return [
         'zoom' => 5,
         'maxZoom' => 19,
     ],
-    /*
-     * Resources move to Vue/Inertia one at a time. Keeping this list explicit
-     * prevents an unfinished frontend component from changing an existing
-     * Blade route or API workflow.
-     */
-    'inertia_resources' => [
-        'complexes',
-        'buildings',
-        'blocks',
-        'floors',
-        'units',
-    ],
-
     'libraries' => [
         'bootstrap' => [
             'version' => '5.3.8',

@@ -1,6 +1,6 @@
 @php
     $financeVisible = $managementUi['visible_resources'] ?? [];
-    $financeGroups = collect(config('management_finance.groups', []));
+    $financeGroups = collect(\App\Support\ManagementPageCatalog::FINANCE_GROUPS);
     $financeCurrentGroup = $financeGroups->first(fn ($group) => in_array($currentResource, $group['resources'], true));
     $financeUrl = fn ($key) => route('management.operations.show', array_filter(['resource' => $key, 'building_id' => request()->integer('building_id') ?: null]));
 @endphp

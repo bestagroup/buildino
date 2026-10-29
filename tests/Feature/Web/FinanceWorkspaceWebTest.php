@@ -81,6 +81,21 @@ final class FinanceWorkspaceWebTest extends TestCase
             ->where('workspace.blocks.0.value', $graph['block']->id)->where('workspace.blocks.0.abilities.create', true));
     }
 
+    public function test_finance_navigation_survives_configuration_cached_before_the_finance_release(): void
+    {
+        $graph = $this->createBuildingGraph(); $user = $this->createUser();
+        $this->grant($user, ['reports.dashboard.view', 'invoices.view', 'charge-formulas.view', 'charge-periods.view'], $graph['building']);
+        config(['management_finance' => null]);
+
+        $this->actingAs($user)->get('/management/operations/invoices')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('management/finance/Invoices')
+            ->has('workspace.groups', 4)
+            ->where('workspace.groups.0.resources.0', 'invoices'));
+        foreach (['charge-formulas', 'charge-periods'] as $resource) {
+            $this->get('/management/operations/'.$resource)->assertOk()->assertSee('صورتحساب واحد');
+        }
+    }
+
     private function grant($user, array $names, $scope): void
     {
         $role = Role::query()->create(['name' => 'finance-'.uniqid(), 'display_name' => 'نقش مالی', 'is_system' => false]);

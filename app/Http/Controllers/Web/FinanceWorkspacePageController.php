@@ -11,6 +11,7 @@ use App\Models\FinancialCategory;
 use App\Models\Fund;
 use App\Services\Security\BuildingPermissionScopeService;
 use App\Services\Web\ManagementUiContextService;
+use App\Support\ManagementPageCatalog;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -79,7 +80,7 @@ final class FinanceWorkspacePageController extends Controller
             'resource' => $configuration,
             'workspace' => [
                 'buildings' => $buildings, 'units' => $units, 'navigation' => $navigation,
-                'groups' => config('management_finance.groups'), 'prefix' => $prefix, 'actionPermissions' => $actionPermissions,
+                'groups' => ManagementPageCatalog::FINANCE_GROUPS, 'prefix' => $prefix, 'actionPermissions' => $actionPermissions,
                 'lookups' => $lookups, 'blocks' => $blocks,
                 'initial' => $request->only(['building_id', 'unit_id', 'unit_invoice_id', 'charge_period_id']),
             ],

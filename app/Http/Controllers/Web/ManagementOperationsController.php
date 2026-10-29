@@ -10,6 +10,7 @@ use App\Models\Floor;
 use App\Services\System\IranLocations;
 use App\Services\Web\ManagementDashboardAccessService;
 use App\Services\Web\ManagementUiContextService;
+use App\Support\ManagementPageCatalog;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
@@ -144,10 +145,7 @@ class ManagementOperationsController extends Controller
                 ])->values();
         }
 
-        $inertiaResources = config(
-            'management_ui.inertia_resources',
-            []
-        );
+        $inertiaResources = ManagementPageCatalog::STRUCTURE_RESOURCES;
 
         if (
             in_array(
