@@ -2,6 +2,15 @@
 
 @section('title', 'خانه من | Buildino')
 @section('page-title', 'خانه من')
+@section('portal-body-class', 'resident-glass')
+
+@push('portal-theme')
+    <link rel="stylesheet" href="{{ asset('css/buildino-resident-glass.css') }}?v={{ filemtime(public_path('css/buildino-resident-glass.css')) }}">
+@endpush
+
+@push('scripts')
+    <script src="{{ asset('js/buildino-resident-accessibility.js') }}" defer></script>
+@endpush
 
 @section('sidebar-links')
     <a href="#units">
@@ -1483,6 +1492,7 @@
     class="modal fade"
     id="guestModal"
     tabindex="-1"
+    aria-labelledby="guestModalTitle"
 >
     <div class="modal-dialog modal-dialog-centered">
         <form
@@ -1490,12 +1500,13 @@
             data-portal-form="guest"
         >
             <div class="modal-header">
-                <h5 class="modal-title">
+                <h5 class="modal-title" id="guestModalTitle">
                     ثبت مهمان
                 </h5>
                 <button
                     type="button"
                     class="btn-close"
+                    aria-label="بستن"
                     data-bs-dismiss="modal"
                 ></button>
             </div>
@@ -1605,6 +1616,7 @@
     class="modal fade"
     id="serviceModal"
     tabindex="-1"
+    aria-labelledby="serviceModalTitle"
 >
     <div class="modal-dialog modal-dialog-centered">
         <form
@@ -1612,12 +1624,13 @@
             data-portal-form="service"
         >
             <div class="modal-header">
-                <h5 class="modal-title">
+                <h5 class="modal-title" id="serviceModalTitle">
                     درخواست خدمات ساختمان
                 </h5>
                 <button
                     type="button"
                     class="btn-close"
+                    aria-label="بستن"
                     data-bs-dismiss="modal"
                 ></button>
             </div>
@@ -1728,6 +1741,7 @@
     class="modal fade"
     id="supportModal"
     tabindex="-1"
+    aria-labelledby="supportModalTitle"
 >
     <div class="modal-dialog modal-dialog-centered">
         <form
@@ -1735,12 +1749,13 @@
             data-portal-form="support"
         >
             <div class="modal-header">
-                <h5 class="modal-title">
+                <h5 class="modal-title" id="supportModalTitle">
                     ثبت تیکت پشتیبانی
                 </h5>
                 <button
                     type="button"
                     class="btn-close"
+                    aria-label="بستن"
                     data-bs-dismiss="modal"
                 ></button>
             </div>
@@ -1843,6 +1858,7 @@
     class="modal fade"
     id="reservationModal"
     tabindex="-1"
+    aria-labelledby="reservationModalTitle"
 >
     <div class="modal-dialog modal-dialog-centered">
         <form
@@ -1850,12 +1866,13 @@
             data-portal-form="reservation"
         >
             <div class="modal-header">
-                <h5 class="modal-title">
+                <h5 class="modal-title" id="reservationModalTitle">
                     رزرو امکانات
                 </h5>
                 <button
                     type="button"
                     class="btn-close"
+                    aria-label="بستن"
                     data-bs-dismiss="modal"
                 ></button>
             </div>
@@ -1987,6 +2004,7 @@
     class="modal fade"
     id="reservationPaymentModal"
     tabindex="-1"
+    aria-labelledby="reservationPaymentModalTitle"
 >
     <div class="modal-dialog modal-dialog-centered">
         <form
@@ -1994,12 +2012,13 @@
             data-portal-form="reservation-payment"
         >
             <div class="modal-header">
-                <h5 class="modal-title">
+                <h5 class="modal-title" id="reservationPaymentModalTitle">
                     پرداخت رزرو از کیف پول
                 </h5>
                 <button
                     type="button"
                     class="btn-close"
+                    aria-label="بستن"
                     data-bs-dismiss="modal"
                 ></button>
             </div>
@@ -2063,6 +2082,7 @@
     class="modal fade"
     id="ticketConversationModal"
     tabindex="-1"
+    aria-labelledby="ticketConversationModalTitle"
 >
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content portal-modal">
@@ -2072,7 +2092,7 @@
                         گفت‌وگوی پشتیبانی
                     </span>
                     <h5
-                        class="modal-title"
+                        class="modal-title" id="ticketConversationModalTitle"
                         data-ticket-conversation-title
                     >
                         گفتگو با پشتیبانی
@@ -2082,6 +2102,7 @@
                 <button
                     type="button"
                     class="btn-close"
+                    aria-label="بستن"
                     data-bs-dismiss="modal"
                 ></button>
             </div>
@@ -2097,7 +2118,7 @@
                 </div>
 
                 <form
-                    class="portal-ticket-reply"
+                    class="portal-ticket-reply" aria-label="پاسخ به پشتیبانی"
                     data-ticket-reply-form
                 >
                     <input
@@ -2107,6 +2128,7 @@
 
                     <textarea
                         name="message"
+                        aria-label="متن پیام"
                         rows="3"
                         placeholder="پیام خود را بنویسید..."
                         required
@@ -2133,6 +2155,7 @@
     class="modal fade"
     id="topUpModal"
     tabindex="-1"
+    aria-labelledby="topUpModalTitle"
 >
     <div class="modal-dialog modal-dialog-centered">
         <form
@@ -2140,12 +2163,13 @@
             data-portal-form="topup"
         >
             <div class="modal-header">
-                <h5 class="modal-title">
+                <h5 class="modal-title" id="topUpModalTitle">
                     افزایش موجودی کیف پول
                 </h5>
                 <button
                     type="button"
                     class="btn-close"
+                    aria-label="بستن"
                     data-bs-dismiss="modal"
                 ></button>
             </div>
