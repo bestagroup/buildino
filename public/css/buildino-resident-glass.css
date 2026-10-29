@@ -1,0 +1,174 @@
+/* Resident dashboard only; loaded after the shared portal theme. */
+body.resident-glass {
+    --resident-glass: rgba(255,255,255,.91);
+    --resident-line: #d5e0eb;
+    --resident-shadow: 0 10px 32px rgba(18,50,83,.07);
+    --resident-radius: 20px;
+    --resident-blur: 12px;
+    --portal-muted: #52647a;
+    --portal-teal: #146b66;
+    --portal-warning: #80520d;
+    --portal-success: #126b48;
+    --portal-info: #245c88;
+    --portal-font: "IRANYekanRd", Tahoma, sans-serif;
+    background: radial-gradient(ellipse at 90% 0, #dfecf8, transparent 55%),
+                linear-gradient(140deg, #f4f7fb, #edf5f5);
+    font-family: var(--portal-font);
+    font-weight: 400;
+    font-synthesis: none;
+    line-height: 1.85;
+    min-inline-size: 0;
+}
+html[data-theme="dark"] body.resident-glass {
+    --resident-glass: rgba(21,31,46,.95);
+    --resident-line: #3c4d63;
+    --resident-shadow: 0 10px 32px rgba(0,0,0,.16);
+    --portal-muted: #b5c3d4;
+    --portal-teal: #8adcd5;
+    --portal-warning: #edc884;
+    --portal-success: #8bddb1;
+    --portal-info: #9cccef;
+    background: linear-gradient(140deg, #101b2b, #14262d);
+}
+/* Text nodes and Bootstrap utilities, deliberately excluding icon elements. */
+body.resident-glass :is(h1,h2,h3,h4,h5,h6,p,span,a,div,section,article,header,footer,
+    button,input,select,textarea,label,legend,th,td,dt,dd,strong,b,small,em,time,
+    .fw-bold,.fw-bolder,.fw-semibold,.fw-medium,.fw-light,.fw-lighter,.fw-normal) {
+    font-weight: 400 !important;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+    text-transform: none !important;
+    text-shadow: none !important;
+}
+body.resident-glass :is(em,cite,.fst-italic) { font-style: normal !important; }
+body.resident-glass :is(button,input,select,textarea,.select2-container,.tooltip,.swal2-popup) {
+    font-family: var(--portal-font);
+}
+.resident-glass :is(.portal-sidebar,.portal-topbar,.portal-hero,.portal-stat-card,.portal-modal,.dropdown-menu) {
+    border: 1px solid var(--resident-line);
+    box-shadow: var(--resident-shadow);
+    background: var(--portal-surface);
+}
+.resident-glass .portal-sidebar {
+    background: #123253;
+    border: 0;
+    border-inline-end: 1px solid rgba(255,255,255,.2);
+}
+.resident-glass .portal-sidebar :is(small,.portal-user-card span,.portal-sidebar__security) { color: #d4e2f0; }
+.resident-glass .portal-nav a { color: #e2edf8; min-block-size: 44px; border-inline-start: 3px solid transparent; }
+.resident-glass .portal-nav a:is(:hover,:focus-visible,.is-active) {
+    background: rgba(255,255,255,.12); color: white; border-inline-start-color: #badcf5;
+}
+.resident-glass .portal-topbar { background: var(--resident-glass); padding-block: 14px; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.resident-glass .portal-content { padding-block: 28px 48px; }
+.resident-glass .portal-hero { padding: 28px; border-radius: var(--resident-radius); overflow: visible; }
+.resident-glass .portal-hero::after { content: none; }
+.resident-glass .portal-hero p { font-size: 14px; max-inline-size: 58ch; }
+.resident-glass .portal-hero__actions { gap: 10px; }
+.resident-glass .portal-stat-grid { gap: 16px; margin-block-start: 20px; }
+.resident-glass .portal-stat-card { padding: 20px; border-radius: var(--resident-radius); min-block-size: 132px; }
+.resident-glass .portal-stat-card strong { font-size: clamp(22px,2vw,30px); overflow-wrap: anywhere; }
+.resident-glass .portal-section { margin-block-start: 32px; scroll-margin-block-start: 110px; }
+.resident-glass .portal-section__heading { margin-block-end: 16px; gap: 12px; }
+.resident-glass .portal-section__heading h3 { font-size: 21px; }
+.resident-glass .portal-eyebrow { font-size: 12px; }
+.resident-glass :is(.portal-unit-card,.portal-table-card,.portal-list-card,.portal-wallet-history-card,.core-flow) {
+    background: var(--portal-surface);
+    border: 1px solid var(--resident-line);
+    border-radius: var(--resident-radius);
+    box-shadow: var(--resident-shadow);
+    backdrop-filter: none;
+}
+.resident-glass .portal-unit-card { padding: 22px; }
+.resident-glass .portal-unit-card h4 { font-size: 20px; }
+.resident-glass :is(.portal-unit-card p,.portal-unit-card__facts span,.portal-list-item > div > span,
+    .portal-section__note,.portal-notification-item small,.portal-notification-item em) {
+    color: var(--portal-muted); font-size: 13px;
+}
+.resident-glass :is(.portal-list-card,.portal-wallet-history-card) { overflow: visible; }
+.resident-glass :is(.portal-list-card > header,.portal-wallet-history-card > header) {
+    background: var(--portal-soft); border-radius: var(--resident-radius) var(--resident-radius) 0 0;
+}
+.resident-glass :is(.portal-table-card,.table-responsive,.dt-container) { min-inline-size: 0; max-inline-size: 100%; }
+.resident-glass :is(.portal-table-card,.table-responsive) { overflow-x: auto; }
+.resident-glass :is(.portal-table,table.dataTable) { background: var(--portal-surface); color: var(--portal-text); font-size: 14px; }
+.resident-glass :is(th,td) { padding: 14px 16px; border-color: var(--resident-line); }
+.resident-glass th { background: var(--portal-soft); color: var(--portal-text); }
+.resident-glass .portal-status { font-size: 12px; padding: 5px 10px; }
+.resident-glass :is(.portal-action-button,.portal-primary-button,.portal-table-action,.portal-inline-action,.btn,.page-link) {
+    min-block-size: 42px; border-radius: 11px; font-size: 14px;
+    transition: background-color .15s, border-color .15s, box-shadow .15s;
+}
+.resident-glass .portal-action-button:hover { transform: none; }
+.resident-glass :is(.portal-primary-button,.portal-action-button--primary) { background: #1f527f; color: white; }
+.resident-glass :is(.portal-primary-button,.portal-action-button--primary):hover { background: #173f67; color: white; }
+.resident-glass .portal-modal { border-radius: var(--resident-radius); }
+.resident-glass .portal-modal .modal-body { background: var(--portal-surface); padding: 22px; }
+.resident-glass :is(.modal-header,.modal-footer) { padding: 18px 22px; border-color: var(--resident-line); }
+.resident-glass .modal-title { font-size: 20px; }
+.resident-glass .portal-form-grid { gap: 18px; }
+.resident-glass .portal-field { min-inline-size: 0; gap: 8px; }
+.resident-glass .portal-field > span { color: var(--portal-text); font-size: 14px; }
+.resident-glass :is(.portal-field input,.portal-field select,.portal-field textarea,.form-control,.form-select,.select2-selection) {
+    background: var(--portal-surface); color: var(--portal-text); border: 1px solid #869bb2;
+    border-radius: 10px; min-block-size: 44px; font-size: 16px;
+}
+.resident-glass :is(input,textarea)::placeholder { color: var(--portal-muted); opacity: 1; }
+.resident-glass :is(input[type="email"],input[type="url"],code,[dir="ltr"],.ltr) { direction: ltr; unicode-bidi: isolate; }
+.resident-glass :is(a,button,input,textarea,select,[tabindex]):focus-visible {
+    outline: 3px solid #3478ad !important; outline-offset: 3px;
+}
+.resident-glass .portal-sidebar :focus-visible { outline-color: #d4e9ff !important; }
+.resident-glass :is(:disabled,[aria-disabled="true"]) { cursor: not-allowed; }
+.resident-glass :is(.invalid-feedback,.text-danger,.core-flow__error) { color: var(--portal-danger); }
+.resident-glass :is(.portal-empty-mini,.portal-empty-state,.portal-table-empty) {
+    padding: 28px 20px; color: var(--portal-muted); background: var(--portal-soft); font-size: 14px;
+}
+.resident-glass .portal-notification-menu { max-inline-size: calc(100vw - 24px); border-radius: 16px; background: var(--portal-surface); }
+.resident-glass :is(.portal-main,.portal-topbar__title,.portal-list-item > div,.portal-wallet-entry) { min-inline-size: 0; }
+.resident-glass :is(.portal-row-actions,.portal-section__actions,.portal-hero__actions) { flex-wrap: wrap; }
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .resident-glass :is(.portal-hero,.portal-stat-card,.portal-modal) {
+        background: var(--resident-glass);
+        backdrop-filter: blur(var(--resident-blur));
+        -webkit-backdrop-filter: blur(var(--resident-blur));
+    }
+    .resident-glass .portal-sidebar {
+        background: rgba(18,50,83,.96);
+        backdrop-filter: blur(var(--resident-blur));
+        -webkit-backdrop-filter: blur(var(--resident-blur));
+    }
+}
+/* Modal ancestors remain unfiltered so Bootstrap's fixed dialogs sit above its backdrop. */
+.resident-glass :is(.portal-shell,.portal-main,.portal-content) { backdrop-filter: none; -webkit-backdrop-filter: none; }
+@media (max-width: 980px) {
+    .resident-glass:not(.portal-sidebar-open) .portal-sidebar { visibility: hidden; }
+    .resident-glass.portal-sidebar-open { overflow: hidden; }
+}
+@media (max-width: 700px) {
+    .resident-glass .portal-topbar { flex-wrap: wrap; gap: 10px; }
+    .resident-glass .portal-content { padding: 16px 12px 32px; }
+    .resident-glass .portal-hero { padding: 20px; }
+    .resident-glass .portal-hero__actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); inline-size: 100%; }
+    .resident-glass .portal-stat-grid { gap: 12px; }
+    .resident-glass .portal-form-grid { grid-template-columns: minmax(0,1fr); }
+    .resident-glass .portal-wallet-entry { flex-wrap: wrap; }
+}
+@media (max-width: 380px) {
+    .resident-glass .portal-hero__actions { grid-template-columns: minmax(0,1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+    html:has(body.resident-glass) { scroll-behavior: auto; }
+    .resident-glass *, .resident-glass *::before, .resident-glass *::after {
+        animation: none !important; transition: none !important; scroll-behavior: auto !important;
+    }
+}
+@media print {
+    body.resident-glass { background: white !important; color: black !important; }
+    .resident-glass :is(.portal-sidebar,.portal-topbar,.portal-sidebar-backdrop,.portal-hero__actions) { display: none !important; }
+    .resident-glass .portal-main { margin: 0; }
+    .resident-glass :is(.portal-hero,.portal-stat-card,.portal-unit-card,.portal-list-card,.portal-wallet-history-card) {
+        background: white !important; color: black !important; box-shadow: none; backdrop-filter: none;
+    }
+    .resident-glass .portal-content { inline-size: 100%; padding: 0; }
+}
