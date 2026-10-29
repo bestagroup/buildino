@@ -127,6 +127,10 @@ class ManagementOperationsController extends Controller
             return app(ChargePeriodPageController::class)(request(), $permissions);
         }
 
+        if ($resource === 'service-requests') {
+            return app(ServiceRequestPageController::class)(request(), $permissions);
+        }
+
         if (($configuration['group'] ?? null) === 'finance' && $resource !== 'charge-formulas') {
             return app(FinanceWorkspacePageController::class)(request(), $resource, $permissions, $ui);
         }

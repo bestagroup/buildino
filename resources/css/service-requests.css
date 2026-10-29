@@ -1,0 +1,26 @@
+.service-list { display: grid; gap: 12px; }
+.service-record { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.service-record__main { min-width: 0; }
+.service-record__heading { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.service-record h4 { margin: 0; color: var(--text); font-size: 15px; overflow-wrap: anywhere; }
+.service-record p { margin: 10px 0 0; color: var(--muted); font-size: 12px; line-height: 1.9; overflow-wrap: anywhere; }
+.service-record > button { flex-shrink: 0; }
+.service-state, .service-priority { display: inline-flex; padding: 5px 10px; border-radius: 20px; font-size: 11px; background: var(--surface-soft); color: var(--text-soft); }
+.service-state[data-state="in_progress"], .service-state[data-state="assigned"] { color: var(--primary-700); background: var(--primary-50); }
+.service-state[data-state="completed"] { color: var(--success); background: var(--success-soft); }
+.service-state[data-state="awaiting_confirmation"] { color: var(--warning); background: var(--warning-soft); }
+.service-state[data-state="cancelled"], .service-priority[data-priority="urgent"] { color: var(--danger); background: var(--danger-soft); }
+.service-priority[data-priority="high"] { color: var(--warning); background: var(--warning-soft); }
+.service-detail-status { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-block: 16px; font-size: 12px; color: var(--muted); }
+.service-timeline { list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding: 0; margin: 20px 0; }
+.service-timeline li { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 12px; padding: 12px; color: var(--muted); font-size: 11px; }
+.service-timeline b { display: grid; place-items: center; flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--surface-soft); }
+.service-timeline .is-current { border-color: var(--primary-500); color: var(--primary-700); background: var(--primary-50); }
+.service-timeline .is-current b { background: var(--primary-700); color: white; }
+.service-timeline .is-complete { color: var(--success); }
+.service-timeline .is-complete b { background: var(--success-soft); }
+.service-action-bar { margin-block-start: 20px; }
+.service-quotes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.service-quotes .finance-line { margin: 0; }
+.service-notes { color: var(--text-soft); font-size: 13px; white-space: pre-line; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .service-record { align-items: stretch; flex-direction: column; padding: 16px; gap: 14px; } .service-timeline { grid-template-columns: minmax(0, 1fr); } .service-timeline li { padding: 10px 12px; } .service-quotes { grid-template-columns: minmax(0, 1fr); } .service-action-bar > button { flex: 1 1 auto; } }
