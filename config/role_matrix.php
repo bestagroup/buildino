@@ -211,6 +211,9 @@ return [
             'scope' =>
                 'building',
 
+            // Sidebar visibility only; operational permissions remain available.
+            'sidebar_navigation' => ['dashboard', 'operations', 'at_a_glance'],
+
             'permissions' => [
                 'reports.dashboard.view',
                 'reports.financial.view',
