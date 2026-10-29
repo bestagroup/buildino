@@ -151,6 +151,18 @@ final class ManagementUiContextService
                 $isSuperAdmin
             );
 
+        // Keep operational access separate from sidebar presentation.
+        // Platform administrators retain their complete navigation.
+        if (! $isSuperAdmin && ! $platformAccess
+            && $roles->contains('name', 'building_manager')) {
+            $allowed = config('role_matrix.roles.building_manager.sidebar_navigation');
+            if (is_array($allowed)) {
+                foreach ($navigation as $key => $visible) {
+                    $navigation[$key] = $visible && in_array($key, $allowed, true);
+                }
+            }
+        }
+
         $context = [
             'roles' =>
                 $roles->all(),
@@ -337,6 +349,8 @@ final class ManagementUiContextService
 
         return [
             'dashboard' => true,
+
+            'at_a_glance' => $permissions->contains('reports.financial.view'),
 
             'operations' =>
                 $permissions
