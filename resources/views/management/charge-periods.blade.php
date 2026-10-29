@@ -8,6 +8,7 @@
 @endpush
 @section('content')
 <div class="ownership-page period-page" data-period-page data-core-process-ui>
+    @include('management.partials.finance-navigation', ['currentResource' => 'charge-periods'])
     <header class="ownership-hero"><div class="ownership-hero__icon">@include('management.partials.icon', ['name' => 'wallet', 'size' => 27])</div><div><span class="eyebrow">مدیریت مالی ساختمان</span><h2>شارژ هر دوره، قدم‌به‌قدم</h2><p>بازه دوره را مشخص کنید، شارژ را محاسبه و سپس صورتحساب‌ها را صادر کنید.</p></div></header>
     <div class="ownership-alert ownership-alert--error" data-period-error role="alert" tabindex="-1" hidden></div>
     <div class="ownership-alert ownership-alert--success" data-period-success role="status" aria-live="polite" hidden></div>

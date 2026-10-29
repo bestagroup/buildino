@@ -1,5 +1,6 @@
 <header class="ownership-hero"><div class="ownership-hero__icon">@include('management.partials.icon', ['name' => 'wallet', 'size' => 27])</div><div><span class="eyebrow">تعریف فرمول شارژ · P12</span><h2>سهم هر واحد، با قاعده‌ای روشن</h2><p>برای هر دسته هزینه، روش تقسیم بین واحدهای ساختمان را مشخص کنید.</p></div></header>
 
+@include('management.partials.finance-navigation', ['currentResource' => 'charge-formulas'])
 <section class="ownership-card" data-charge-location aria-labelledby="charge-location-title">
     <div class="ownership-card__heading"><div><h3 id="charge-location-title" tabindex="-1">فرمول‌های کدام ساختمان؟</h3><p>فقط ساختمان‌های قابل دسترسی شما نمایش داده می‌شوند.</p></div></div>
     <div id="crudContextFields"><label class="ownership-field"><span>ساختمان</span><select data-context-name="building_id" data-required="1" data-select2="off"><option value="">انتخاب ساختمان</option>@foreach ($formulaBuildings as $building)<option value="{{ $building['id'] }}" @selected($formulaBuildings->count() === 1)>{{ $building['title'] }}</option>@endforeach</select></label></div>

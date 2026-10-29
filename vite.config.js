@@ -8,6 +8,7 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
+                'resources/css/finance-workspace.css',
                 'resources/js/app.js',
                 'resources/js/management.ts',
             ],

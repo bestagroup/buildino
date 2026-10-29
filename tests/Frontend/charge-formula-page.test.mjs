@@ -18,7 +18,7 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
             .replace("@include('management.partials.charge-formula-guide')", read('resources/views/management/partials/charge-formula-guide.blade.php').replace(/@if[^\n]*|@endif/g, ''));
         const view = read('resources/views/management/operations/resource.blade.php');
         let editor = view.slice(view.indexOf('    <aside'), view.indexOf('@endsection'))
-            .replace(/@if \(\$resourceKey === 'charge-formulas'\)([^]*?)@else[^]*?@endif/g, '$1')
+            .replace(/@if \((?:\$resourceKey === 'charge-formulas'|in_array\(\$resourceKey, \['charge-formulas', 'invitations'\], true\))\)([^]*?)@else[^]*?@endif/g, '$1')
             .replace(/@if[^]*?@endif/g, '');
         const clean = html => html.replace(/@include\([^]*?\)/g, '◇').replace(/\{\{([^]*?)\}\}/g, (_, expression) => expression.includes('charge-formula-dialog') ? ' charge-formula-dialog' : expression.includes('بازگشت') ? 'بازگشت به فرمول‌ها' : expression.includes('انصراف') ? 'انصراف و بازگشت' : '#');
         markup = clean(markup); editor = clean(editor);
@@ -31,6 +31,8 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
         <style>body{margin:16px}*{box-sizing:border-box}</style>
         <div class="crud-page ownership-page charge-formula-page" id="buildinoCrudApp">${markup}<div id="crudDrawerBackdrop" class="crud-drawer-backdrop"></div>${editor}</div>
         <button id="after-page">خارج از فرم</button><pre id="result" hidden></pre><script>
+        window.requestAnimationFrame = callback => setTimeout(() => callback(performance.now()), 16);
+        window.cancelAnimationFrame = clearTimeout;
         const $ = selector => document.querySelector(selector);
         let failSave = true, writes = 0, failList = false, releaseList, holdList = false;
         const errors = []; window.addEventListener('error', event => errors.push(event.error?.stack || event.message));

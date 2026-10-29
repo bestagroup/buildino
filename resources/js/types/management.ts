@@ -53,6 +53,7 @@ export interface CrudResource {
     delete?: CrudOperation;
     columns?: CrudColumn[];
     fields?: CrudField[];
+    actions?: (CrudOperation & { key: string; title: string; tone?: string; confirm?: string; fields?: CrudField[]; open_url?: boolean })[];
     context?: { name: string; label: string; lookup: string; required?: boolean }[];
 }
 
