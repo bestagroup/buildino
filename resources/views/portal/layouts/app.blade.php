@@ -32,6 +32,7 @@
     <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}?v={{ filemtime(public_path('css/buildino-brand.css')) }}">
 
     <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
+    @stack('portal-theme')
 </head>
 
 @php
@@ -109,7 +110,7 @@
 @endphp
 
 <body
-    class="portal-body"
+    class="portal-body @yield('portal-body-class')"
     data-portal-user-id="{{ $portalUser?->getKey() }}"
 >
 @include('shared.login-success')
@@ -118,6 +119,7 @@
     <aside
         class="portal-sidebar"
         id="portalSidebar"
+        aria-label="منوی پرتال"
     >
         <a
             href="{{ route('portal.dashboard') }}"
@@ -265,6 +267,8 @@
                     type="button"
                     class="portal-icon-button portal-mobile-menu"
                     id="portalSidebarToggle"
+                    aria-controls="portalSidebar"
+                    aria-expanded="false"
                     aria-label="نمایش منو"
                 >
                     @include(
