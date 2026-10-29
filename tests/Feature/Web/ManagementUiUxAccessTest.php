@@ -208,6 +208,31 @@ class ManagementUiUxAccessTest extends TestCase
             ->assertOk();
     }
 
+    public function test_building_manager_sidebar_is_general_only_without_revoking_operations(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $manager = $this->createUser();
+        $this->grant($manager->id, [
+            'reports.dashboard.view', 'reports.financial.view',
+            'buildings.view', 'units.view', 'users.view',
+            'invoices.view', 'unit-occupancies.view',
+        ], $graph['building']);
+        UserRoleAssignment::query()->where('user_id', $manager->id)
+            ->firstOrFail()->role->update(['name' => 'building_manager']);
+
+        $response = $this->actingAs($manager, 'web')->get('/management')->assertOk();
+        preg_match('/<nav class="sidebar__nav">(.*?)<\/nav>/s', $response->getContent(), $match);
+        $this->assertNotEmpty($match);
+        preg_match_all('/data-nav-key="([^"]+)"/', $match[1], $keys);
+        $this->assertEqualsCanonicalizing(
+            ['dashboard', 'operations', 'at-a-glance'], $keys[1]
+        );
+        $this->assertStringNotContainsString('data-nav-group="building"', $match[1]);
+        $this->get('/management/operations')->assertOk();
+        $this->get('/management/operations/occupancies')->assertOk();
+        $this->get('/management/operations/users')->assertOk();
+    }
+
     private function grant(
         int $userId,
         array $permissionNames,
