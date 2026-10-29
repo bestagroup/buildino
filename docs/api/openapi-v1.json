@@ -3487,7 +3487,18 @@
                     "Accounting"
                 ],
                 "summary": "Get /expenses",
-                "parameters": [],
+                "parameters": [
+                    {
+                        "name": "building_id",
+                        "in": "query",
+                        "required": false,
+                        "description": "Filter by an authorized building.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successful response"
@@ -5289,7 +5300,18 @@
                     "Accounting"
                 ],
                 "summary": "Get /incomes",
-                "parameters": [],
+                "parameters": [
+                    {
+                        "name": "building_id",
+                        "in": "query",
+                        "required": false,
+                        "description": "Filter by an authorized building.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successful response"

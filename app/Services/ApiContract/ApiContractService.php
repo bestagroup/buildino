@@ -367,8 +367,9 @@ final class ApiContractService
                     ),
 
                 'parameters' =>
-                    $this->pathParameters(
-                        $path
+                    array_merge(
+                        $this->pathParameters($path),
+                        config('api_contract_v1.query_parameters.'.$route['method'].' '.$route['uri'], []),
                     ),
 
                 'responses' => [

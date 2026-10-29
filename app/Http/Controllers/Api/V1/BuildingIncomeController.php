@@ -21,6 +21,7 @@ class BuildingIncomeController extends Controller
         BuildingResourceScopeService $scope
     ): JsonResponse {
         $this->authorize('viewAny', BuildingIncome::class);
+        $request->validate(['building_id' => ['nullable', 'integer', 'min:1']]);
 
         /** @var User $user */
         $user = $request->user();
@@ -29,7 +30,7 @@ class BuildingIncomeController extends Controller
             BuildingIncome::query(),
             $user,
             'incomes.view'
-        )
+        )->when($request->filled('building_id'), fn ($query) => $query->where('building_id', $request->integer('building_id')))
             ->latest('id')
             ->paginate(min(max((int) $request->integer('per_page', 20), 1), 100));
 

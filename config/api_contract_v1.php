@@ -184,6 +184,15 @@ return [
      * They are examples, not a second source of validation truth.
      * Laravel FormRequest remains authoritative.
      */
+    'query_parameters' => [
+        'GET api/v1/expenses' => [
+            ['name' => 'building_id', 'in' => 'query', 'required' => false, 'description' => 'Filter by an authorized building.', 'schema' => ['type' => 'integer', 'minimum' => 1]],
+        ],
+        'GET api/v1/incomes' => [
+            ['name' => 'building_id', 'in' => 'query', 'required' => false, 'description' => 'Filter by an authorized building.', 'schema' => ['type' => 'integer', 'minimum' => 1]],
+        ],
+    ],
+
     'request_examples' => [
         'POST api/v1/auth/otp/request' => [
             'identifier' => '{{mobile}}',
