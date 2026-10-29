@@ -8,6 +8,7 @@ import {
 } from 'vue';
 import { apiRequest, rowsFromPayload } from '../../lib/management-api';
 import UiSwitch from './UiSwitch.vue';
+import UiDateInput from './UiDateInput.vue';
 import UiLocationPicker from './UiLocationPicker.vue';
 import { asMapPoint } from '../../lib/location-picker';
 import type {
@@ -391,6 +392,14 @@ watch(
                 @update:model-value="setFieldValue(field, $event)"
             />
 
+            <UiDateInput
+                v-else-if="['date', 'datetime-local', 'time'].includes(field.type || '')"
+                :id="fieldDomId(field)" :name="field.name" :type="field.type as 'date' | 'datetime-local' | 'time'"
+                :model-value="fieldValue(field) as string | number | null" :required="field.required"
+                :disabled="mode === 'edit' && field.readonly_on_edit"
+                :aria-invalid="hasFieldError(field)" :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
+                @update:model-value="setFieldValue(field, $event)"
+            />
             <input
                 v-else
                 :id="fieldDomId(field)"

@@ -227,6 +227,9 @@ body.ui-overlay-open {
     grid-column: 1 / -1;
 }
 
+.ui-date-input { display: block; min-width: 0; }
+.ui-date-input > input[type="text"] { width: 100%; }
+
 .ui-field__label {
     color: var(--text-soft);
     font-size: 12px;
