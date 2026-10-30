@@ -10,6 +10,7 @@ use App\Observers\ProvisionWalletObserver;
 use App\Services\Web\ManagementHeaderContextService;
 use App\Services\Web\ManagementUiContextService;
 use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -49,6 +50,25 @@ class AppServiceProvider extends ServiceProvider
                 );
             }
         );
+
+        ResetPasswordNotification::toMailUsing(function (User $user, string $token): MailMessage {
+            $data = [
+                'resetUrl' => route('password.reset', [
+                    'token' => $token,
+                    'email' => $user->getEmailForPasswordReset(),
+                ]),
+                'expires' => (int) config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60),
+                'supportEmail' => config('brand_mail.support_email'),
+                'supportPhone' => config('brand_mail.support_phone'),
+            ];
+
+            return (new MailMessage())
+                ->subject('بازیابی رمز عبور | بیلدینو')
+                ->view([
+                    'html' => 'emails.auth.reset-password',
+                    'text' => 'emails.auth.reset-password-text',
+                ], $data);
+        });
 
         View::composer(
             'management.*',
