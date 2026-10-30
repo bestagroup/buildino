@@ -619,6 +619,7 @@ return [
                 [
                     'name' => 'first_name',
                     'label' => 'نام',
+                    'placeholder' => 'محمد.../آقا... خانم...',
                     'type' => 'text',
                     'required' => true
                 ],
