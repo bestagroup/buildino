@@ -14,6 +14,7 @@ class StoreComplexRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'workspace_type' => ['sometimes', 'nullable', 'in:standalone,complex'],
             'code' => [
                 'required',
                 'string',

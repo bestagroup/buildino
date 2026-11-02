@@ -92,6 +92,7 @@ class ManagementDashboardController extends Controller
                     $platformAccess,
                 'roleDashboard' =>
                     $roleDashboardData,
+                'incompleteSetupBuildings' => app(\App\Services\Web\BuildingSetupProgressService::class)->incomplete($user, $buildings),
             ]
         );
     }

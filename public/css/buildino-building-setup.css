@@ -118,3 +118,7 @@
     .setup-actions > span { order: -1; flex-basis: 100%; }
     .setup-actions .setup-button { flex: 1; padding-inline: 12px; }
 }
+.setup-connection { margin-block-end: 16px; }
+.setup-connection summary { cursor: pointer; font-weight: 700; }
+.setup-connection form { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.setup-connection form .setup-field { flex: 1 1 240px; }

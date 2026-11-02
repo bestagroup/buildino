@@ -411,6 +411,13 @@ class BuildingController extends Controller
             $building
         );
 
+        if ($request->has('complex_id') && (int) $request->input('complex_id') !== (int) $building->complex_id) {
+            abort_if($building->structure_type !== null, 422, 'اتصال به مجتمع را از بخش راه‌اندازی و با تأیید مدیر مجتمع انجام دهید.');
+            $target = Complex::query()->findOrFail($request->input('complex_id'));
+            abort_unless(app(PermissionChecker::class)->allows($request->user(), 'buildings.create', $target), 403);
+            abort_if(in_array($target->workspace_type, ['standalone', 'unlinked'], true), 422, 'این والد برای یک ساختمان یا بلوک مستقل است.');
+        }
+
         $building = $action->execute(
             $building,
             $request->validated()

@@ -186,7 +186,7 @@ final class RegistrationController extends Controller
         $request->session()->flash('buildino.registration_success', true);
 
         return redirect()
-            ->route($result['destination'])
+            ->route($result['destination'], $result['destination'] === 'management.building-setup' ? ($result['destinationParameters'] ?? []) : [])
             ->with(
                 'status',
                 ($result['created'] ?? true)

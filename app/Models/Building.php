@@ -17,6 +17,7 @@ class Building extends Model
 
     protected $fillable = [
         'complex_id',
+        'structure_type',
         'code',
         'title',
         'building_number',
@@ -45,6 +46,7 @@ class Building extends Model
             'storage_count' => 'integer',
             'construction_year' => 'integer',
             'is_active' => 'boolean',
+            'setup_completed_at' => 'datetime',
         ];
     }
 

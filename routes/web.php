@@ -204,6 +204,13 @@ Route::middleware([
         Route::get('/building-setup', BuildingSetupController::class)
             ->name('building-setup');
 
+        Route::post('/building-setup/{building}/complete', [\App\Http\Controllers\Web\BuildingSetupActionsController::class, 'complete'])
+            ->middleware('throttle:api-v1')->name('building-setup.complete');
+        Route::post('/building-setup/{building}/connect', [\App\Http\Controllers\Web\BuildingSetupActionsController::class, 'connect'])
+            ->middleware('throttle:api-v1')->name('building-setup.connect');
+        Route::post('/building-setup/connections/{connection}', [\App\Http\Controllers\Web\BuildingSetupActionsController::class, 'review'])
+            ->middleware('throttle:api-v1')->name('building-setup.review');
+
         /*
         |--------------------------------------------------------------------------
         | Server-side Dashboard DataTables

@@ -13,6 +13,7 @@ class BuildingResource extends JsonResource
             'id' => $this->id,
 
             'complex_id' => $this->complex_id,
+            'structure_type' => $this->structure_type,
 
             'complex' => $this->whenLoaded('complex', function (): array {
                 return [

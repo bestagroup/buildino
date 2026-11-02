@@ -3,6 +3,8 @@
 namespace Tests\Feature\Web;
 
 use App\Models\Role;
+use App\Models\Building;
+use App\Models\BuildingComplexRequest;
 use App\Models\User;
 use App\Models\UserRoleAssignment;
 use Database\Seeders\RoleMatrixSeeder;
@@ -83,6 +85,110 @@ final class BuildingSetupWebTest extends TestCase
         $user = $this->assigned('finance_manager', $structure['building']);
         $this->actingAs($user)->get('/management/building-setup')->assertForbidden();
         $this->get('/management')->assertOk()->assertDontSee('data-nav-key="building-setup"', false);
+    }
+
+    public function test_new_workspace_remains_incomplete_until_final_confirmation_and_legacy_units_are_preserved(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $graph['building']->update(['structure_type' => 'standalone']);
+        $user = $this->assigned('building_manager', $graph['building']);
+        $this->actingAs($user)->get('/management')->assertSee('ادامه راه‌اندازی');
+        $this->postJson('/management/building-setup/'.$graph['building']->id.'/complete')->assertOk();
+        $this->assertNotNull($graph['building']->refresh()->setup_completed_at);
+        $this->assertSame(1, $graph['building']->units_count);
+        $this->get('/management')->assertDontSee('ادامه راه‌اندازی');
+        $this->assertDatabaseHas('units', ['id' => $graph['unit']->id]);
+        $other = $this->createBuildingGraph();
+        $this->postJson('/management/building-setup/'.$other['building']->id.'/complete')->assertForbidden();
+    }
+
+    public function test_empty_structure_cannot_be_marked_complete(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $graph['unit']->delete();
+        $user = $this->assigned('building_manager', $graph['building']);
+        $this->actingAs($user)->postJson('/management/building-setup/'.$graph['building']->id.'/complete')->assertUnprocessable();
+        $this->assertNull($graph['building']->refresh()->setup_completed_at);
+    }
+
+    public function test_complex_connection_requires_approval_and_never_grants_sibling_or_complex_access(): void
+    {
+        $source = $this->createBuildingGraph();
+        $source['complex']->update(['workspace_type' => 'unlinked']);
+        $source['building']->update(['structure_type' => 'complex_block']);
+        $target = $this->createBuildingGraph();
+        $target['complex']->update(['workspace_type' => 'complex']);
+        $manager = $this->assigned('building_manager', $source['building']);
+        $complexManager = $this->assigned('complex_manager', $target['complex']);
+        $stranger = $this->assigned('building_manager', $target['building']);
+        $url = '/management/building-setup/'.$source['building']->id.'/connect';
+        $this->actingAs($manager)->post($url, ['complex_code' => $target['complex']->code])->assertRedirect();
+        $connection = BuildingComplexRequest::query()->firstOrFail();
+        $this->assertSame($source['complex']->id, $source['building']->refresh()->complex_id);
+        $this->post($url, ['complex_code' => $target['complex']->code])->assertSessionHasErrors('complex_code');
+        $review = '/management/building-setup/connections/'.$connection->id;
+        $this->post($review, ['decision' => 'approved'])->assertForbidden();
+        $this->actingAs($stranger)->post($review, ['decision' => 'approved'])->assertForbidden();
+        $this->actingAs($complexManager)->get('/management/building-setup')->assertOk()->assertSee('تأیید اتصال');
+        $this->post($review, ['decision' => 'approved'])->assertRedirect();
+        $this->assertSame($target['complex']->id, $source['building']->refresh()->complex_id);
+        $this->post($review, ['decision' => 'approved'])->assertConflict();
+        $permissions = app(\App\Support\Authorization\PermissionChecker::class);
+        $this->assertTrue($permissions->allows($manager, 'units.create', $source['building']));
+        $this->assertFalse($permissions->allows($manager, 'units.create', $target['building']));
+        $this->assertFalse($permissions->allows($manager, 'complexes.update', $target['complex']));
+        $this->assertTrue($permissions->allows($complexManager, 'units.create', $source['building']));
+    }
+
+    public function test_only_block_manager_can_cancel_own_pending_connection_and_retry(): void
+    {
+        $source = $this->createBuildingGraph();
+        $source['complex']->update(['workspace_type' => 'unlinked']);
+        $source['building']->update(['structure_type' => 'complex_block']);
+        $target = $this->createBuildingGraph();
+        $target['complex']->update(['workspace_type' => 'complex']);
+        $manager = $this->assigned('building_manager', $source['building']);
+        $reviewer = $this->assigned('complex_manager', $target['complex']);
+        $url = '/management/building-setup/'.$source['building']->id.'/connect';
+        $this->actingAs($manager)->post($url, ['complex_code' => 'not-found'])->assertSessionHasErrors('complex_code');
+        $this->assertDatabaseCount('building_complex_requests', 0);
+        $this->post($url, ['complex_code' => $target['complex']->code]);
+        $review = '/management/building-setup/connections/'.BuildingComplexRequest::query()->value('id');
+        $this->actingAs($reviewer)->post($review, ['decision' => 'cancelled'])->assertForbidden();
+        $this->actingAs($manager)->post($review, ['decision' => 'cancelled'])->assertRedirect();
+        $this->post($url, ['complex_code' => $target['complex']->code])->assertRedirect();
+        $this->assertDatabaseCount('building_complex_requests', 2);
+        $this->actingAs($reviewer)->post('/management/building-setup/connections/'.BuildingComplexRequest::query()->max('id'), ['decision' => 'rejected'])->assertRedirect();
+        $this->assertSame($source['complex']->id, $source['building']->refresh()->complex_id);
+    }
+
+    public function test_api_creates_complex_blocks_at_building_scope_and_keeps_legacy_callers_compatible(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $graph['complex']->update(['workspace_type' => 'complex']);
+        $manager = $this->assigned('complex_manager', $graph['complex']);
+        $this->actingAs($manager)->postJson('/api/v1/buildings', ['complex_id' => $graph['complex']->id, 'title' => 'بلوک دوم', 'code' => 'NEW-BLOCK'])
+            ->assertCreated()->assertJsonPath('data.structure_type', 'complex_block');
+        $foreign = $this->createBuildingGraph();
+        $this->patchJson('/api/v1/buildings/'.$graph['building']->id, ['complex_id' => $foreign['complex']->id])->assertForbidden();
+    }
+
+    public function test_single_building_container_cannot_gain_a_second_building_and_unlinked_is_not_a_public_type(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $graph['complex']->update(['workspace_type' => 'standalone']);
+        $manager = $this->assigned('superadmin');
+        $this->actingAs($manager)->postJson('/api/v1/buildings', ['complex_id' => $graph['complex']->id, 'title' => 'Extra', 'code' => 'EXTRA'])
+            ->assertUnprocessable();
+        $this->postJson('/api/v1/complexes', ['code' => 'PRIVATE', 'title' => 'Private', 'province' => 'Tehran', 'city' => 'Tehran', 'workspace_type' => 'unlinked'])
+            ->assertUnprocessable();
+        $this->postJson('/api/v1/complexes', ['code' => 'PUBLIC', 'title' => 'Public', 'province' => 'Tehran', 'city' => 'Tehran', 'workspace_type' => 'complex'])
+            ->assertCreated()->assertJsonPath('data.workspace_type', 'complex');
+        $legacy = $this->createBuildingGraph();
+        $this->postJson('/api/v1/buildings', ['complex_id' => $legacy['complex']->id, 'title' => 'New block', 'code' => 'OPT-IN', 'structure_type' => 'complex_block'])
+            ->assertCreated()->assertJsonPath('data.structure_type', 'complex_block');
+        $this->postJson('/api/v1/buildings', ['complex_id' => $legacy['complex']->id, 'title' => 'Legacy', 'code' => 'LEGACY'])
+            ->assertCreated()->assertJsonPath('data.structure_type', null);
     }
 
     private function assigned(string $role, $scope = null): User

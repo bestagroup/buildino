@@ -64,7 +64,7 @@
     };
 
     const contextCopy = {
-        management: ['فضای کار و نشانی', 'فضای کار اولیه و نشانی', 'اطلاعات مجتمع و ساختمان اولیه را وارد کنید؛ نشانی و کد پستی اختیاری‌اند.'],
+        management: ['مجموعه و نشانی', 'اطلاعات مجموعه شما', 'پس از تأیید موبایل، طبقات و واحدها را در راه‌اندازی تکمیل می‌کنید.'],
         resident: ['دعوت واحد', 'اتصال به واحد شما', 'کد دعوت مدیر ساختمان را وارد کنید و قوانین استفاده را بپذیرید.'],
         provider: ['تکمیل حساب', 'آماده ورود به پرتال خدمات', 'پس از پذیرش قوانین و تأیید موبایل، وارد پرتال خدمات می‌شوید.'],
     };
@@ -144,6 +144,22 @@
                 field.required = management;
             }
         });
+
+        const buildingName = form.elements.namedItem('building_title');
+        const complexName = form.elements.namedItem('complex_title');
+        const onlyComplex = persona.value === 'complex_manager';
+        const standalone = persona.value === 'building_manager';
+        if (buildingName && complexName) {
+            buildingName.closest('label').hidden = !management || onlyComplex;
+            buildingName.disabled = !management || onlyComplex;
+            buildingName.required = management && !onlyComplex;
+            complexName.closest('label').hidden = !management || standalone;
+            complexName.disabled = !management || standalone;
+            complexName.required = management && !standalone;
+            const label = form.querySelector('[data-registration-building-label]');
+            if (label) label.textContent = persona.value === 'block_manager' ? 'نام بلوک شما' : 'نام ساختمان';
+            buildingName.placeholder = persona.value === 'block_manager' ? 'مثلاً بلوک A' : 'مثلاً ساختمان سرو';
+        }
 
         const invitation = form.elements.namedItem(
             'invitation_token'

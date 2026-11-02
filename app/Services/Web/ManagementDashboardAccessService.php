@@ -66,7 +66,7 @@ final class ManagementDashboardAccessService
         User $user
     ): Collection {
         $query = Building::query()
-            ->with('complex:id,code,title')
+            ->with('complex:id,code,title,workspace_type')
             ->orderBy('title')
             ->orderBy('id');
 

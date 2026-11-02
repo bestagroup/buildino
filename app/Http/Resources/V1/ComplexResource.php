@@ -13,6 +13,7 @@ class ComplexResource extends JsonResource
             'id' => $this->id,
             'code' => $this->code,
             'title' => $this->title,
+            'workspace_type' => $this->workspace_type,
 
             'location' => [
                 'province' => $this->province,

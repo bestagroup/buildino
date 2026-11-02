@@ -16,6 +16,7 @@ class Complex extends Model
 
     protected $fillable = [
         'code',
+        'workspace_type',
         'title',
         'province',
         'city',

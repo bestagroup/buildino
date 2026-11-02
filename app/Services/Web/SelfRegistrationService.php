@@ -141,7 +141,9 @@ final class SelfRegistrationService
 
                     return [
                         'user' => $user,
-                        'destination' => 'management.dashboard',
+                        'destination' => in_array($data['persona'], ['building_manager', 'block_manager', 'complex_manager'], true)
+                            ? 'management.building-setup' : 'management.dashboard',
+                        'destinationParameters' => [$scope instanceof Complex ? 'complex_id' : 'building_id' => $scope->getKey()],
                         'created' => true,
                     ];
                 }
@@ -194,7 +196,13 @@ final class SelfRegistrationService
                 Complex::class,
                 'CMP'
             ),
-            'title' => $data['complex_title'],
+            'title' => $data['persona'] === 'building_manager' ? $data['building_title'] : $data['complex_title'],
+            'workspace_type' => match ($data['persona']) {
+                'building_manager' => 'standalone',
+                'block_manager' => 'unlinked',
+                'complex_manager' => 'complex',
+                default => null,
+            },
             'province' => $data['province'],
             'city' => $data['city'],
             'address' => $data['address'] ?? null,
@@ -203,8 +211,18 @@ final class SelfRegistrationService
             'is_active' => true,
         ]);
 
+        // A complex manager adds the actual blocks during setup, not registration.
+        if ($data['persona'] === 'complex_manager' && empty($data['building_title'])) {
+            return $complex;
+        }
+
         $building = Building::query()->create([
             'complex_id' => $complex->getKey(),
+            'structure_type' => match ($data['persona']) {
+                'building_manager' => 'standalone',
+                'block_manager', 'complex_manager' => 'complex_block',
+                default => null,
+            },
             'code' => $this->uniqueCode(
                 Building::class,
                 'BLD'
@@ -365,7 +383,7 @@ final class SelfRegistrationService
     private function role(string $persona): Role
     {
         $role = Role::query()
-            ->where('name', $persona)
+            ->where('name', config("self_registration.personas.{$persona}.role", $persona))
             ->first();
 
         if (! $role) {

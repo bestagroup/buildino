@@ -200,7 +200,7 @@ final class RegisterRequest extends FormRequest
                         $this->input('persona'),
                         $managementPersonas,
                         true
-                    )
+                    ) && $this->input('persona') !== 'building_manager'
                 ),
                 'nullable',
                 'string',
@@ -212,7 +212,7 @@ final class RegisterRequest extends FormRequest
                         $this->input('persona'),
                         $managementPersonas,
                         true
-                    )
+                    ) && $this->input('persona') !== 'complex_manager'
                 ),
                 'nullable',
                 'string',
@@ -336,7 +336,7 @@ final class RegisterRequest extends FormRequest
             'password.letters' => 'رمز عبور باید حداقل یک حرف داشته باشد.',
             'password.numbers' => 'رمز عبور باید حداقل یک عدد داشته باشد.',
             'complex_title.required' => 'نام مجتمع را وارد کنید.',
-            'building_title.required' => 'نام ساختمان اولیه را وارد کنید.',
+            'building_title.required' => 'نام ساختمان یا بلوک خود را وارد کنید.',
             'province.required' => 'استان را وارد کنید.',
             'city.required' => 'شهر را وارد کنید.',
             'province.in' => 'استان را از فهرست استان‌های ایران انتخاب کنید.',

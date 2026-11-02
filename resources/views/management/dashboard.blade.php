@@ -151,13 +151,13 @@
 @endphp
 
 @section('content')
-@if ($buildings->isEmpty() && (count(array_intersect(['buildings.create', 'blocks.create'], $managementUi['permissions'] ?? [])) || (in_array('users.create', $managementUi['global_permissions'] ?? [], true) && in_array('users.update', $managementUi['global_permissions'] ?? [], true))))
+@if (($buildings->isEmpty() || $incompleteSetupBuildings->isNotEmpty()) && (count(array_intersect(['buildings.create', 'blocks.create'], $managementUi['permissions'] ?? [])) || (in_array('users.create', $managementUi['global_permissions'] ?? [], true) && in_array('users.update', $managementUi['global_permissions'] ?? [], true))))
 <section class="core-flow">
-    <h2>تکمیل اطلاعات ساختمان</h2>
+    <h2>تکمیل راه‌اندازی مجموعه</h2>
     <p>ساختمان خود را انتخاب کنید، واحدها را اضافه کنید و کاربران را دعوت کنید.</p>
     <div class="core-flow__actions">
         @if (count(array_intersect(['buildings.create', 'blocks.create'], $managementUi['permissions'] ?? [])))
-            <a class="is-primary" href="{{ route('management.building-setup', $selectedBuilding ? ['building_id' => $selectedBuilding->id] : []) }}">شروع راه‌اندازی ساختمان</a>
+            <a class="is-primary" href="{{ route('management.building-setup', $incompleteSetupBuildings->isNotEmpty() ? ['building_id' => $incompleteSetupBuildings->first()->id] : []) }}">ادامه راه‌اندازی</a>
         @endif
         @if (in_array('users.create', $managementUi['global_permissions'] ?? [], true) && in_array('users.update', $managementUi['global_permissions'] ?? [], true))
             <a href="{{ route('management.operations.show', ['resource' => 'users', 'flow' => 'P05']) }}">تعریف کاربر و دسترسی</a>

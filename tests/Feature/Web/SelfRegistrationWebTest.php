@@ -110,11 +110,10 @@ final class SelfRegistrationWebTest extends TestCase
         $this->assertDatabaseCount('complexes', 0);
         $this->assertDatabaseCount('buildings', 0);
 
-        $this->post('/register/verify', [
+        $verification = $this->post('/register/verify', [
             'code' => $this->otpCode($mobile),
-        ])->assertRedirect(
-            route('management.dashboard')
-        )->assertSessionHas('buildino.registration_success', true);
+        ])->assertSessionHas('buildino.registration_success', true);
+        $verification->assertRedirectContains(in_array($persona, ['building_manager', 'block_manager', 'complex_manager'], true) ? '/management/building-setup' : '/management');
 
         $user = User::query()
             ->where('mobile', $mobile)
@@ -130,7 +129,7 @@ final class SelfRegistrationWebTest extends TestCase
             $user->mobile_verified_at
         );
         $this->assertSame(
-            $persona,
+            $persona === 'block_manager' ? 'building_manager' : $persona,
             $assignment->role->name
         );
         $this->assertSame(
@@ -173,6 +172,7 @@ final class SelfRegistrationWebTest extends TestCase
     public static function managementPersonaProvider(): array
     {
         return [
+            'block manager' => ['block_manager', Building::class],
             'building manager' => [
                 'building_manager',
                 Building::class,
@@ -463,11 +463,14 @@ final class SelfRegistrationWebTest extends TestCase
                 route('register.verify')
             );
 
-        $this->post('/register/verify', [
+        $verification = $this->post('/register/verify', [
             'code' => $this->otpCode($mobile),
-        ])->assertRedirect(
-            route($destination)
-        );
+        ]);
+        if ($destination === 'management.dashboard' && in_array($payload['persona'], ['building_manager', 'block_manager', 'complex_manager'], true)) {
+            $verification->assertRedirectContains('/management/building-setup');
+        } else {
+            $verification->assertRedirect(route($destination));
+        }
     }
 
     public function test_location_ids_resolve_to_canonical_names_and_ignore_client_labels(): void
@@ -482,7 +485,7 @@ final class SelfRegistrationWebTest extends TestCase
         $payload['city'] = 'another-client-label';
 
         $this->post('/register', $payload)->assertRedirect(route('register.verify'));
-        $this->post('/register/verify', ['code' => $this->otpCode($payload['mobile'])])->assertRedirect(route('management.dashboard'));
+        $this->post('/register/verify', ['code' => $this->otpCode($payload['mobile'])])->assertRedirectContains('/management/building-setup');
         $this->assertDatabaseHas('complexes', ['province' => 'گیلان', 'city' => 'رشت']);
     }
 
@@ -504,6 +507,45 @@ final class SelfRegistrationWebTest extends TestCase
         $this->post('/register', [...$payload, 'province_id' => '999999', 'city_id' => '999999'])->assertSessionHasErrors(['province_id', 'city_id']);
         $this->post('/register', [...$payload, 'city' => 'شیراز'])->assertSessionHasErrors('city');
         $this->assertArrayNotHasKey($payload['mobile'], $this->otpSender->codes);
+    }
+
+    public function test_standalone_registration_needs_no_complex_name_and_reuses_its_building_in_setup(): void
+    {
+        $payload = $this->managementPayload('building_manager', '09120000901');
+        unset($payload['complex_title']);
+        $this->completeRegistration($payload, $payload['mobile']);
+        $building = Building::query()->firstOrFail();
+        $this->assertSame('standalone', $building->structure_type);
+        $this->assertSame('standalone', $building->complex->workspace_type);
+        $this->get('/management/building-setup?building_id='.$building->id)->assertOk()
+            ->assertViewHas('setupConfig', fn ($config) => $config['initialBuildingId'] === $building->id && !$config['canCreateBuilding']);
+        $this->get('/management')->assertSee('ادامه راه‌اندازی');
+    }
+
+    public function test_complex_manager_can_register_without_an_initial_block(): void
+    {
+        $payload = $this->managementPayload('complex_manager', '09120000902');
+        unset($payload['building_title']);
+        $this->completeRegistration($payload, $payload['mobile']);
+        $this->assertDatabaseCount('buildings', 0);
+        $complex = Complex::query()->firstOrFail();
+        $this->assertSame('complex', $complex->workspace_type);
+        $this->get('/management/building-setup?complex_id='.$complex->id)->assertOk()
+            ->assertViewHas('setupConfig', fn ($config) => $config['canCreateBuilding'] && $config['complexes']->pluck('id')->all() === [$complex->id]);
+        $this->get('/management')->assertOk()->assertSee('ادامه راه‌اندازی');
+    }
+
+    public function test_block_manager_receives_only_its_block_and_cannot_attach_by_posting_a_complex_id(): void
+    {
+        $foreign = $this->createBuildingGraph();
+        $payload = $this->managementPayload('block_manager', '09120000903');
+        $this->completeRegistration($payload, $payload['mobile']);
+        $building = Building::query()->where('id', '!=', $foreign['building']->id)->firstOrFail();
+        $this->assertSame('complex_block', $building->structure_type);
+        $this->assertSame('unlinked', $building->complex->workspace_type);
+        $this->patchJson('/api/v1/buildings/'.$building->id, ['complex_id' => $foreign['complex']->id])->assertUnprocessable();
+        $this->get('/management/building-setup')->assertOk()->assertSee('ارسال درخواست اتصال')
+            ->assertViewHas('setupConfig', fn ($config) => $config['buildings']->pluck('id')->all() === [$building->id] && $config['complexes']->isEmpty());
     }
 
     private function managementPayload(

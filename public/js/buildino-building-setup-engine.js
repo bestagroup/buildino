@@ -95,6 +95,11 @@
         const errors = [];
         if (!['existing', 'new'].includes(draft.mode)) errors.push({ step: 0, message: 'روش شروع را انتخاب کنید.' });
         if (draft.mode === 'existing' && !positiveId(draft.buildingId)) errors.push({ step: 0, field: 'buildingId', message: 'ساختمان را انتخاب کنید.' });
+        if (draft.mode === 'existing' && draft.updateExisting) {
+            if (!draft.existingTitle?.trim() || draft.existingTitle.length > 255) errors.push({ step: 0, field: 'existingTitle', message: 'نام ساختمان یا بلوک را وارد کنید.' });
+            if ((draft.existingPostalCode || '').length > 20 || (draft.existingAddress || '').length > 2000) errors.push({ step: 0, field: 'existingAddress', message: 'طول نشانی یا کد پستی معتبر نیست.' });
+            for (const field of ['existingParkingCount', 'existingStorageCount']) if (!Number.isInteger(Number(draft[field] || 0)) || Number(draft[field] || 0) < 0) errors.push({ step: 0, field, message: 'تعداد پارکینگ و انباری باید عدد صحیح و نامنفی باشد.' });
+        }
         if (draft.mode === 'new') {
             if (!['standalone', 'existing', 'new'].includes(draft.complexMode)) errors.push({ step: 0, field: 'complexMode', message: 'وضعیت مجتمع را انتخاب کنید.' });
             if (!/^[a-zA-Z0-9-]{16,50}$/.test(String(draft.token || ''))) errors.push({ step: 0, message: 'پیش‌نویس معتبر نیست؛ یک راه‌اندازی تازه شروع کنید.' });
@@ -189,14 +194,14 @@
                 const code = `SET-C-${draft.token}`;
                 let complex = (await list(api, `complexes?search=${encodeURIComponent(code)}&per_page=100`)).find((row) => row.code === code);
                 const fresh = !complex;
-                if (!complex) complex = await create('complexes', { code, title: draft.complexMode === 'standalone' ? draft.title.trim() : draft.complexTitle.trim(), province: draft.province, city: draft.city, address: draft.address || null, postal_code: draft.postalCode || null, is_active: true });
+                if (!complex) complex = await create('complexes', { code, workspace_type: draft.complexMode === 'standalone' ? 'standalone' : 'complex', title: draft.complexMode === 'standalone' ? draft.title.trim() : draft.complexTitle.trim(), province: draft.province, city: draft.city, address: draft.address || null, postal_code: draft.postalCode || null, is_active: true });
                 complexId = complex.id;
                 tick('محل ساختمان', fresh);
             }
             const code = `SET-B-${draft.token}`;
             building = (await list(api, `buildings?search=${encodeURIComponent(code)}&per_page=100`)).find((row) => row.code === code);
             const fresh = !building;
-            if (!building) building = await create('buildings', { complex_id: complexId, code, title: draft.title.trim(), address: draft.address || null, postal_code: draft.postalCode || null, timezone: 'Asia/Tehran', currency: 'IRR', floors_count: counts.floors, units_count: counts.units, parking_count: Number(draft.parkingCount || 0), storage_count: Number(draft.storageCount || 0), is_active: true });
+            if (!building) building = await create('buildings', { complex_id: complexId, ...(draft.complexMode !== 'standalone' ? { structure_type: 'complex_block' } : {}), code, title: draft.title.trim(), address: draft.address || null, postal_code: draft.postalCode || null, timezone: 'Asia/Tehran', currency: 'IRR', floors_count: counts.floors, units_count: counts.units, parking_count: Number(draft.parkingCount || 0), storage_count: Number(draft.storageCount || 0), is_active: true });
             if (!same(building.complex_id, complexId)) throw new Error('ساختمان ذخیره‌شده با مجتمع این راه‌اندازی مطابقت ندارد.');
             tick('ساختمان', fresh);
         }
@@ -228,7 +233,15 @@
                 }
             }
         }
-        return { buildingId: building.id, firstUnitId, created, ...counts };
+        if (draft.mode === 'existing' && draft.updateExisting) {
+            const values = { title: draft.existingTitle.trim(), address: draft.existingAddress || null, postal_code: draft.existingPostalCode || null, parking_count: Number(draft.existingParkingCount || 0), storage_count: Number(draft.existingStorageCount || 0) };
+            // Do not overwrite concurrent edits to fields this user never changed.
+            const payload = Object.fromEntries(Object.entries(values).filter(([key, value]) => String(value ?? '') !== String((draft.existingOriginal ? draft.existingOriginal[key] : building.location?.[key] ?? building.statistics?.[key] ?? building[key]) ?? '')));
+            if (Object.keys(payload).length) {
+                await api(`buildings/${building.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+            }
+        }
+        return { buildingId: building.id, complexId: building.complex_id, firstUnitId, created, ...counts };
     };
     root.BuildinoBuildingSetupEngine = Object.freeze({ labelForFloor, totals, resizeUnits, resizeFloors, renumberGeneratedUnits, validate, execute, readStructure, list });
 })(typeof window === 'undefined' ? globalThis : window);

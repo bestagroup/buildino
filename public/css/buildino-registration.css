@@ -1,4 +1,5 @@
 /* Registration motion stays on transform and opacity; no animation loops. */
+.registration-page [hidden] { display: none !important; }
 .registration-page .login-backdrop {
     background-color: #edf5ff;
     background-image: url('../images/Modern%20Architectural%20Mistscape.png');

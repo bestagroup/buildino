@@ -6,15 +6,16 @@
     const engine = window.BuildinoBuildingSetupEngine;
     const form = root.querySelector('[data-setup-form]');
     const query = (selector) => root.querySelector(selector);
-    const key = `buildino.building-setup.${config.actorId}`;
+    const key = `buildino.building-setup.${config.actorId}.${config.initialBuildingId || 'all'}.${config.initialComplexId || 'all'}`;
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
     const fa = (number) => Number(number).toLocaleString('fa-IR');
     const digits = (value) => String(value).replace(/[۰-۹٠-٩]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.includes(digit) ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit) : '٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
-    const newBlock = (title = 'بلوک اصلی') => ({ title, startFloor: 1, unitsPerFloor: 2, defaultArea: '', defaultBedrooms: '', usage: 'residential', floors: [] });
+    const newBlock = (title = 'طبقات') => ({ title, startFloor: 1, unitsPerFloor: 2, defaultArea: '', defaultBedrooms: '', usage: 'residential', floors: [] });
     const freshDraft = () => {
         const chosen = config.buildings.find((building) => Number(building.id) === Number(config.initialBuildingId)) || (config.buildings.length === 1 ? config.buildings[0] : null);
         const block = newBlock(); engine.resizeFloors(block, 3);
-        return { token: crypto.randomUUID(), mode: config.buildings.length ? 'existing' : 'new', buildingId: chosen?.id || '', title: '', complexMode: config.canCreateComplex ? 'standalone' : 'existing', complexId: config.complexes.length === 1 ? config.complexes[0].id : '', complexTitle: '', provinceId: '', cityId: '', province: '', city: '', address: '', postalCode: '', parkingCount: 0, storageCount: 0, blocks: [block], started: false, loadedBuildingId: null };
+        const complex = config.complexes.find((item) => Number(item.id) === Number(config.initialComplexId));
+        return { token: crypto.randomUUID(), mode: complex && !config.initialBuildingId ? 'new' : config.buildings.length ? 'existing' : 'new', buildingId: chosen?.id || '', title: '', complexMode: complex || !config.canCreateComplex ? 'existing' : 'standalone', complexId: complex?.id || (config.complexes.length === 1 ? config.complexes[0].id : ''), complexTitle: '', provinceId: '', cityId: '', province: '', city: '', address: '', postalCode: '', parkingCount: 0, storageCount: 0, blocks: [block], started: false, loadedBuildingId: null };
     };
     let draft = freshDraft();
     let step = 0;
@@ -24,11 +25,11 @@
     let restored = false;
     try {
         const saved = JSON.parse(sessionStorage.getItem(key) || 'null');
-        if (saved?.version === 2 && Array.isArray(saved.draft?.blocks) && saved.draft.blocks.length <= 20 && saved.draft.blocks.every((block) => Array.isArray(block.floors) && block.floors.length <= 100 && block.floors.every((floor) => Array.isArray(floor.units) && floor.units.length <= 2000))) {
+        if (saved?.version === 3 && Array.isArray(saved.draft?.blocks) && saved.draft.blocks.length <= 20 && saved.draft.blocks.every((block) => Array.isArray(block.floors) && block.floors.length <= 100 && block.floors.every((floor) => Array.isArray(floor.units) && floor.units.length <= 2000))) {
             draft = saved.draft; step = draft.started ? 3 : Math.max(0, Math.min(3, Number(saved.step) || 0)); furthest = step; restored = true;
         }
     } catch { /* A broken or unavailable browser draft does not block setup. */ }
-    const persist = () => { try { sessionStorage.setItem(key, JSON.stringify({ version: 2, draft, step })); } catch {} };
+    const persist = () => { try { sessionStorage.setItem(key, JSON.stringify({ version: 3, draft, step })); } catch {} };
     const clearError = () => { query('[data-setup-error]').hidden = true; };
     const errorMessage = (message, field) => {
         const error = query('[data-setup-error]'); error.textContent = message; error.hidden = false;
@@ -82,6 +83,23 @@
     };
     const syncBasics = () => {
         const existing = draft.mode === 'existing';
+        const building = config.buildings.find((item) => String(item.id) === String(draft.buildingId));
+        draft.structureType = existing ? building?.structureType || null : draft.complexMode === 'standalone' ? 'standalone' : 'complex_block';
+        draft.updateExisting = existing && Boolean(building?.canUpdate);
+        if (existing && building && String(draft.detailsBuildingId) !== String(building.id)) {
+            Object.assign(draft, { existingTitle: building.title, existingAddress: building.address || '', existingPostalCode: building.postalCode || '', existingParkingCount: building.parkingCount || 0, existingStorageCount: building.storageCount || 0, detailsBuildingId: building.id });
+            draft.existingOriginal = { title: building.title, address: building.address || null, postal_code: building.postalCode || null, parking_count: building.parkingCount || 0, storage_count: building.storageCount || 0 };
+        }
+        const label = draft.structureType === 'complex_block' ? 'بلوک' : 'ساختمان';
+        query('[data-setup-new-title-label]').textContent = `نام ${label}`;
+        query('[data-setup-existing-title-label]').textContent = `نام ${label}`;
+        query('[data-setup-context]').textContent = building?.structureType === 'complex_block' ? `${building.complexTitle} ← ${building.title} ← طبقات ← واحدها${building.complexType === 'unlinked' ? '؛ اتصال به مجتمع هنوز تأیید نشده است.' : ''}` : building?.structureType === 'standalone' ? `${building.title} ← طبقات ← واحدها` : 'ساختار قبلی حفظ می‌شود؛ فقط طبقات و واحدهای تازه اضافه می‌شوند.';
+        query('[data-setup-existing-details]').hidden = !draft.updateExisting;
+        for (const input of query('[data-setup-existing-details]').querySelectorAll('[data-setup-field]')) {
+            input.disabled = !draft.updateExisting || draft.started;
+            input.value = draft[input.dataset.setupField] ?? '';
+        }
+        query('[data-setup-add-block]').hidden = Boolean(draft.structureType);
         query('[data-setup-existing]').hidden = !existing;
         query('[data-setup-new]').hidden = existing;
         query('[data-setup-complex-name]').hidden = draft.complexMode !== 'new';
@@ -93,15 +111,15 @@
         const host = query('[data-setup-blocks]'); window.BuildinoSelect2?.destroy(host);
         host.innerHTML = draft.blocks.map((block, index) => `<article class="setup-block" data-block="${index}">
             <div class="setup-block__header"><h4>${esc(block.title)}${block.existing ? '<span class="setup-badge">ثبت‌شده</span>' : ''}</h4>${!block.existing && draft.blocks.length > 1 ? '<button type="button" class="setup-button setup-button--danger" data-block-remove>حذف از پیش‌نویس</button>' : ''}</div>
-            <p class="setup-block__preview">${fa(block.floors.length)} طبقه · ${fa(block.floors.reduce((sum, floor) => sum + floor.units.length, 0))} واحد در این بلوک</p>
+            <p class="setup-block__preview">${fa(block.floors.length)} طبقه · ${fa(block.floors.reduce((sum, floor) => sum + floor.units.length, 0))} واحد</p>
             <div class="setup-fields">
                 <div class="setup-field"><span>تعداد طبقات</span>${counter('data-block-field="floorCount"', block.floors.length || 1, Math.max(1, block.floors.filter((floor) => floor.existing).length), 'تعداد طبقات')}</div>
                 <div class="setup-field"><span>واحد در هر طبقه</span>${counter('data-block-field="unitsPerFloor"', block.unitsPerFloor, 0, 'واحدهای هر طبقه')}</div>
             </div>
             <details class="setup-block__more" data-block-options ${block.optionsOpen ? 'open' : ''}>
-                <summary>تنظیمات بیشتر <small>نام بلوک، کاربری و مشخصات واحد</small></summary>
+                <summary>تنظیمات بیشتر <small>کاربری و مشخصات واحدها</small></summary>
                 <div class="setup-fields">
-                    ${block.existing ? '' : `<label class="setup-field setup-wide"><span>نام بلوک</span><input type="text" data-block-field="title" value="${esc(block.title)}" maxlength="255"></label>`}
+                    ${block.existing || draft.structureType ? '' : `<label class="setup-field setup-wide"><span>نام بلوک</span><input type="text" data-block-field="title" value="${esc(block.title)}" maxlength="255"></label>`}
                     <label class="setup-field"><span>کاربری واحدهای جدید</span><select data-block-field="usage" data-required="1">${Object.entries({ residential: 'مسکونی', commercial: 'تجاری', office: 'اداری', other: 'سایر' }).map(([value,label]) => `<option value="${value}" ${block.usage === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
                     <label class="setup-field"><span>متراژ معمول واحدها <small>اختیاری</small></span><input type="number" data-block-field="defaultArea" value="${esc(block.defaultArea)}" min="0" step="0.01" placeholder="مثلاً ۱۰۰ مترمربع"></label>
                     <label class="setup-field"><span>تعداد اتاق معمول <small>اختیاری</small></span><input type="number" data-block-field="defaultBedrooms" value="${esc(block.defaultBedrooms)}" min="0" max="50" step="1"></label>
@@ -110,12 +128,12 @@
             <p class="setup-note">${block.existing ? 'طبقات و واحدهای ثبت‌شده محفوظ‌اند. در گام بعد می‌توانید واحدهای تازه را اصلاح کنید.' : 'شماره طبقات و واحدها خودکار پیشنهاد می‌شود و در گام بعد قابل اصلاح است.'}</p>
         </article>`).join('');
         const totals = engine.totals(draft.blocks);
-        query('[data-setup-structure-summary]').textContent = `پیش‌نمایش ساختمان: ${fa(totals.blocks)} بلوک، ${fa(totals.floors)} طبقه و ${fa(totals.units)} واحد`;
+        query('[data-setup-structure-summary]').textContent = `پیش‌نمایش: ${draft.structureType ? '' : `${fa(totals.blocks)} بخش، `}${fa(totals.floors)} طبقه و ${fa(totals.units)} واحد`;
         window.BuildinoSelect2?.enhance(host);
     };
     const renderTotals = () => {
         const count = engine.totals(draft.blocks);
-        query('[data-setup-totals]').innerHTML = `<span>${fa(count.blocks)} بلوک</span><span>${fa(count.floors)} طبقه</span><span>${fa(count.units)} واحد</span>`;
+        query('[data-setup-totals]').innerHTML = `${draft.structureType ? '' : `<span>${fa(count.blocks)} بخش</span>`}<span>${fa(count.floors)} طبقه</span><span>${fa(count.units)} واحد</span>`;
     };
     const renderUnits = () => {
         renderTotals();
@@ -124,9 +142,13 @@
     const renderReview = () => {
         const count = engine.totals(draft.blocks);
         const building = config.buildings.find((item) => Number(item.id) === Number(draft.buildingId));
-        const title = draft.mode === 'existing' ? building?.title || 'ساختمان انتخاب‌شده' : draft.title;
+        const title = draft.mode === 'existing' ? draft.existingTitle || building?.title || 'مورد انتخاب‌شده' : draft.title;
+        const context = draft.mode === 'existing'
+            ? building?.structureType === 'standalone' ? 'ساختمان مستقل' : building?.complexTitle || ''
+            : draft.complexMode === 'existing' ? config.complexes.find((item) => Number(item.id) === Number(draft.complexId))?.title || ''
+            : draft.complexMode === 'standalone' ? 'ساختمان مستقل' : draft.complexTitle;
         const existing = draft.blocks.reduce((sum, block) => sum + block.floors.reduce((total, floor) => total + floor.units.filter((unit) => unit.existing).length, 0), 0);
-        query('[data-setup-review]').innerHTML = `<div class="setup-review"><div class="setup-review__building"><h4>${esc(title)}</h4><p>${esc(draft.mode === 'existing' ? building?.complexTitle || '' : draft.complexMode === 'existing' ? config.complexes.find((item) => Number(item.id) === Number(draft.complexId))?.title || '' : draft.complexMode === 'standalone' ? 'ساختمان مستقل' : draft.complexTitle)}</p><p>${esc(draft.mode === 'existing' ? building?.address || '' : [draft.province, draft.city, draft.address].filter(Boolean).join('، '))}</p></div>${draft.blocks.map((block) => `<div class="setup-review__row"><strong>${esc(block.title)}</strong><span>${fa(block.floors.length)} طبقه · ${fa(block.floors.reduce((sum, floor) => sum + floor.units.length, 0))} واحد</span></div>`).join('')}<div class="setup-review__row"><strong>جمع کل</strong><span>${fa(count.units)} واحد، شامل ${fa(existing)} واحد ثبت‌شده و ${fa(count.units - existing)} واحد جدید</span></div><p class="setup-note">ساختار هر بخش پس از ثبت حفظ می‌شود. اگر ارتباط قطع شد، از همین صفحه ادامه دهید.</p></div>`;
+        query('[data-setup-review]').innerHTML = `<div class="setup-review"><div class="setup-review__building"><h4>${esc(title)}</h4><p>${esc(context)}</p><p>${esc(draft.mode === 'existing' ? draft.existingAddress || building?.address || '' : [draft.province, draft.city, draft.address].filter(Boolean).join('، '))}</p></div>${draft.blocks.map((block) => `<div class="setup-review__row"><strong>${esc(block.title)}</strong><span>${fa(block.floors.length)} طبقه · ${fa(block.floors.reduce((sum, floor) => sum + floor.units.length, 0))} واحد</span></div>`).join('')}<div class="setup-review__row"><strong>جمع کل</strong><span>${fa(count.units)} واحد، شامل ${fa(existing)} واحد ثبت‌شده و ${fa(count.units - existing)} واحد جدید</span></div><p class="setup-note">ساختار هر بخش پس از ثبت حفظ می‌شود. اگر ارتباط قطع شد، از همین صفحه ادامه دهید.</p></div>`;
     };
     const updateNavigation = () => {
         const links = [...root.querySelectorAll('[data-setup-step-link]')];
@@ -173,11 +195,19 @@
                 query('[data-setup-saving-label]').textContent = `در حال ثبت: ${label}`;
                 query('[data-setup-saving-count]').textContent = `${fa(done)} از ${fa(total)} بخش بررسی و ثبت شد`;
             });
+            const completion = await fetch(`${config.completeUrl}/${result.buildingId}/complete`, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': config.csrfToken } });
+            if (!completion.ok) throw new Error('ساختار ذخیره شد اما تأیید نهایی کامل نشد. دوباره «ادامه ثبت» را بزنید.');
             form.hidden = true; query('.setup-steps').hidden = true; query('[data-setup-resume]').hidden = true;
             const success = query('[data-setup-success]'); success.hidden = false;
-            query('[data-setup-success-summary]').textContent = `${fa(result.blocks)} بلوک، ${fa(result.floors)} طبقه و ${fa(result.units)} واحد در ساختار انتخاب‌شده آماده است.`;
-            if (config.canManageOwnership && result.firstUnitId) { const url = new URL(config.ownershipUrl, location.origin); url.searchParams.set('unit_id', result.firstUnitId); query('[data-setup-ownership]').href = url.pathname + url.search; query('[data-setup-ownership]').hidden = false; }
-            if (config.canInvite && result.firstUnitId) { const url = new URL(config.invitationsUrl, location.origin); url.searchParams.set('unit_id', result.firstUnitId); query('[data-setup-invite]').href = url.pathname + url.search; query('[data-setup-invite]').hidden = false; }
+            query('[data-setup-success-summary]').textContent = `${fa(result.floors)} طبقه و ${fa(result.units)} واحد آماده است.`;
+            const canAddSibling = config.complexes.some((item) => Number(item.id) === Number(result.complexId));
+            query('[data-setup-another]').hidden = !config.canCreateBuilding;
+            query('[data-setup-another]').textContent = canAddSibling ? 'افزودن بلوک دیگر به همین مجتمع' : 'راه‌اندازی مجموعه دیگر';
+            query('[data-setup-another]').dataset.complexId = canAddSibling ? result.complexId : '';
+            if (config.canManageOwnership && result.firstUnitId) { const url = new URL(config.ownershipUrl, location.origin); url.searchParams.set('unit_id', result.firstUnitId); url.searchParams.set('building_id', result.buildingId); query('[data-setup-ownership]').href = url.pathname + url.search; query('[data-setup-ownership]').hidden = false; }
+            if (config.canInvite && result.firstUnitId) { const url = new URL(config.invitationsUrl, location.origin); url.searchParams.set('unit_id', result.firstUnitId); url.searchParams.set('building_id', result.buildingId); query('[data-setup-invite]').href = url.pathname + url.search; query('[data-setup-invite]').hidden = false; }
+            const unitLink = success.querySelector('[data-setup-unit-link]');
+            unitLink.href = `${config.unitsUrl}?building_id=${result.buildingId}`;
             try { sessionStorage.removeItem(key); } catch {}
             success.querySelector('h3').focus();
         } catch (error) {
@@ -203,7 +233,7 @@
         draft[field] = input.value;
         input.removeAttribute('aria-invalid'); clearError();
         if (field === 'mode' || field === 'buildingId') { draft.loadedBuildingId = null; furthest = 0; if (field === 'mode' && draft.mode === 'new') { draft.blocks = [newBlock()]; engine.resizeFloors(draft.blocks[0], 3); } }
-        if (field === 'mode' || field === 'complexMode') syncBasics();
+        if (['mode', 'buildingId', 'complexMode', 'complexId'].includes(field)) syncBasics();
         if (field === 'provinceId') syncLocations(true);
         if (field === 'cityId') syncLocations();
         persist(); updateNavigation();
@@ -284,7 +314,8 @@
     query('[data-setup-previous]').addEventListener('click', () => { if (!busy && !draft.started && step > 0) { clearError(); showStep(step - 1); } });
     root.querySelectorAll('[data-setup-step-link]').forEach((button) => button.addEventListener('click', () => { const index = Number(button.dataset.setupStepLink); if (!busy && !draft.started && index <= furthest && (index <= step || checkThrough(index - 1))) { clearError(); showStep(index); } }));
     const reset = () => { if (busy) return; try { sessionStorage.removeItem(key); } catch {} window.location.assign(window.location.pathname); };
-    query('[data-setup-reset]').addEventListener('click', reset); query('[data-setup-another]').addEventListener('click', reset);
+    query('[data-setup-reset]').addEventListener('click', reset);
+    query('[data-setup-another]').addEventListener('click', () => { const id = query('[data-setup-another]').dataset.complexId; if (id) window.location.assign(`${location.pathname}?complex_id=${encodeURIComponent(id)}`); else reset(); });
     for (const input of form.querySelectorAll('[data-setup-field]')) { if (input.type === 'radio') input.checked = input.value === draft.mode; else if (input.name !== 'cityId') input.value = draft[input.dataset.setupField] ?? ''; }
     query('[data-setup-optional]').open = draft.optionalOpen ?? Boolean(draft.address || draft.postalCode || Number(draft.parkingCount) || Number(draft.storageCount));
     syncBasics(); syncLocations(); showStep(step, false);

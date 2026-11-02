@@ -17,7 +17,7 @@
     @vite('resources/js/app.js')
     <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-login.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/buildino-registration.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-registration.css') }}?v={{ filemtime(public_path('css/buildino-registration.css')) }}">
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}">
 </head>
@@ -90,7 +90,7 @@
                     <label class="registration-field registration-field--wide">
                         <select name="persona" required data-registration-persona data-placeholder="نوع حساب را انتخاب کنید">
                             @foreach ($personas as $name => $persona)
-                                <option value="{{ $name }}" data-kind="{{ $persona['kind'] }}" data-description="{{ $persona['description'] }}">
+                                <option value="{{ $name }}" data-kind="{{ $persona['kind'] }}" data-description="{{ $persona['description'] }}" @selected($activePersona === $name)>
                                     {{ $persona['label'] }}
                                 </option>
                             @endforeach
@@ -228,7 +228,7 @@
                             <span>
                                 <strong>فضای کاری اولیه</strong>
                                 <small>
-                                    این مجتمع فقط برای حساب شما ساخته می‌شود.
+                                    اطلاعات این بخش در راه‌اندازی ادامه پیدا می‌کند.
                                 </small>
                             </span>
                         </div>
@@ -246,7 +246,7 @@
                             </label>
 
                             <label class="registration-field">
-                                <span>نام ساختمان اولیه</span>
+                                <span data-registration-building-label>نام ساختمان</span>
                                 <input
                                     type="text"
                                     name="building_title"
@@ -417,7 +417,7 @@
     </main>
 </div>
 <script src="{{ asset('js/buildino-foundation.js') }}"></script>
-<script src="{{ asset('js/buildino-registration.js') }}" defer></script>
+<script src="{{ asset('js/buildino-registration.js') }}?v={{ filemtime(public_path('js/buildino-registration.js')) }}" defer></script>
 @include('shared.core-auth')
 </body>
 </html>

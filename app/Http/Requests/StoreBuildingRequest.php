@@ -14,6 +14,8 @@ class StoreBuildingRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // Explicit opt-in for new blocks under a legacy Complex; omission preserves old callers.
+            'structure_type' => ['sometimes', 'in:complex_block'],
             'complex_id' => [
                 'required',
                 'integer',

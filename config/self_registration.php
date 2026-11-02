@@ -14,15 +14,23 @@ return [
 
     'personas' => [
         'building_manager' => [
-            'label' => 'مدیر ساختمان',
-            'description' => 'ایجاد مجتمع و ساختمان اولیه و مدیریت بلوک‌ها، طبقات، واحدها و ساکنین.',
+            'label' => 'مدیر ساختمان مستقل',
+            'description' => 'مدیریت یک ساختمان مستقل، طبقات، واحدها و ساکنان آن.',
             'kind' => 'management',
             'scope' => 'building',
         ],
 
+        'block_manager' => [
+            'label' => 'مدیر یک بلوک از مجتمع',
+            'description' => 'مدیریت فقط بلوک خودتان؛ اتصال به مجتمع موجود با تأیید مدیر مجتمع انجام می‌شود.',
+            'kind' => 'management',
+            'scope' => 'building',
+            'role' => 'building_manager',
+        ],
+
         'complex_manager' => [
             'label' => 'مدیر مجتمع',
-            'description' => 'مدیریت یک مجتمع اختصاصی و افزودن چند ساختمان و همه عملیات آن‌ها.',
+            'description' => 'تعریف مجتمع و مدیریت بلوک‌ها، طبقات و واحدهای آن.',
             'kind' => 'management',
             'scope' => 'complex',
         ],
