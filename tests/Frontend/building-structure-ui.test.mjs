@@ -76,6 +76,12 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
         await mount('buildings'); await until(() => $('[data-structure-edit]'));
         expect(!$('.crud-sibling-nav') && !$('.ui-drawer'), 'Legacy tabs or modal remain');
         expect($('[data-structure-child]').href.includes('building_id=11'), 'Building context missing from child link');
+        samples.buildings.structure_type = 'complex_block'; await mount('buildings'); await until(() => $('[data-structure-child]'));
+        expect($('[data-structure-child]').href.includes('/floors?building_id=11'), 'Typed block still routes through a second block layer');
+        const simple = props('floors'); simple.structureUi.hierarchy.buildings[0].structure_type = 'complex_block';
+        activeKey = 'floors'; history.replaceState({},'', '/management/operations/floors?building_id=1'); window.mountStructure(simple); await tick(); await until(() => $('.structure-record'));
+        expect(!$('[data-structure-block]') && $('.structure-breadcrumb a[href="/management/operations/buildings"]'), 'Internal section still shown as an extra block');
+        delete samples.buildings.structure_type; await mount('buildings'); await until(() => $('[data-structure-edit]'));
         $('[data-structure-add]').click(); await tick(); expect(!$('.structure-record') && $('.structure-editor'), 'Editor must replace list');
         submit(); await tick(); expect($('[aria-invalid="true"]') && posts.length === 0, 'Required fields bypassed');
         await input('title','ساختمان جدید'); await input('code','B-2'); submit(); await tick();

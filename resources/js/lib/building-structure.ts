@@ -2,7 +2,7 @@ import type { CrudField, CrudRecord } from '../types/management';
 
 export const structure = {
     complexes: { singular: 'مجتمع', parent: '', child: 'buildings', context: '', childContext: 'complex_id' },
-    buildings: { singular: 'ساختمان', parent: 'complexes', child: 'blocks', context: '', childContext: 'building_id' },
+    buildings: { singular: 'ساختمان / بلوک', parent: 'complexes', child: 'blocks', context: '', childContext: 'building_id' },
     blocks: { singular: 'بلوک', parent: 'buildings', child: 'floors', context: 'building_id', childContext: 'block_id' },
     floors: { singular: 'طبقه', parent: 'blocks', child: 'units', context: 'block_id', childContext: 'floor_id' },
     units: { singular: 'واحد', parent: 'floors', child: '', context: 'floor_id', childContext: '' },
@@ -11,11 +11,12 @@ export type StructureKey = keyof typeof structure;
 export interface Abilities { create: boolean; update: boolean; delete: boolean; childView?: boolean }
 export interface StructureContext extends Abilities {
     id: number; label: string; title?: string; building_id: number; block_id: number | null; complex_id: number;
+    structure_type?: string | null;
 }
 export interface StructureUi {
     contexts: StructureContext[];
     hierarchy?: {
-        buildings: { id: number; title: string; complex_id: number }[];
+        buildings: { id: number; title: string; complex_id: number; structure_type?: string | null }[];
         blocks: { id: number; title: string; building_id: number }[];
     };
     abilities: Record<string, Abilities>;

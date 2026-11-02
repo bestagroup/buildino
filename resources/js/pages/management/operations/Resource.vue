@@ -20,6 +20,7 @@ const notice = ref(''), choosingScope = ref(false);
 let listTicket = 0, initializing = false, disposed = false;
 const scope = useStructureScope(props.resourceKey as StructureKey, props.structureUi, contextId);
 const { buildingId, blockId, buildings, blocks, floors, context } = scope;
+const simpleStructure = computed(() => Boolean(buildings.value.find(row => String(row.id) === buildingId.value)?.structure_type));
 const child = computed(() => props.siblingResources.find(row => row.key === meta.value.child));
 const parent = computed(() => props.siblingResources.find(row => row.key === meta.value.parent));
 const ready = computed(() => !meta.value.context || Boolean(context.value));
@@ -72,6 +73,7 @@ const changeContext = (level: 'building' | 'block' | 'floor') => {
 };
 const confirmContext = () => { if (ready.value) { choosingScope.value = false; updateUrl(); void loadRows(); void focus('#structure-list-title'); } };
 const relatedUrl = (row: CrudRecord) => {
+    if (props.resourceKey === 'buildings' && row.structure_type) return `/management/operations/floors?building_id=${encodeURIComponent(String(row.id))}`;
     const url = new URL(child.value?.url || window.location.href, window.location.origin);
     url.search = '';
     if (meta.value.context) scope.query().forEach((value, key) => url.searchParams.set(key, value));
@@ -80,6 +82,7 @@ const relatedUrl = (row: CrudRecord) => {
     return url.pathname + url.search;
 };
 const parentUrl = computed(() => {
+    if (props.resourceKey === 'floors' && simpleStructure.value) return '/management/operations/buildings';
     const url = new URL(parent.value?.url || '/management/operations/buildings', window.location.origin);
     if (props.resourceKey === 'floors' && buildingId.value) url.searchParams.set('building_id', buildingId.value);
     if (props.resourceKey === 'units') {
@@ -185,15 +188,15 @@ onBeforeUnmount(() => { disposed = true; listTicket++; window.removeEventListene
 <template>
     <Head :title="resource.title" />
     <div ref="root" class="ownership-page structure-page" data-structure-page>
-        <nav class="structure-breadcrumb" aria-label="مسیر صفحه"><a href="/management">داشبورد</a><span>/</span><a v-if="parent" :href="parentUrl">{{ parent.title }}</a><span v-if="parent">/</span><strong>{{ resource.title }}</strong></nav>
+        <nav class="structure-breadcrumb" aria-label="مسیر صفحه"><a href="/management">داشبورد</a><span>/</span><a v-if="parent" :href="parentUrl">{{ resourceKey === 'floors' && simpleStructure ? 'ساختمان‌ها و بلوک‌ها' : parent.title }}</a><span v-if="parent">/</span><strong>{{ resource.title }}</strong></nav>
         <header class="ownership-hero"><div class="ownership-hero__icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 21V5l8-2v18M12 8h8v13M7 8h2M7 12h2M7 16h2M15 11h2M15 15h2M2 21h20"/></svg></div><div><h2>{{ resource.title }}</h2><p>{{ resource.description }}</p></div></header>
         <template v-if="!editor">
             <section v-if="meta.context" class="ownership-card structure-context" aria-labelledby="structure-context-title">
                 <template v-if="choosingScope">
                     <div class="ownership-card__heading"><div><h3 id="structure-context-title">انتخاب {{ resource.context?.[0]?.label }}</h3><p>از ساختمان شروع کنید و محل {{ meta.singular }} را مشخص کنید.</p></div></div>
                     <div class="structure-context-grid">
-                        <label class="ownership-field"><span>ساختمان</span><select v-model="buildingId" data-structure-building data-select2="off" @change="changeContext('building')"><option value="">انتخاب ساختمان</option><option v-for="item in buildings" :key="item.id" :value="String(item.id)">{{ item.title }}</option></select></label>
-                        <label v-if="resourceKey !== 'blocks'" class="ownership-field"><span>بلوک</span><select v-model="blockId" data-structure-block data-select2="off" :disabled="!buildingId || !blocks.length" @change="changeContext('block')"><option value="">{{ !buildingId ? 'ابتدا ساختمان را انتخاب کنید' : blocks.length ? 'انتخاب بلوک' : 'بلوکی ثبت نشده است' }}</option><option v-for="item in blocks" :key="item.id" :value="String(item.id)">{{ item.title }}</option></select></label>
+                        <label class="ownership-field"><span>ساختمان یا بلوک مجتمع</span><select v-model="buildingId" data-structure-building data-select2="off" @change="changeContext('building')"><option value="">انتخاب ساختمان یا بلوک</option><option v-for="item in buildings" :key="item.id" :value="String(item.id)">{{ item.title }}</option></select></label>
+                        <label v-if="resourceKey !== 'blocks' && (!simpleStructure || blocks.length > 1)" class="ownership-field"><span>{{ simpleStructure ? 'بخش داخلی' : 'بلوک' }}</span><select v-model="blockId" data-structure-block data-select2="off" :disabled="!buildingId || !blocks.length" @change="changeContext('block')"><option value="">انتخاب بخش</option><option v-for="item in blocks" :key="item.id" :value="String(item.id)">{{ item.title }}</option></select></label>
                         <label v-if="resourceKey === 'units'" class="ownership-field"><span>طبقه</span><select v-model="contextId" data-structure-floor data-select2="off" :disabled="!blockId || !floors.length" @change="changeContext('floor')"><option value="">{{ !blockId ? 'ابتدا بلوک را انتخاب کنید' : floors.length ? 'انتخاب طبقه' : 'طبقه‌ای ثبت نشده است' }}</option><option v-for="item in floors" :key="item.id" :value="String(item.id)">{{ item.title || item.label }}</option></select></label>
                     </div>
                     <p v-if="!buildings.length" class="ownership-empty">ساختمان قابل دسترسی برای این بخش وجود ندارد.</p>
@@ -214,7 +217,7 @@ onBeforeUnmount(() => { disposed = true; listTicket++; window.removeEventListene
                     <article v-for="row in visibleRows" :key="String(row.id)" class="structure-record" :aria-label="rowTitle(row)">
                         <div class="structure-record__heading"><div><span v-if="row.code" class="structure-code" dir="ltr">{{ row.code }}</span><h4>{{ rowTitle(row) }}</h4></div><span v-if="row.is_active !== undefined" class="structure-status" :class="{ 'is-inactive': !row.is_active }">{{ display(row.is_active) }}</span></div>
                         <dl class="structure-record__info"><template v-for="column in (resource.columns ?? []).filter(column => !['id', 'title', 'code', 'is_active', 'sort_order', 'currency'].includes(column.key))" :key="column.key"><dt>{{ column.label }}</dt><dd>{{ column.key === 'usage_type' ? ({ residential: 'مسکونی', commercial: 'تجاری', office: 'اداری', other: 'سایر' } as Record<string, string>)[String(readValue(row, column.key))] || display(readValue(row, column.key)) : display(readValue(row, column.key)) }}</dd></template></dl>
-                        <div class="structure-record__actions"><a v-if="canViewChild(row) && child" :href="relatedUrl(row)" class="ownership-button ownership-button--primary" data-structure-child>مدیریت {{ child.title }}</a><button v-if="allowed(row, 'update')" type="button" class="ownership-button" data-structure-edit @click="openEditor('edit', row)">ویرایش اطلاعات</button><button v-if="allowed(row, 'delete')" type="button" class="ownership-button structure-delete" @click="deleteTarget = row">حذف</button></div>
+                        <div class="structure-record__actions"><a v-if="canViewChild(row) && child" :href="relatedUrl(row)" class="ownership-button ownership-button--primary" data-structure-child>مدیریت {{ resourceKey === 'buildings' && row.structure_type ? 'طبقات و واحدها' : child.title }}</a><button v-if="allowed(row, 'update')" type="button" class="ownership-button" data-structure-edit @click="openEditor('edit', row)">ویرایش اطلاعات</button><button v-if="allowed(row, 'delete')" type="button" class="ownership-button structure-delete" @click="deleteTarget = row">حذف</button></div>
                     </article>
                 </div>
                 <nav v-if="ready && lastPage > 1" class="structure-pagination" aria-label="صفحه‌بندی"><button class="ownership-button" type="button" :disabled="loading || page <= 1" @click="loadRows(page - 1)">صفحه قبل</button><span>صفحه {{ page }} از {{ lastPage }} · {{ total }} مورد</span><button class="ownership-button" type="button" :disabled="loading || page >= lastPage" @click="loadRows(page + 1)">صفحه بعد</button></nav>

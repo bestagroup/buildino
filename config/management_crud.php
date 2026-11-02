@@ -162,8 +162,8 @@ return [
         'permission' => 'buildings.view',
         'permission_scope' => 'any',
             'group' => 'structure',
-            'title' => 'ساختمان‌ها',
-            'description' => 'ثبت ساختمان و اتصال آن به مجتمع',
+            'title' => 'ساختمان‌ها و بلوک‌های مجتمع',
+            'description' => 'مدیریت ساختمان مستقل یا بلوک مجتمع و طبقات و واحدهای آن',
             'list' => [
                 'method' => 'GET',
                 'url' => '/api/v1/buildings?per_page=100'

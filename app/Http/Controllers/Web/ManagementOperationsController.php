@@ -259,7 +259,8 @@ class ManagementOperationsController extends Controller
             'complexes' => 'buildings.view', 'buildings' => 'blocks.view',
             'blocks' => 'floors.view', 'floors' => 'units.view', default => null,
         };
-        $childAccess = fn ($scope): bool => $childPermission !== null && $permissions->allows($user, $childPermission, $scope);
+        $childAccess = fn ($scope): bool => $childPermission !== null && $permissions->allows($user,
+            $resource === 'buildings' && $scope instanceof Building && $scope->structure_type ? 'floors.view' : $childPermission, $scope);
         $parents = match ($resource) {
             'blocks' => Building::query()->whereIn('id', $buildingIds)->with('complex')->orderBy('title')->get(),
             'floors' => Block::query()->whereIn('building_id', $buildingIds)->with('building.complex')->orderBy('sort_order')->get(),
@@ -277,10 +278,11 @@ class ManagementOperationsController extends Controller
                 $block = $resource === 'floors' ? $parent : ($resource === 'units' ? $parent->block : null);
                 return [
                     'id' => $parent->id,
-                    'label' => collect([$building->title, $block?->title, $resource === 'units' ? ($parent->title ?: 'طبقه '.$parent->floor_number) : null])->filter()->implode(' / '),
+                    'label' => collect([$building->title, $building->structure_type ? null : $block?->title, $resource === 'units' ? ($parent->title ?: 'طبقه '.$parent->floor_number) : null])->filter()->implode(' / '),
                     'building_id' => $building->id,
                     'block_id' => $block?->id,
                     'complex_id' => $building->complex_id,
+                    'structure_type' => $building->structure_type,
                     'title' => $resource === 'units' ? ($parent->title ?: 'طبقه '.$parent->floor_number) : $parent->title,
                     ...$abilities($building),
                     'childView' => $childAccess($building),
@@ -297,7 +299,7 @@ class ManagementOperationsController extends Controller
             'hierarchy' => [
                 'buildings' => in_array($resource, ['blocks', 'floors', 'units'], true)
                     ? $accessibleBuildings->filter(fn (Building $building): bool => $permissions->allows($user, "$resource.view", $building))
-                        ->map(fn (Building $building): array => ['id' => $building->id, 'title' => $building->title, 'complex_id' => $building->complex_id])->values()
+                        ->map(fn (Building $building): array => ['id' => $building->id, 'title' => $building->title, 'complex_id' => $building->complex_id, 'structure_type' => $building->structure_type])->values()
                     : [],
                 'blocks' => $resource === 'units'
                     ? Block::query()->whereIn('building_id', $buildingIds)->orderBy('sort_order')->orderBy('id')->get()

@@ -7,7 +7,7 @@ export function useStructureScope(key: StructureKey, ui: StructureUi, contextId:
     const buildingId = ref(''), blockId = ref('');
     const buildings = computed(() => ui.hierarchy?.buildings ?? ui.contexts
         .filter((row, index, all) => all.findIndex(item => item.building_id === row.building_id) === index)
-        .map(row => ({ id: row.building_id, title: row.label.split(' / ')[0], complex_id: row.complex_id })));
+        .map(row => ({ id: row.building_id, title: row.label.split(' / ')[0], complex_id: row.complex_id, structure_type: row.structure_type })));
     const blocks = computed(() => (key === 'floors'
         ? ui.contexts.map(row => ({ id: row.id, title: row.title || row.label, building_id: row.building_id }))
         : ui.hierarchy?.blocks ?? ui.contexts
