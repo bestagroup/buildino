@@ -194,6 +194,13 @@ return [
     ],
 
     'request_examples' => [
+        'POST api/v1/complexes' => [
+            'code' => 'COMPLEX-EXAMPLE', 'title' => 'Example complex',
+            'province' => 'Tehran', 'city' => 'Tehran', 'workspace_type' => 'complex',
+        ],
+        'POST api/v1/buildings' => [
+            'complex_id' => '{{complex_id}}', 'code' => 'BLOCK-EXAMPLE', 'title' => 'Block A', 'structure_type' => 'complex_block',
+        ],
         'POST api/v1/auth/otp/request' => [
             'identifier' => '{{mobile}}',
             'channel' => 'sms',

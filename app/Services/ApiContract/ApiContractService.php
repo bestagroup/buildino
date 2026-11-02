@@ -537,6 +537,25 @@ final class ApiContractService
                 ];
             }
 
+            if ($path === '/complexes' && $method === 'post') {
+                $operation['description'] = 'Optional workspace_type: complex (blocks managed at Building scope) or standalone (one Building only). Omit for the legacy hierarchy. The response includes nullable workspace_type. Public requests cannot create an unlinked placeholder.';
+                $operation['requestBody']['content']['application/json']['schema']['required'] = ['code', 'title', 'province', 'city'];
+                $operation['requestBody']['content']['application/json']['schema']['properties']['workspace_type'] = [
+                    'type' => 'string', 'nullable' => true, 'enum' => ['standalone', 'complex', null],
+                ];
+                $operation['responses']['201'] = ['description' => 'Complex created; response data includes workspace_type.'];
+                unset($operation['responses']['200']);
+            }
+            if ($path === '/buildings' && $method === 'post') {
+                $operation['description'] = 'Requires buildings.create on the parent Complex. structure_type is derived from its workspace_type: standalone or complex_block. For a legacy Complex, optionally send structure_type=complex_block to opt into the new block journey; omission preserves null and legacy callers. A standalone or unlinked parent may contain only one Building (422 otherwise).';
+                $operation['requestBody']['content']['application/json']['schema']['properties']['structure_type'] = ['type' => 'string', 'enum' => ['complex_block']];
+                $operation['responses']['201'] = ['description' => 'Building or complex block created; data includes nullable structure_type.'];
+                unset($operation['responses']['200']);
+            }
+            if ($path === '/buildings/{building}' && $method === 'patch') {
+                $operation['description'] = 'Updating complex_id on a typed Building is rejected with 422; use the management setup connection request/approval flow. Moving a legacy Building also requires buildings.create on the destination Complex.';
+            }
+
             $paths[$path][$method] =
                 $operation;
         }

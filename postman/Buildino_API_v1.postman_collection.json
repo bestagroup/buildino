@@ -2483,6 +2483,10 @@
                             {
                                 "key": "Accept",
                                 "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -2495,6 +2499,15 @@
                                 "v1",
                                 "buildings"
                             ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"complex_id\": \"{{complex_id}}\",\n    \"code\": \"BLOCK-EXAMPLE\",\n    \"title\": \"Block A\",\n    \"structure_type\": \"complex_block\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     },
                     "event": [
@@ -3281,6 +3294,10 @@
                             {
                                 "key": "Accept",
                                 "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -3293,6 +3310,15 @@
                                 "v1",
                                 "complexes"
                             ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"COMPLEX-EXAMPLE\",\n    \"title\": \"Example complex\",\n    \"province\": \"Tehran\",\n    \"city\": \"Tehran\",\n    \"workspace_type\": \"complex\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     },
                     "event": [

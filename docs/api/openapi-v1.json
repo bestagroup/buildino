@@ -1058,9 +1058,6 @@
                 "summary": "Post /buildings",
                 "parameters": [],
                 "responses": {
-                    "200": {
-                        "description": "Successful response"
-                    },
                     "401": {
                         "$ref": "#/components/responses/Unauthenticated"
                     },
@@ -1072,13 +1069,42 @@
                     },
                     "429": {
                         "$ref": "#/components/responses/RateLimited"
+                    },
+                    "201": {
+                        "description": "Building or complex block created; data includes nullable structure_type."
                     }
                 },
                 "security": [
                     {
                         "bearerAuth": []
                     }
-                ]
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true,
+                                "properties": {
+                                    "structure_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "complex_block"
+                                        ]
+                                    }
+                                }
+                            },
+                            "example": {
+                                "complex_id": "{{complex_id}}",
+                                "code": "BLOCK-EXAMPLE",
+                                "title": "Block A",
+                                "structure_type": "complex_block"
+                            }
+                        }
+                    }
+                },
+                "description": "Requires buildings.create on the parent Complex. structure_type is derived from its workspace_type: standalone or complex_block. For a legacy Complex, optionally send structure_type=complex_block to opt into the new block journey; omission preserves null and legacy callers. A standalone or unlinked parent may contain only one Building (422 otherwise)."
             }
         },
         "/buildings/{building}": {
@@ -1197,7 +1223,8 @@
                     {
                         "bearerAuth": []
                     }
-                ]
+                ],
+                "description": "Updating complex_id on a typed Building is rejected with 422; use the management setup connection request/approval flow. Moving a legacy Building also requires buildings.create on the destination Complex."
             },
             "put": {
                 "operationId": "put_api_v1_buildings_building",
@@ -3004,9 +3031,6 @@
                 "summary": "Post /complexes",
                 "parameters": [],
                 "responses": {
-                    "200": {
-                        "description": "Successful response"
-                    },
                     "401": {
                         "$ref": "#/components/responses/Unauthenticated"
                     },
@@ -3018,13 +3042,52 @@
                     },
                     "429": {
                         "$ref": "#/components/responses/RateLimited"
+                    },
+                    "201": {
+                        "description": "Complex created; response data includes workspace_type."
                     }
                 },
                 "security": [
                     {
                         "bearerAuth": []
                     }
-                ]
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true,
+                                "required": [
+                                    "code",
+                                    "title",
+                                    "province",
+                                    "city"
+                                ],
+                                "properties": {
+                                    "workspace_type": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "enum": [
+                                            "standalone",
+                                            "complex",
+                                            null
+                                        ]
+                                    }
+                                }
+                            },
+                            "example": {
+                                "code": "COMPLEX-EXAMPLE",
+                                "title": "Example complex",
+                                "province": "Tehran",
+                                "city": "Tehran",
+                                "workspace_type": "complex"
+                            }
+                        }
+                    }
+                },
+                "description": "Optional workspace_type: complex (blocks managed at Building scope) or standalone (one Building only). Omit for the legacy hierarchy. The response includes nullable workspace_type. Public requests cannot create an unlinked placeholder."
             }
         },
         "/complexes/{complex}": {
