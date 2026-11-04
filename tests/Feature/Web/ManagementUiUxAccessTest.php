@@ -210,7 +210,7 @@ class ManagementUiUxAccessTest extends TestCase
             ->assertOk();
     }
 
-    public function test_building_manager_sidebar_exposes_its_structure_residents_and_users_without_extra_permissions(): void
+    public function test_building_manager_sidebar_shows_only_general_links_without_revoking_operations(): void
     {
         $graph = $this->createBuildingGraph();
         $manager = $this->createUser();
@@ -226,13 +226,8 @@ class ManagementUiUxAccessTest extends TestCase
         preg_match('/<nav class="sidebar__nav">(.*?)<\/nav>/s', $response->getContent(), $match);
         $this->assertNotEmpty($match);
         preg_match_all('/data-nav-key="([^"]+)"/', $match[1], $keys);
-        foreach (['dashboard', 'operations', 'at-a-glance', 'occupancies', 'access'] as $key) {
-            $this->assertContains($key, $keys[1]);
-        }
-        $this->assertStringContainsString('data-nav-group="building"', $match[1]);
-        $this->assertStringContainsString(route('management.operations.show', 'users'), $match[1]);
-        $this->assertNotContains('ownerships', $keys[1]); // This custom role has no ownership permission.
-        $this->assertNotContains('roles', $keys[1]);
+        $this->assertEqualsCanonicalizing(['dashboard', 'operations', 'at-a-glance'], $keys[1]);
+        $this->assertStringNotContainsString('data-nav-group="building"', $match[1]);
         $this->get('/management/operations')->assertOk();
         $this->get('/management/operations/occupancies')->assertOk();
         $this->get('/management/operations/users')->assertOk();
