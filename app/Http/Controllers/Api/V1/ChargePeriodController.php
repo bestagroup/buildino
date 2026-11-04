@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\ChargePeriodStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreChargePeriodRequest;
 use App\Http\Requests\UpdateChargePeriodRequest;
 use App\Http\Resources\V1\ChargePeriodResource;
 use App\Models\Building;
 use App\Models\ChargePeriod;
+use App\Services\ChargePeriodScheduleService;
 use App\Services\ChargePeriodService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Validation\ValidationException;
 
 class ChargePeriodController extends Controller
 {
@@ -33,7 +32,7 @@ class ChargePeriodController extends Controller
 
         return ChargePeriodResource::collection(
             $building->chargePeriods()
-                ->withCount(['chargeCalculations','chargeExpenseAllocations','unitInvoices'])
+                ->withCount(['chargeCalculations', 'chargeExpenseAllocations', 'unitInvoices'])
                 ->latest('period_start')
                 ->paginate(
                     min(
@@ -59,28 +58,9 @@ class ChargePeriodController extends Controller
             403
         );
 
-        $data = $request->validated();
-
-        $overlap = ChargePeriod::query()
-            ->where('building_id', $building->id)
-            ->whereNotIn('status', [
-                ChargePeriodStatus::Cancelled->value,
-            ])
-            ->whereDate('period_start', '<=', $data['period_end'])
-            ->whereDate('period_end', '>=', $data['period_start'])
-            ->exists();
-
-        if ($overlap) {
-            throw ValidationException::withMessages([
-                'period_start' => 'This charge period overlaps an existing period.',
-            ]);
-        }
-
-        $period = $building->chargePeriods()->create([
-            ...$data,
-            'status' => ChargePeriodStatus::Draft,
-            'created_by' => $request->user()->getKey(),
-        ]);
+        $period = app(ChargePeriodScheduleService::class)->save(
+            $building, $request->validated(), $request->user()
+        );
 
         return (new ChargePeriodResource($period))
             ->response()
@@ -107,13 +87,9 @@ class ChargePeriodController extends Controller
     ): ChargePeriodResource {
         $this->authorize('update', $chargePeriod);
 
-        if ($chargePeriod->status !== ChargePeriodStatus::Draft) {
-            throw ValidationException::withMessages([
-                'status' => 'Only a draft charge period can be edited.',
-            ]);
-        }
-
-        $chargePeriod->update($request->validated());
+        $chargePeriod = app(ChargePeriodScheduleService::class)->save(
+            $chargePeriod->building, $request->validated(), $request->user(), $chargePeriod
+        );
 
         return new ChargePeriodResource($chargePeriod->refresh());
     }

@@ -220,6 +220,7 @@
         form.elements.namedItem('occupancy_type').value = record?.occupancy_type === 'owner' && !record.is_current_owner ? 'resident' : record?.occupancy_type || '';
         setDate(form, 'starts_at', record?.starts_at || today()); setDate(form, 'ends_at', '');
         form.elements.namedItem('is_primary').checked = Boolean(record?.is_primary);
+        setDate(form, 'resident_count_effective_from', '');
         form.elements.namedItem('resident_count').value = record?.resident_count ?? records[0]?.resident_count ?? '';
         form.elements.namedItem('notes').value = record?.notes || '';
         $('editor-unit-label').textContent = $('unit-label').textContent;
@@ -272,6 +273,8 @@
         if (records.some(record => Number(record.id) !== Number(editing?.id) && Number(record.user_id) === selectedId && record.is_active && (!record.ends_at || record.ends_at >= today()))) { message('error', 'این شخص هم‌اکنون ساکن همین واحد است. برای تغییر رابطه، رکورد فعلی را ویرایش کنید.'); return; }
         if (!editing && invitations.some(invitation => Number(invitation.invited_user_id) === selectedId && invitation.planned_occupancy && ['pending', 'sent'].includes(invitation.status) && !invitationExpired(invitation))) { message('error', 'برای این شخص دعوت در انتظار پذیرش وجود دارد. ابتدا آن را لغو کنید.'); return; }
         const payload = { user_id: selectedId, resident_count: Number(form.elements.namedItem('resident_count').value), occupancy_type: form.elements.namedItem('occupancy_type').value, starts_at: start, is_primary: form.elements.namedItem('is_primary').checked, notes: form.elements.namedItem('notes').value.trim() || null };
+        const countDate = form.elements.namedItem('resident_count_effective_from').value;
+        if (editing && countDate) payload.resident_count_effective_from = countDate;
         if (!editing) { payload.user_id = selectedId; payload.is_active = true; if (end) payload.ends_at = end; }
         const inviteFirst = !editing && form.elements.namedItem('send_invitation').checked;
         if (inviteFirst && (!building()?.canInvite || !candidates.find(candidate => Number(candidate.id) === selectedId)?.hasMobile)) {

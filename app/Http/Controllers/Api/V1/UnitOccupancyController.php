@@ -37,7 +37,7 @@ class UnitOccupancyController extends Controller
 
         $query = $unit->unitOccupancies()
             ->with([
-                'user:id,first_name,last_name,mobile,email',
+                'user:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
                 'unit:id,floor_id,unit_number,title,resident_count',
                 'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
             ]);
@@ -98,9 +98,9 @@ class UnitOccupancyController extends Controller
         );
 
         $occupancy->load([
-            'user:id,first_name,last_name,mobile,email',
+            'user:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'unit:id,floor_id,unit_number,title,resident_count',
-                'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
+            'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
         ]);
 
         return (new UnitOccupancyResource($occupancy))
@@ -117,9 +117,9 @@ class UnitOccupancyController extends Controller
         );
 
         $unitOccupancy->load([
-            'user:id,first_name,last_name,mobile,email',
+            'user:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'unit:id,floor_id,unit_number,title,resident_count',
-                'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
+            'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
         ]);
 
         return new UnitOccupancyResource(
@@ -143,9 +143,9 @@ class UnitOccupancyController extends Controller
         );
 
         $unitOccupancy->load([
-            'user:id,first_name,last_name,mobile,email',
+            'user:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'unit:id,floor_id,unit_number,title,resident_count',
-                'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
+            'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
         ]);
 
         return new UnitOccupancyResource(
@@ -170,9 +170,9 @@ class UnitOccupancyController extends Controller
         );
 
         $unitOccupancy->load([
-            'user:id,first_name,last_name,mobile,email',
+            'user:id,first_name,last_name,mobile,email,is_active,is_blocked,mobile_verified_at,email_verified_at',
             'unit:id,floor_id,unit_number,title,resident_count',
-                'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
+            'unit.unitOwnerships:id,unit_id,user_id,is_active,starts_at,ends_at',
         ]);
 
         return new UnitOccupancyResource(

@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\Unit;
 use App\Models\UnitOccupancy;
 use App\Models\User;
+use App\Services\Charge\ResidentCountHistory;
+use App\Services\Web\ScopedUserManagementService;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -23,22 +26,16 @@ class OccupancyService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if (
-                array_key_exists(
-                    'resident_count',
-                    $data
-                )
-            ) {
-                $unit->update([
-                    'resident_count' =>
-                        (int) $data[
-                            'resident_count'
-                        ],
-                ]);
-
-                unset(
-                    $data['resident_count']
+            if (array_key_exists('resident_count', $data)) {
+                if (CarbonImmutable::parse($data['starts_at'])->isPast()) {
+                    app(ResidentCountHistory::class)->record(
+                        $unit, (int) $data['resident_count'], now()->toDateString()
+                    );
+                }
+                app(ResidentCountHistory::class)->record(
+                    $unit, (int) $data['resident_count'], CarbonImmutable::parse($data['starts_at'])->toDateString()
                 );
+                unset($data['resident_count']);
             }
 
             $duplicateExists = UnitOccupancy::query()
@@ -94,7 +91,7 @@ class OccupancyService
                 $building = $unit->floor?->block?->building;
                 $candidate = User::query()->whereKey($data['user_id'])
                     ->where('is_active', true)->where('is_blocked', false);
-                if (! $building || ! app(\App\Services\Web\ScopedUserManagementService::class)
+                if (! $building || ! app(ScopedUserManagementService::class)
                     ->applyBuildingUsers($candidate, $building)->exists()) {
                     throw ValidationException::withMessages([
                         'user_id' => ['ساکن جدید باید کاربر فعال و غیرمسدود همین ساختمان باشد.'],
@@ -121,23 +118,14 @@ class OccupancyService
                 }
             }
 
-            if (
-                array_key_exists(
-                    'resident_count',
-                    $data
-                )
-            ) {
-                $unit->update([
-                    'resident_count' =>
-                        (int) $data[
-                            'resident_count'
-                        ],
-                ]);
-
-                unset(
-                    $data['resident_count']
+            if (array_key_exists('resident_count', $data)) {
+                $effective = $data['resident_count_effective_from'] ?? now()->toDateString();
+                app(ResidentCountHistory::class)->record(
+                    $unit, (int) $data['resident_count'], CarbonImmutable::parse($effective)->toDateString()
                 );
+                unset($data['resident_count']);
             }
+            unset($data['resident_count_effective_from']);
 
             if (($data['is_primary'] ?? false) === true) {
                 UnitOccupancy::query()
@@ -171,6 +159,7 @@ class OccupancyService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            $occupancy->refresh();
             if (! $occupancy->is_active) {
                 return $occupancy->refresh();
             }
@@ -195,38 +184,16 @@ class OccupancyService
                 'ended_by' => $actor->getKey(),
             ]);
 
-            $hasActiveOccupancy =
-                UnitOccupancy::query()
-                    ->where(
-                        'unit_id',
-                        $occupancy->unit_id
-                    )
-                    ->whereKeyNot(
-                        $occupancy->getKey()
-                    )
-                    ->where('is_active', true)
-                    ->whereDate(
-                        'starts_at',
-                        '<=',
-                        now()->toDateString()
-                    )
-                    ->where(function (
-                        $query
-                    ): void {
-                        $query
-                            ->whereNull('ends_at')
-                            ->orWhereDate(
-                                'ends_at',
-                                '>=',
-                                now()->toDateString()
-                            );
-                    })
-                    ->exists();
+            $nextDay = CarbonImmutable::parse($endDate)->addDay()->toDateString();
+            $hasActiveOccupancy = UnitOccupancy::query()
+                ->where('unit_id', $occupancy->unit_id)
+                ->whereKeyNot($occupancy->getKey())
+                ->whereDate('starts_at', '<=', $nextDay)
+                ->where(fn ($query) => $query->whereNull('ends_at')->orWhereDate('ends_at', '>=', $nextDay))
+                ->exists();
 
             if (! $hasActiveOccupancy) {
-                $unit->update([
-                    'resident_count' => 0,
-                ]);
+                app(ResidentCountHistory::class)->record($unit, 0, $nextDay);
             }
 
             return $occupancy->refresh();

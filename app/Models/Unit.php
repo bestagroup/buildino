@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\UnitUsageType;
+use App\Services\Charge\ResidentCountHistory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,22 @@ class Unit extends Model
         'usage_type',
         'is_active',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (Unit $unit): void {
+            app(ResidentCountHistory::class)->record(
+                $unit, (int) $unit->resident_count, now()->toDateString()
+            );
+        });
+        static::updated(function (Unit $unit): void {
+            if ($unit->wasChanged('resident_count')) {
+                app(ResidentCountHistory::class)->record(
+                    $unit, (int) $unit->resident_count, now()->toDateString()
+                );
+            }
+        });
+    }
 
     protected function casts(): array
     {

@@ -34,6 +34,8 @@ class UpdateUnitOccupancyRequest extends FormRequest
                 'boolean',
             ],
 
+            'resident_count_effective_from' => ['sometimes', 'required', 'date', 'before_or_equal:today'],
+
             'resident_count' => [
                 'sometimes',
                 'required',

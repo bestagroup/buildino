@@ -14,6 +14,13 @@ class StoreUnitInvitationRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'occupancy' => ['sometimes', 'required', 'array:occupancy_type,starts_at,ends_at,is_primary,notes,resident_count'],
+            'occupancy.occupancy_type' => ['required_with:occupancy', 'in:tenant,resident,family_member'],
+            'occupancy.starts_at' => ['required_with:occupancy', 'date'],
+            'occupancy.ends_at' => ['nullable', 'date', 'after_or_equal:occupancy.starts_at'],
+            'occupancy.is_primary' => ['sometimes', 'boolean'],
+            'occupancy.resident_count' => ['sometimes', 'integer', 'min:0', 'max:255'],
+            'occupancy.notes' => ['nullable', 'string', 'max:5000'],
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             /*
              * Recipient data already exists in Buildino. The form only sends
@@ -21,9 +28,10 @@ class StoreUnitInvitationRequest extends FormRequest
              * resolved from existing unit links by the controller.
              */
             'user_ids' => [
+                'required_with:occupancy',
                 'nullable',
                 'array',
-                'max:50',
+                $this->has('occupancy') ? 'size:1' : 'max:50',
             ],
 
             'user_ids.*' => [

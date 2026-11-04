@@ -20,6 +20,7 @@ use App\Models\UnitOccupancy;
 use App\Models\UnitOwnership;
 use App\Models\User;
 use App\Models\UserRoleAssignment;
+use App\Services\Charge\ResidentCountHistory;
 use App\Services\Web\ManagementDashboardAccessService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -62,8 +63,7 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
 
         $waterCategory =
             FinancialCategory::query()->create([
-                'building_id' =>
-                    $graph['building']->id,
+                'building_id' => $graph['building']->id,
                 'title' => 'آب مشترک',
                 'type' => 'expense',
                 'is_active' => true,
@@ -71,8 +71,7 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
 
         $repairCategory =
             FinancialCategory::query()->create([
-                'building_id' =>
-                    $graph['building']->id,
+                'building_id' => $graph['building']->id,
                 'title' => 'تعمیرات اساسی',
                 'type' => 'expense',
                 'is_active' => true,
@@ -83,10 +82,8 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
             [
                 'title' => 'آب بر اساس نفرات',
                 'builder' => [
-                    'calculation_type' =>
-                        ChargeCalculationType::Persons->value,
-                    'financial_category_id' =>
-                        $waterCategory->id,
+                    'calculation_type' => ChargeCalculationType::Persons->value,
+                    'financial_category_id' => $waterCategory->id,
                 ],
             ]
         )->assertCreated();
@@ -96,18 +93,15 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
             [
                 'title' => 'تعمیرات مساوی',
                 'builder' => [
-                    'calculation_type' =>
-                        ChargeCalculationType::Equal->value,
-                    'financial_category_id' =>
-                        $repairCategory->id,
+                    'calculation_type' => ChargeCalculationType::Equal->value,
+                    'financial_category_id' => $repairCategory->id,
                 ],
             ]
         )->assertCreated();
 
         $waterId = $this->postJson('/api/v1/expenses', [
             'building_id' => $graph['building']->id,
-            'financial_category_id' =>
-                $waterCategory->id,
+            'financial_category_id' => $waterCategory->id,
             'title' => 'آب مشترک',
             'amount' => 300_000,
             'expense_date' => '2026-08-10',
@@ -120,8 +114,7 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
 
         $repairId = $this->postJson('/api/v1/expenses', [
             'building_id' => $graph['building']->id,
-            'financial_category_id' =>
-                $repairCategory->id,
+            'financial_category_id' => $repairCategory->id,
             'title' => 'تعمیرات اساسی نما',
             'amount' => 300_000,
             'expense_date' => '2026-08-12',
@@ -386,6 +379,7 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
         ]);
 
         $unit->increment('resident_count');
+        app(ResidentCountHistory::class)->record($unit, (int) $unit->resident_count, '2026-08-01');
     }
 
     private function own(Unit $unit, User $user): void

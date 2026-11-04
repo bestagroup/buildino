@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\RefundStatus;
 use App\Enums\ReservationApprovalType;
 use App\Enums\ReservationStatus;
 use App\Events\FacilityReservationApproved;
@@ -12,10 +13,9 @@ use App\Models\FacilityReservationRule;
 use App\Models\FacilitySchedule;
 use App\Models\FacilityTimeSlot;
 use App\Models\ReservationCancellation;
-use App\Enums\RefundStatus;
-use App\Services\Facility\FacilityWalletPaymentService;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\Facility\FacilityWalletPaymentService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -24,8 +24,7 @@ class FacilityReservationService
 {
     public function __construct(
         private readonly FacilityWalletPaymentService $walletPayments
-    ) {
-    }
+    ) {}
 
     public function create(array $data): FacilityReservation
     {
@@ -220,25 +219,48 @@ class FacilityReservationService
 
     public function reject(FacilityReservation $reservation, User $user): FacilityReservation
     {
-        return DB::transaction(function () use ($reservation, $user): FacilityReservation {
+        $result = DB::transaction(function () use ($reservation, $user): array {
             $reservation = FacilityReservation::query()
-                ->lockForUpdate()
-                ->findOrFail($reservation->getKey());
+                ->with('walletPayment')->lockForUpdate()->findOrFail($reservation->getKey());
 
+            if ($reservation->status === ReservationStatus::Rejected) {
+                return [$reservation, $reservation->reservationCancellations()->latest('id')->first()];
+            }
             if ($reservation->status !== ReservationStatus::Pending) {
                 throw ValidationException::withMessages([
                     'status' => ['Only pending reservations can be rejected.'],
                 ]);
             }
 
+            // Manager rejection is a full refund, independent of voluntary cancellation penalties.
+            $amount = (int) ($reservation->walletPayment?->amount ?? 0);
+            $cancellation = ReservationCancellation::query()->create([
+                'facility_reservation_id' => $reservation->getKey(),
+                'cancelled_by' => $user->getKey(),
+                'reason' => 'Manager rejected reservation',
+                'cancellation_fee' => 0,
+                'refund_amount' => $amount,
+                'refund_status' => $amount > 0 ? RefundStatus::Pending : null,
+                'cancelled_at' => now(),
+            ]);
             $reservation->update([
                 'status' => ReservationStatus::Rejected,
                 'approved_by' => $user->getKey(),
                 'approved_at' => now(),
             ]);
 
-            return $reservation->refresh();
+            return [$reservation, $cancellation];
         }, 3);
+
+        if ($result[1] && (int) $result[1]->refund_amount > 0) {
+            try {
+                $this->walletPayments->refund($result[1], $user);
+            } catch (ValidationException) {
+                // The persisted pending refund can be retried after funding the building wallet.
+            }
+        }
+
+        return $result[0]->refresh();
     }
 
     public function cancel(
@@ -504,8 +526,7 @@ class FacilityReservationService
         $startMinutes = ($startAt->hour * 60) + $startAt->minute;
         $endMinutes = ($endAt->hour * 60) + $endAt->minute;
 
-        $inside = $daySchedules->contains(fn (FacilitySchedule $schedule): bool =>
-            $this->minutes($schedule->start_time) <= $startMinutes
+        $inside = $daySchedules->contains(fn (FacilitySchedule $schedule): bool => $this->minutes($schedule->start_time) <= $startMinutes
             && $this->minutes($schedule->end_time) >= $endMinutes
         );
 
@@ -651,12 +672,14 @@ class FacilityReservationService
     private function dateTime(CarbonImmutable $date, string $time): CarbonImmutable
     {
         [$hour, $minute, $second] = array_pad(array_map('intval', explode(':', $time)), 3, 0);
+
         return $date->setTime($hour, $minute, $second);
     }
 
     private function minutes(string $time): int
     {
         $parts = array_map('intval', explode(':', $time));
+
         return ($parts[0] * 60) + ($parts[1] ?? 0);
     }
 }
