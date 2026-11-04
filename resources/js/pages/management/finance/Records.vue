@@ -24,7 +24,7 @@ const currency = computed(() => ({ IRR: 'ریال', IRT: 'تومان' }[building
 const canCreate = computed(() => Boolean(props.resource.create && allowed('create')));
 const filtered = computed(() => rows.value.filter(row => (globalCategories.value || row.building_id === undefined || String(row.building_id) === buildingId.value) && JSON.stringify(row).toLocaleLowerCase('fa').includes(search.value.trim().toLocaleLowerCase('fa'))));
 const rowTitle = (row: CrudRecord) => String(row.title || row.account_holder_name || (props.resourceKey === 'loyalty-rules' ? 'قاعده نسخه ' + row.version : props.resourceKey === 'loyalty-claims' ? row.user_name || 'درخواست جایزه' : props.title + ' · ' + row.id));
-const labels: Record<string, string> = { ...invoiceLabels, approved: 'تأییدشده', rejected: 'ردشده', posted: 'ثبت‌شده', payment_verified: 'تأیید پرداخت', equal: 'مساوی بین واحدها', area: 'بر اساس متراژ', persons: 'بر اساس تعداد ساکنین', owner: 'مالک', resident: 'ساکن / مستأجر', unit: 'کیف پول واحد', electricity: 'برق', gas: 'گاز', water: 'آب', phone: 'تلفن', internet: 'اینترنت', municipality: 'شهرداری', other: 'سایر' };
+const labels: Record<string, string> = { ...invoiceLabels, paid: 'پرداخت‌شده', unpaid: 'پرداخت‌نشده', approved: 'تأییدشده', rejected: 'ردشده', posted: 'ثبت‌شده', payment_verified: 'تأیید پرداخت', equal: 'مساوی بین واحدها', area: 'بر اساس متراژ', persons: 'بر اساس تعداد ساکنین', owner: 'مالک', resident: 'ساکن / مستأجر', unit: 'کیف پول واحد', electricity: 'برق', gas: 'گاز', water: 'آب', phone: 'تلفن', internet: 'اینترنت', municipality: 'شهرداری', other: 'سایر' };
 const fields = computed<CrudField[]>(() => {
     const base = (operation.value ? operation.value.fields || [] : props.resource.fields || []).filter(field => field.name !== 'building_id' && field.type !== 'json').map(field => {
         const result = { ...field };
@@ -37,6 +37,7 @@ const fields = computed<CrudField[]>(() => {
         if (lookup) {
             result.lookup = undefined; result.depends_on = undefined;
             result.options = lookup.filter(row => (!row.building_id || String(row.building_id) === buildingId.value) && (result.name !== 'block_id' || building.value?.abilities['expenses.create'] || row.abilities?.create || editing.value && String(row.value) === String(selected.value?.block_id)));
+            if (props.resourceKey === 'expenses' && result.name === 'financial_category_id' && !result.options.length) result.help = 'برای این ساختمان فرمول شارژ فعال غیرثابت وجود ندارد. ابتدا در بخش فرمول شارژ، فرمول هزینه را تعریف یا فعال کنید.';
             if (result.name === 'block_id' && !building.value?.abilities['expenses.create'] && (!editing.value || selected.value?.block_id)) { result.required = true; result.help = 'بلوک مجاز برای ثبت هزینه را انتخاب کنید.'; }
             if (result.name === 'building_bank_account_id' && !result.options.length) result.help = 'حساب بانکی فعال و تأییدشده‌ای وجود ندارد. ابتدا در بخش حساب‌های بانکی، حساب را ثبت و تأیید کنید.';
         }
@@ -52,7 +53,7 @@ const fields = computed<CrudField[]>(() => {
     ].map(field => ({ ...field, type: 'number', step: 1, help: 'اختیاری؛ در صورت خالی‌بودن، مقدار پیش‌فرض سامانه اعمال می‌شود.' })));
     return base;
 });
-const mainNames = new Set(['title', 'amount', 'expense_date', 'income_date', 'allocation_method', 'payer_responsibility']);
+const mainNames = new Set(['financial_category_id', 'title', 'amount', 'expense_date', 'income_date', 'allocation_method', 'payer_responsibility']);
 const split = computed(() => !operation.value && ['expenses', 'incomes', 'loyalty-rules'].includes(props.resourceKey));
 const steps = computed(() => globalCategories.value ? ['عنوان دسته هزینه', 'بازبینی و ثبت'] : operation.value ? fields.value.length ? ['اطلاعات عملیات', 'بررسی و اجرا'] : ['بررسی و اجرا'] : split.value ? ['اطلاعات اصلی', 'جزئیات و تنظیمات', 'بررسی نهایی'] : ['اطلاعات', 'بررسی نهایی']);
 const activeFields = computed(() => !split.value ? fields.value : fields.value.filter(field => props.resourceKey === 'loyalty-rules' ? ['event_type', 'points', 'is_active'].includes(field.name) === (step.value === 0) : mainNames.has(field.name) === (step.value === 0)));
@@ -120,6 +121,12 @@ const validate = (checkFields = fields.value) => {
         else if (!empty && field.type === 'number' && (!Number.isSafeInteger(Number(value)) || field.min !== undefined && Number(value) < field.min || field.max !== undefined && Number(value) > field.max)) next[field.name] = ['مقدار عددی معتبر وارد کنید.'];
         else if (!empty && field.maxlength && String(value).length > field.maxlength) next[field.name] = ['متن از حداکثر طول مجاز بیشتر است.'];
         else if (!empty && ['date', 'datetime-local'].includes(field.type || '') && !/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2})?$/.test(String(value))) next[field.name] = ['تاریخ یا ساعت معتبر انتخاب کنید.'];
+    }
+    if (props.resourceKey === 'expenses' && checkFields.some(field => field.name === 'financial_category_id')) {
+        const formula = fields.value.find(field => field.name === 'financial_category_id');
+        if (!formula?.options?.some(option => String(option.value) === String(form.value.financial_category_id))) {
+            next.financial_category_id = ['فرمول فعال همین ساختمان را انتخاب کنید؛ در صورت خالی‌بودن فهرست ابتدا فرمول شارژ را تعریف کنید.'];
+        }
     }
     if (form.value.starts_at && form.value.ends_at && String(form.value.ends_at) <= String(form.value.starts_at)) next.ends_at = ['پایان باید بعد از شروع باشد.'];
     if (props.resourceKey === 'bank-accounts' && !operation.value && (String(form.value.iban || '').trim().length < 24 || String(form.value.iban).trim().length > 34)) next.iban = ['شماره شبا باید بین ۲۴ تا ۳۴ نویسه باشد.'];

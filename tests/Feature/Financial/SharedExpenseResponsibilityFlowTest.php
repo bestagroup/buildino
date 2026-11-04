@@ -347,6 +347,35 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
             ->assertOk()->assertJsonCount(1, 'data');
     }
 
+    public function test_expense_page_lists_active_formulas_instead_of_unconfigured_categories(): void
+    {
+        $manager = $this->user('09125550777', 'expense-options@example.test');
+        $graph = $this->buildingWithTwoUnits();
+        $role = $this->role('expense-options', ['expenses.view', 'expenses.create']);
+        $this->assign($manager, $role, $graph['building']);
+        $category = FinancialCategory::query()->create([
+            'title' => 'گاز عمومی', 'type' => 'expense', 'is_active' => true,
+        ]);
+        $formula = \App\Models\ChargeFormula::query()->create([
+            'building_id' => $graph['building']->id, 'title' => 'گاز بر اساس متراژ',
+            'calculation_type' => 'area', 'is_active' => true,
+        ]);
+        $formula->chargeItems()->create([
+            'financial_category_id' => $category->id, 'title' => 'گاز', 'base_amount' => 0,
+        ]);
+        $this->actingAs($manager)->get('/management/operations/expenses')->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('management/finance/Records')
+                ->has('workspace.lookups.financial_category_id', 1)
+                ->where('workspace.lookups.financial_category_id.0.value', $category->id)
+                ->where('workspace.lookups.financial_category_id.0.label', $formula->title)
+                ->where('workspace.lookups.financial_category_id.0.building_id', $graph['building']->id));
+        $formula->update(['is_active' => false]);
+        $this->get('/management/operations/expenses')->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->has('workspace.lookups.financial_category_id', 0));
+    }
+
     private function assertAllocation(
         int $periodId,
         int $expenseId,

@@ -8,6 +8,7 @@ use App\Models\Building;
 use App\Models\Block;
 use App\Models\BuildingBankAccount;
 use App\Models\FinancialCategory;
+use App\Models\ChargeFormula;
 use App\Models\Fund;
 use App\Services\Security\BuildingPermissionScopeService;
 use App\Services\Web\ManagementUiContextService;
@@ -62,6 +63,20 @@ final class FinanceWorkspacePageController extends Controller
                 ->map(fn ($category): array => ['value' => $category->id, 'label' => $category->title, 'building_id' => $category->building_id])->values();
         }
         if ($resource === 'expenses') {
+            // Expense forms select a building's active formula, not an arbitrary global category.
+            $lookups['financial_category_id'] = ChargeFormula::query()
+                ->whereIn('building_id', $scopeIds)
+                ->where('is_active', true)
+                ->where('calculation_type', '!=', 'fixed')
+                ->has('chargeItems', '=', 1)
+                ->with('chargeItems')
+                ->orderBy('title')->get()
+                ->filter(fn (ChargeFormula $formula) => $formula->chargeItems->first()?->financial_category_id)
+                ->map(fn (ChargeFormula $formula): array => [
+                    'value' => $formula->chargeItems->first()->financial_category_id,
+                    'label' => $formula->title,
+                    'building_id' => $formula->building_id,
+                ])->values();
             $blocks = Block::query()->whereIn('building_id', $scopeIds)->orderBy('sort_order')->get()->map(function (Block $block) use ($user, $permissions): array {
                 $abilities = [];
                 foreach (['view', 'create', 'update', 'delete'] as $action) $abilities[$action] = $permissions->allows($user, "expenses.$action", $block);
