@@ -463,9 +463,7 @@ class RoleMatrixAccessScenarioTest extends TestCase
             ->assertDontSee(
                 'ساختمان بتا'
             )
-            ->assertSee(
-                'کاربران و دسترسی'
-            );
+            ->assertDontSee('کاربران و دسترسی');
     }
 
     public function test_owner_and_tenant_are_relation_driven_and_do_not_get_management_dashboard_access(): void
