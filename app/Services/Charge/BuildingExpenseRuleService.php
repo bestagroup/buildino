@@ -72,6 +72,12 @@ final class BuildingExpenseRuleService
     public function synchronize(BuildingExpense $expense, bool $requireFormula = false): BuildingExpenseAllocationRule
     {
         if ($requireFormula || $expense->payment_status !== null) {
+            if (! $expense->financial_category_id) {
+                throw ValidationException::withMessages([
+                    'financial_category_id' => 'انتخاب فرمول شارژ الزامی است.',
+                ]);
+            }
+
             $formulas = ChargeFormula::query()
                 ->where('building_id', $expense->building_id)
                 ->where('is_active', true)

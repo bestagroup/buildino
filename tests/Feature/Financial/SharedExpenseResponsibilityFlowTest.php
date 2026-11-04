@@ -300,6 +300,8 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
         ];
         $this->postJson('/api/v1/expenses', $payload)->assertUnprocessable()
             ->assertJsonValidationErrors('financial_category_id');
+        $this->postJson('/api/v1/expenses', [...$payload, 'financial_category_id' => null])
+            ->assertUnprocessable()->assertJsonValidationErrors('financial_category_id');
         $this->assertDatabaseCount('building_expenses', 0);
 
         $formula = \App\Models\ChargeFormula::query()->create([
