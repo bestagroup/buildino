@@ -9,10 +9,14 @@ import '../../../css/user-create-dialog.css';
 
 const props = defineProps<{ fields: CrudField[]; csrfToken: string }>();
 const dialog = ref<HTMLDialogElement | null>(null), busy = ref(false), uncertain = ref(false);
+const closing = ref(false);
 const form = ref<CrudRecord>({ first_name: '', last_name: '', mobile: '', email: '', national_code: '' });
 const errors = ref<Record<string, string[]>>({}), error = ref(''), created = ref<CrudRecord | null>(null);
 const context = ref({ unitId: 0, unitLabel: '' });
-const fields = computed(() => userIdentityFields(props.fields));
+const fields = computed(() => {
+    const order = ['first_name', 'last_name', 'mobile', 'email', 'national_code'];
+    return userIdentityFields(props.fields).sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
+});
 let returnFocus: HTMLElement | null = null;
 let previousOverflow = '';
 const focus = async (selector: string) => { await nextTick(); dialog.value?.querySelector<HTMLElement>(selector)?.focus(); };
@@ -26,10 +30,23 @@ const open = async (event: Event) => {
     previousOverflow = document.body.style.overflow; document.body.style.overflow = 'hidden';
     dialog.value?.showModal(); await focus('input');
 };
-const close = () => { if (!busy.value) dialog.value?.close(); };
+const close = async () => {
+    const element = dialog.value;
+    if (busy.value || closing.value || !element?.open) return;
+    closing.value = true;
+    await nextTick();
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    await Promise.race([
+        Promise.allSettled(element.getAnimations().map(animation => animation.finished)),
+        new Promise<void>(resolve => { timeout = setTimeout(resolve, 200); }),
+    ]);
+    clearTimeout(timeout);
+    if (element.isConnected && element.open) element.close();
+    closing.value = false;
+};
 const closed = () => { document.body.style.overflow = previousOverflow; returnFocus?.focus({ preventScroll: true }); };
 const submit = async () => {
-    if (busy.value || uncertain.value || created.value) return;
+    if (busy.value || closing.value || uncertain.value || created.value) return;
     errors.value = validateUserIdentity(form.value); error.value = '';
     if (Object.keys(errors.value).length) { await focus('[aria-invalid="true"]'); return; }
     busy.value = true;
@@ -63,8 +80,8 @@ onBeforeUnmount(() => { window.removeEventListener('buildino:user-create', open)
 
 <template>
     <Teleport to="body">
-        <dialog ref="dialog" class="user-create-dialog" aria-labelledby="user-create-title" aria-describedby="user-create-context" @cancel.prevent="close" @close="closed">
-            <header class="user-create-dialog__header"><div><h3 id="user-create-title">{{ created ? 'کاربر ساخته شد' : 'افزودن کاربر' }}</h3><p id="user-create-context">{{ context.unitLabel }}</p></div><button type="button" class="ownership-button" :disabled="busy" aria-label="بستن پنجره افزودن کاربر" @click="close">×</button></header>
+        <dialog ref="dialog" class="user-create-dialog" :class="{ 'is-closing': closing }" aria-labelledby="user-create-title" aria-describedby="user-create-context" @cancel.prevent="close" @close="closed">
+            <header class="user-create-dialog__header"><div><h3 id="user-create-title">{{ created ? 'کاربر ساخته شد' : 'افزودن کاربر' }}</h3><p id="user-create-context">{{ context.unitLabel }}</p></div><button type="button" class="ownership-button user-create-dialog__close" :disabled="busy || closing" aria-label="بستن پنجره افزودن کاربر" @click="close">×</button></header>
             <section v-if="created" class="user-create-dialog__success" role="status">
                 <strong>{{ created.first_name }} {{ created.last_name }}</strong><p>کاربر به فهرست مالک‌ها اضافه شد. برای اتصال او به واحد، ثبت مالکیت را تکمیل کنید.</p>
                 <p>رمز اولیه: <bdi>123456789</bdi>؛ تغییر رمز در اولین ورود الزامی است.</p>
@@ -73,8 +90,8 @@ onBeforeUnmount(() => { window.removeEventListener('buildino:user-create', open)
             <form v-else novalidate :aria-busy="busy" @submit.prevent="submit">
                 <p class="user-create-dialog__hint">اطلاعات حساب کاربری را وارد کنید؛ مالکیت در مرحله بعد ثبت می‌شود.</p>
                 <p v-if="error" role="alert" tabindex="-1" class="ownership-alert ownership-alert--error" data-user-create-error>{{ error }}</p>
-                <fieldset :disabled="busy || uncertain"><legend class="visually-hidden">مشخصات کاربر</legend><DynamicForm v-model="form" :fields="fields" mode="create" lookup-base="/management/lookups" :csrf-token="csrfToken" :errors="errors" :group-optional="false" /></fieldset>
-                <footer class="user-create-dialog__actions"><button type="button" class="ownership-button" :disabled="busy" @click="close">بازگشت به مالکیت</button><button type="submit" class="ownership-button ownership-button--primary" :disabled="busy || uncertain" data-user-create-save>{{ busy ? 'در حال ثبت…' : 'ثبت کاربر' }}</button></footer>
+                <fieldset :disabled="busy || closing || uncertain"><legend class="visually-hidden">مشخصات کاربر</legend><DynamicForm v-model="form" :fields="fields" mode="create" lookup-base="/management/lookups" :csrf-token="csrfToken" :errors="errors" :group-optional="false" /></fieldset>
+                <footer class="user-create-dialog__actions"><button type="button" class="ownership-button" :disabled="busy || closing" @click="close">بازگشت به مالکیت</button><button type="submit" class="ownership-button ownership-button--primary" :disabled="busy || closing || uncertain" data-user-create-save>{{ busy ? 'در حال ثبت…' : 'ثبت کاربر' }}</button></footer>
             </form>
         </dialog>
     </Teleport>

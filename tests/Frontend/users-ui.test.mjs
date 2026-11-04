@@ -81,16 +81,18 @@ test('users: actual Vue wizard, scoped actions, validation, P05, retries and res
         let createdEvent;window.addEventListener('buildino:user-created',event=>createdEvent=event.detail);
         const openDialog=()=>window.dispatchEvent(new CustomEvent('buildino:user-create',{detail:{unitId:7,unitLabel:'واحد ۱۰۱'}}));
         openDialog();await until(()=>$('.user-create-dialog')?.open);
+        expect([...$$('.user-create-dialog input')].map(el=>el.name).join(',')==='first_name,last_name,mobile,email,national_code','Modal field order is inconsistent');
+        if(innerWidth===500)expect(matchMedia('(prefers-reduced-motion: reduce)').matches&&getComputedStyle($('.user-create-dialog')).animationName==='none','Reduced motion still animates modal');
         const dialogSubmit=async()=>{$('.user-create-dialog form').dispatchEvent(new Event('submit',{cancelable:true}));await tick();};
         await dialogSubmit();expect($('.user-create-dialog [aria-invalid="true"]'),'Modal required validation missing');
         await input('first_name','مالک مودال');await input('last_name','آزمایشی');await input('mobile','09127777777');
-        $('.user-create-dialog').dispatchEvent(new Event('cancel',{cancelable:true}));await tick();expect(!$('.user-create-dialog').open,'Cancel did not close modal');
+        $('.user-create-dialog').dispatchEvent(new Event('cancel',{cancelable:true}));await until(()=>!$('.user-create-dialog').open);
         openDialog();await tick();expect($('.user-create-dialog [name="mobile"]').value==='09127777777','Cancel lost entered user details');
         fail='validation';await dialogSubmit();expect($('.user-create-dialog [name="mobile"]').getAttribute('aria-invalid')==='true','Modal lost server validation');
         await input('mobile','09128888888');await dialogSubmit();await until(()=>$('[data-user-create-done]'));
         expect(createdEvent?.unitId===7&&createdEvent?.user?.id===4,'Modal did not return created user with unit');
         expect($('.user-create-dialog').open&&$('.user-create-dialog').scrollWidth<=$('.user-create-dialog').clientWidth,'Success modal overflows or closes unexpectedly');
-        $('[data-user-create-done]').click();await tick();expect(!$('.user-create-dialog').open,'Continue did not close modal');
+        $('[data-user-create-done]').click();await until(()=>!$('.user-create-dialog').open);
         openDialog();await tick();await input('first_name','تست');await input('last_name','شبکه');await input('mobile','09129999999');fail='server';await dialogSubmit();
         expect($('[data-user-create-save]').disabled&&!$('.user-create-dialog').textContent.includes('SQLSTATE'),'Unknown modal result leaked SQL or allowed retry');
         $('#result').dataset.ok='true';
@@ -105,7 +107,7 @@ test('users: actual Vue wizard, scoped actions, validation, P05, retries and res
     });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     try { for (const width of [1280, 500]) {
-        const capture = process.env.USERS_CAPTURE ? ['--screenshot=' + join(tmpdir(), 'buildino-users-' + width + '.png')] : [];
+        const capture = [...(process.env.USERS_CAPTURE ? ['--screenshot=' + join(tmpdir(), 'buildino-users-' + width + '.png')] : []), ...(width===500?['--force-prefers-reduced-motion=reduce']:[])];
         const { stdout } = await promisify(execFile)(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--no-first-run', '--force-device-scale-factor=1', '--window-size=' + width + ',1000', '--virtual-time-budget=7000', '--dump-dom', ...capture, 'http://127.0.0.1:' + server.address().port], { timeout: 30000, maxBuffer: 2 * 1024 * 1024, windowsHide: true });
         const result = stdout.match(/<pre id="result"[^>]*>[\s\S]*?<\/pre>/)?.[0] || stdout.slice(-500); assert.match(result, /data-ok="true"/, width + ': ' + result);
     } } finally { await new Promise(resolve => server.close(resolve)); }
