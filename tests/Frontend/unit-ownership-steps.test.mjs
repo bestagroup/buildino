@@ -71,6 +71,20 @@ for (const kind of ['ownership', 'occupancy']) test(kind + ' steps replace one a
         $('back-unit').click(); only('location'); holdRecords = false; releaseRecords();
         await new Promise(resolve => setTimeout(resolve, 10)); only('location');
         expect(document.querySelector('[data-${kind}-flow="unit"]').getAttribute('aria-current') === 'step', 'Progress must reflect the visible stage');
+        if ('${kind}' === 'ownership') {
+            window.BuildinoOwnershipConfig.actorId = 1;
+            window.BuildinoOwnershipConfig.buildings[0].canCreateUser = true;
+            window.BuildinoOwnershipConfig.initialUnit = { buildingId: 4, blockId: 5, floorId: 6, unitId: 7 };
+            sessionStorage.setItem('buildino:ownership-return:1:7', JSON.stringify({ savedAt: Date.now(), editor: true, recordId: null, ownerId: 1, percent: '25', primary: true, notes: 'پیش از مدیریت کاربران', startsAt: '2026-01-02', endsAt: '' }));
+            history.replaceState(null, '', '?unit_id=7&resume=ownership&owner_id=2');
+            const resumeScript = document.createElement('script'); resumeScript.textContent = ${JSON.stringify(source)}; document.body.append(resumeScript);
+            await until(() => !$('editor').hidden && $('user').value === '2', 'Returned owner not selected in restored editor');
+            only('editor');
+            expect($('form').elements.notes.value === 'پیش از مدیریت کاربران' && $('form').elements.ownership_percentage.value === '25', 'Return lost ownership draft');
+            expect($('form').elements.starts_at.value === '2026-01-02', 'Return lost ownership date');
+            expect($('manage-users').href.includes('from=ownership') && $('manage-users').href.includes('unit_id=7'), 'User management lost unit context');
+            expect(!sessionStorage.getItem('buildino:ownership-return:1:7'), 'Restored draft was not consumed');
+        }
         document.getElementById('result').dataset.ok = 'true'; document.getElementById('result').textContent = JSON.stringify({ checks });
     })().catch(error => document.getElementById('result').textContent = error.stack);
     </script></html>`;

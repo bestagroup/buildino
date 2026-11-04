@@ -27,6 +27,39 @@
     let endTrigger = null;
     let currentStep = 'unit';
     let recordsLoading = false;
+    const returnParams = new URLSearchParams(window.location.search);
+    let resumePending = returnParams.get('resume') === 'ownership';
+    let returnedOwner = safeReturnedOwner();
+    function safeReturnedOwner() { const value = returnParams.get('owner_id'); return /^[1-9]\d*$/.test(value || '') ? value : ''; }
+    const draftKey = () => `buildino:ownership-return:${config.actorId}:${unitId()}`;
+    const updateUserLinks = () => {
+        for (const link of [$('create-user'), $('manage-users')].filter(Boolean)) {
+            link.hidden = !building()?.canCreateUser;
+            const url = new URL(config.usersUrl || '/management/operations/users', window.location.origin);
+            url.searchParams.set('from', 'ownership');
+            url.searchParams.set('unit_id', String(unitId()));
+            link.href = url.pathname + url.search;
+        }
+    };
+    const resumeOwnership = () => {
+        if (!resumePending || !unitId()) return;
+        resumePending = false;
+        let draft;
+        try { draft = JSON.parse(sessionStorage.getItem(draftKey()) || 'null'); sessionStorage.removeItem(draftKey()); } catch {}
+        const fresh = draft && Date.now() - draft.savedAt < 30 * 60 * 1000;
+        const record = fresh && draft.recordId ? records.find(item => item.id === draft.recordId) : null;
+        if (fresh && draft.recordId && !record) { message('error', 'مالکیت قبلی در دسترس نیست؛ فهرست واحد را بررسی کنید.'); return; }
+        if (!(record ? building()?.canUpdate : building()?.canCreate)) return;
+        openEditor(record);
+        if (fresh && draft.editor) {
+            percentField.value = draft.percent; primaryField.checked = draft.primary; notesField.value = draft.notes;
+            setDate(form, 'starts_at', draft.startsAt); setDate(form, 'ends_at', draft.endsAt);
+            $('more').open = Boolean(draft.endsAt || draft.notes);
+        }
+        if (!returnedOwner && fresh && draft.editor) returnedOwner = String(draft.ownerId || '');
+        const url = new URL(window.location.href); url.searchParams.delete('resume'); url.searchParams.delete('owner_id');
+        window.history.replaceState(null, '', url);
+    };
 
     const today = () => {
         const date = new Date();
@@ -233,6 +266,7 @@
         showStep('records', true);
     };
     const loadRecords = async () => {
+        let loaded = false;
         const selectedId = unitId();
         const ticket = ++generation;
         hideRecords();
@@ -268,10 +302,12 @@
             window.history.replaceState(null, '', url);
             setHint('واحد انتخاب شد. برای ادامه، نمایش مالکیت‌ها را بزنید.');
             renderRecords();
+            updateUserLinks();
+            loaded = true;
         } catch (error) {
             if (ticket === generation) { $('active').replaceChildren(make('p', 'ownership-empty', 'دریافت مالکیت‌ها انجام نشد؛ به‌روزرسانی را بزنید یا واحد را تغییر دهید.')); report(error); }
         } finally {
-            if (ticket === generation) { recordsLoading = false; $('records').setAttribute('aria-busy', 'false'); $('reload').disabled = false; }
+            if (ticket === generation) { recordsLoading = false; $('records').setAttribute('aria-busy', 'false'); $('reload').disabled = false; if (loaded) resumeOwnership(); }
         }
     };
     const shareHint = () => {
@@ -304,6 +340,7 @@
         setDate(form, 'ends_at', '');
         $('editor-unit-label').textContent = $('unit-label').textContent;
         shareHint(); showStep('change', true);
+        updateUserLinks();
         void loadUsers(record);
     };
     const closeEditor = () => { editing = null; ++userGeneration; showStep('records', true); };
@@ -383,6 +420,12 @@
                 userSelect.disabled = false;
             }
             userSelect.value = record ? String(record.user_id) : '';
+            if (returnedOwner) {
+                const available = rows.some(row => String(row.id) === returnedOwner);
+                if (available) userSelect.value = returnedOwner;
+                else message('error', 'کاربر موردنظر در فهرست مجاز این واحد نیست؛ نقش و محدوده دسترسی او را در مدیریت کاربران بررسی کنید.');
+                returnedOwner = '';
+            }
             window.BuildinoSelect2?.refresh(userSelect);
             $('user-hint').textContent = rows.length
                 ? `${number(rows.length)} کاربر ساختمان؛ برای جست‌وجوی نام یا شماره تماس، فهرست را باز کنید.`
@@ -437,6 +480,13 @@
         }
     });
     form.addEventListener('submit', save);
+    for (const link of [$('create-user'), $('manage-users')].filter(Boolean)) link.addEventListener('click', (event) => {
+        if (busy || !unitId()) { event.preventDefault(); return; }
+        updateUserLinks();
+        try { sessionStorage.setItem(draftKey(), JSON.stringify({ savedAt: Date.now(), editor: currentStep === 'change', recordId: editing?.id || null,
+            ownerId: userSelect.value, percent: percentField.value, primary: primaryField.checked, notes: notesField.value,
+            startsAt: readDate(form, 'starts_at'), endsAt: readDate(form, 'ends_at') })); } catch {}
+    });
     endForm.addEventListener('submit', end);
 
     const initial = config.initialUnit;

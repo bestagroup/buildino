@@ -21,6 +21,12 @@ const errors = ref<Record<string, string[]>>({}), error = ref(''), notice = ref(
 const search = ref(''), status = ref(''), page = ref(1), lastPage = ref(1), total = ref(0);
 const discard = ref(false), deleting = ref<UserRow | null>(null), created = ref<UserRow | null>(null);
 const accessFlow = ref(false);
+const ownershipUnit = ref('');
+const ownershipReturnUrl = (ownerId?: number) => {
+    const query = new URLSearchParams({ unit_id: ownershipUnit.value, resume: 'ownership' });
+    if (ownerId) query.set('owner_id', String(ownerId));
+    return '/management/operations/ownerships?' + query;
+};
 const stages = ['مشخصات کاربر', 'وضعیت حساب', 'بررسی نهایی'];
 let version = 0, disposed = false, snapshot = '';
 let original: CrudRecord = {};
@@ -111,7 +117,13 @@ const remove = async () => {
 };
 const checkList = async () => { editing.value = false; search.value = ''; status.value = ''; await load(1); await focus('#users-list-title'); };
 const unload = (event: BeforeUnloadEvent) => { if (busy.value || editing.value && JSON.stringify(form.value) !== snapshot) { event.preventDefault(); event.returnValue = ''; } };
-onMounted(() => { accessFlow.value = props.workspace.canAccessFlow && new URLSearchParams(location.search).get('flow') === 'P05'; void load(); window.addEventListener('beforeunload', unload); });
+onMounted(() => {
+    const query = new URLSearchParams(location.search);
+    accessFlow.value = props.workspace.canAccessFlow && query.get('flow') === 'P05';
+    const unit = query.get('unit_id') || '';
+    ownershipUnit.value = query.get('from') === 'ownership' && /^[1-9]\d*$/.test(unit) ? unit : '';
+    void load(); window.addEventListener('beforeunload', unload);
+});
 onBeforeUnmount(() => { disposed = true; version++; window.removeEventListener('beforeunload', unload); });
 </script>
 
@@ -120,6 +132,9 @@ onBeforeUnmount(() => { disposed = true; version++; window.removeEventListener('
     <div ref="root" class="ownership-page finance-page users-page" data-users-page>
         <nav class="finance-breadcrumb" aria-label="مسیر صفحه"><a href="/management">داشبورد</a><span>/</span><a href="/management/operations">مرکز عملیات</a><span>/</span><strong>کاربران</strong></nav>
         <header class="ownership-hero"><div class="ownership-hero__icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="7" r="4"/><path d="M2 21v-3a7 7 0 0 1 14 0v3M17 3a4 4 0 0 1 0 8M19 14a6 6 0 0 1 3 5v2"/></svg></div><div><span class="eyebrow">کاربران و دسترسی‌ها</span><h2>مدیریت کاربران</h2><p>اطلاعات و وضعیت حساب کاربران در محدوده مدیریت شما.</p></div></header>
+        <section v-if="ownershipUnit" class="ownership-card" aria-label="ادامه ثبت مالکیت" data-ownership-return>
+            <div class="ownership-card__heading ownership-card__heading--split"><div><h3>ادامه ثبت مالکیت</h3><p>پس از افزودن یا ویرایش کاربر، به فرم مالکیت همان واحد برگردید.</p></div><a :href="ownershipReturnUrl(created?.id)" class="ownership-button ownership-button--primary" :aria-disabled="busy || undefined" @click="busy && $event.preventDefault()">{{ created ? 'ادامه مالکیت با کاربر جدید' : 'بازگشت به ثبت مالکیت' }}</a></div>
+        </section>
         <nav v-if="workspace.navigation.length && !editing" class="finance-actions users-navigation" aria-label="صفحات مرتبط"><a v-for="item in workspace.navigation" :key="item.url" :href="item.url" class="ownership-button">{{ item.title }}</a></nav>
         <section v-if="notice" class="ownership-card users-success" role="status" tabindex="-1" data-users-success><strong>{{ notice }}</strong><template v-if="created"><p>{{ name(created) }} — <bdi>{{ created.mobile }}</bdi></p><p>رمز اولیه: <bdi>123456789</bdi>؛ کاربر در اولین ورود باید رمز خود را تغییر دهد.</p><p v-if="!created.is_active">حساب غیرفعال است.</p><a v-if="workspace.canAssign" :href="roleUrl(created.id)" class="ownership-button ownership-button--primary">تخصیص نقش و محدوده</a></template></section>
         <div v-if="error" class="users-error" role="alert" tabindex="-1" data-users-error><p>{{ error }}</p><button v-if="uncertain" class="ownership-button" type="button" :disabled="busy" @click="checkList">بررسی فهرست کاربران</button></div>

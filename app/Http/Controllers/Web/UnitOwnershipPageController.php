@@ -53,6 +53,7 @@ final class UnitOwnershipPageController extends Controller
                 'apiBase' => '/api/v1',
                 'lookupBase' => '/management/lookups',
                 'csrfToken' => csrf_token(),
+                'actorId' => $user->id,
                 'buildings' => $buildings,
                 'initialUnit' => $initialUnit,
                 'usersUrl' => route('management.operations.show', 'users'),

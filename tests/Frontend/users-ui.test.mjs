@@ -48,9 +48,10 @@ test('users: actual Vue wizard, scoped actions, validation, P05, retries and res
         rows.sort((a,b)=>b.id-a.id);const page=Number(url.searchParams.get('page')||1);return reply({data:rows.slice((page-1)*2,page*2).map(r=>({...r,...(readOnly?{can_update:false,can_delete:false}:{})})),total:rows.length,current_page:page,last_page:Math.ceil(rows.length/2)});
     };
     const props=()=>({resource:${JSON.stringify(resource)},csrfToken:'test',workspace:{userId:1,canCreate:!readOnly,canAssign:!readOnly,canAccessFlow:!readOnly,navigation:[]}});
-    history.replaceState({},'', '/management/operations/users?flow=P05');mountUsers(props());
+    history.replaceState({},'', '/management/operations/users?flow=P05&from=ownership&unit_id=7');mountUsers(props());
     (async()=>{
         await until(()=>$('.users-item'));expect(!$('.user-registration-dialog'),'Old user dialog still rendered');
+        expect($('[data-ownership-return] a').getAttribute('href')==='/management/operations/ownerships?unit_id=7&resume=ownership','Ownership return lost unit or accepted arbitrary destination');
         $('[data-users-add]').click();await tick();expect(!$('.users-list')&&$('#users-form'),'Editor did not replace list');
         await submit();expect($('[aria-invalid="true"]')&&posts.length===0,'Required validation bypassed');
         await input('first_name','<img src=x onerror=alert(1)>');await input('last_name','جدید');await input('mobile','09124444444');await input('email','invalid');await submit();expect($('[name="email"]').getAttribute('aria-invalid')==='true','Invalid email accepted');
@@ -61,6 +62,7 @@ test('users: actual Vue wizard, scoped actions, validation, P05, retries and res
         await submit();await submit();fail='validation';await submit();expect($('[name="mobile"]').getAttribute('aria-invalid')==='true'&&$('#users-form'),'Server errors lost form');
         await input('mobile','09125555555');await submit();await submit();await submit();await until(()=>$('[data-users-success]'));
         expect(posts.length===2&&posts[1].is_active===false&&!('password'in posts[1]),'Creation changed initial password/activation contract');
+        expect($('[data-ownership-return] a').getAttribute('href').includes('owner_id=4'),'Return did not carry created owner');
         expect($('[data-users-success] a').href.includes('user_id=4')&&$('[data-users-success] a').href.includes('flow=P05'),'Role assignment lost created user');
         expect(!$('#users-form')&&document.documentElement.scrollWidth<=innerWidth,'Success layout wrong');
         $('[data-users-edit]').click();await tick();await input('first_name','نام ویرایش‌شده');await submit();await submit();await submit();await until(()=>patches.length===1&&!$('#users-form'));
