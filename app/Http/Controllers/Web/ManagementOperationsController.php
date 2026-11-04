@@ -153,7 +153,7 @@ class ManagementOperationsController extends Controller
             return app(SupportTicketPageController::class)(request(), $permissions);
         }
 
-        if (($configuration['group'] ?? null) === 'finance' && $resource !== 'charge-formulas') {
+        if (($configuration['group'] ?? null) === 'finance' && ! in_array($resource, ['charge-formulas', 'expense-categories'], true)) {
             return app(FinanceWorkspacePageController::class)(request(), $resource, $permissions, $ui);
         }
 

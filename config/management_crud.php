@@ -2478,16 +2478,14 @@ return [
             'operation_permissions' => ['create' => 'charge-formulas.create'],
             'group' => 'finance',
             'title' => 'دسته‌های هزینه',
-            'description' => 'ایجاد دسته هزینه اختصاصی ساختمان برای استفاده در فرمول شارژ',
+            'description' => 'ایجاد دسته هزینه عمومی و مشترک برای استفاده در فرمول شارژ تمام ساختمان‌ها',
             'list' => ['method' => 'GET', 'url' => '/api/v1/expense-categories?per_page=100'],
             'create' => ['method' => 'POST', 'url' => '/api/v1/expense-categories'],
             'columns' => [
                 ['key' => 'title', 'label' => 'عنوان دسته هزینه'],
-                ['key' => 'building_id', 'label' => 'ساختمان'],
                 ['key' => 'is_active', 'label' => 'وضعیت'],
             ],
             'fields' => [
-                ['name' => 'building_id', 'label' => 'ساختمان', 'type' => 'select', 'lookup' => 'buildings', 'required' => true],
                 ['name' => 'title', 'label' => 'عنوان دسته هزینه', 'type' => 'text', 'required' => true, 'placeholder' => 'مانند آب، گاز یا نگهداری آسانسور'],
             ],
         ],

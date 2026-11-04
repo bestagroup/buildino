@@ -327,7 +327,7 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
         $this->assertDatabaseHas('building_expenses', ['id' => $id, 'amount' => 1234567]);
     }
 
-    public function test_managers_create_expense_categories_only_for_their_building(): void
+    public function test_managers_create_shared_expense_categories_without_a_building(): void
     {
         $manager = $this->user('09125550888', 'category-manager@example.test');
         $graph = $this->buildingWithTwoUnits();
@@ -335,16 +335,16 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
         $role = $this->role('category-manager', ['charge-formulas.view', 'charge-formulas.create']);
         $this->assign($manager, $role, $graph['building']);
         Sanctum::actingAs($manager);
-        $payload = ['building_id' => $graph['building']->id, 'title' => 'نگهداری آسانسور'];
+        $payload = ['title' => 'نگهداری آسانسور'];
         $this->postJson('/api/v1/expense-categories', [...$payload, 'type' => 'income'])
-            ->assertCreated()->assertJsonPath('data.type', 'expense')->assertJsonPath('data.is_active', true);
+            ->assertCreated()->assertJsonPath('data.type', 'expense')->assertJsonPath('data.building_id', null)->assertJsonPath('data.is_active', true);
         $this->postJson('/api/v1/expense-categories', $payload)->assertUnprocessable()
             ->assertJsonValidationErrors('title');
         $this->postJson('/api/v1/expense-categories', [...$payload, 'building_id' => $other['building']->id])
-            ->assertForbidden();
+            ->assertUnprocessable();
         $this->getJson('/api/v1/expense-categories')->assertOk()->assertJsonCount(1, 'data');
         $this->getJson('/api/v1/expense-categories?building_id='.$other['building']->id)
-            ->assertOk()->assertJsonCount(0, 'data');
+            ->assertOk()->assertJsonCount(1, 'data');
     }
 
     private function assertAllocation(
