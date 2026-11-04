@@ -112,13 +112,13 @@
         host.innerHTML = draft.blocks.map((block, index) => `<article class="setup-block" data-block="${index}">
             <div class="setup-block__header"><h4>${esc(block.title)}${block.existing ? '<span class="setup-badge">ثبت‌شده</span>' : ''}</h4>${!block.existing && draft.blocks.length > 1 ? '<button type="button" class="setup-button setup-button--danger" data-block-remove>حذف از پیش‌نویس</button>' : ''}</div>
             <p class="setup-block__preview">${fa(block.floors.length)} طبقه · ${fa(block.floors.reduce((sum, floor) => sum + floor.units.length, 0))} واحد</p>
-            <div class="setup-fields">
+            <div class="setup-fields setup-count-fields">
                 <div class="setup-field"><span>تعداد طبقات</span>${counter('data-block-field="floorCount"', block.floors.length || 1, Math.max(1, block.floors.filter((floor) => floor.existing).length), 'تعداد طبقات')}</div>
                 <div class="setup-field"><span>واحد در هر طبقه</span>${counter('data-block-field="unitsPerFloor"', block.unitsPerFloor, 0, 'واحدهای هر طبقه')}</div>
             </div>
             <details class="setup-block__more" data-block-options ${block.optionsOpen ? 'open' : ''}>
                 <summary>تنظیمات بیشتر <small>کاربری و مشخصات واحدها</small></summary>
-                <div class="setup-fields">
+                <div class="setup-fields setup-default-fields">
                     ${block.existing || draft.structureType ? '' : `<label class="setup-field setup-wide"><span>نام بلوک</span><input type="text" data-block-field="title" value="${esc(block.title)}" maxlength="255"></label>`}
                     <label class="setup-field"><span>کاربری واحدهای جدید</span><select data-block-field="usage" data-required="1">${Object.entries({ residential: 'مسکونی', commercial: 'تجاری', office: 'اداری', other: 'سایر' }).map(([value,label]) => `<option value="${value}" ${block.usage === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
                     <label class="setup-field"><span>متراژ معمول واحدها <small>اختیاری</small></span><input type="number" data-block-field="defaultArea" value="${esc(block.defaultArea)}" min="0" step="0.01" placeholder="مثلاً ۱۰۰ مترمربع"></label>
@@ -137,7 +137,22 @@
     };
     const renderUnits = () => {
         renderTotals();
-        query('[data-setup-units]').innerHTML = draft.blocks.map((block, blockIndex) => `<div data-block="${blockIndex}"><h4>${esc(block.title)}</h4>${block.floors.map((floor, floorIndex) => `<details class="setup-floor" data-floor="${floorIndex}" ${floorIndex === 0 ? 'open' : ''}><summary>${esc(floor.title)} <span class="setup-badge">${fa(floor.units.length)} واحد</span>${floor.existing ? '<span class="setup-badge">ثبت‌شده</span>' : ''}</summary><div class="setup-floor__content"><div class="setup-floor__header"><div class="setup-field"><span>تعداد واحدهای این طبقه</span>${counter('data-floor-count', floor.units.length, floor.units.filter((unit) => unit.existing).length, 'واحدهای این طبقه')}</div></div><table class="setup-unit-table"><caption class="visually-hidden">واحدهای ${esc(block.title)}، ${esc(floor.title)}</caption><thead><tr><th scope="col">شماره واحد</th><th scope="col">متراژ (مترمربع)</th><th scope="col">اتاق</th><th scope="col">وضعیت</th></tr></thead><tbody>${floor.units.map((unit, unitIndex) => `<tr data-unit="${unitIndex}"><td><input type="text" data-unit-field="unit_number" value="${esc(unit.unit_number)}" maxlength="100" aria-label="شماره واحد ${unitIndex + 1} در ${esc(floor.title)}" ${unit.existing ? 'readonly' : ''}></td><td><input type="number" data-unit-field="area" value="${esc(unit.area)}" min="0" step="0.01" aria-label="متراژ واحد ${esc(unit.unit_number)}" ${unit.existing ? 'readonly' : ''}></td><td><input type="number" data-unit-field="bedrooms" value="${esc(unit.bedrooms)}" min="0" max="50" step="1" aria-label="اتاق‌های واحد ${esc(unit.unit_number)}" ${unit.existing ? 'readonly' : ''}></td><td><span class="setup-badge">${unit.existing ? 'ثبت‌شده' : 'جدید'}</span></td></tr>`).join('')}</tbody></table>${!floor.units.length ? '<p class="setup-note">این طبقه واحدی ندارد. با دکمه + واحد اضافه کنید.</p>' : ''}</div></details>`).join('')}</div>`).join('');
+        query('[data-setup-units]').innerHTML = draft.blocks.map((block, blockIndex) => `<div class="setup-unit-group" data-block="${blockIndex}">
+            ${draft.structureType ? '' : `<h4>${esc(block.title)}</h4>`}${block.floors.map((floor, floorIndex) => `<details class="setup-floor" data-floor="${floorIndex}" ${floorIndex === 0 ? 'open' : ''}>
+                <summary><span class="setup-floor__title">${esc(floor.title)}</span><span class="setup-badge">${fa(floor.units.length)} واحد</span>${floor.existing ? '<span class="setup-badge">ثبت‌شده</span>' : ''}</summary>
+                <div class="setup-floor__content">
+                    <div class="setup-floor__header"><div class="setup-field"><span>تعداد واحدهای این طبقه</span>${counter('data-floor-count', floor.units.length, floor.units.filter((unit) => unit.existing).length, 'واحدهای این طبقه')}</div></div>
+                    <div class="setup-unit-grid${floor.units.length > 4 ? ' setup-unit-grid--list' : ''}" style="--setup-unit-columns:${Math.max(1, Math.min(4, floor.units.length))}">${floor.units.map((unit, unitIndex) => `<article class="setup-unit-card" data-unit="${unitIndex}" aria-labelledby="setup-unit-${blockIndex}-${floorIndex}-${unitIndex}">
+                        <header class="setup-unit-card__header"><h5 id="setup-unit-${blockIndex}-${floorIndex}-${unitIndex}" class="setup-unit-card__title">واحد ${esc(unit.unit_number)}</h5><span class="setup-badge" data-status="${unit.existing ? 'saved' : 'draft'}">${unit.existing ? 'ثبت‌شده' : 'جدید'}</span></header>
+                        <div class="setup-unit-card__fields">
+                            <label class="setup-field"><span>شماره واحد</span><input type="text" data-unit-field="unit_number" value="${esc(unit.unit_number)}" maxlength="100" ${unit.existing ? 'readonly' : ''}></label>
+                            <label class="setup-field"><span>متراژ <small>مترمربع</small></span><input type="number" data-unit-field="area" value="${esc(unit.area)}" min="0" step="0.01" ${unit.existing ? 'readonly' : ''}></label>
+                            <label class="setup-field"><span>اتاق</span><input type="number" data-unit-field="bedrooms" value="${esc(unit.bedrooms)}" min="0" max="50" step="1" ${unit.existing ? 'readonly' : ''}></label>
+                        </div>
+                    </article>`).join('')}</div>${!floor.units.length ? '<p class="setup-note">این طبقه واحدی ندارد. با دکمه + واحد اضافه کنید.</p>' : ''}
+                </div>
+            </details>`).join('')}
+        </div>`).join('');
     };
     const renderReview = () => {
         const count = engine.totals(draft.blocks);
@@ -255,6 +270,7 @@
 
             if (field === 'unit_number') {
                 unit.auto_numbered = false;
+                event.target.closest('[data-unit]').querySelector('.setup-unit-card__title').textContent = `واحد ${unit[field]}`;
             }
         }
         clearError(); persist();
