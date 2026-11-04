@@ -59,13 +59,13 @@ class ChargeFormulaController extends Controller
         );
 
         $data = $builder->normalize($request->validated());
-        $this->validateCategories($building, $data['items']);
-        $this->validateUniqueCategory(
-            $building,
-            (int) $data['items'][0]['financial_category_id']
-        );
+        $formula = DB::transaction(function () use ($building, $data): ChargeFormula {
+            Building::query()->whereKey($building->getKey())->lockForUpdate()->firstOrFail();
+            $this->validateCategories($building, $data['items']);
+            if ($data['is_active'] ?? true) {
+                $this->validateUniqueCategory($building, (int) $data['items'][0]['financial_category_id']);
+            }
 
-        $formula = DB::transaction(function () use ($building,$data): ChargeFormula {
             $formula = $building->chargeFormulas()->create([
                 'title'=>$data['title'],
                 'calculation_type'=>$data['calculation_type'],
@@ -76,7 +76,7 @@ class ChargeFormulaController extends Controller
             $formula->chargeItems()->createMany($data['items']);
 
             return $formula;
-        });
+        }, 3);
 
         $formula->load('chargeItems');
 
@@ -103,22 +103,24 @@ class ChargeFormulaController extends Controller
 
         $data = $builder->normalize($request->validated());
 
-        if (isset($data['items'])) {
-            $this->validateCategories(
-                $chargeFormula->building,
-                $data['items']
-            );
+        $chargeFormula = DB::transaction(function () use ($chargeFormula, $data): ChargeFormula {
+            $building = Building::query()->whereKey($chargeFormula->building_id)->lockForUpdate()->firstOrFail();
+            $chargeFormula = ChargeFormula::query()->whereKey($chargeFormula->getKey())->lockForUpdate()->firstOrFail();
 
-            $this->validateUniqueCategory(
-                $chargeFormula->building,
-                (int) $data['items'][0][
-                    'financial_category_id'
-                ],
-                $chargeFormula
-            );
-        }
+            if (isset($data['items'])) {
+                $this->validateCategories($building, $data['items']);
+            }
 
-        DB::transaction(function () use ($chargeFormula,$data): void {
+            // Validate the resulting state, including an activation-only PATCH.
+            if ($data['is_active'] ?? $chargeFormula->is_active) {
+                $categoryIds = isset($data['items'])
+                    ? collect($data['items'])->pluck('financial_category_id')
+                    : $chargeFormula->chargeItems()->pluck('financial_category_id');
+                foreach ($categoryIds->filter()->unique() as $categoryId) {
+                    $this->validateUniqueCategory($building, (int) $categoryId, $chargeFormula);
+                }
+            }
+
             $chargeFormula->update(
                 array_intersect_key(
                     $data,
@@ -132,7 +134,9 @@ class ChargeFormulaController extends Controller
                 $chargeFormula->chargeItems()->delete();
                 $chargeFormula->chargeItems()->createMany($data['items']);
             }
-        });
+
+            return $chargeFormula;
+        }, 3);
 
         $chargeFormula->load('chargeItems');
 
@@ -145,6 +149,7 @@ class ChargeFormulaController extends Controller
         ?ChargeFormula $ignore = null
     ): void {
         $query = ChargeFormula::query()
+            ->where('is_active', true)
             ->where(
                 'building_id',
                 $building->getKey()
@@ -166,7 +171,7 @@ class ChargeFormulaController extends Controller
         if ($query->exists()) {
             throw ValidationException::withMessages([
                 'builder.financial_category_id' =>
-                    'برای این دسته هزینه قبلاً فرمول محاسبه تعریف شده است.',
+                    'برای این دسته هزینه یک فرمول فعال وجود دارد. ابتدا فرمول قبلی را غیرفعال کنید.',
             ]);
         }
     }
