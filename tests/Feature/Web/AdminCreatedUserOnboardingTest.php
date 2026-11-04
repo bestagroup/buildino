@@ -9,6 +9,7 @@ use App\Models\UserRoleAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
+use Inertia\Testing\AssertableInertia as Assert;
 
 class AdminCreatedUserOnboardingTest extends TestCase
 {
@@ -22,8 +23,7 @@ class AdminCreatedUserOnboardingTest extends TestCase
 
         $this->get('/management/operations/users')
             ->assertOk()
-            ->assertSee('user-registration-dialog')
-            ->assertSee('buildino-user-dialog.css');
+            ->assertInertia(fn (Assert $page) => $page->component('management/access/Users')->where('workspace.canCreate', true));
 
         $fields = collect(config('management_crud.resources.users.fields'));
         $this->assertFalse($fields->contains('name', 'password'));

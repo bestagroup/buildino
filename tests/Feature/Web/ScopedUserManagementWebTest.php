@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\CreatesBuildingDomainData;
 use Tests\TestCase;
+use Inertia\Testing\AssertableInertia as Assert;
 
 class ScopedUserManagementWebTest extends TestCase
 {
@@ -39,10 +40,8 @@ class ScopedUserManagementWebTest extends TestCase
         ]);
         $this->actingAs($manager, 'web')
             ->get('/management/operations/users')->assertOk()
-            ->assertViewHas('resource', fn (array $resource): bool =>
-                ($resource['update']['method'] ?? null) === 'PATCH'
-                && ! isset($resource['delete'])
-            );
+            ->assertInertia(fn (Assert $page) => $page->component('management/access/Users')
+                ->where('resource.update.method', 'PATCH')->missing('resource.delete'));
         $this->patchJson('/management/data/users/'.$target->id, [
             'first_name' => 'نام اصلاح‌شده',
             'last_name' => 'کاربر ساختمان',
@@ -94,7 +93,7 @@ class ScopedUserManagementWebTest extends TestCase
 
             $this->get('/management/operations/users')
                 ->assertOk()
-                ->assertSee('افزودن کاربر');
+                ->assertInertia(fn (Assert $page) => $page->component('management/access/Users')->where('workspace.canCreate', true));
 
             $response = $this->postJson(
                 '/management/data/users',
@@ -235,6 +234,31 @@ class ScopedUserManagementWebTest extends TestCase
                 'scope_id' => $graph['block']->getKey(),
             ]
         );
+    }
+
+    public function test_user_list_filters_status_and_exposes_only_scoped_row_actions(): void
+    {
+        $a = $this->createBuildingGraph();
+        $b = $this->createBuildingGraph();
+        $actor = $this->createUser();
+        $editable = $this->createUser(['is_active' => false]);
+        $readOnly = $this->createUser(['is_blocked' => true]);
+        $foreign = $this->createUser();
+        $this->grant($actor, ['reports.dashboard.view', 'users.view', 'users.update'], $a['building'], 'users-editor-a');
+        $this->grant($actor, ['users.view'], $b['building'], 'users-viewer-b');
+        foreach ([[$editable, $a['building']], [$readOnly, $b['building']]] as [$target, $building]) {
+            ManagedUserScope::query()->create(['user_id' => $target->id, 'scope_type' => $building->getMorphClass(), 'scope_id' => $building->id]);
+        }
+        $rows = collect($this->actingAs($actor)->getJson('/management/data/users')->assertOk()->json('data'))->keyBy('id');
+        $this->assertTrue($rows[$editable->id]['can_update']);
+        $this->assertFalse($rows[$editable->id]['can_delete']);
+        $this->assertFalse($rows[$readOnly->id]['can_update']);
+        $this->assertFalse($rows[$readOnly->id]['can_delete']);
+        $this->assertFalse($rows->has($foreign->id));
+        $this->getJson('/management/data/users?status=inactive')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $editable->id);
+        $this->getJson('/management/data/users?status=blocked')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $readOnly->id);
+        $this->getJson('/management/data/users?status=invalid')->assertUnprocessable();
+        $this->patchJson('/management/data/users/'.$readOnly->id, ['first_name' => 'Forbidden'])->assertForbidden();
     }
 
     private function grant(

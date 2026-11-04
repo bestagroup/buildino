@@ -338,22 +338,8 @@ class ManagementCrudWebTest extends TestCase
             '/management/operations/users'
         )
             ->assertOk()
-            ->assertSee(
-                'role="dialog"',
-                false
-            )
-            ->assertSee(
-                'aria-modal="true"',
-                false
-            )
-            ->assertSee(
-                'aria-labelledby="crudDrawerTitle"',
-                false
-            )
-            ->assertSee(
-                'aria-busy="false"',
-                false
-            );
+            ->assertInertia(fn (Assert $page) => $page->component('management/access/Users')
+                ->where('resource.create.url', '/management/data/users'));
 
         $drawer = (string) file_get_contents(
             resource_path(

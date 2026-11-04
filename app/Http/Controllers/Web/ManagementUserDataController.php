@@ -45,6 +45,14 @@ class ManagementUserDataController extends Controller
             ])
             ->latest('id');
 
+        $filters = $request->validate(['status' => ['nullable', 'in:active,inactive,blocked']]);
+        match ($filters['status'] ?? null) {
+            'active' => $query->where('is_active', true)->where('is_blocked', false),
+            'inactive' => $query->where('is_active', false)->where('is_blocked', false),
+            'blocked' => $query->where('is_blocked', true),
+            default => null,
+        };
+
         if (
             $search = trim(
                 (string) $request->query('search')
@@ -93,6 +101,15 @@ class ManagementUserDataController extends Controller
                     100
                 )
             );
+
+        // Resolve row actions in two scoped queries, rather than one query per user.
+        $ids = $users->getCollection()->pluck('id');
+        $editable = $this->scopedUsers->applyVisibleUsers(User::query()->whereKey($ids), $request->user(), 'users.update')->pluck('id');
+        $deletable = $this->scopedUsers->applyVisibleUsers(User::query()->whereKey($ids), $request->user(), 'users.delete')->where('id', '!=', $request->user()->id)->pluck('id');
+        $users->getCollection()->each(function (User $user) use ($editable, $deletable): void {
+            $user->setAttribute('can_update', $editable->contains($user->id));
+            $user->setAttribute('can_delete', $deletable->contains($user->id));
+        });
 
         return response()->json(
             $users

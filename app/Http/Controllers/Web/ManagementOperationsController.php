@@ -103,6 +103,24 @@ class ManagementOperationsController extends Controller
             $configuration
         );
 
+        if ($resource === 'users') {
+            $actor = request()->user();
+            $canAssign = $permissions->allows($actor, 'users.update') && $ui->canSeeResource($actor, config('management_crud.resources.role-assignments', []));
+            $navigation = collect(['roles', 'role-assignments'])->filter(fn ($key) => $ui->canSeeResource($actor, config("management_crud.resources.{$key}", [])))
+                ->map(fn ($key) => ['title' => config("management_crud.resources.{$key}.title"), 'url' => route('management.operations.show', $key)])->values();
+            return Inertia::render('management/access/Users', [
+                'resource' => $configuration,
+                'csrfToken' => csrf_token(),
+                'workspace' => [
+                    'userId' => $actor->id,
+                    'canCreate' => isset($configuration['create']),
+                    'canAssign' => $canAssign,
+                    'canAccessFlow' => $permissions->allows($actor, 'users.create') && $canAssign,
+                    'navigation' => $navigation,
+                ],
+            ]);
+        }
+
         if ($resource === 'ownerships') {
             return app(UnitOwnershipPageController::class)(request(), $permissions);
         }
