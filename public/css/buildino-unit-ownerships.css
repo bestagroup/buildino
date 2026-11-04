@@ -86,4 +86,8 @@ body.ownership-modal-open { overflow: hidden; }
     .ownership-record__actions { width: 100%; }
     .ownership-card__heading--split { flex-wrap: wrap; }
     .ownership-card__heading--split > .ownership-button { margin-inline-start: auto; }
+    [data-unit-ownership-page] .ownership-card__heading--split { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: start; }
+    [data-unit-ownership-page] .ownership-card__heading--split > .ownership-card__index { grid-column: 1/-1; justify-self: start; width: 38px; }
+    [data-unit-ownership-page] .ownership-card__heading--split > div { grid-column: 1/-1; overflow-wrap: anywhere; }
+    [data-unit-ownership-page] .ownership-card__heading--split > .ownership-button { width: 100%; margin: 0; }
 }

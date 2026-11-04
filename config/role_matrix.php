@@ -212,7 +212,7 @@ return [
                 'building',
 
             // Sidebar visibility only; operational permissions remain available.
-            'sidebar_navigation' => ['dashboard', 'operations', 'at_a_glance'],
+            'sidebar_navigation' => ['dashboard', 'operations', 'at_a_glance', 'structure', 'residents', 'access'],
 
             'permissions' => [
                 'reports.dashboard.view',

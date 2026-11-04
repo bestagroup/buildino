@@ -446,8 +446,8 @@ class RoleMatrixAccessScenarioTest extends TestCase
             '/management/operations/users'
         )
             ->assertOk()
-            ->assertSee('کاربران')
-            ->assertSee('افزودن کاربر');
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('management/access/Users')->where('workspace.canCreate', true));
 
         $this->get(
             '/management/operations/roles'

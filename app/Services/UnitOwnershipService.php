@@ -110,7 +110,7 @@ final class UnitOwnershipService
             ) {
                 throw ValidationException::withMessages([
                     'ends_at' => [
-                        'The end date cannot be before the ownership start date.',
+                        'تاریخ پایان نمی‌تواند پیش از تاریخ شروع مالکیت باشد.',
                     ],
                 ]);
             }
@@ -173,7 +173,7 @@ final class UnitOwnershipService
         ) {
             throw ValidationException::withMessages([
                 'ownership_percentage' => [
-                    'The total active ownership percentage for the unit cannot exceed 100.',
+                    'مجموع سهم مالکان فعال این واحد نمی‌تواند بیشتر از ۱۰۰٪ باشد.',
                 ],
             ]);
         }

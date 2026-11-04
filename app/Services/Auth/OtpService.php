@@ -64,7 +64,7 @@ class OtpService
         if (! $lock->get()) {
             throw ValidationException::withMessages([
                 'identifier' =>
-                    'Please wait before requesting another code.',
+                    'برای درخواست دوباره کد تأیید، کمی صبر کنید.',
             ]);
         }
 
@@ -89,7 +89,7 @@ class OtpService
             if ($recent) {
                 throw ValidationException::withMessages([
                     'identifier' =>
-                        'Please wait before requesting another code.',
+                        'برای درخواست دوباره کد تأیید، کمی صبر کنید.',
                 ]);
             }
 
@@ -217,13 +217,13 @@ class OtpService
 
         if ($result['status'] === 'maximum_attempts') {
             throw ValidationException::withMessages([
-                'code' => 'Maximum OTP attempts exceeded.',
+                'code' => 'تعداد تلاش‌های مجاز تمام شده است؛ کد تأیید جدید درخواست کنید.',
             ]);
         }
 
         if ($result['status'] !== 'verified') {
             throw ValidationException::withMessages([
-                'code' => 'OTP is invalid or expired.',
+                'code' => 'کد تأیید نادرست است یا اعتبار آن تمام شده است.',
             ]);
         }
 
@@ -251,13 +251,13 @@ class OtpService
     {
         if (! in_array($channel, ['sms', 'email'], true)) {
             throw ValidationException::withMessages([
-                'channel' => 'Unsupported OTP channel.',
+                'channel' => 'روش ارسال کد تأیید پشتیبانی نمی‌شود.',
             ]);
         }
 
         if ($channel === 'email' && ! filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             throw ValidationException::withMessages([
-                'identifier' => 'A valid email address is required.',
+                'identifier' => 'یک نشانی ایمیل معتبر وارد کنید.',
             ]);
         }
     }

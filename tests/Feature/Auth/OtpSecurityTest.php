@@ -143,7 +143,7 @@ class OtpSecurityTest extends TestCase
             $this->fail('Incorrect OTP was accepted.');
         } catch (ValidationException $exception) {
             $this->assertSame(
-                ['OTP is invalid or expired.'],
+                ['کد تأیید نادرست است یا اعتبار آن تمام شده است.'],
                 $exception->errors()['code']
             );
         }
@@ -168,7 +168,7 @@ class OtpSecurityTest extends TestCase
                 $this->fail('Incorrect OTP was accepted.');
             } catch (ValidationException $exception) {
                 $this->assertSame(
-                    ['OTP is invalid or expired.'],
+                    ['کد تأیید نادرست است یا اعتبار آن تمام شده است.'],
                     $exception->errors()['code']
                 );
                 $this->assertSame(
@@ -183,7 +183,7 @@ class OtpSecurityTest extends TestCase
             $this->fail('Attempt-limited OTP was accepted.');
         } catch (ValidationException $exception) {
             $this->assertSame(
-                ['Maximum OTP attempts exceeded.'],
+                ['تعداد تلاش‌های مجاز تمام شده است؛ کد تأیید جدید درخواست کنید.'],
                 $exception->errors()['code']
             );
         }
@@ -207,7 +207,7 @@ class OtpSecurityTest extends TestCase
             $this->fail('Expired OTP was accepted.');
         } catch (ValidationException $exception) {
             $this->assertSame(
-                ['OTP is invalid or expired.'],
+                ['کد تأیید نادرست است یا اعتبار آن تمام شده است.'],
                 $exception->errors()['code']
             );
         }
