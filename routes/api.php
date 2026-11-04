@@ -685,6 +685,8 @@ Route::prefix('v1')
             [FinancialTransactionController::class, 'store']
         );
 
+        Route::apiResource('expense-categories', \App\Http\Controllers\Api\V1\ExpenseCategoryController::class)->only(['index', 'store']);
+
         Route::apiResources([
             'expenses' => BuildingExpenseController::class,
             'incomes' => BuildingIncomeController::class,
