@@ -13,10 +13,7 @@ const closing = ref(false);
 const form = ref<CrudRecord>({ first_name: '', last_name: '', mobile: '', email: '', national_code: '' });
 const errors = ref<Record<string, string[]>>({}), error = ref(''), created = ref<CrudRecord | null>(null);
 const context = ref({ unitId: 0, unitLabel: '' });
-const fields = computed(() => {
-    const order = ['first_name', 'last_name', 'mobile', 'email', 'national_code'];
-    return userIdentityFields(props.fields).sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
-});
+const fields = computed(() => userIdentityFields(props.fields));
 let returnFocus: HTMLElement | null = null;
 let previousOverflow = '';
 const focus = async (selector: string) => { await nextTick(); dialog.value?.querySelector<HTMLElement>(selector)?.focus(); };

@@ -37,12 +37,18 @@ const number = (value: number) => value.toLocaleString('fa-IR');
 const roleNames = (row: UserRow) => row.roles || [...new Set((row.user_role_assignments || []).filter(item => item.is_active && (!item.starts_at || new Date(item.starts_at).getTime() <= Date.now()) && (!item.ends_at || new Date(item.ends_at).getTime() >= Date.now())).map(item => item.role?.display_name || item.role?.name).filter(Boolean))];
 const stateLabel = (row: UserRow) => row.is_blocked ? 'مسدود' : row.is_active ? 'فعال' : 'غیرفعال';
 const roleUrl = (id: number) => '/management/operations/role-assignments?flow=P05&user_id=' + encodeURIComponent(id);
-const fields = computed<CrudField[]>(() => step.value === 0 ? userIdentityFields(props.resource.fields || []) : (props.resource.fields || []).filter(field =>
-    ['is_active', 'is_blocked', 'verify_mobile', 'verify_email'].includes(field.name) && !(accessFlow.value && mode.value === 'create' && field.name === 'is_active'))
-    .map(field => ({ ...field, maxlength: field.name === 'national_code' || field.name === 'mobile' ? 20 : 255,
-        ...(field.name === 'mobile' ? { type: 'tel', placeholder: '09… یا +98…' } : {}),
-        ...(field.name === 'verify_mobile' ? { label: 'موبایل تأییدشده' } : field.name === 'verify_email' ? { label: 'ایمیل تأییدشده' } : {}),
-    })));
+const clearCreateQuery = () => {
+    const url = new URL(location.href);
+    if (url.searchParams.get('create') !== '1') return;
+    url.searchParams.delete('create'); window.history.replaceState(window.history.state, '', url);
+};
+const fields = computed<CrudField[]>(() => {
+    if (step.value === 0) return userIdentityFields(props.resource.fields || []);
+    const order = ['is_active', 'is_blocked', 'verify_mobile', 'verify_email'];
+    return (props.resource.fields || []).filter(field => order.includes(field.name) && !(accessFlow.value && mode.value === 'create' && field.name === 'is_active'))
+        .sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name))
+        .map(field => ({ ...field, ...(field.name === 'verify_mobile' ? { label: 'موبایل تأییدشده' } : field.name === 'verify_email' ? { label: 'ایمیل تأییدشده' } : {}) }));
+});
 const focus = async (selector: string) => { await nextTick(); root.value?.querySelector<HTMLElement>(selector)?.focus(); };
 const request = <T,>(path: string, method = 'GET', body?: unknown) => apiRequest<T>(path, { csrfToken: props.csrfToken, method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
 const report = (caught: unknown, mutation = false) => {
@@ -75,7 +81,7 @@ const begin = async (row: UserRow | null = null) => {
 const close = async (force = false) => {
     if (busy.value) return;
     if (!force && JSON.stringify(form.value) !== snapshot) { discard.value = true; return; }
-    editing.value = false; discard.value = false; error.value = ''; errors.value = {}; await load(page.value); await focus('#users-list-title');
+    editing.value = false; discard.value = false; error.value = ''; errors.value = {}; clearCreateQuery(); await load(page.value); await focus('#users-list-title');
 };
 const validate = (index: number) => {
     const result: Record<string, string[]> = {};
@@ -100,6 +106,7 @@ const submit = async () => {
         const result = await request<{ data: UserRow }>('/management/data/users' + (current ? '/' + current.id : ''), current ? 'PATCH' : 'POST', body);
         if (!result.data?.id) throw new Error('نتیجه ثبت دریافت نشد.');
         created.value = current ? null : result.data; notice.value = current ? 'اطلاعات کاربر ذخیره شد.' : 'کاربر ساخته شد.';
+        clearCreateQuery();
         editing.value = false; search.value = ''; status.value = ''; await load(1); await focus('[data-users-success]');
     } catch (caught) {
         report(caught, true);
@@ -113,14 +120,15 @@ const remove = async () => {
     catch (caught) { deleting.value = null; report(caught, true); }
     finally { busy.value = false; }
 };
-const checkList = async () => { editing.value = false; search.value = ''; status.value = ''; await load(1); await focus('#users-list-title'); };
+const checkList = async () => { editing.value = false; clearCreateQuery(); search.value = ''; status.value = ''; await load(1); await focus('#users-list-title'); };
 const unload = (event: BeforeUnloadEvent) => { if (busy.value || editing.value && JSON.stringify(form.value) !== snapshot) { event.preventDefault(); event.returnValue = ''; } };
 onMounted(() => {
     const query = new URLSearchParams(location.search);
     accessFlow.value = props.workspace.canAccessFlow && query.get('flow') === 'P05';
     const unit = query.get('unit_id') || '';
     ownershipUnit.value = query.get('from') === 'ownership' && /^[1-9]\d*$/.test(unit) ? unit : '';
-    void load(); window.addEventListener('beforeunload', unload);
+    if (query.get('create') === '1' && props.workspace.canCreate) void begin(); else void load();
+    window.addEventListener('beforeunload', unload);
 });
 onBeforeUnmount(() => { disposed = true; version++; window.removeEventListener('beforeunload', unload); });
 </script>
@@ -150,9 +158,9 @@ onBeforeUnmount(() => { disposed = true; version++; window.removeEventListener('
             <nav v-if="lastPage > 1" class="finance-actions finance-pagination users-pagination" aria-label="صفحه‌بندی"><button type="button" class="ownership-button" :disabled="loading || page <= 1" @click="load(page - 1)">صفحه قبل</button><span>صفحه {{ number(page) }} از {{ number(lastPage) }}</span><button type="button" class="ownership-button" :disabled="loading || page >= lastPage" @click="load(page + 1)">صفحه بعد</button></nav>
         </section>
         <section v-else class="ownership-card finance-editor" :aria-busy="busy">
-            <div class="ownership-card__heading ownership-card__heading--split"><h3>{{ selected ? 'ویرایش کاربر' : 'افزودن کاربر' }}</h3><button type="button" class="ownership-button" :disabled="busy" @click="close()">بازگشت به فهرست</button></div>
+            <div class="ownership-card__heading ownership-card__heading--split users-editor-heading"><h3>{{ selected ? 'ویرایش کاربر' : 'افزودن کاربر' }}</h3><button type="button" class="ownership-button" :disabled="busy" @click="close()">بازگشت به فهرست</button></div>
             <ol class="ownership-flow" aria-label="مراحل فرم"><li v-for="(label, index) in stages" :key="label" :aria-current="step === index ? 'step' : undefined" :class="{ 'is-complete': index < step }"><button type="button" :disabled="index >= step || busy" @click="navigate(index)">{{ number(index + 1) }}. {{ label }}</button></li></ol>
-            <form id="users-form" novalidate @submit.prevent="submit"><fieldset :disabled="busy || uncertain"><legend id="users-step-title" tabindex="-1">{{ stages[step] }}</legend>
+            <form id="users-form" :data-users-step="step" novalidate @submit.prevent="submit"><fieldset :disabled="busy || uncertain"><legend id="users-step-title" tabindex="-1">{{ stages[step] }}</legend>
                 <p v-if="accessFlow && !selected" class="finance-hint">کاربر تا تکمیل نقش و محدوده غیرفعال می‌ماند.</p>
                 <DynamicForm v-if="step < 2" v-model="form" :fields="fields" :mode="mode" :errors="errors" lookup-base="/management/lookups" :csrf-token="csrfToken" :group-optional="false" />
                 <template v-else><dl class="finance-review"><dt>نام و نام خانوادگی</dt><dd>{{ form.first_name }} {{ form.last_name }}</dd><dt>موبایل</dt><dd><bdi>{{ form.mobile }}</bdi></dd><dt>ایمیل</dt><dd><bdi>{{ form.email || '—' }}</bdi></dd><dt>کد ملی</dt><dd><bdi>{{ form.national_code || '—' }}</bdi></dd><dt>وضعیت حساب</dt><dd>{{ form.is_blocked ? 'مسدود' : form.is_active ? 'فعال' : 'غیرفعال' }}</dd><dt>تأیید موبایل / ایمیل</dt><dd>{{ form.verify_mobile ? 'موبایل تأییدشده' : 'موبایل تأییدنشده' }} / {{ form.verify_email ? 'ایمیل تأییدشده' : 'ایمیل تأییدنشده' }}</dd></dl><p v-if="!selected" class="finance-hint">رمز اولیه خودکار تعیین می‌شود؛ تغییر آن در اولین ورود الزامی است. تخصیص نقش پس از ساخت کاربر انجام می‌شود.</p></template>

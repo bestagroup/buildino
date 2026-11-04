@@ -74,7 +74,15 @@ test('users: actual Vue wizard, scoped actions, validation, P05, retries and res
         $('[data-users-add]').click();await tick();await input('first_name','تست');await input('last_name','شبکه');await input('mobile','09126666666');await submit();await submit();fail='server';await submit();
         expect($('[data-users-next]').disabled&&!$('#app').textContent.includes('SQLSTATE')&&!$('[data-users-success]'),'Unknown result leaked SQL or announced success');
         $('[data-users-error] button').click();await until(()=>!$('#users-form'));const count=posts.length;await tick();expect(posts.length===count,'Mutation automatically retried');
-        readOnly=true;history.replaceState({},'', '/management/operations/users');mountUsers(props());await until(()=>$('.users-item'));
+        history.replaceState({},'', '/management/operations/users?create=1');mountUsers(props());await until(()=>$('#users-form'));
+        expect([...$$('#users-form input')].map(el=>el.name).join(',')==='first_name,last_name,mobile,email,national_code','Direct creation link or identity field order is wrong');
+        if(${JSON.stringify(process.env.USERS_FORM_PREVIEW || '')}){
+            if(${JSON.stringify(process.env.USERS_FORM_PREVIEW || '')}==='status'){await input('first_name','کاربر');await input('last_name','آزمایشی');await input('mobile','09121112233');await submit();}
+            $('#result').dataset.ok='true';return;
+        }
+        $$('.users-editor-heading button').find(el=>el.textContent.includes('بازگشت')).click();await until(()=>!$('#users-form'));expect(!new URLSearchParams(location.search).has('create'),'Closing left create flag in URL');
+        readOnly=true;history.replaceState({},'', '/management/operations/users?create=1');mountUsers(props());await until(()=>$('.users-item'));
+        expect(!$('#users-form'),'Read-only account opened creation via query');
         expect(!$('[data-users-add]')&&!$('[data-users-edit]'),'Read-only user sees write controls');
         expect(document.documentElement.scrollWidth<=innerWidth,'User list overflows');
         const host=document.createElement('div');host.id='dialog';host.setAttribute('data-user-create-root','');document.body.append(host);mountUserDialog({fields:props().resource.fields,csrfToken:'test'});
