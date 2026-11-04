@@ -187,7 +187,7 @@ onBeforeUnmount(() => { disposed = true; listTicket++; window.removeEventListene
 
 <template>
     <Head :title="resource.title" />
-    <div ref="root" class="ownership-page structure-page" data-structure-page>
+    <div ref="root" class="ownership-page structure-page" data-structure-page :data-structure-resource="resourceKey">
         <nav class="structure-breadcrumb" aria-label="مسیر صفحه"><a href="/management">داشبورد</a><span>/</span><a v-if="parent" :href="parentUrl">{{ resourceKey === 'floors' && simpleStructure ? 'ساختمان‌ها و بلوک‌ها' : parent.title }}</a><span v-if="parent">/</span><strong>{{ resource.title }}</strong></nav>
         <header class="ownership-hero"><div class="ownership-hero__icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 21V5l8-2v18M12 8h8v13M7 8h2M7 12h2M7 16h2M15 11h2M15 15h2M2 21h20"/></svg></div><div><h2>{{ resource.title }}</h2><p>{{ resource.description }}</p></div></header>
         <template v-if="!editor">
@@ -228,7 +228,7 @@ onBeforeUnmount(() => { disposed = true; listTicket++; window.removeEventListene
             <nav class="ownership-flow structure-steps" :style="{ '--structure-steps': labels.length }" aria-label="مراحل ثبت اطلاعات"><span v-for="(label, index) in labels" :key="label" :class="{ 'is-current': index === step, 'is-complete': index < step }" :aria-current="index === step ? 'step' : undefined"><b>{{ index + 1 }}</b>{{ label }}</span></nav>
             <h4 id="structure-step-title" tabindex="-1">{{ labels[step] }}</h4>
             <form id="structure-form" novalidate @submit.prevent="submit">
-                <fieldset :disabled="saving"><DynamicForm v-if="step < reviewStep" v-model="form" :fields="activeFields" :mode="mode" :lookup-base="lookupBase" :csrf-token="csrfToken" :errors="formErrors" @loading="lookupsLoading = $event" /><dl v-else class="structure-review"><template v-for="item in review" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></template></dl></fieldset>
+                <fieldset :disabled="saving"><DynamicForm v-if="step < reviewStep" v-model="form" :fields="activeFields" :mode="mode" :lookup-base="lookupBase" :csrf-token="csrfToken" :errors="formErrors" :group-optional="resourceKey !== 'units'" @loading="lookupsLoading = $event" /><dl v-else class="structure-review"><template v-for="item in review" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></template></dl></fieldset>
                 <div v-if="formError" class="structure-error" role="alert">{{ formError }}</div>
                 <div v-if="discard" class="structure-discard" role="alert"><p>تغییرات ذخیره نشده‌اند. از فرم خارج می‌شوید؟</p><button type="button" class="ownership-button" @click="discard = false">ادامه ویرایش</button><button type="button" class="ownership-button structure-delete" @click="closeEditor(true)">خروج بدون ذخیره</button></div>
                 <div class="ownership-actions structure-form-actions"><button v-if="step > 0" type="button" class="ownership-button" :disabled="saving" @click="step--; formError = ''; focus('#structure-step-title')">مرحله قبل</button><button type="submit" class="ownership-button ownership-button--primary" :disabled="saving || lookupsLoading" data-structure-next>{{ saving ? 'در حال ذخیره…' : step === reviewStep ? 'تأیید و ذخیره' : 'ادامه' }}</button></div>

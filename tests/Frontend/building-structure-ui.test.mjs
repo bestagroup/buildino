@@ -130,7 +130,11 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
             $('[data-structure-add]').click(); await tick();
             if (key === 'blocks') await input('title','بلوک جدید');
             if (key === 'floors') await input('floor_number','-1');
-            if (key === 'units') { await input('unit_number','۱۰۲'); await input('area','75.5'); await input('usage_type','residential'); }
+            if (key === 'units') {
+                expect(!$('[name="bedrooms"]').closest('details')&&$('[name="bedrooms"]').getBoundingClientRect().height>0,'Unit bedrooms hidden away from main fields');
+                if(innerWidth>700){const tops=['area','bedrooms','usage_type'].map(name=>$('[name="'+name+'"]').getBoundingClientRect().top);expect(tops.every(top=>Math.abs(top-tops[0])<1),'Unit size, bedrooms and usage are not aligned');}
+                await input('unit_number','۱۰۲'); await input('area','75.5'); await input('usage_type','residential');
+            }
             submit(); await tick(); expect($('.structure-review'), 'Child form cannot advance: ' + key); submit(); await until(() => $('[data-structure-edit]')); expect(posts.at(-1).path.includes('/1/'), 'Saved under wrong parent');
         }
         await mount('blocks','?building_id=1'); await until(() => $('[data-structure-edit]'));
@@ -168,10 +172,10 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
         if (['editor', 'switch', 'map'].includes(${JSON.stringify(process.env.STRUCTURE_CAPTURE || '')})) { $('.structure-discard button').click(); if (['switch', 'map'].includes(${JSON.stringify(process.env.STRUCTURE_CAPTURE || '')})) { submit(); await tick(); } if (${JSON.stringify(process.env.STRUCTURE_CAPTURE || '')} === 'map') { $('[data-location-open]').click(); await tick(); await until(() => !$('[data-location-center]').disabled); $('[data-location-center]').click(); await new Promise(resolve => setTimeout(resolve, 300)); } }
         else { $('.structure-discard button:last-child').click(); }
         const captureKey = ${JSON.stringify(process.env.STRUCTURE_CAPTURE || '')};
-        if (['blocks','floors','units','block-editor','scope'].includes(captureKey)) {
-            await mount(captureKey === 'block-editor' ? 'blocks' : captureKey === 'scope' ? 'units' : captureKey, captureKey === 'scope' ? '' : '?building_id=1&block_id=1&floor_id=1');
+        if (['blocks','floors','units','block-editor','unit-editor','scope'].includes(captureKey)) {
+            await mount(captureKey === 'block-editor' ? 'blocks' : ['unit-editor','scope'].includes(captureKey) ? 'units' : captureKey, captureKey === 'scope' ? '' : '?building_id=1&block_id=1&floor_id=1');
             if (captureKey !== 'scope') await until(() => $('[data-structure-edit]'));
-            if (captureKey === 'block-editor') { $('[data-structure-edit]').click(); await tick(); }
+            if (['block-editor','unit-editor'].includes(captureKey)) { $('[data-structure-edit]').click(); await tick(); }
             window.scrollTo(0,0);
         }
         $('#result').dataset.ok = 'true'; $('#result').textContent = 'Passed';
