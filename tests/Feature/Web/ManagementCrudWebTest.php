@@ -292,7 +292,7 @@ class ManagementCrudWebTest extends TestCase
             $script
         );
         $this->assertStringContainsString(
-            'data-formula-expression',
+            'data-formula-method',
             $script
         );
     }

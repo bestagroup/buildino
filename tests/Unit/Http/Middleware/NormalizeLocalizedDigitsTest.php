@@ -25,7 +25,7 @@ final class NormalizeLocalizedDigitsTest extends TestCase
         );
 
         $middleware = new NormalizeLocalizedDigits(
-            new DigitNormalizer()
+            new DigitNormalizer
         );
 
         $middleware->handle(
@@ -66,7 +66,7 @@ final class NormalizeLocalizedDigitsTest extends TestCase
         );
 
         $middleware = new NormalizeLocalizedDigits(
-            new DigitNormalizer()
+            new DigitNormalizer
         );
 
         $middleware->handle(
@@ -83,7 +83,7 @@ final class NormalizeLocalizedDigitsTest extends TestCase
             $request->input('password_confirmation')
         );
         $this->assertSame(
-            'invite-123',
+            'invite-۱۲۳',
             $request->input('invitation_token')
         );
         $this->assertSame(

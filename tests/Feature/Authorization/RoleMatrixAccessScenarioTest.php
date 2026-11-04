@@ -19,6 +19,7 @@ use Database\Seeders\AccessScenarioSeeder;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\RoleMatrixSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -63,8 +64,7 @@ class RoleMatrixAccessScenarioTest extends TestCase
         );
 
         foreach (
-            $matrix
-            as $name => $configuration
+            $matrix as $name => $configuration
         ) {
             $role =
                 Role::query()
@@ -301,11 +301,10 @@ class RoleMatrixAccessScenarioTest extends TestCase
             Floor::query()
                 ->whereHas(
                     'block.building',
-                    fn ($query) =>
-                        $query->where(
-                            'code',
-                            'DEMO-BUILDING-A'
-                        )
+                    fn ($query) => $query->where(
+                        'code',
+                        'DEMO-BUILDING-A'
+                    )
                 )
                 ->firstOrFail();
 
@@ -313,11 +312,10 @@ class RoleMatrixAccessScenarioTest extends TestCase
             Floor::query()
                 ->whereHas(
                     'block.building',
-                    fn ($query) =>
-                        $query->where(
-                            'code',
-                            'DEMO-BUILDING-B'
-                        )
+                    fn ($query) => $query->where(
+                        'code',
+                        'DEMO-BUILDING-B'
+                    )
                 )
                 ->firstOrFail();
 
@@ -337,23 +335,17 @@ class RoleMatrixAccessScenarioTest extends TestCase
         $this->postJson(
             "/api/v1/floors/{$assignedFloor->getKey()}/units",
             [
-                'unit_number' =>
-                    '103',
+                'unit_number' => '103',
 
-                'title' =>
-                    'واحد 103 مدیر ساختمان',
+                'title' => 'واحد 103 مدیر ساختمان',
 
-                'area' =>
-                    90,
+                'area' => 90,
 
-                'bedrooms' =>
-                    2,
+                'bedrooms' => 2,
 
-                'usage_type' =>
-                    'residential',
+                'usage_type' => 'residential',
 
-                'is_active' =>
-                    true,
+                'is_active' => true,
             ]
         )->assertCreated();
 
@@ -364,11 +356,9 @@ class RoleMatrixAccessScenarioTest extends TestCase
         $this->postJson(
             "/api/v1/floors/{$outsideFloor->getKey()}/units",
             [
-                'unit_number' =>
-                    '103',
+                'unit_number' => '103',
 
-                'usage_type' =>
-                    'residential',
+                'usage_type' => 'residential',
             ]
         )->assertForbidden();
     }
@@ -446,7 +436,7 @@ class RoleMatrixAccessScenarioTest extends TestCase
             '/management/operations/users'
         )
             ->assertOk()
-            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('management/access/Users')->where('workspace.canCreate', true));
 
         $this->get(
@@ -463,9 +453,8 @@ class RoleMatrixAccessScenarioTest extends TestCase
             ->assertDontSee(
                 'ساختمان بتا'
             )
-            ->assertSee(
-                'کاربران و دسترسی'
-            );
+            ->assertSee('مرکز عملیات')
+            ->assertDontSee('کاربران و دسترسی');
     }
 
     public function test_owner_and_tenant_are_relation_driven_and_do_not_get_management_dashboard_access(): void
@@ -530,11 +519,9 @@ class RoleMatrixAccessScenarioTest extends TestCase
         $this->post(
             '/management/login',
             [
-                'login' =>
-                    $owner->mobile,
+                'login' => $owner->mobile,
 
-                'password' =>
-                    'Demo@1405',
+                'password' => 'Demo@1405',
             ]
         )
             ->assertSessionHasErrors(
@@ -607,14 +594,13 @@ class RoleMatrixAccessScenarioTest extends TestCase
             InvoiceItem::query()
                 ->whereHas(
                     'unitInvoice',
-                    fn ($query) =>
-                        $query->whereIn(
-                            'invoice_number',
-                            [
-                                'ACCESS-OWNER-CHARGE',
-                                'ACCESS-TENANT-CHARGE',
-                            ]
-                        )
+                    fn ($query) => $query->whereIn(
+                        'invoice_number',
+                        [
+                            'ACCESS-OWNER-CHARGE',
+                            'ACCESS-TENANT-CHARGE',
+                        ]
+                    )
                 )
                 ->count()
         );

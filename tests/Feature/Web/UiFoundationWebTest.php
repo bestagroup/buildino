@@ -288,8 +288,7 @@ class UiFoundationWebTest extends TestCase
                 'input[type="date"]',
                 'input[type="datetime-local"]',
                 'input[type="time"]',
-            ]
-            as $selector
+            ] as $selector
         ) {
             $this->assertStringContainsString(
                 $selector,
@@ -371,11 +370,11 @@ class UiFoundationWebTest extends TestCase
                 $source
             );
 
-            $this->assertStringNotContainsString(
-                'data-native-date',
-                $source,
-                "A native date opt-out exists in {$path}."
-            );
+            // Time-only inputs have no calendar and may use the native 24-hour picker.
+            preg_match_all('/<input\b[^>]*data-native-date[^>]*>/i', $source, $nativeInputs);
+            foreach ($nativeInputs[0] as $nativeInput) {
+                $this->assertMatchesRegularExpression('/type=[\"\']time[\"\']/', $nativeInput, "Only time-only controls may opt out in {$path}.");
+            }
             $this->assertStringNotContainsString(
                 'data-jdp="off"',
                 $source,
@@ -423,11 +422,11 @@ class UiFoundationWebTest extends TestCase
             $designSystem
         );
         $this->assertStringContainsString(
-            "aria-live",
+            'aria-live',
             $foundation
         );
         $this->assertStringContainsString(
-            "aria-required",
+            'aria-required',
             $foundation
         );
 
@@ -452,8 +451,7 @@ class UiFoundationWebTest extends TestCase
             [
                 '/management/login',
                 '/portal/login',
-            ]
-            as $uri
+            ] as $uri
         ) {
             $this->get($uri)
                 ->assertOk()
@@ -478,8 +476,7 @@ class UiFoundationWebTest extends TestCase
                 public_path('css/buildino-crud.css'),
                 public_path('css/buildino-datatables.css'),
                 resource_path('css/buildino-select2.css'),
-            ]
-            as $path
+            ] as $path
         ) {
             $css = (string) file_get_contents($path);
 
@@ -498,5 +495,4 @@ class UiFoundationWebTest extends TestCase
             }
         }
     }
-
 }
