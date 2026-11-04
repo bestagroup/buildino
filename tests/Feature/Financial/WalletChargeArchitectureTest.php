@@ -22,6 +22,7 @@ use App\Models\Unit;
 use App\Models\UnitInvoice;
 use App\Models\UnitOccupancy;
 use App\Models\User;
+use App\Services\Charge\ResidentCountHistory;
 use App\Services\Charge\UnitChargePayerService;
 use App\Services\Charge\WalletChargePeriodService;
 use App\Services\Wallet\WalletService;
@@ -486,6 +487,7 @@ class WalletChargeArchitectureTest extends TestCase
         ]);
 
         $unit->increment('resident_count');
+        app(ResidentCountHistory::class)->record($unit, (int) $unit->resident_count, '2026-08-01');
 
         return $occupancy;
     }

@@ -5,6 +5,7 @@ namespace App\Services\Charge;
 use App\Enums\ChargePolicyMode;
 use App\Enums\ExpensePayerResponsibility;
 use App\Enums\InvoiceStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\UnitChargePayerSource;
 use App\Enums\WalletTransferType;
 use App\Models\BuildingChargePolicy;
@@ -13,10 +14,12 @@ use App\Models\BuildingExpenseAllocationRule;
 use App\Models\ChargeExpenseAllocation;
 use App\Models\ChargePeriod;
 use App\Models\InvoiceWalletSettlement;
+use App\Models\PaymentAllocation;
 use App\Models\Unit;
 use App\Models\UnitChargeSetting;
 use App\Models\UnitInvoice;
 use App\Models\User;
+use App\Services\InvoiceInstallmentService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -28,9 +31,9 @@ final class WalletChargePeriodService
     public function __construct(
         private readonly ExpenseAllocationService $allocator,
         private readonly UnitChargePayerService $payerResolver,
-        private readonly WalletService $wallets
-    ) {
-    }
+        private readonly WalletService $wallets,
+        private readonly InvoiceInstallmentService $installments
+    ) {}
 
     public function calculate(
         ChargePeriod $period,
@@ -165,8 +168,7 @@ final class WalletChargePeriodService
                             'charge_period_id' => $period->getKey(),
                             'building_expense_id' => $expense->getKey(),
                             'unit_id' => $row['unit']->getKey(),
-                            'building_expense_allocation_rule_id' =>
-                                $rule->getKey(),
+                            'building_expense_allocation_rule_id' => $rule->getKey(),
                             'base_value' => $row['base_value'],
                             'allocated_amount' => $row['amount'],
                             'calculation_snapshot' => [
@@ -184,11 +186,9 @@ final class WalletChargePeriodService
                                 'metadata' => [
                                     'source' => 'building_expense',
                                     'building_expense_id' => $expense->getKey(),
-                                    'financial_category_id' =>
-                                        $expense->financial_category_id,
+                                    'financial_category_id' => $expense->financial_category_id,
                                     'allocation_rule_id' => $rule->getKey(),
-                                    'allocation_method' =>
-                                        $rule->allocation_method->value,
+                                    'allocation_method' => $rule->allocation_method->value,
                                     'base_value' => $row['base_value'],
                                 ],
                             ];
@@ -234,10 +234,7 @@ final class WalletChargePeriodService
             ->firstOrFail();
 
         DB::transaction(function () use (
-            $period,
-            $policy,
-            $actor
-        ): void {
+            $period): void {
             $invoices = UnitInvoice::query()
                 ->where('charge_period_id', $period->getKey())
                 ->with('unit')
@@ -281,127 +278,152 @@ final class WalletChargePeriodService
         User $actor,
         ?bool $allowPartialOverride = null
     ): UnitInvoice {
-        $invoice->refresh();
-        $invoice->loadMissing([
-            'unit.floor.block.building',
-        ]);
-
-        if (
-            ! in_array(
-                $invoice->status,
-                [
-                    InvoiceStatus::Issued,
-                    InvoiceStatus::Partial,
-                    InvoiceStatus::Overdue,
-                ],
-                true
-            )
-        ) {
-            return $invoice;
-        }
-
-        if ($invoice->outstanding_amount <= 0) {
-            return $invoice;
-        }
-
-        $setting = UnitChargeSetting::query()
-            ->where('unit_id', $invoice->unit_id)
-            ->first();
-
-        $source = $this->payerResolver->resolveWallet(
-            $invoice->unit
-        );
-
-        $building = $invoice->unit
-            ->floor
-            ?->block
-            ?->building;
-
-        if (! $building) {
-            throw ValidationException::withMessages([
-                'building' => 'Invoice unit is not connected to a building.',
+        return DB::transaction(function () use ($invoice, $actor, $allowPartialOverride): UnitInvoice {
+            $invoice = UnitInvoice::query()->lockForUpdate()->findOrFail($invoice->getKey());
+            $invoice->loadMissing([
+                'unit.floor.block.building',
             ]);
-        }
 
-        $destination = $this->wallets->walletFor(
-            $building
-        );
+            if (
+                ! in_array(
+                    $invoice->status,
+                    [
+                        InvoiceStatus::Issued,
+                        InvoiceStatus::Partial,
+                        InvoiceStatus::Overdue,
+                    ],
+                    true
+                )
+            ) {
+                return $invoice;
+            }
 
-        $allowPartial = $allowPartialOverride
-            ?? $setting?->allow_partial
-            ?? true;
+            if ($invoice->outstanding_amount <= 0) {
+                return $invoice;
+            }
 
-        $available = $source->fresh()->availableBalance();
-        $outstanding = (int) $invoice->outstanding_amount;
+            $setting = UnitChargeSetting::query()
+                ->where('unit_id', $invoice->unit_id)
+                ->lockForUpdate()
+                ->first();
 
-        if ($available <= 0) {
-            return $invoice;
-        }
+            if ($setting && ! $setting->auto_collect) {
+                return $invoice;
+            }
 
-        if (! $allowPartial && $available < $outstanding) {
-            return $invoice;
-        }
+            // Personal debts require an explicitly configured matching payer.
+            // A shared unit wallet must never silently assume a person's debt.
+            if ($invoice->payer_user_id !== null || $invoice->payer_responsibility !== ExpensePayerResponsibility::Unit) {
+                if (! $invoice->payer_user_id || ! $setting
+                    || $setting->payer_source !== UnitChargePayerSource::UserWallet
+                    || (int) $setting->payer_user_id !== (int) $invoice->payer_user_id) {
+                    return $invoice;
+                }
+            }
 
-        $amount = $allowPartial
-            ? min($available, $outstanding)
-            : $outstanding;
-
-        $transfer = $this->wallets->transfer(
-            $source,
-            $destination,
-            $amount,
-            WalletTransferType::ChargeCollection,
-            sprintf(
-                'invoice:%d:wallet-collect:paid:%d:amount:%d',
-                $invoice->getKey(),
-                (int) $invoice->paid_amount,
-                $amount
-            ),
-            $invoice,
-            $actor,
-            'Automatic building charge collection'
-        );
-
-        /*
-         * If the idempotency key already existed, do not settle
-         * the same transfer twice.
-         */
-        $settlement = InvoiceWalletSettlement::query()
-            ->firstOrCreate(
-                [
-                    'wallet_transfer_id' => $transfer->getKey(),
-                ],
-                [
-                    'unit_invoice_id' => $invoice->getKey(),
-                    'source_wallet_id' => $source->getKey(),
-                    'destination_wallet_id' => $destination->getKey(),
-                    'amount' => $amount,
-                ]
+            $source = $this->payerResolver->resolveWallet(
+                $invoice->unit
             );
 
-        if (! $settlement->wasRecentlyCreated) {
+            $building = $invoice->unit
+                ->floor
+                ?->block
+                ?->building;
+
+            if (! $building) {
+                throw ValidationException::withMessages([
+                    'building' => 'Invoice unit is not connected to a building.',
+                ]);
+            }
+
+            $destination = $this->wallets->walletFor(
+                $building
+            );
+
+            $allowPartial = $allowPartialOverride
+                ?? $setting?->allow_partial
+                ?? true;
+
+            $available = $source->fresh()->availableBalance();
+            $reserved = (int) PaymentAllocation::query()
+                ->join('payments', 'payments.id', '=', 'payment_allocations.payment_id')
+                ->whereIn('payment_allocations.payable_type', array_unique([$invoice->getMorphClass(), UnitInvoice::class]))
+                ->where('payment_allocations.payable_id', $invoice->getKey())
+                ->whereIn('payments.status', [PaymentStatus::Pending->value, PaymentStatus::Processing->value])
+                ->sum('payment_allocations.amount');
+            $outstanding = max(0, (int) $invoice->outstanding_amount - $reserved);
+
+            if ($available <= 0 || $outstanding <= 0) {
+                return $invoice;
+            }
+
+            if (! $allowPartial && $available < $outstanding) {
+                return $invoice;
+            }
+
+            $amount = $allowPartial
+                ? min($available, $outstanding)
+                : $outstanding;
+
+            $transfer = $this->wallets->transfer(
+                $source,
+                $destination,
+                $amount,
+                WalletTransferType::ChargeCollection,
+                sprintf(
+                    'invoice:%d:wallet-collect:paid:%d:amount:%d',
+                    $invoice->getKey(),
+                    (int) $invoice->paid_amount,
+                    $amount
+                ),
+                $invoice,
+                $actor,
+                'Automatic building charge collection'
+            );
+
+            /*
+             * If the idempotency key already existed, do not settle
+             * the same transfer twice.
+             */
+            $settlement = InvoiceWalletSettlement::query()
+                ->firstOrCreate(
+                    [
+                        'wallet_transfer_id' => $transfer->getKey(),
+                    ],
+                    [
+                        'unit_invoice_id' => $invoice->getKey(),
+                        'source_wallet_id' => $source->getKey(),
+                        'destination_wallet_id' => $destination->getKey(),
+                        'amount' => $amount,
+                    ]
+                );
+
+            if (! $settlement->wasRecentlyCreated) {
+                return $invoice->refresh();
+            }
+
+            $this->installments->applyPayment($invoice, $amount);
+
+            $newPaid = min(
+                (int) $invoice->total_amount,
+                (int) $invoice->paid_amount + $amount
+            );
+
+            $newOutstanding = max(
+                0,
+                (int) $invoice->total_amount - $newPaid
+            );
+
+            $invoice->update([
+                'paid_amount' => $newPaid,
+                'outstanding_amount' => $newOutstanding,
+                'status' => $newOutstanding === 0
+                    ? InvoiceStatus::Paid
+                    : InvoiceStatus::Partial,
+            ]);
+
             return $invoice->refresh();
-        }
-
-        $newPaid = min(
-            (int) $invoice->total_amount,
-            (int) $invoice->paid_amount + $amount
-        );
-
-        $newOutstanding = max(
-            0,
-            (int) $invoice->total_amount - $newPaid
-        );
-
-        $invoice->update([
-            'paid_amount' => $newPaid,
-            'outstanding_amount' => $newOutstanding,
-            'status' => $newOutstanding === 0
-                ? InvoiceStatus::Paid
-                : InvoiceStatus::Partial,
-        ]);
-
-        return $invoice->refresh();
+        }, 3);
     }
 
     private function buildingUnits(int $buildingId): Collection
@@ -410,11 +432,10 @@ final class WalletChargePeriodService
             ->where('is_active', true)
             ->whereHas(
                 'floor.block',
-                fn (Builder $query) =>
-                    $query->where(
-                        'building_id',
-                        $buildingId
-                    )
+                fn (Builder $query) => $query->where(
+                    'building_id',
+                    $buildingId
+                )
             )
             ->orderBy('id')
             ->get();
@@ -451,8 +472,7 @@ final class WalletChargePeriodService
         );
 
         $invoice->fill([
-            'invoice_number' =>
-                $invoice->invoice_number
+            'invoice_number' => $invoice->invoice_number
                 ?: sprintf(
                     'WCH-%d-%d-%d',
                     $period->building_id,

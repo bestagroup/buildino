@@ -3,24 +3,26 @@
 namespace Tests\Unit\Domain;
 
 use App\Enums\ChargeCalculationType;
+use App\Enums\ExpenseAllocationMethod;
 use App\Models\BuildingExpense;
+use App\Models\BuildingExpenseAllocationRule;
 use App\Models\ChargeFormula;
 use App\Models\ChargePeriod;
 use App\Models\FinancialCategory;
 use App\Models\Floor;
 use App\Models\Unit;
 use App\Models\UnitOccupancy;
-use App\Models\BuildingExpenseAllocationRule;
-use App\Enums\ExpenseAllocationMethod;
-use App\Services\ChargeService;
 use App\Services\Charge\ExpenseAllocationService;
+use App\Services\Charge\PeriodResidentCount;
+use App\Services\Charge\ResidentCountHistory;
+use App\Services\ChargeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\CreatesBuildingDomainData;
 use Tests\TestCase;
 
 class ChargeFormulaAllocationServiceTest extends TestCase
 {
-    use RefreshDatabase, CreatesBuildingDomainData;
+    use CreatesBuildingDomainData, RefreshDatabase;
 
     public function test_period_expense_can_be_allocated_by_equal_persons_and_floor_coefficient(): void
     {
@@ -150,7 +152,6 @@ class ChargeFormulaAllocationServiceTest extends TestCase
         );
     }
 
-
     public function test_vacant_units_are_excluded_from_both_persons_allocation_paths(): void
     {
         $graph = $this->createBuildingGraph();
@@ -210,7 +211,7 @@ class ChargeFormulaAllocationServiceTest extends TestCase
             'period_start' => '2026-08-01',
             'period_end' => '2026-08-31',
         ]);
-        $counter = new \App\Services\Charge\PeriodResidentCount();
+        $counter = new PeriodResidentCount;
         $count = fn () => $counter->count($unit, $period->period_start, $period->period_end);
         $this->assertSame(0, $count());
         $history = $this->occupy($unit, '2026-01-01', '2026-07-31');
@@ -225,6 +226,8 @@ class ChargeFormulaAllocationServiceTest extends TestCase
 
     private function occupy(Unit $unit, string $start, ?string $end = null): UnitOccupancy
     {
+        app(ResidentCountHistory::class)->record($unit, (int) $unit->resident_count, $start);
+
         return UnitOccupancy::query()->create([
             'unit_id' => $unit->id,
             'user_id' => $this->createUser()->id,
@@ -270,6 +273,4 @@ class ChargeFormulaAllocationServiceTest extends TestCase
             'status' => 'posted',
         ]);
     }
-
-
 }

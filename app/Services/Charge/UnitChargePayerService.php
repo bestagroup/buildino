@@ -16,8 +16,7 @@ final class UnitChargePayerService
 {
     public function __construct(
         private readonly WalletService $wallets
-    ) {
-    }
+    ) {}
 
     public function configure(
         Unit $unit,
@@ -81,11 +80,15 @@ final class UnitChargePayerService
         Unit $unit,
         User $user
     ): bool {
+        if (! $user->is_active || $user->is_blocked) {
+            return false;
+        }
         $today = now()->toDateString();
 
         $occupancy = UnitOccupancy::query()
             ->where('unit_id', $unit->getKey())
             ->where('user_id', $user->getKey())
+            ->where('is_active', true)
             ->whereDate('starts_at', '<=', $today)
             ->where(function ($query) use ($today): void {
                 $query
@@ -101,6 +104,7 @@ final class UnitChargePayerService
         return UnitOwnership::query()
             ->where('unit_id', $unit->getKey())
             ->where('user_id', $user->getKey())
+            ->where('is_active', true)
             ->whereDate('starts_at', '<=', $today)
             ->where(function ($query) use ($today): void {
                 $query

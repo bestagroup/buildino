@@ -5,6 +5,8 @@ namespace App\Services\Charge;
 use App\Models\Unit;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 final class PeriodResidentCount
 {
@@ -18,8 +20,24 @@ final class PeriodResidentCount
                 $query->whereNull('ends_at')
                     ->orWhereDate('ends_at', '>=', $start->toDateString());
             })
-            ->exists();
+            ->orderBy('starts_at')->first();
 
-        return $occupied ? max(0, (int) ($unit->resident_count ?? 0)) : 0;
+        if (! $occupied) {
+            return 0;
+        }
+
+        // Preserve whole-period charging: count on the first occupied day.
+        // Time-prorated billing is a separate, explicit product policy.
+        $date = max($start->toDateString(), $occupied->starts_at->toDateString());
+        $count = DB::table('unit_resident_counts')
+            ->where('unit_id', $unit->getKey())->whereDate('effective_from', '<=', $date)
+            ->orderByDesc('effective_from')->value('resident_count');
+        if ($count === null) {
+            throw ValidationException::withMessages([
+                'resident_count' => sprintf('تعداد ساکنین واحد %s در تاریخ %s ثبت نشده است؛ ابتدا سابقه معتبر تعداد نفرات را تکمیل کنید.', $unit->unit_number, $date),
+            ]);
+        }
+
+        return max(0, (int) $count);
     }
 }

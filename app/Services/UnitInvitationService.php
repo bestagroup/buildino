@@ -12,9 +12,9 @@ use App\Models\UnitInvitation;
 use App\Models\UnitOccupancy;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -23,8 +23,7 @@ final class UnitInvitationService
     public function __construct(
         private readonly SmsSender $sms,
         private readonly OccupancyService $occupancies
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{
@@ -136,8 +135,7 @@ final class UnitInvitationService
                     'email' => $user->email,
                     'relation_type' => $relationType,
                     'channel' => InvitationChannel::Sms->value,
-                    'expires_in_hours' =>
-                        (int) ($data['expires_in_hours'] ?? 72),
+                    'expires_in_hours' => (int) ($data['expires_in_hours'] ?? 72),
                 ]);
             }
         );
@@ -161,12 +159,11 @@ final class UnitInvitationService
 
         return $payloads
             ->map(
-                fn (array $payload): array =>
-                    $this->createPrepared(
-                        $unit,
-                        $actor,
-                        $payload
-                    )
+                fn (array $payload): array => $this->createPrepared(
+                    $unit,
+                    $actor,
+                    $payload
+                )
             )
             ->values()
             ->all();
@@ -315,8 +312,7 @@ final class UnitInvitationService
              * Never store the bearer token itself.
              */
             'token' => $this->hashToken($rawToken),
-            'invitation_code_hash' =>
-                $this->hashToken($invitationCode),
+            'invitation_code_hash' => $this->hashToken($invitationCode),
 
             'status' => InvitationStatus::Pending,
 
@@ -362,8 +358,7 @@ final class UnitInvitationService
          */
         $invitation->update([
             'token' => $this->hashToken($rawToken),
-            'invitation_code_hash' =>
-                $this->hashToken($invitationCode),
+            'invitation_code_hash' => $this->hashToken($invitationCode),
             'status' => InvitationStatus::Pending,
             'sent_at' => null,
         ]);
@@ -566,6 +561,7 @@ final class UnitInvitationService
                         'ends_at' => $planned['ends_at'] ?? null,
                         'is_primary' => $planned['is_primary'] ?? false,
                         'is_active' => true,
+                        ...(isset($planned['resident_count']) ? ['resident_count' => (int) $planned['resident_count']] : []),
                         'notes' => $planned['notes'] ?? sprintf('Created from unit invitation #%d.', $invitation->getKey()),
                     ],
                     $actor
