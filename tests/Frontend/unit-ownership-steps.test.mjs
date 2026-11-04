@@ -82,7 +82,9 @@ for (const kind of ['ownership', 'occupancy']) test(kind + ' steps replace one a
             only('editor');
             expect($('form').elements.notes.value === 'پیش از مدیریت کاربران' && $('form').elements.ownership_percentage.value === '25', 'Return lost ownership draft');
             expect($('form').elements.starts_at.value === '2026-01-02', 'Return lost ownership date');
-            expect($('manage-users').href.includes('from=ownership') && $('manage-users').href.includes('unit_id=7'), 'User management lost unit context');
+            document.querySelector('[data-user-create-root]').dataset.ready = 'true'; window.dispatchEvent(new CustomEvent('buildino:user-create-ready'));
+            let createContext; window.addEventListener('buildino:user-create', event => { createContext = event.detail; }, { once: true });
+            $('manage-users').click(); expect(createContext?.unitId === 7 && !$('editor').hidden, 'Inline user creation lost unit or left ownership editor');
             expect(!sessionStorage.getItem('buildino:ownership-return:1:7'), 'Restored draft was not consumed');
         }
         document.getElementById('result').dataset.ok = 'true'; document.getElementById('result').textContent = JSON.stringify({ checks });

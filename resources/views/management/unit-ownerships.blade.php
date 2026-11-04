@@ -64,7 +64,7 @@
         <div class="ownership-actions" data-ownership-actions hidden>
             <button type="button" class="ownership-button ownership-button--primary" data-ownership-add>+ ثبت مالک جدید</button>
             <span>برای ثبت مالک، حساب کاربری او باید از قبل ساخته شده باشد.</span>
-            <a href="{{ $ownershipConfig['usersUrl'] }}" data-ownership-create-user hidden>مدیریت کاربران</a>
+            <button type="button" class="ownership-button ownership-button--soft" data-ownership-create-user hidden>+ افزودن کاربر</button>
         </div>
     </section>
 
@@ -76,7 +76,7 @@
                     <label for="ownership-user">مالک</label>
                     <select id="ownership-user" name="user_id" data-ownership-user data-placeholder="جست‌وجو و انتخاب مالک" aria-describedby="ownership-user-hint" required><option value="">جست‌وجو و انتخاب مالک</option></select>
                     <small id="ownership-user-hint" data-ownership-user-hint role="status">کاربران ساختمان را در همین فهرست جست‌وجو و انتخاب کنید.</small>
-                    <a href="{{ $ownershipConfig['usersUrl'] }}" class="ownership-button ownership-button--soft" data-ownership-manage-users hidden>افزودن یا مدیریت کاربر</a>
+                    <button type="button" class="ownership-button ownership-button--soft" data-ownership-manage-users hidden>+ افزودن کاربر</button>
                 </div>
                 <div class="ownership-field ownership-field--wide" data-ownership-edit-owner hidden><span>مالک</span><strong data-ownership-edit-name></strong></div>
                 <label class="ownership-field"><span>درصد مالکیت</span><input type="number" name="ownership_percentage" min="0" max="100" step="0.01" inputmode="decimal" dir="ltr" placeholder="مثلاً ۵۰"></label>
@@ -89,6 +89,7 @@
         </form>
     </section>
 
+    <div data-user-create-root></div>
     <div class="ownership-dialog-backdrop" data-ownership-end-backdrop hidden></div>
     <dialog class="ownership-dialog" data-ownership-end-dialog aria-modal="true" aria-labelledby="ownership-end-title">
         <form data-ownership-end-form novalidate>

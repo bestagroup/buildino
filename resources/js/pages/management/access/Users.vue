@@ -4,6 +4,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import DynamicForm from '../../../components/management/DynamicForm.vue';
 import UiConfirmDialog from '../../../components/management/UiConfirmDialog.vue';
 import { ApiError, apiRequest } from '../../../lib/management-api';
+import { userIdentityFields, userIdentityValues, validateUserIdentity } from '../../../lib/user-identity';
 import type { CrudField, CrudRecord, CrudResource } from '../../../types/management';
 import '../../../../css/finance-workspace.css';
 import '../../../../css/user-workspace.css';
@@ -36,9 +37,8 @@ const number = (value: number) => value.toLocaleString('fa-IR');
 const roleNames = (row: UserRow) => row.roles || [...new Set((row.user_role_assignments || []).filter(item => item.is_active && (!item.starts_at || new Date(item.starts_at).getTime() <= Date.now()) && (!item.ends_at || new Date(item.ends_at).getTime() >= Date.now())).map(item => item.role?.display_name || item.role?.name).filter(Boolean))];
 const stateLabel = (row: UserRow) => row.is_blocked ? 'مسدود' : row.is_active ? 'فعال' : 'غیرفعال';
 const roleUrl = (id: number) => '/management/operations/role-assignments?flow=P05&user_id=' + encodeURIComponent(id);
-const fields = computed<CrudField[]>(() => (props.resource.fields || []).filter(field => step.value === 0
-    ? ['first_name', 'last_name', 'mobile', 'email', 'national_code'].includes(field.name)
-    : ['is_active', 'is_blocked', 'verify_mobile', 'verify_email'].includes(field.name) && !(accessFlow.value && mode.value === 'create' && field.name === 'is_active'))
+const fields = computed<CrudField[]>(() => step.value === 0 ? userIdentityFields(props.resource.fields || []) : (props.resource.fields || []).filter(field =>
+    ['is_active', 'is_blocked', 'verify_mobile', 'verify_email'].includes(field.name) && !(accessFlow.value && mode.value === 'create' && field.name === 'is_active'))
     .map(field => ({ ...field, maxlength: field.name === 'national_code' || field.name === 'mobile' ? 20 : 255,
         ...(field.name === 'mobile' ? { type: 'tel', placeholder: '09… یا +98…' } : {}),
         ...(field.name === 'verify_mobile' ? { label: 'موبایل تأییدشده' } : field.name === 'verify_email' ? { label: 'ایمیل تأییدشده' } : {}),
@@ -80,9 +80,7 @@ const close = async (force = false) => {
 const validate = (index: number) => {
     const result: Record<string, string[]> = {};
     if (index === 0) {
-        for (const field of ['first_name', 'last_name', 'mobile']) if (!String(form.value[field] || '').trim()) result[field] = ['این فیلد را تکمیل کنید.'];
-        for (const [field, max] of [['first_name', 255], ['last_name', 255], ['mobile', 20], ['national_code', 20], ['email', 255]] as const) if (String(form.value[field] || '').length > max) result[field] = ['طول این مقدار بیش از حد مجاز است.'];
-        if (form.value.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(form.value.email))) result.email = ['ایمیل معتبر وارد کنید.'];
+        Object.assign(result, validateUserIdentity(form.value));
     }
     if (index === 1 && form.value.verify_email && !String(form.value.email || '').trim()) result.verify_email = ['برای تأیید ایمیل، ابتدا نشانی ایمیل را وارد کنید.'];
     errors.value = result; return Object.keys(result).length === 0;
@@ -95,7 +93,7 @@ const submit = async () => {
     for (let index = 0; index < 2; index++) if (!validate(index)) { step.value = index; await focus('[aria-invalid="true"]'); return; }
     const current = selected.value;
     if (current ? !current.can_update : !props.workspace.canCreate) return;
-    const values = { ...form.value, first_name: String(form.value.first_name).trim(), last_name: String(form.value.last_name).trim(), mobile: String(form.value.mobile).trim(), email: String(form.value.email || '').trim() || null, national_code: String(form.value.national_code || '').trim() || null };
+    const values = { ...form.value, ...userIdentityValues(form.value) };
     const body = current ? Object.fromEntries(Object.entries(values).filter(([key, value]) => String(value ?? '') !== String(original[key] ?? ''))) : values;
     busy.value = true;
     try {

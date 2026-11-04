@@ -14,3 +14,7 @@ window.DataTable = DataTable;
 
 window.dispatchEvent(new CustomEvent('buildino:vite-ready'));
 window.dispatchEvent(new CustomEvent('buildino:datatables-ready'));
+
+if (document.querySelector('[data-user-create-root]')) {
+    void import('./user-create-dialog').then(({ mountUserCreateDialog }) => mountUserCreateDialog());
+}

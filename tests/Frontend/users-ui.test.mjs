@@ -15,7 +15,7 @@ const chrome = process.env.CHROME_BIN || 'C:/Program Files/Google/Chrome/Applica
 test('users: actual Vue wizard, scoped actions, validation, P05, retries and responsive layout', { skip: !existsSync(chrome) }, async () => {
     const resource = JSON.parse(execFileSync('php', ['-r', 'echo json_encode((require "config/management_crud.php")["resources"]["users"]);'], { cwd: project, encoding: 'utf8' }));
     const bundle = await build({ absWorkingDir: project, bundle: true, write: false, format: 'iife', define: { 'process.env.NODE_ENV': '"production"' },
-        stdin: { contents: `import {createApp} from 'vue'; import Page from './resources/js/pages/management/access/Users.vue'; let app; window.mountUsers=props=>{app?.unmount();app=createApp(Page,props);app.mount('#app');};`, resolveDir: project },
+        stdin: { contents: `import {createApp} from 'vue'; import Page from './resources/js/pages/management/access/Users.vue'; import Dialog from './resources/js/components/management/UserCreateDialog.vue'; let app; window.mountUsers=props=>{app?.unmount();app=createApp(Page,props);app.mount('#app');}; window.mountUserDialog=props=>createApp(Dialog,props).mount('#dialog');`, resolveDir: project },
         plugins: [{ name: 'vue-fixture', setup(builder) {
             builder.onResolve({ filter: /\.css$/ }, args => ({ path: args.path, namespace: 'css-fixture' }));
             builder.onLoad({ filter: /.*/, namespace: 'css-fixture' }, () => ({ contents: '', loader: 'js' }));
@@ -24,7 +24,7 @@ test('users: actual Vue wizard, scoped actions, validation, P05, retries and res
             builder.onLoad({ filter: /\.vue$/ }, args => { const parsed = parse(readFileSync(args.path, 'utf8'), { filename: args.path }); if (parsed.errors.length) throw parsed.errors[0]; return { contents: compileScript(parsed.descriptor, { id: args.path, inlineTemplate: true, fs: { fileExists: existsSync, readFile: path => readFileSync(path, 'utf8') } }).content, loader: 'ts' }; });
         } }],
     });
-    const styles = ['/public/css/buildino-fonts.css', '/public/css/buildino-management.css', '/public/css/buildino-design-system.css', '/public/css/buildino-unit-ownerships.css', '/resources/css/management-inertia.css', '/resources/css/finance-workspace.css', '/resources/css/user-workspace.css'];
+    const styles = ['/public/css/buildino-fonts.css', '/public/css/buildino-management.css', '/public/css/buildino-design-system.css', '/public/css/buildino-unit-ownerships.css', '/resources/css/management-inertia.css', '/resources/css/finance-workspace.css', '/resources/css/user-workspace.css', '/resources/css/user-create-dialog.css'];
     const html = `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${styles.map(path => '<link rel="stylesheet" href="' + path + '">').join('')}<main id="app" style="padding:16px;max-width:1150px;margin:auto"></main><pre id="result" hidden></pre><script>window.requestAnimationFrame=callback=>setTimeout(()=>callback(performance.now()),16);window.cancelAnimationFrame=clearTimeout;</script><script src="/fixture.js"></script><script>
     const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],expect=(value,message)=>{if(!value)throw Error(message);};
     const tick=()=>new Promise(r=>setTimeout(r,15));const until=async fn=>{for(let i=0;i<100;i++){if(fn())return;await tick();}throw Error('Timeout: '+fn+' / '+$('#app').textContent);};
@@ -76,7 +76,24 @@ test('users: actual Vue wizard, scoped actions, validation, P05, retries and res
         $('[data-users-error] button').click();await until(()=>!$('#users-form'));const count=posts.length;await tick();expect(posts.length===count,'Mutation automatically retried');
         readOnly=true;history.replaceState({},'', '/management/operations/users');mountUsers(props());await until(()=>$('.users-item'));
         expect(!$('[data-users-add]')&&!$('[data-users-edit]'),'Read-only user sees write controls');
-        expect(document.documentElement.scrollWidth<=innerWidth,'User list overflows');$('#result').dataset.ok='true';
+        expect(document.documentElement.scrollWidth<=innerWidth,'User list overflows');
+        const host=document.createElement('div');host.id='dialog';host.setAttribute('data-user-create-root','');document.body.append(host);mountUserDialog({fields:props().resource.fields,csrfToken:'test'});
+        let createdEvent;window.addEventListener('buildino:user-created',event=>createdEvent=event.detail);
+        const openDialog=()=>window.dispatchEvent(new CustomEvent('buildino:user-create',{detail:{unitId:7,unitLabel:'واحد ۱۰۱'}}));
+        openDialog();await until(()=>$('.user-create-dialog')?.open);
+        const dialogSubmit=async()=>{$('.user-create-dialog form').dispatchEvent(new Event('submit',{cancelable:true}));await tick();};
+        await dialogSubmit();expect($('.user-create-dialog [aria-invalid="true"]'),'Modal required validation missing');
+        await input('first_name','مالک مودال');await input('last_name','آزمایشی');await input('mobile','09127777777');
+        $('.user-create-dialog').dispatchEvent(new Event('cancel',{cancelable:true}));await tick();expect(!$('.user-create-dialog').open,'Cancel did not close modal');
+        openDialog();await tick();expect($('.user-create-dialog [name="mobile"]').value==='09127777777','Cancel lost entered user details');
+        fail='validation';await dialogSubmit();expect($('.user-create-dialog [name="mobile"]').getAttribute('aria-invalid')==='true','Modal lost server validation');
+        await input('mobile','09128888888');await dialogSubmit();await until(()=>$('[data-user-create-done]'));
+        expect(createdEvent?.unitId===7&&createdEvent?.user?.id===4,'Modal did not return created user with unit');
+        expect($('.user-create-dialog').open&&$('.user-create-dialog').scrollWidth<=$('.user-create-dialog').clientWidth,'Success modal overflows or closes unexpectedly');
+        $('[data-user-create-done]').click();await tick();expect(!$('.user-create-dialog').open,'Continue did not close modal');
+        openDialog();await tick();await input('first_name','تست');await input('last_name','شبکه');await input('mobile','09129999999');fail='server';await dialogSubmit();
+        expect($('[data-user-create-save]').disabled&&!$('.user-create-dialog').textContent.includes('SQLSTATE'),'Unknown modal result leaked SQL or allowed retry');
+        $('#result').dataset.ok='true';
     })().catch(e=>$('#result').textContent=e.stack);
     async function inputStatus(value){const el=$('.users-filters select');el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}));await tick();$('.users-filters').dispatchEvent(new Event('submit',{cancelable:true}));await tick();}
     </script></html>`;

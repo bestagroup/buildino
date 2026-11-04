@@ -35,10 +35,7 @@
     const updateUserLinks = () => {
         for (const link of [$('create-user'), $('manage-users')].filter(Boolean)) {
             link.hidden = !building()?.canCreateUser;
-            const url = new URL(config.usersUrl || '/management/operations/users', window.location.origin);
-            url.searchParams.set('from', 'ownership');
-            url.searchParams.set('unit_id', String(unitId()));
-            link.href = url.pathname + url.search;
+            link.disabled = busy || recordsLoading || document.querySelector('[data-user-create-root]')?.dataset.ready !== 'true';
         }
     };
     const resumeOwnership = () => {
@@ -307,7 +304,7 @@
         } catch (error) {
             if (ticket === generation) { $('active').replaceChildren(make('p', 'ownership-empty', 'دریافت مالکیت‌ها انجام نشد؛ به‌روزرسانی را بزنید یا واحد را تغییر دهید.')); report(error); }
         } finally {
-            if (ticket === generation) { recordsLoading = false; $('records').setAttribute('aria-busy', 'false'); $('reload').disabled = false; if (loaded) resumeOwnership(); }
+            if (ticket === generation) { recordsLoading = false; $('records').setAttribute('aria-busy', 'false'); $('reload').disabled = false; updateUserLinks(); if (loaded) resumeOwnership(); }
         }
     };
     const shareHint = () => {
@@ -481,11 +478,16 @@
     });
     form.addEventListener('submit', save);
     for (const link of [$('create-user'), $('manage-users')].filter(Boolean)) link.addEventListener('click', (event) => {
-        if (busy || !unitId()) { event.preventDefault(); return; }
-        updateUserLinks();
-        try { sessionStorage.setItem(draftKey(), JSON.stringify({ savedAt: Date.now(), editor: currentStep === 'change', recordId: editing?.id || null,
-            ownerId: userSelect.value, percent: percentField.value, primary: primaryField.checked, notes: notesField.value,
-            startsAt: readDate(form, 'starts_at'), endsAt: readDate(form, 'ends_at') })); } catch {}
+        event.preventDefault();
+        if (busy || recordsLoading || !unitId() || !building()?.canCreateUser) return;
+        window.dispatchEvent(new CustomEvent('buildino:user-create', { detail: { unitId: unitId(), unitLabel: $('unit-label').textContent } }));
+    });
+    window.addEventListener('buildino:user-create-ready', updateUserLinks);
+    window.addEventListener('buildino:user-created', (event) => {
+        if (Number(event.detail?.unitId) !== unitId() || !safeId(event.detail?.user?.id)) return;
+        returnedOwner = String(event.detail.user.id);
+        if (currentStep !== 'change') openEditor(); else void loadUsers(editing);
+        message('success', 'کاربر ساخته شد؛ برای اتصال او به واحد، ثبت مالکیت را تکمیل کنید.');
     });
     endForm.addEventListener('submit', end);
 

@@ -57,6 +57,7 @@ final class UnitOwnershipPageController extends Controller
                 'buildings' => $buildings,
                 'initialUnit' => $initialUnit,
                 'usersUrl' => route('management.operations.show', 'users'),
+                'userFields' => config('management_crud.resources.users.fields', []),
                 'buildingSetupUrl' => route('management.building-setup'),
             ],
         ]);
