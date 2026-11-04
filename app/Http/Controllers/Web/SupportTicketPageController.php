@@ -53,7 +53,7 @@ final class SupportTicketPageController extends Controller
             'resourceKey' => 'support-tickets', 'resource' => ['title' => 'تیکت‌های پشتیبانی', 'description' => 'ثبت و پیگیری درخواست پشتیبانی'],
             'workspace' => ['buildings' => $buildings, 'units' => $units, 'categories' => $categories,
                 'userId' => $user->id, 'canCreate' => Gate::forUser($user)->allows('create', SupportTicket::class),
-                'globalAbilities' => $abilities(null), 'canManageCategories' => $permissions->allowsAnyScope($user, 'support-config.view'),
+                'globalAbilities' => $abilities(null), 'canManageCategories' => $permissions->allows($user, 'support-config.view'),
                 'initial' => $request->only(['building_id', 'unit_id'])],
             'csrfToken' => csrf_token(),
         ]);

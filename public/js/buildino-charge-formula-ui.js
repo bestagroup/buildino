@@ -57,7 +57,7 @@
                 categoryField.hidden = !available;
                 if (titleInput) titleInput.closest('label').hidden = !available;
                 categoryState.hidden = available; categoryActions.hidden = available;
-                categoryState.replaceChildren(make('strong', '', failed ? 'دسته‌های هزینه دریافت نشدند' : 'این ساختمان دسته هزینهٔ فعالی ندارد'), make('p', '', failed ? 'اتصال را بررسی کنید و دوباره تلاش کنید؛ اطلاعات فرم حفظ می‌شود.' : 'برای تعریف فرمول، ابتدا باید دسته هزینهٔ فعال برای همین ساختمان موجود باشد. فعلاً امکان ایجاد دسته هزینه در داشبورد فراهم نیست.'));
+                categoryState.replaceChildren(make('strong', '', failed ? 'دسته‌های هزینه دریافت نشدند' : 'دسته هزینهٔ فعالی در دسترس نیست'), make('p', '', failed ? 'اتصال را بررسی کنید و دوباره تلاش کنید؛ اطلاعات فرم حفظ می‌شود.' : 'برای تعریف فرمول، یک دسته هزینهٔ عمومی یا اختصاصی ساختمان باید فعال باشد. برای آماده‌سازی دسته‌ها با مسئول تنظیمات مالی هماهنگ کنید.'));
                 sync();
             };
             const rows = make('div', 'charge-floor-rows'); floor.append(rows);

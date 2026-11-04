@@ -259,7 +259,7 @@ final class ManagementUiContextService
         array $resource
     ): array {
         $permissions = collect(
-            $this->context($user)['permissions']
+            $this->context($user)[($resource['permission_scope'] ?? 'any') === 'global' ? 'global_permissions' : 'permissions']
             ?? []
         );
 
