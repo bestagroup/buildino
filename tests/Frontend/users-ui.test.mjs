@@ -85,10 +85,11 @@ test('users: actual Vue wizard, scoped actions, validation, P05, retries and res
         expect(!$('#users-form'),'Read-only account opened creation via query');
         expect(!$('[data-users-add]')&&!$('[data-users-edit]'),'Read-only user sees write controls');
         expect(document.documentElement.scrollWidth<=innerWidth,'User list overflows');
-        const host=document.createElement('div');host.id='dialog';host.setAttribute('data-user-create-root','');document.body.append(host);mountUserDialog({fields:props().resource.fields,csrfToken:'test'});
+        const host=document.createElement('div');host.id='dialog';host.setAttribute('data-user-create-root','');document.body.append(host);mountUserDialog({fields:props().resource.fields,csrfToken:'test',purpose:innerWidth===500?'occupancy':'ownership'});
         let createdEvent;window.addEventListener('buildino:user-created',event=>createdEvent=event.detail);
         const openDialog=()=>window.dispatchEvent(new CustomEvent('buildino:user-create',{detail:{unitId:7,unitLabel:'واحد ۱۰۱'}}));
         openDialog();await until(()=>$('.user-create-dialog')?.open);
+        expect($('.user-create-dialog__hint').textContent.includes(innerWidth===500?'سکونت':'مالکیت'),'Modal uses the wrong process label');
         expect([...$$('.user-create-dialog input')].map(el=>el.name).join(',')==='first_name,last_name,mobile,email,national_code','Modal field order is inconsistent');
         if(innerWidth===500)expect(matchMedia('(prefers-reduced-motion: reduce)').matches&&getComputedStyle($('.user-create-dialog')).animationName==='none','Reduced motion still animates modal');
         const dialogSubmit=async()=>{$('.user-create-dialog form').dispatchEvent(new Event('submit',{cancelable:true}));await tick();};
@@ -99,6 +100,7 @@ test('users: actual Vue wizard, scoped actions, validation, P05, retries and res
         fail='validation';await dialogSubmit();expect($('.user-create-dialog [name="mobile"]').getAttribute('aria-invalid')==='true','Modal lost server validation');
         await input('mobile','09128888888');await dialogSubmit();await until(()=>$('[data-user-create-done]'));
         expect(createdEvent?.unitId===7&&createdEvent?.user?.id===4,'Modal did not return created user with unit');
+        expect($('[data-user-create-done]').textContent.includes(innerWidth===500?'سکونت':'مالکیت'),'Success does not return to the correct process');
         expect($('.user-create-dialog').open&&$('.user-create-dialog').scrollWidth<=$('.user-create-dialog').clientWidth,'Success modal overflows or closes unexpectedly');
         $('[data-user-create-done]').click();await until(()=>!$('.user-create-dialog').open);
         openDialog();await tick();await input('first_name','تست');await input('last_name','شبکه');await input('mobile','09129999999');fail='server';await dialogSubmit();

@@ -58,8 +58,22 @@ for (const kind of ['ownership', 'occupancy']) test(kind + ' steps replace one a
         expect(!$('user-search'), 'Person selection must not have a separate search input');
         await until(() => $('user').querySelector('option[value="2"]'), 'Candidate lookup did not finish');
         $('user').value = '2'; $('user').dispatchEvent(new Event('change', { bubbles: true }));
-        if ('${kind}' === 'occupancy') $('form').elements.occupancy_type.value = 'resident';
+        if ('${kind}' === 'occupancy') { $('form').elements.occupancy_type.value = 'resident'; $('form').elements.resident_count.value = '2'; }
         $('form').elements.notes.value = 'یادداشت محفوظ';
+        if ('${kind}' === 'occupancy') {
+            window.BuildinoOccupancyConfig.buildings[0].canCreateUser = true;
+            document.querySelector('[data-user-create-root]').dataset.ready = 'true';
+            window.dispatchEvent(new CustomEvent('buildino:user-create-ready'));
+            let createContext; window.addEventListener('buildino:user-create', event => { createContext = event.detail; });
+            $('manage-users').click(); expect(createContext?.unitId === 7, 'Modal lost occupancy unit'); only('editor');
+            window.dispatchEvent(new CustomEvent('buildino:user-created', { detail: { unitId: 8, user: { id: 2 } } }));
+            expect($('user').value === '2', 'Unrelated unit changed selection');
+            $('user').value = '';
+            window.dispatchEvent(new CustomEvent('buildino:user-created', { detail: { unitId: 7, user: { id: 2 } } }));
+            await until(() => $('user').value === '2', 'Created resident was not selected'); only('editor');
+            expect($('form').elements.notes.value === 'یادداشت محفوظ' && $('form').elements.occupancy_type.value === 'resident' && $('form').elements.resident_count.value === '2', 'Modal lost occupancy draft');
+            expect(!$('invite-wrap').hidden && writes === 0, 'Candidate metadata or explicit occupancy confirmation lost');
+        }
         $('form').dispatchEvent(new Event('submit', { cancelable: true }));
         await until(() => !$('save').disabled, 'Failed save did not settle'); only('editor');
         expect($('form').elements.notes.value === 'یادداشت محفوظ', 'Failure must preserve the form');

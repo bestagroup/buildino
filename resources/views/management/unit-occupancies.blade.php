@@ -44,14 +44,14 @@
         <div class="ownership-record-list" data-occupancy-active></div>
         <div data-occupancy-pending-wrap hidden><h4 class="ownership-subheading">در انتظار پذیرش دعوت</h4><div class="ownership-record-list" data-occupancy-pending></div></div>
         <details class="ownership-history" data-occupancy-history-wrap hidden><summary>سوابق پایان‌یافته <span data-occupancy-history-count></span></summary><div class="ownership-record-list" data-occupancy-history></div></details>
-        <div class="ownership-actions" data-occupancy-actions hidden><button type="button" class="ownership-button ownership-button--primary" data-occupancy-add>+ ثبت ساکن</button><span>ساکن باید حساب کاربری فعال داشته باشد.</span><a href="{{ $occupancyConfig['usersUrl'] }}" data-occupancy-create-user hidden>ایجاد حساب در مدیریت کاربران</a></div>
+        <div class="ownership-actions" data-occupancy-actions hidden><button type="button" class="ownership-button ownership-button--primary" data-occupancy-add>+ ثبت ساکن</button><span>ساکن باید حساب کاربری فعال داشته باشد.</span><button type="button" class="ownership-button ownership-button--soft" data-occupancy-create-user hidden disabled>+ افزودن کاربر</button></div>
     </section>
 
     <section class="ownership-card ownership-editor" data-occupancy-editor hidden aria-labelledby="occupancy-editor-heading">
         <div class="ownership-card__heading"><span class="ownership-card__index">۳</span><div><h3 id="occupancy-editor-heading" data-occupancy-editor-title tabindex="-1">ثبت ساکن</h3><p data-occupancy-editor-unit-label></p><p>رابطه سکونت مستقل از مالکیت و نقش دسترسی است.</p></div></div>
         <form data-occupancy-form novalidate>
             <div class="ownership-form-grid">
-                <div class="ownership-field ownership-field--wide" data-occupancy-user-picker><label for="occupancy-user">شخص</label><select id="occupancy-user" name="user_id" data-occupancy-user data-placeholder="جست‌وجو و انتخاب ساکن" required aria-describedby="occupancy-user-hint"><option value="">جست‌وجو و انتخاب ساکن</option></select><small id="occupancy-user-hint" data-occupancy-user-hint role="status">کاربران ساختمان را در همین فهرست جست‌وجو و انتخاب کنید.</small><small data-occupancy-account-status role="status" aria-live="polite"></small></div>
+                <div class="ownership-field ownership-field--wide" data-occupancy-user-picker><label for="occupancy-user">شخص</label><select id="occupancy-user" name="user_id" data-occupancy-user data-placeholder="جست‌وجو و انتخاب ساکن" required aria-describedby="occupancy-user-hint"><option value="">جست‌وجو و انتخاب ساکن</option></select><small id="occupancy-user-hint" data-occupancy-user-hint role="status">کاربران ساختمان را در همین فهرست جست‌وجو و انتخاب کنید.</small><small data-occupancy-account-status role="status" aria-live="polite"></small><button type="button" class="ownership-button ownership-button--soft" data-occupancy-manage-users hidden disabled>+ افزودن کاربر</button></div>
                 <div class="ownership-field ownership-field--wide" data-occupancy-edit-person hidden><span>شخص</span><strong data-occupancy-edit-name></strong></div>
                 <label class="ownership-field"><span>نوع رابطه با واحد</span><select name="occupancy_type" required><option value="">انتخاب کنید</option><option value="tenant">مستأجر</option><option value="resident">ساکن</option><option value="family_member">عضو خانواده</option><option value="owner" data-occupancy-owner-option hidden>مالک ساکن</option></select></label>
                 <label class="ownership-field"><span>تعداد نفرات ساکن در واحد</span><input type="number" name="resident_count" min="0" max="255" step="1" inputmode="numeric" required aria-describedby="occupancy-resident-count-hint"><small id="occupancy-resident-count-hint">تعداد کل افراد ساکن در واحد را وارد کنید، نه تعداد حساب‌های کاربری.</small></label>
@@ -65,6 +65,7 @@
         </form>
     </section>
 
+    <div data-user-create-root data-user-create-purpose="occupancy"></div>
     <div class="ownership-dialog-backdrop" data-occupancy-end-backdrop hidden></div>
     <dialog class="ownership-dialog" data-occupancy-end-dialog aria-labelledby="occupancy-end-title"><form data-occupancy-end-form novalidate><h3 id="occupancy-end-title" tabindex="-1">پایان سکونت</h3><p>این رابطه در سوابق واحد باقی می‌ماند.</p><strong data-occupancy-end-name></strong><label class="ownership-field"><span>تاریخ پایان</span><input type="date" name="ends_at" required></label><div class="ownership-dialog__actions"><button type="button" class="ownership-button ownership-button--soft" data-occupancy-end-cancel>انصراف</button><button type="submit" class="ownership-button ownership-button--danger" data-occupancy-end-confirm>تأیید پایان سکونت</button></div></form></dialog>
     <noscript><p class="ownership-alert ownership-alert--error">برای مدیریت سکونت، جاوااسکریپت مرورگر را فعال کنید.</p></noscript>

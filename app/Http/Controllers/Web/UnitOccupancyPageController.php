@@ -51,6 +51,7 @@ final class UnitOccupancyPageController extends Controller
                 'apiBase' => '/api/v1',
                 'lookupBase' => '/management/lookups',
                 'csrfToken' => csrf_token(),
+                'userFields' => config('management_crud.resources.users.fields', []),
                 'buildings' => $buildings,
                 'initialUnit' => $initialUnit,
                 'usersUrl' => route('management.operations.show', 'users'),

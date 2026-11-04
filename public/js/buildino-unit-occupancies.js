@@ -14,6 +14,13 @@
     const safeId = value => /^[1-9]\d*$/.test(String(value || '')) ? Number(value) : null;
     const unitId = () => safeId(fields.unit.value);
     const building = () => buildings.get(fields.building.value);
+    let createdUserId = null;
+    const updateUserButtons = () => {
+        for (const button of [$('create-user'), $('manage-users')]) {
+            button.hidden = !building()?.canCreateUser;
+            button.disabled = busy || recordsLoading || document.querySelector('[data-user-create-root]')?.dataset.ready !== 'true';
+        }
+    };
     const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
     const displayDate = value => value ? (window.BuildinoJalaliDatepicker?.serverToJalali(value, 'date') || value) : 'نامشخص';
     const number = value => new Intl.NumberFormat('fa-IR').format(value);
@@ -196,7 +203,7 @@
         } catch (error) {
             if (ticket === generation) { $('active').replaceChildren(make('p', 'ownership-empty', 'دریافت ساکنان انجام نشد؛ به‌روزرسانی را بزنید یا واحد را تغییر دهید.')); report(error); }
         } finally {
-            if (ticket === generation) { recordsLoading = false; $('records').setAttribute('aria-busy', 'false'); $('reload').disabled = false; }
+            if (ticket === generation) { recordsLoading = false; $('records').setAttribute('aria-busy', 'false'); $('reload').disabled = false; updateUserButtons(); }
         }
     };
     const openEditor = (record = null) => {
@@ -217,6 +224,7 @@
         form.elements.namedItem('notes').value = record?.notes || '';
         $('editor-unit-label').textContent = $('unit-label').textContent;
         showStep('change', true);
+        updateUserButtons();
         void loadUsers(record);
     };
     const closeEditor = () => { editing = null; ++userGeneration; showStep('records', true); };
@@ -236,10 +244,16 @@
                 userSelect.disabled = false;
             }
             userSelect.value = record ? String(record.user_id) : '';
+            if (createdUserId) {
+                if (rows.some(row => Number(row.id) === createdUserId)) userSelect.value = String(createdUserId);
+                else message('error', 'کاربر ساخته شد اما در فهرست مجاز این واحد نیست؛ فهرست کاربران را به‌روزرسانی کنید.');
+                createdUserId = null;
+            }
             window.BuildinoSelect2?.refresh(userSelect);
+            userSelect.dispatchEvent(new Event('change', { bubbles: true }));
             $('user-hint').textContent = rows.length
                 ? `${number(rows.length)} کاربر ساختمان؛ برای جست‌وجوی نام یا شماره تماس، فهرست را باز کنید.`
-                : 'ابتدا کاربر را از بخش مدیریت کاربران برای این ساختمان ثبت کنید.';
+                : building()?.canCreateUser ? 'برای ساخت حساب در همین صفحه، افزودن کاربر را بزنید.' : 'کاربری برای این ساختمان در دسترس نیست؛ با مدیر دارای دسترسی مدیریت کاربران تماس بگیرید.';
         } catch (error) {
             if (ticket !== userGeneration) return;
             resetSelect(userSelect, 'دریافت کاربران انجام نشد');
@@ -330,6 +344,17 @@
         $('invite-wrap').hidden = Boolean(editing) || !building()?.canInvite || !candidate?.hasMobile;
         if ($('invite-wrap').hidden) form.elements.namedItem('send_invitation').checked = false;
         $('account-status').textContent = candidate ? candidate.mobileVerified || candidate.emailVerified ? 'هویت این حساب تأیید شده است.' : candidate.hasMobile ? 'هویت این حساب هنوز تأیید نشده است؛ برای پذیرش دعوت باید آن را تأیید کند.' : 'برای این حساب شماره موبایل ثبت نشده و امکان دعوت پیامکی وجود ندارد.' : '';
+    });
+    for (const button of [$('create-user'), $('manage-users')]) button.addEventListener('click', () => {
+        if (busy || recordsLoading || !unitId() || !building()?.canCreateUser) return;
+        window.dispatchEvent(new CustomEvent('buildino:user-create', { detail: { unitId: unitId(), unitLabel: $('unit-label').textContent } }));
+    });
+    window.addEventListener('buildino:user-create-ready', updateUserButtons);
+    window.addEventListener('buildino:user-created', event => {
+        if (event.detail?.unitId !== unitId() || !safeId(event.detail?.user?.id)) return;
+        createdUserId = safeId(event.detail.user.id);
+        if (currentStep !== 'change') openEditor(); else void loadUsers(editing);
+        message('success', 'حساب کاربری ساخته شد؛ برای اتصال او به واحد، ثبت سکونت را تکمیل کنید.');
     });
     const initial = config.initialUnit;
     fields.building.value = String(initial?.buildingId || (buildings.size === 1 ? [...buildings.keys()][0] : ''));

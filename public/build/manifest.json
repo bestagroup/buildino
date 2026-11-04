@@ -113,7 +113,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-BXps8L7V.js",
+    "file": "assets/app-B8VTDyWW.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -254,7 +254,7 @@
     ]
   },
   "resources/js/user-create-dialog.ts": {
-    "file": "assets/user-create-dialog-C8TWVxLo.js",
+    "file": "assets/user-create-dialog-B-63ClMr.js",
     "name": "user-create-dialog",
     "src": "resources/js/user-create-dialog.ts",
     "isDynamicEntry": true,
