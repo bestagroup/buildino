@@ -56,7 +56,7 @@
             @include('shared.login-brand')
             <div class="portal-login-card__heading">
                 <span>
-                    ورود کاربران
+                    ورود مالکان/ساکنان
                 </span>
 
                 <h2>
