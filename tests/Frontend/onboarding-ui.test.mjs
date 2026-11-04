@@ -70,8 +70,27 @@ test('actual registration/setup UI keeps standalone, block, complex and legacy j
         $('[data-setup-next]').click();await pause();
         expect(!$('[data-setup-step="1"]').hidden,'Cannot reach floors: '+$('[data-setup-error]').textContent+' '+fixtureErrors.join(';'));
         expect(document.documentElement.scrollWidth<=innerWidth,'Floors stage overflows');
+        expect([...document.querySelectorAll('.setup-counter')].every(el=>el.getBoundingClientRect().width<=166),'Counters stretch beyond their compact size');
+        if(new URLSearchParams(location.search).get('preview')==='floors'){$('#result').dataset.ok='true';return;}
         expect($('[data-setup-add-block]').hidden===(fixtureMode!=='legacy'),'Extra hierarchy exposed or legacy hidden');
         $('[data-setup-next]').click();await pause();expect(!$('[data-setup-step="2"]').hidden,'Cannot reach units');
+        expect(document.documentElement.scrollWidth<=innerWidth,'Units stage overflows');
+        expect(document.querySelectorAll('.setup-unit-card').length===6,'Unit cards missing');
+        expect([...document.querySelectorAll('.setup-unit-card input')].every(el=>el.getBoundingClientRect().height>=(innerWidth>=1000?38:44)),'Unit inputs are too small to use');
+        const unitNumber=$('.setup-unit-card [data-unit-field="unit_number"]');unitNumber.value='11';unitNumber.dispatchEvent(new Event('input',{bubbles:true}));
+        expect($('.setup-unit-card__title').textContent==='واحد 11','Unit card title did not follow edited number');
+        $('[data-setup-previous]').click();await pause();$('[data-setup-next]').click();await pause();
+        expect($('.setup-unit-card [data-unit-field="unit_number"]').value==='11','Returning to unit cards lost entered data');
+        const resizeFloor=async count=>{const el=$('[data-floor-count]');el.value=String(count);el.dispatchEvent(new Event('change',{bubbles:true}));await pause();};
+        await resizeFloor(4);
+        let cards=[...document.querySelectorAll('.setup-floor[open] .setup-unit-card')];
+        expect(cards.length===4&&!$('.setup-unit-grid').classList.contains('setup-unit-grid--list'),'Four units should use cards');
+        if(innerWidth>=1000)expect(cards.every(el=>Math.abs(el.getBoundingClientRect().top-cards[0].getBoundingClientRect().top)<1),'Four desktop units are not in one row');
+        await resizeFloor(5);cards=[...document.querySelectorAll('.setup-floor[open] .setup-unit-card')];
+        expect(cards.length===5&&$('.setup-unit-grid').classList.contains('setup-unit-grid--list'),'Five units should switch to list');
+        if(innerWidth>=1000)expect(cards.every((el,index)=>!index||el.getBoundingClientRect().top>cards[index-1].getBoundingClientRect().top),'Desktop list rows overlap');
+        await resizeFloor(2);expect($('.setup-unit-card [data-unit-field="unit_number"]').value==='11','Layout switching lost entered unit number');
+        if(new URLSearchParams(location.search).get('preview')==='units'){$('#result').dataset.ok='true';return;}
         $('[data-setup-next]').click();await pause();expect(!$('[data-setup-step="3"]').hidden,'Cannot reach review');
         $('[data-setup-next]').click();await pause();await pause();expect($('[data-setup-success]').hidden,'Failed final confirmation announced success');
         $('[data-setup-next]').click();await pause();await pause();expect(!$('[data-setup-success]').hidden,'Explicit confirmation retry failed');
@@ -97,8 +116,10 @@ test('actual registration/setup UI keeps standalone, block, complex and legacy j
     });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     try {
-        for (const [width, mode] of [[1280, 'register'], [390, 'register'], [1280, 'standalone'], [390, 'block'], [390, 'complex'], [1280, 'legacy']]) {
-            const { stdout } = await promisify(execFile)(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--no-first-run', '--window-size=' + width + ',1000', '--virtual-time-budget=6000', '--dump-dom', 'http://127.0.0.1:' + server.address().port + '/' + mode], { timeout: 30000, maxBuffer: 4 * 1024 * 1024, windowsHide: true });
+        for (const [width, mode] of [[1280, 'register'], [500, 'register'], [1280, 'standalone'], [500, 'block'], [500, 'complex'], [1280, 'legacy']]) {
+            const capture = process.env.SETUP_CAPTURE && mode !== 'register' ? ['--screenshot=' + join(process.env.SETUP_CAPTURE, 'setup-' + mode + '-' + width + '.png')] : [];
+            const preview = process.env.SETUP_PREVIEW && mode !== 'register' ? '?preview=' + process.env.SETUP_PREVIEW : '';
+            const { stdout } = await promisify(execFile)(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--no-first-run', '--force-device-scale-factor=1', '--window-size=' + width + ',1000', ...capture, '--virtual-time-budget=6000', '--dump-dom', 'http://127.0.0.1:' + server.address().port + '/' + mode + preview], { timeout: 30000, maxBuffer: 4 * 1024 * 1024, windowsHide: true });
             const result = stdout.match(/<pre id="result"[^>]*>[\s\S]*?<\/pre>/)?.[0] || stdout.slice(-1000);
             assert.match(result, /data-ok="true"/, width + ' ' + mode + ': ' + result);
         }
