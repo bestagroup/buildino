@@ -45,6 +45,17 @@ final class ScopedUserManagementService
             return $query->whereRaw('1 = 0');
         }
 
+        if ($permission !== 'users.view') {
+            // A relation to a building must never permit taking over a staff account.
+            $query->where(function (Builder $users) use ($actor): void {
+                $users->whereKey($actor->getKey())->orWhereDoesntHave(
+                    'userRoleAssignments',
+                    fn (Builder $assignments) => $assignments->whereHas('role.permissions')
+                );
+            });
+            $this->restrictEndedRelations($query, $buckets);
+        }
+
         return $query->where(
             function (Builder $query) use (
                 $actor,
@@ -84,6 +95,26 @@ final class ScopedUserManagementService
                     );
             }
         );
+    }
+
+    private function restrictEndedRelations(Builder $query, array $buckets): void
+    {
+        $inScope = fn (Builder $floors) => $floors->whereIn('block_id', $buckets['blocks']);
+        $current = function (Builder $relations) use ($inScope): void {
+            $relations->whereHas('unit.floor', $inScope)->where('is_active', true)
+                ->whereDate('starts_at', '<=', today())
+                ->where(fn (Builder $dates) => $dates->whereNull('ends_at')->orWhereDate('ends_at', '>=', today()));
+        };
+        // Keep newly defined accounts editable, but a historical relation alone
+        // (including an account created by this manager) cannot grant write access.
+        $query->where(function (Builder $users) use ($inScope, $current): void {
+            $users->whereHas('unitOwnershipsAsUser', $current)
+                ->orWhereHas('unitOccupanciesAsUser', $current)
+                ->orWhere(function (Builder $unrelated) use ($inScope): void {
+                    $unrelated->whereDoesntHave('unitOwnershipsAsUser.unit.floor', $inScope)
+                        ->whereDoesntHave('unitOccupanciesAsUser.unit.floor', $inScope);
+                });
+        });
     }
 
     public function applyBuildingUsers(Builder $query, Building $building): Builder

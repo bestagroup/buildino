@@ -390,21 +390,7 @@ class ManagementLookupController extends Controller
                     ),
 
             'financial_categories' =>
-                FinancialCategory::query()
-                    ->whereIn(
-                        'building_id',
-                        $buildingIds->all()
-                    )
-                    ->when(
-                        $request->filled('building_id'),
-                        fn (Builder $query) =>
-                            $query->where(
-                                'building_id',
-                                $request->integer(
-                                    'building_id'
-                                )
-                            )
-                    )
+                $this->financialCategoryQuery($request, $buildingIds->all())
                     ->orderBy('title')
                     ->get([
                         'id',
@@ -423,21 +409,9 @@ class ManagementLookupController extends Controller
                     ),
 
             'expense_categories' =>
-                FinancialCategory::query()
-                    ->whereIn(
-                        'building_id',
-                        $buildingIds->all()
-                    )
+                $this->financialCategoryQuery($request, $buildingIds->all())
                     ->where('type', 'expense')
                     ->where('is_active', true)
-                    ->when(
-                        $request->filled('building_id'),
-                        fn (Builder $query) =>
-                            $query->where(
-                                'building_id',
-                                $request->integer('building_id')
-                            )
-                    )
                     ->orderBy('title')
                     ->get([
                         'id',
@@ -619,6 +593,18 @@ class ManagementLookupController extends Controller
         return response()->json([
             'data' => $items->values(),
         ]);
+    }
+
+    private function financialCategoryQuery(Request $request, array $buildingIds): Builder
+    {
+        if ($request->filled('building_id')) {
+            $buildingIds = array_values(array_intersect($buildingIds, [$request->integer('building_id')]));
+        }
+
+        return FinancialCategory::query()->where(function (Builder $query) use ($buildingIds): void {
+            $query->whereIn('building_id', $buildingIds);
+            if ($buildingIds !== []) $query->orWhereNull('building_id');
+        });
     }
 
     private function residencyCandidateLookup(Request $request, string $permission)

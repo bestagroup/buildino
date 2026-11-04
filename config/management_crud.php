@@ -3744,7 +3744,8 @@ return [
         ],
         'support-categories' => [
         'permission' => 'support-config.view',
-        'permission_scope' => 'any',
+        'permission_scope' => 'global',
+            'operation_permissions' => ['create' => 'support-config.manage', 'update' => 'support-config.manage'],
             'group' => 'support',
             'title' => 'دسته‌بندی پشتیبانی',
             'description' => 'تعریف دسته‌بندی‌های تیکت',
@@ -3796,7 +3797,8 @@ return [
         ],
         'support-sla' => [
         'permission' => 'support-config.view',
-        'permission_scope' => 'any',
+        'permission_scope' => 'global',
+            'operation_permissions' => ['create' => 'support-config.manage', 'update' => 'support-config.manage'],
             'group' => 'support',
             'title' => 'سطح خدمت پشتیبانی',
             'description' => 'زمان هدف پاسخ و حل تیکت',
