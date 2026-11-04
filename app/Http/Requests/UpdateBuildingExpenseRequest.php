@@ -39,6 +39,7 @@ class UpdateBuildingExpenseRequest extends FormRequest
             'expense_date' => 'sometimes|date',
             'invoice_number' => 'sometimes|nullable|string|max:100',
             'status' => ['sometimes', Rule::enum(FinancialOperationStatus::class)],
+            'payment_status' => ['sometimes', Rule::in(['paid', 'unpaid'])],
             'description' => 'sometimes|nullable|string',
         ];
     }

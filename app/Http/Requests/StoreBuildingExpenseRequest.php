@@ -33,6 +33,7 @@ class StoreBuildingExpenseRequest extends FormRequest
             'expense_date' => 'required|date',
             'invoice_number' => 'nullable|string|max:100',
             'status' => ['sometimes', Rule::enum(FinancialOperationStatus::class)],
+            'payment_status' => ['sometimes', Rule::in(['paid', 'unpaid'])],
             'description' => 'nullable|string',
         ];
     }

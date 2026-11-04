@@ -8,6 +8,7 @@ use App\Models\Building;
 use App\Models\BuildingBankAccount;
 use App\Models\BuildingFacility;
 use App\Models\Complex;
+use App\Models\ChargeFormula;
 use App\Models\FacilitySchedule;
 use App\Models\FinancialCategory;
 use App\Models\Floor;
@@ -407,6 +408,24 @@ class ManagementLookupController extends Controller
                                 $item->building_id,
                         ]
                     ),
+
+            'expense_formulas' =>
+                ChargeFormula::query()
+                    ->whereIn('building_id', $buildingIds->all())
+                    ->when($request->filled('building_id'), fn (Builder $query) =>
+                        $query->where('building_id', $request->integer('building_id')))
+                    ->where('is_active', true)
+                    ->where('calculation_type', '!=', 'fixed')
+                    ->has('chargeItems', '=', 1)
+                    ->with('chargeItems')
+                    ->orderBy('title')
+                    ->get()
+                    ->filter(fn (ChargeFormula $formula) => $formula->chargeItems->first()?->financial_category_id)
+                    ->map(fn (ChargeFormula $formula): array => [
+                        'id' => $formula->chargeItems->first()->financial_category_id,
+                        'label' => $formula->title,
+                        'building_id' => $formula->building_id,
+                    ])->values(),
 
             'expense_categories' =>
                 $this->financialCategoryQuery($request, $buildingIds->all())

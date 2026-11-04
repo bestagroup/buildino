@@ -26,6 +26,7 @@ class BuildingExpense extends Model
         'expense_date',
         'invoice_number',
         'status',
+        'payment_status',
         'description',
         'created_by',
         'approved_by',

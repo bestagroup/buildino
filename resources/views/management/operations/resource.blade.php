@@ -434,6 +434,7 @@
 @if ($resourceKey === 'invitations')
 <script src="{{ asset('js/buildino-invitations.js') }}?v={{ filemtime(public_path('js/buildino-invitations.js')) }}" defer></script>
 @endif
+<script src="{{ asset('js/buildino-money.js') }}?v={{ filemtime(public_path('js/buildino-money.js')) }}"></script>
 <script
     src="{{ asset('js/buildino-crud.js') }}?v={{ filemtime(public_path('js/buildino-crud.js')) }}"
     defer
