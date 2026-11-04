@@ -106,10 +106,14 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
             'amount' => 300_000,
             'expense_date' => '2026-08-10',
             'payer_responsibility' => 'resident',
-            'status' => 'posted',
+            'payment_status' => 'unpaid',
+            'allocation_method' => 'area',
         ])
             ->assertCreated()
             ->assertJsonPath('data.payer_responsibility', 'resident')
+            ->assertJsonPath('data.status', 'posted')
+            ->assertJsonPath('data.payment_status', 'unpaid')
+            ->assertJsonPath('data.allocation_method', 'persons')
             ->json('data.id');
 
         $repairId = $this->postJson('/api/v1/expenses', [
@@ -119,10 +123,18 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
             'amount' => 300_000,
             'expense_date' => '2026-08-12',
             'payer_responsibility' => 'owner',
-            'status' => 'posted',
+            'payment_status' => 'paid',
         ])
             ->assertCreated()
             ->json('data.id');
+
+        $this->patchJson("/api/v1/expenses/{$waterId}", [
+            'allocation_method' => 'equal',
+        ])->assertOk()->assertJsonPath('data.allocation_method', 'persons');
+
+        $this->patchJson("/api/v1/expenses/{$waterId}", [
+            'payment_status' => 'draft',
+        ])->assertUnprocessable()->assertJsonValidationErrors('payment_status');
 
         $periodId = $this->postJson(
             "/api/v1/buildings/{$graph['building']->id}/charge-periods",
@@ -267,6 +279,52 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
             [$graph['building']->id],
             $accessible->modelKeys()
         );
+    }
+
+    public function test_expense_entry_requires_an_active_nonfixed_formula_and_rolls_back_invalid_changes(): void
+    {
+        $manager = $this->user('09125550999', 'expense-form@example.test');
+        $graph = $this->buildingWithTwoUnits();
+        $role = $this->role('expense-form-manager', ['expenses.create', 'expenses.update']);
+        $this->assign($manager, $role, $graph['building']);
+        Sanctum::actingAs($manager);
+        $category = FinancialCategory::query()->create([
+            'building_id' => $graph['building']->id, 'title' => 'گاز',
+            'type' => 'expense', 'is_active' => true,
+        ]);
+        $payload = [
+            'building_id' => $graph['building']->id,
+            'financial_category_id' => $category->id,
+            'title' => 'قبض گاز', 'amount' => '1234567',
+            'expense_date' => '2026-08-10', 'payment_status' => 'unpaid',
+        ];
+        $this->postJson('/api/v1/expenses', $payload)->assertUnprocessable()
+            ->assertJsonValidationErrors('financial_category_id');
+        $this->postJson('/api/v1/expenses', [...$payload, 'financial_category_id' => null])
+            ->assertUnprocessable()->assertJsonValidationErrors('financial_category_id');
+        $this->assertDatabaseCount('building_expenses', 0);
+
+        $formula = \App\Models\ChargeFormula::query()->create([
+            'building_id' => $graph['building']->id, 'title' => 'گاز بر اساس متراژ',
+            'calculation_type' => 'area', 'is_active' => false,
+        ]);
+        $formula->chargeItems()->create([
+            'financial_category_id' => $category->id, 'title' => 'گاز', 'base_amount' => 0,
+        ]);
+        $this->postJson('/api/v1/expenses', $payload)->assertUnprocessable();
+        $formula->update(['is_active' => true, 'calculation_type' => 'fixed']);
+        $this->postJson('/api/v1/expenses', $payload)->assertUnprocessable();
+        $formula->update(['calculation_type' => 'area']);
+        $id = $this->postJson('/api/v1/expenses', $payload)->assertCreated()
+            ->assertJsonPath('data.amount', 1234567)
+            ->assertJsonPath('data.allocation_method', 'area')->json('data.id');
+        $this->patchJson("/api/v1/expenses/{$id}", ['payment_status' => 'paid'])
+            ->assertOk()->assertJsonPath('data.payment_status', 'paid')
+            ->assertJsonPath('data.status', 'posted');
+        $formula->update(['is_active' => false]);
+        $this->patchJson("/api/v1/expenses/{$id}", ['amount' => 999])
+            ->assertUnprocessable();
+        $this->assertDatabaseHas('building_expenses', ['id' => $id, 'amount' => 1234567]);
     }
 
     private function assertAllocation(

@@ -3,6 +3,7 @@
 namespace App\Actions\BuildingExpense;
 
 use App\Models\BuildingExpense;
+use App\Models\Building;
 use App\Models\User;
 use App\Services\Charge\BuildingExpenseRuleService;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,8 @@ class UpdateBuildingExpense
     ): BuildingExpense
     {
         return DB::transaction(function () use ($model, $data, $actor): BuildingExpense {
+            Building::query()->whereKey($model->building_id)->lockForUpdate()->firstOrFail();
+
             $status = $data['status'] ?? $model->status;
 
             if (
@@ -37,7 +40,7 @@ class UpdateBuildingExpense
 
             $model->update($data);
 
-            $this->rules->synchronize($model->refresh());
+            $this->rules->synchronize($model->refresh(), isset($data['payment_status']));
 
             return $model->refresh();
         });

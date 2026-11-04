@@ -245,6 +245,7 @@
                 "issued",
                 "draft",
                 "payment_pending",
+                "unpaid",
                 "awaiting_confirmation",
             ].includes(status)
         ) {
@@ -296,6 +297,8 @@
             channel: { sms: 'پیامک', email: 'ایمیل' },
         } : bootstrap.resourceKey === 'units' ? {
             usage_type: { residential: 'مسکونی', commercial: 'تجاری', office: 'اداری', other: 'سایر' },
+        } : bootstrap.resourceKey === 'expenses' ? {
+            payment_status: { paid: 'پرداخت‌شده', unpaid: 'پرداخت‌نشده' },
         } : bootstrap.resourceKey === 'charge-formulas' ? {
             calculation_type: { fixed: 'مبلغ ثابت هر واحد', area: 'متناسب با متراژ', persons: 'متناسب با نفرات', equal: 'تقسیم مساوی', floor_coefficient: 'ضریب طبقه' },
         } : {};
@@ -1956,7 +1959,7 @@
                         field.type;
             } else {
                 input.type =
-                    field.type
+                    (field.type === "money" ? "text" : field.type)
                     || "text";
             }
         }
@@ -2145,6 +2148,10 @@
             wrapper.appendChild(
                 input
             );
+        }
+
+        if (field.type === "money") {
+            window.BuildinoMoney.mount(input);
         }
 
         if (field.help) {
@@ -2485,6 +2492,11 @@
                     throw new Error(
                         `مقدار «${field.label}» JSON معتبر نیست.`
                     );
+                }
+            } else if (field.type === "money") {
+                value = window.BuildinoMoney.normalize(value);
+                if (! /^\d+$/.test(value)) {
+                    throw new Error(`مقدار «${field.label}» باید عدد صحیح باشد.`);
                 }
             } else if (
                 field.type === "number"

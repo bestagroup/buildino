@@ -473,7 +473,7 @@ class ManagementCrudWebTest extends TestCase
         $this->assertStringContainsString('savedPayload?.meta?.created_count', $script);
     }
 
-    public function test_expense_form_collects_scope_allocation_and_payer_responsibility(): void
+    public function test_expense_form_uses_formula_money_and_only_payment_states(): void
     {
         $fields = collect(
             config(
@@ -484,21 +484,23 @@ class ManagementCrudWebTest extends TestCase
         $block = $fields->firstWhere('name', 'block_id');
         $method = $fields->firstWhere('name', 'allocation_method');
         $payer = $fields->firstWhere('name', 'payer_responsibility');
-        $status = $fields->firstWhere('name', 'status');
+        $status = $fields->firstWhere('name', 'payment_status');
+        $formula = $fields->firstWhere('name', 'financial_category_id');
 
         $this->assertSame('expense_blocks', $block['lookup'] ?? null);
         $this->assertSame('building_id', $block['depends_on'] ?? null);
-        $this->assertSame('select', $method['type'] ?? null);
-        $this->assertSame(
-            ['equal', 'area', 'persons'],
-            collect($method['options'] ?? [])->pluck('value')->all()
-        );
+        $this->assertNull($method);
+        $this->assertSame('expense_formulas', $formula['lookup']);
+        $this->assertSame('فرمول شارژ', $formula['label']);
+        $this->assertSame('money', $fields->firstWhere('name', 'amount')['type']);
+        $this->assertNull($fields->firstWhere('name', 'status'));
         $this->assertSame('select', $payer['type'] ?? null);
         $this->assertSame(
             ['resident', 'owner', 'unit'],
             collect($payer['options'] ?? [])->pluck('value')->all()
         );
-        $this->assertSame('posted', $status['default'] ?? null);
+        $this->assertSame(['paid', 'unpaid'], array_column($status['options'], 'value'));
+        $this->assertTrue($status['required']);
     }
 
     private function assertOperationRouteExists(

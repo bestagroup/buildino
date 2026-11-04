@@ -3,6 +3,7 @@
 namespace App\Actions\BuildingExpense;
 
 use App\Models\BuildingExpense;
+use App\Models\Building;
 use App\Models\User;
 use App\Services\Charge\BuildingExpenseRuleService;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,10 @@ class CreateBuildingExpense
     ): BuildingExpense
     {
         return DB::transaction(function () use ($data, $actor): BuildingExpense {
-            $status = $data['status'] ?? 'draft';
+            Building::query()->whereKey($data['building_id'])->lockForUpdate()->firstOrFail();
+
+            $status = $data['status'] ?? (isset($data['payment_status']) ? 'posted' : 'draft');
+            $data['status'] = $status;
 
             $expense = BuildingExpense::query()->create([
                 ...$data,
@@ -34,7 +38,7 @@ class CreateBuildingExpense
                 'posted_at' => $status === 'posted' ? now() : null,
             ]);
 
-            $this->rules->synchronize($expense);
+            $this->rules->synchronize($expense, isset($data['payment_status']));
 
             return $expense->refresh();
         });

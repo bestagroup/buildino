@@ -2477,7 +2477,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'finance',
             'title' => 'هزینه‌های ساختمان',
-            'description' => 'ثبت هزینه عمومی، تعیین روش تقسیم و مشخص‌کردن مسئول پرداخت مالک یا ساکن',
+            'description' => 'ثبت هزینه ساختمان بر اساس فرمول شارژ و مشخص‌کردن وضعیت پرداخت',
             'list' => [
                 'method' => 'GET',
                 'url' => '/api/v1/expenses?per_page=100'
@@ -2520,15 +2520,11 @@ return [
                     'label' => 'تاریخ'
                 ],
                 [
-                    'key' => 'allocation_method',
-                    'label' => 'روش تقسیم'
-                ],
-                [
                     'key' => 'payer_responsibility',
                     'label' => 'مسئول پرداخت'
                 ],
                 [
-                    'key' => 'status',
+                    'key' => 'payment_status',
                     'label' => 'وضعیت'
                 ]
             ],
@@ -2557,11 +2553,12 @@ return [
                 ],
                 [
                     'name' => 'financial_category_id',
-                    'label' => 'دسته مالی',
+                    'label' => 'فرمول شارژ',
                     'type' => 'select',
-                    'lookup' => 'expense_categories',
+                    'lookup' => 'expense_formulas',
+                    'required' => true,
                     'depends_on' => 'building_id',
-                    'help' => 'در صورت عدم انتخاب، دسته «هزینه‌های عمومی» به‌صورت خودکار ساخته می‌شود.'
+                    'help' => 'روش تقسیم از فرمول فعال این هزینه تعیین می‌شود. برای تغییر روش، به بخش فرمول شارژ بروید.'
                 ],
                 [
                     'name' => 'title',
@@ -2572,30 +2569,8 @@ return [
                 [
                     'name' => 'amount',
                     'label' => 'مبلغ',
-                    'type' => 'number',
+                    'type' => 'money',
                     'required' => true
-                ],
-                [
-                    'name' => 'allocation_method',
-                    'label' => 'روش تقسیم هزینه',
-                    'type' => 'select',
-                    'required' => true,
-                    'default' => 'equal',
-                    'options' => [
-                        [
-                            'value' => 'equal',
-                            'label' => 'مساوی بین واحدها'
-                        ],
-                        [
-                            'value' => 'area',
-                            'label' => 'بر اساس متراژ واحد'
-                        ],
-                        [
-                            'value' => 'persons',
-                            'label' => 'بر اساس تعداد ساکنین'
-                        ]
-                    ],
-                    'help' => 'مبلغ کل با همین روش و با کنترل جمع دقیق، بین واحدهای دامنه انتخاب‌شده تقسیم می‌شود.'
                 ],
                 [
                     'name' => 'payer_responsibility',
@@ -2631,29 +2606,15 @@ return [
                     'type' => 'text'
                 ],
                 [
-                    'name' => 'status',
-                    'label' => 'وضعیت',
+                    'name' => 'payment_status',
+                    'label' => 'وضعیت پرداخت',
                     'type' => 'select',
-                    'default' => 'posted',
-                    'help' => 'فقط هزینه‌های ثبت‌شده در محاسبه دوره شارژ وارد می‌شوند.',
+                    'required' => true,
                     'options' => [
-                        [
-                            'value' => 'draft',
-                            'label' => 'پیش‌نویس'
-                        ],
-                        [
-                            'value' => 'approved',
-                            'label' => 'تأیید'
-                        ],
-                        [
-                            'value' => 'posted',
-                            'label' => 'ثبت‌شده'
-                        ],
-                        [
-                            'value' => 'cancelled',
-                            'label' => 'لغو'
-                        ]
-                    ]
+                        ['value' => 'paid', 'label' => 'پرداخت‌شده'],
+                        ['value' => 'unpaid', 'label' => 'پرداخت‌نشده'],
+                    ],
+                    'help' => 'وضعیت پرداخت هزینه به تأمین‌کننده؛ هر دو وضعیت در محاسبه شارژ لحاظ می‌شوند.',
                 ],
                 [
                     'name' => 'description',
