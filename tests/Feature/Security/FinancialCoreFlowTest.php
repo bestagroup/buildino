@@ -268,6 +268,45 @@ class FinancialCoreFlowTest extends TestCase
         );
     }
 
+    public function test_category_allows_inactive_alternatives_but_only_one_active_formula(): void
+    {
+        $manager = $this->createUser('09123330509', 'seasonal-formula@example.test');
+        $structure = $this->createStructure('SEASONAL', 100);
+        $role = $this->createRoleWithPermissions('seasonal-manager', ['charge-formulas.create', 'charge-formulas.update']);
+        $this->assignRole($manager, $role, $structure['building']);
+        $gas = FinancialCategory::query()->create([
+            'building_id' => $structure['building']->id, 'title' => 'Gas', 'type' => 'expense', 'is_active' => true,
+        ]);
+        Sanctum::actingAs($manager);
+        $url = "/api/v1/buildings/{$structure['building']->id}/charge-formulas";
+        $payload = fn ($type, $active = true) => [
+            'title' => 'Gas '.$type, 'is_active' => $active,
+            'builder' => ['calculation_type' => $type, 'financial_category_id' => $gas->id],
+        ];
+        $persons = $this->postJson($url, $payload('persons'))->assertCreated()->json('data.id');
+        $this->postJson($url, $payload('area'))->assertUnprocessable();
+        $inactive = $this->postJson($url, $payload('area', false))->assertCreated()->json('data.id');
+        $this->patchJson("/api/v1/charge-formulas/{$inactive}", ['is_active' => true])->assertUnprocessable();
+        $this->patchJson("/api/v1/charge-formulas/{$inactive}", ['title' => 'Winter gas'])->assertOk();
+        $this->patchJson("/api/v1/charge-formulas/{$persons}", ['is_active' => false])->assertOk();
+        $area = $this->postJson($url, $payload('area'))->assertCreated()->json('data.id');
+        $this->patchJson("/api/v1/charge-formulas/{$persons}", ['is_active' => true])->assertUnprocessable();
+        $this->patchJson("/api/v1/charge-formulas/{$area}", ['is_active' => true])->assertOk();
+        $this->patchJson("/api/v1/charge-formulas/{$area}", ['is_active' => false])->assertOk();
+        $this->patchJson("/api/v1/charge-formulas/{$persons}", ['is_active' => true])->assertOk();
+        $otherCategory = FinancialCategory::query()->create([
+            'building_id' => $structure['building']->id, 'title' => 'Water', 'type' => 'expense', 'is_active' => true,
+        ]);
+        $otherPayload = $payload('area');
+        $otherPayload['builder']['financial_category_id'] = $otherCategory->id;
+        $otherId = $this->postJson($url, $otherPayload)->assertCreated()->json('data.id');
+        $this->patchJson("/api/v1/charge-formulas/{$otherId}", $payload('area'))->assertUnprocessable();
+        $this->assertDatabaseHas('charge_items', ['charge_formula_id' => $otherId, 'financial_category_id' => $otherCategory->id]);
+        $this->assertDatabaseHas('charge_formulas', ['id' => $persons, 'is_active' => true]);
+        $this->assertDatabaseHas('charge_formulas', ['id' => $area, 'is_active' => false]);
+        $this->assertDatabaseHas('charge_formulas', ['id' => $inactive, 'is_active' => false]);
+    }
+
     public function test_inactive_charge_formula_is_excluded_and_can_be_reactivated(): void
     {
         $manager = $this->createUser(
