@@ -89,6 +89,9 @@ final class ScopedUserManagementService
     public function applyBuildingUsers(Builder $query, Building $building): Builder
     {
         $buckets = $this->scopeBuckets($building->newCollection([$building]));
+        // Candidate membership inherits the actual parent complex, without
+        // expanding the actor's user-administration or sibling-building scope.
+        $buckets['complexes'] = $building->complex_id ? [(int) $building->complex_id] : [];
 
         return $query->where(function (Builder $users) use ($buckets): void {
             $users->whereHas('managedUserScopes', fn (Builder $scopes) => $this->applyScopeBuckets($scopes, $buckets))

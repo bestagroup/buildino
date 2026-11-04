@@ -67,6 +67,47 @@ final class UnitOwnershipPageWebTest extends TestCase
                 && ! $config['buildings']->first()['canUpdate']);
     }
 
+    public function test_complex_manager_created_user_is_an_owner_candidate_without_expanding_user_administration(): void
+    {
+        $own = $this->createBuildingGraph();
+        $foreign = $this->createBuildingGraph();
+        $sibling = $this->createBuildingGraph();
+        $sibling['building']->update(['complex_id' => $own['complex']->id]);
+        $manager = $this->assigned('complex_manager', $own['complex']);
+        $buildingManager = $this->assigned('building_manager', $own['building']);
+        $outside = $this->assigned('owner', $foreign['complex']);
+        $siblingOnly = $this->assigned('owner', $sibling['building']);
+        $inactive = $this->assigned('owner', $own['complex']);
+        $inactive->update(['is_active' => false]);
+
+        $createdId = $this->actingAs($manager, 'web')->postJson('/management/data/users', [
+            'first_name' => 'مالک', 'last_name' => 'مجتمع', 'mobile' => '09990008881',
+            'is_active' => true, 'verify_mobile' => true,
+        ])->assertCreated()->json('data.id');
+        $created = User::query()->findOrFail($createdId);
+        $this->assertFalse(app(\App\Services\Web\ScopedUserManagementService::class)
+            ->canManage($buildingManager, $created, 'users.view'));
+
+        foreach ([$manager, $buildingManager] as $actor) {
+            $ids = $this->actingAs($actor, 'web')
+                ->getJson('/management/lookups/ownership_candidates?unit_id='.$own['unit']->id)
+                ->assertOk()->json('data.*.id');
+            $this->assertContains($createdId, $ids);
+            $this->assertNotContains($outside->id, $ids);
+            $this->assertNotContains($siblingOnly->id, $ids);
+            $this->assertNotContains($inactive->id, $ids);
+        }
+        $this->actingAs($buildingManager, 'web')
+            ->getJson('/management/lookups/ownership_candidates?unit_id='.$foreign['unit']->id)
+            ->assertForbidden();
+
+        \Laravel\Sanctum\Sanctum::actingAs($manager);
+        $this->postJson('/api/v1/units/'.$own['unit']->id.'/ownerships', [
+            'user_id' => $createdId, 'ownership_percentage' => 100, 'starts_at' => now()->toDateString(),
+        ])->assertCreated();
+        $this->assertDatabaseHas('unit_ownerships', ['unit_id' => $own['unit']->id, 'user_id' => $createdId]);
+    }
+
     public function test_role_without_ownership_permission_cannot_open_page(): void
     {
         $structure = $this->createBuildingGraph();
