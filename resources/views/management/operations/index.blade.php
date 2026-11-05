@@ -5,7 +5,7 @@
 @section('page-subtitle', 'مدیریت اطلاعات و کارهای روزمره ساختمان')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/buildino-crud.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-crud.css') }}?v={{ filemtime(public_path('css/buildino-crud.css')) }}">
 @endpush
 
 @section('content')
@@ -69,29 +69,11 @@
 
             <div class="crud-resource-grid">
                 @foreach ($group['resources'] as $resource)
-                    <a
-                        class="crud-resource-card"
-                        href="{{
-                            route(
-                                'management.operations.show',
-                                $resource['key']
-                            )
-                        }}"
-                    >
-                        <div>
-                            <strong>
-                                {{ $resource['title'] }}
-                            </strong>
-
-                            <p>
-                                {{ $resource['description'] ?? '' }}
-                            </p>
-                        </div>
-
-                        <span class="crud-resource-card__arrow">
-                            ←
-                        </span>
-                    </a>
+                    <x-management.operation-card
+                        :title="$resource['title']"
+                        :description="$resource['description'] ?? ''"
+                        :url="route('management.operations.show', $resource['key'])"
+                    />
                 @endforeach
             </div>
         </section>

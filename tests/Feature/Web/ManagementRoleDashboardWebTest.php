@@ -230,6 +230,27 @@ class ManagementRoleDashboardWebTest extends TestCase
             );
     }
 
+    public function test_dashboard_cards_reuse_operation_design_and_insurance_has_no_action(): void
+    {
+        $this->seed(AccessScenarioSeeder::class);
+        $this->actingAs($this->user('role.building@buildino.local'), 'web');
+        $response = $this->get('/management')->assertOk()->assertSee('خدمات بیمه آپارتمان')->assertSee('به‌زودی');
+        preg_match('/<section class="section-block" id="modules">(.*?)<\/section>/s', $response->getContent(), $section);
+        $this->assertNotEmpty($section);
+        $modules = $response->viewData('roleDashboard')['modules'];
+        $this->assertSame(count($modules), substr_count($section[1], '<a class="crud-resource-card"'));
+        $this->assertStringNotContainsString('class="module-card"', $section[1]);
+        preg_match('/<article class="crud-resource-card crud-resource-card--unavailable".*?<\/article>/s', $section[1], $insurance);
+        $this->assertNotEmpty($insurance);
+        $this->assertStringContainsString('aria-disabled="true"', $insurance[0]);
+        $this->assertStringContainsString('خدمات بیمه آپارتمان', $insurance[0]);
+        $this->assertDoesNotMatchRegularExpression('/href=|tabindex=|<button|__metric/', $insurance[0]);
+        foreach ($modules as $module) {
+            $this->assertStringContainsString(route('management.operations.show', $module['target_resource']), $section[1]);
+        }
+        $this->get('/management/operations')->assertOk()->assertSee('class="crud-resource-card"', false);
+    }
+
     private function user(
         string $email
     ): User {

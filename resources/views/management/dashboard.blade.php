@@ -2,6 +2,10 @@
 
 @section('title', 'داشبورد مدیریتی Buildino')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/buildino-crud.css') }}?v={{ filemtime(public_path('css/buildino-crud.css')) }}">
+@endpush
+
 @section('page-title', $roleDashboard['profile']['short_title'] ?? 'داشبورد مدیریتی')
 
 @section(
@@ -405,64 +409,34 @@
 
 @if ($roleSections['modules'] ?? true)
 <section class="section-block" id="modules">
+    <div class="crud-group">
     <div class="section-heading">
         <div>
             <span class="eyebrow">قابلیت‌های سامانه</span>
             <h3>ماژول‌های سامانه</h3>
             <p>
-                نمای یکپارچه امکانات پیاده‌سازی‌شده در هسته Buildino.
+                دسترسی به بخش‌های مدیریتی ساختمان و خدمات پیش رو.
             </p>
         </div>
 
         <div class="section-heading__meta">
-            <strong>{{ count($roleModules) }}</strong>
+            <strong>{{ count($roleModules) + 1 }}</strong>
             <span>حوزه اصلی</span>
         </div>
     </div>
 
-    <div class="module-grid">
+    <div class="crud-resource-grid">
         @foreach ($roleModules as $module)
-            <a
-                class="module-card"
-                href="{{
-                    route(
-                        'management.operations.show',
-                        $module['target_resource']
-                    )
-                }}"
-            >
-                <div class="module-card__top">
-                    <div class="module-icon">
-                        @include(
-                            'management.partials.icon',
-                            [
-                                'name' => $module['icon'],
-                                'size' => 22,
-                            ]
-                        )
-                    </div>
-
-                    <span class="module-state">
-                        فعال
-                    </span>
-                </div>
-
-                <h4>{{ $module['title'] }}</h4>
-
-                <p>{{ $module['description'] }}</p>
-
-                <div class="module-card__footer">
-                    <strong>
-                        @if ($module['money'] ?? false)
-                            {{ $money($module['count']) }}
-                        @else
-                            {{ number_format((int) $module['count']) }}
-                        @endif
-                    </strong>
-                    <span>{{ $module['unit'] }}</span>
-                </div>
-            </a>
+            <x-management.operation-card
+                :title="$module['title']"
+                :description="$module['description']"
+                :url="route('management.operations.show', $module['target_resource'])"
+                :value="($module['money'] ?? false) ? $money($module['count']) : number_format((int) $module['count'])"
+                :unit="$module['unit']"
+            />
         @endforeach
+        <x-management.operation-card title="خدمات بیمه آپارتمان" status="به‌زودی" />
+    </div>
     </div>
 </section>
 @endif
