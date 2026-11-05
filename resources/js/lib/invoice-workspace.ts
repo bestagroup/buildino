@@ -4,6 +4,7 @@ export interface Installment { id?: number; amount: number | string; due_date: s
 export interface Invoice {
     id: number; building_id: number; unit_id: number; invoice_number: string; status: string;
     issue_date: string; due_date: string; period_start?: string | null; period_end?: string | null;
+    credit_applied_amount?: number; credit_remaining_amount?: number;
     adjustment_amount?: number; adjustment_reason?: string | null;
     subtotal: number; discount_amount: number; penalty_amount: number; total_amount: number; paid_amount: number; outstanding_amount: number;
     description?: string | null; items?: InvoiceItem[]; installments?: Installment[];
@@ -14,6 +15,7 @@ export interface InvoiceWorkspace {
     buildings: { id: number; title: string; currency: string; abilities: Record<string, boolean> }[];
     units: { id: number; building_id: number; label: string }[];
     navigation: { key: string; title: string; url: string }[];
+    chargeTabs?: string[];
     groups: { title: string; resources: string[] }[];
     prefix: string; actionPermissions: Record<string, string>;
     lookups: Record<string, { value: number; label: string; building_id: number | null; abilities?: Record<string, boolean> }[]>;
@@ -26,9 +28,9 @@ export const money = (value: unknown) => Number(value ?? 0).toLocaleString('fa-I
 export const day = (value?: string | null) => /^\d{4}-\d{2}-\d{2}/.test(value || '') ? new Date(value!.slice(0, 10) + 'T12:00:00').toLocaleDateString('fa-IR') : '—';
 export const today = () => { const date = new Date(); return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-'); };
 export const payable = (invoice: Invoice) => ['issued', 'partial', 'overdue'].includes(invoice.status) && invoice.outstanding_amount > 0;
-export const canPlan = (invoice: Invoice) => ['issued', 'overdue'].includes(invoice.status) && invoice.paid_amount === 0;
+export const canPlan = (invoice: Invoice) => invoice.total_amount > 0 && ['issued', 'overdue'].includes(invoice.status) && invoice.paid_amount === 0;
 export const itemTotal = (items: InvoiceItem[]) => items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.unit_amount || 0), 0);
-export const invoiceTotal = (items: InvoiceItem[], discount: unknown, penalty: unknown, adjustment: unknown = 0) => Math.max(0, itemTotal(items) - Number(discount || 0) + Number(penalty || 0) + Number(adjustment || 0));
+export const invoiceTotal = (items: InvoiceItem[], discount: unknown, penalty: unknown, adjustment: unknown = 0) => itemTotal(items) - Number(discount || 0) + Number(penalty || 0) + Number(adjustment || 0);
 export const splitInstallments = (total: number, count: number, firstDate: string): Installment[] => {
     if (!Number.isSafeInteger(total) || !Number.isInteger(count) || count < 2 || count > 60 || total < count || !/^\d{4}-\d{2}-\d{2}$/.test(firstDate)) return [];
     const first = new Date(firstDate + 'T12:00:00'), base = Math.floor(total / count);
@@ -37,3 +39,8 @@ export const splitInstallments = (total: number, count: number, firstDate: strin
         return { amount: base + (index === count - 1 ? total - base * count : 0), due_date: [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-') };
     });
 };
+
+export const normalizeSignedAmount = (value: unknown) => String(value ?? '')
+    .replace(/[۰-۹]/g, digit => String(digit.charCodeAt(0) - 1776))
+    .replace(/[٠-٩]/g, digit => String(digit.charCodeAt(0) - 1632))
+    .replace(/−/g, '-').replace(/[,٬\s]/g, '');

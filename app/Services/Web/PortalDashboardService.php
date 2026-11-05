@@ -190,6 +190,9 @@ final class PortalDashboardService
                     )
             );
 
+        $creditTotal = (int) (clone $invoiceBase)->whereIn('status', ['issued', 'partial', 'overdue'])
+            ->sum('credit_remaining_amount');
+
         // Invoice rows are loaded by the server-side Yajra endpoint.
         $invoices = collect();
 
@@ -419,6 +422,7 @@ final class PortalDashboardService
                                 )
                         ),
 
+                'credit_remaining_total' => $creditTotal,
                 'outstanding_total' =>
                     $outstandingTotal,
 

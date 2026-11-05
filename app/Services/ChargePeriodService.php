@@ -140,7 +140,19 @@ final class ChargePeriodService
             'status' => $expense->status, 'payment_status' => $expense->payment_status,
             'formula' => $byCategory->get($expense->financial_category_id)?->title,
         ];
+        $accountInvoices = UnitInvoice::query()->where('building_id', $period->building_id)
+            ->whereIn('unit_id', $units->modelKeys())
+            ->whereIn('status', ['issued', 'partial', 'overdue'])->orderBy('id')->get();
+        $priorDebt = (int) $accountInvoices->sum('outstanding_amount');
+        $remainingCredit = (int) $accountInvoices->sum('credit_remaining_amount');
         $data = [
+            'prior_debt_total' => $priorDebt,
+            'remaining_credit_total' => $remainingCredit,
+            'account_invoices' => $accountInvoices->map(fn ($invoice) => [
+                'number' => $invoice->invoice_number, 'unit_id' => $invoice->unit_id,
+                'outstanding' => (int) $invoice->outstanding_amount,
+                'credit' => (int) $invoice->credit_remaining_amount,
+            ])->all(),
             'currency' => $period->building->currency,
             'unit_count' => $units->count(),
             'expenses' => $posted->map($expenseRow)->values()->all(),
@@ -163,7 +175,7 @@ final class ChargePeriodService
             'errors' => $errors,
         ];
         // The revision also invalidates two confirmations made within the same second.
-        $data['review_token'] = hash('sha256', $this->sourceFingerprint($period).':'.$period->calculation_revision);
+        $data['review_token'] = hash('sha256', $this->sourceFingerprint($period).':'.$period->calculation_revision.':'.json_encode($data['account_invoices'], JSON_THROW_ON_ERROR));
 
         return $data;
     }

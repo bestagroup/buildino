@@ -154,7 +154,7 @@ final class BuildingReportService
 
         $periodInvoiced =
             (int) (clone $invoiceBase)
-                ->sum('total_amount');
+                ->selectRaw('COALESCE(SUM(total_amount + credit_applied_amount), 0) AS amount')->value('amount');
 
         $periodInvoicePaid =
             (int) (clone $invoiceBase)

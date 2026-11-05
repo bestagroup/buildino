@@ -30,7 +30,7 @@ class UnitInvoice extends Model
             'issue_date'=>'date','due_date'=>'date','period_start'=>'date',
             'period_end'=>'date','subtotal'=>'integer','discount_amount'=>'integer',
             'penalty_amount'=>'integer','waived_penalty_amount'=>'integer','total_amount'=>'integer',
-            'adjustment_amount'=>'integer','paid_amount'=>'integer','outstanding_amount'=>'integer',
+            'credit_applied_amount'=>'integer','credit_remaining_amount'=>'integer','adjustment_amount'=>'integer','paid_amount'=>'integer','outstanding_amount'=>'integer',
             'payer_responsibility'=>ExpensePayerResponsibility::class,
             'status'=>InvoiceStatus::class,
         ];

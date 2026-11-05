@@ -64,13 +64,12 @@ class InvoiceService
         UnitInvoice $invoice,
         array $data
     ): UnitInvoice {
-        if ($invoice->status !== InvoiceStatus::Draft) {
-            throw ValidationException::withMessages([
-                'status' => 'Only draft invoices can be edited.',
-            ]);
-        }
-
         return DB::transaction(function () use ($invoice, $data): UnitInvoice {
+            Unit::whereKey($invoice->unit_id)->lockForUpdate()->firstOrFail();
+            $invoice = UnitInvoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            if ($invoice->status !== InvoiceStatus::Draft) {
+                throw ValidationException::withMessages(['status' => 'Only draft invoices can be edited.']);
+            }
             $invoice->update(
                 array_intersect_key(
                     $data,
@@ -95,14 +94,13 @@ class InvoiceService
             $invoice->refresh();
 
             $subtotal = (int) $invoice->invoiceItems()->sum('total_amount');
-            $total = max(
-                0,
-                $subtotal
-                - (int) $invoice->discount_amount
-                + (int) $invoice->penalty_amount
-                + (int) $invoice->adjustment_amount
-            );
-            $paid = min((int) $invoice->paid_amount, $total);
+            $total = $subtotal - (int) $invoice->discount_amount + (int) $invoice->penalty_amount
+                + (int) $invoice->adjustment_amount - (int) $invoice->credit_applied_amount;
+            $paid = (int) $invoice->paid_amount;
+            if (($subtotal >= 0 && $total < $paid) || abs($total) > 9007199254740991
+                || ($subtotal < 0 && ($paid > 0 || $invoice->discount_amount || $invoice->penalty_amount || $invoice->adjustment_amount))) {
+                throw ValidationException::withMessages(['total_amount' => 'مبلغ نهایی نامعتبر است؛ سند بستانکاری مستقل نباید پرداخت، تخفیف یا جریمه داشته باشد.']);
+            }
 
             $status = $invoice->status;
 
@@ -115,7 +113,9 @@ class InvoiceService
                 ],
                 true
             )) {
-                $status = $paid >= $total
+                $status = $total < 0
+                    ? ($invoice->credit_remaining_amount > 0 ? InvoiceStatus::Issued : InvoiceStatus::Paid)
+                    : ($paid >= $total
                     ? InvoiceStatus::Paid
                     : (
                         $paid > 0
@@ -125,7 +125,7 @@ class InvoiceService
                                     ? InvoiceStatus::Overdue
                                     : InvoiceStatus::Issued
                             )
-                    );
+                    ));
             }
 
             $invoice->update([
@@ -142,43 +142,38 @@ class InvoiceService
 
     public function issue(UnitInvoice $invoice): UnitInvoice
     {
-        if ($invoice->status !== InvoiceStatus::Draft) {
-            throw ValidationException::withMessages([
-                'status' => 'Only draft invoices can be issued.',
-            ]);
-        }
-
-        $invoice = $this->recalculate($invoice);
-
-        if ($invoice->total_amount <= 0) {
-            throw ValidationException::withMessages([
-                'total_amount' => 'Invoice total amount must be greater than zero.',
-            ]);
-        }
-
         DB::transaction(function () use ($invoice): void {
-            $invoice->update([
+            Unit::whereKey($invoice->unit_id)->lockForUpdate()->firstOrFail();
+            $invoice = UnitInvoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            if ($invoice->status !== InvoiceStatus::Draft) {
+                throw ValidationException::withMessages(['status' => 'Only draft invoices can be issued.']);
+            }
+            $invoice = $this->recalculate($invoice);
+            if ($invoice->total_amount === 0) {
+                throw ValidationException::withMessages(['total_amount' => 'مبلغ نهایی صورتحساب نباید صفر باشد.']);
+            }
+            $invoice->forceFill([
                 'status' => InvoiceStatus::Issued,
-                'outstanding_amount' => $invoice->total_amount,
-            ]);
-
-            DB::afterCommit(
-                fn () => InvoiceIssued::dispatch($invoice->fresh())
-            );
-        });
+                'outstanding_amount' => max(0, $invoice->total_amount),
+                'credit_remaining_amount' => max(0, -$invoice->total_amount),
+            ])->save();
+            app(InvoiceCreditService::class)->apply($invoice->unit_id, $invoice->building_id);
+            DB::afterCommit(fn () => InvoiceIssued::dispatch($invoice->fresh()));
+        }, 3);
 
         return $invoice->refresh();
     }
 
     public function voidDraft(UnitInvoice $invoice): void
     {
-        if ($invoice->status !== InvoiceStatus::Draft) {
-            throw ValidationException::withMessages([
-                'status' => 'Only draft invoices can be deleted.',
-            ]);
-        }
-
-        $invoice->delete();
+        DB::transaction(function () use ($invoice): void {
+            Unit::whereKey($invoice->unit_id)->lockForUpdate()->firstOrFail();
+            $invoice = UnitInvoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            if ($invoice->status !== InvoiceStatus::Draft) {
+                throw ValidationException::withMessages(['status' => 'Only draft invoices can be deleted.']);
+            }
+            $invoice->delete();
+        }, 3);
     }
 
     public function replaceItems(UnitInvoice $invoice, array $items): void
@@ -187,7 +182,10 @@ class InvoiceService
 
         foreach ($items as $item) {
             $quantity = max(1, (int) ($item['quantity'] ?? 1));
-            $unitAmount = max(0, (int) $item['unit_amount']);
+            $unitAmount = (int) $item['unit_amount'];
+            if (abs($unitAmount) > 9007199254740991 || abs($quantity * $unitAmount) > 9007199254740991) {
+                throw ValidationException::withMessages(['items' => 'مبلغ ردیف خارج از محدوده مجاز است.']);
+            }
 
             $invoice->invoiceItems()->create([
                 'charge_item_id' => $item['charge_item_id'] ?? null,

@@ -235,6 +235,9 @@ final class WalletChargePeriodService
 
         DB::transaction(function () use (
             $period): void {
+            Unit::query()->select('units.*')->join('floors', 'floors.id', '=', 'units.floor_id')
+                ->join('blocks', 'blocks.id', '=', 'floors.block_id')
+                ->where('blocks.building_id', $period->building_id)->orderBy('units.id')->lockForUpdate()->get();
             $invoices = UnitInvoice::query()
                 ->where('charge_period_id', $period->getKey())
                 ->with('unit')
@@ -250,10 +253,13 @@ final class WalletChargePeriodService
                 }
             }
 
+            foreach ($invoices->pluck('unit_id')->unique() as $unitId) {
+                app(\App\Services\InvoiceCreditService::class)->apply((int) $unitId, (int) $period->building_id);
+            }
             $period->update([
                 'status' => 'issued',
             ]);
-        });
+        }, 3);
 
         if ($policy->auto_collect) {
             $invoices = UnitInvoice::query()

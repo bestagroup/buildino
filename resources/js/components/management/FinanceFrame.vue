@@ -6,7 +6,10 @@ import '../../../css/finance-workspace.css';
 const props = defineProps<{ title: string; resourceKey: string; workspace: InvoiceWorkspace; buildingId: string }>();
 const groups = computed(() => props.workspace.groups ?? []);
 const group = computed(() => groups.value.find(item => item.resources.includes(props.resourceKey)));
-const links = computed(() => props.workspace.navigation.filter(item => group.value ? group.value.resources.includes(item.key) : item.key === props.resourceKey));
+const links = computed(() => {
+    const keys = props.workspace.chargeTabs?.includes(props.resourceKey) ? props.workspace.chargeTabs : group.value?.resources ?? [props.resourceKey];
+    return keys.flatMap(key => props.workspace.navigation.filter(item => item.key === key));
+});
 const menuGroups = computed(() => groups.value.length ? groups.value : [{ title: 'امور مالی', resources: props.workspace.navigation.map(item => item.key) }]);
 const url = (href: string) => props.buildingId ? href + '?building_id=' + encodeURIComponent(props.buildingId) : href;
 </script>

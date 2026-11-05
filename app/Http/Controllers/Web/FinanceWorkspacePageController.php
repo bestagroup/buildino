@@ -95,7 +95,7 @@ final class FinanceWorkspacePageController extends Controller
             'resource' => $configuration,
             'workspace' => [
                 'buildings' => $buildings, 'units' => $units, 'navigation' => $navigation,
-                'groups' => ManagementPageCatalog::FINANCE_GROUPS, 'prefix' => $prefix, 'actionPermissions' => $actionPermissions,
+                'chargeTabs' => ManagementPageCatalog::CHARGE_TABS, 'groups' => ManagementPageCatalog::FINANCE_GROUPS, 'prefix' => $prefix, 'actionPermissions' => $actionPermissions,
                 'lookups' => $lookups, 'blocks' => $blocks,
                 'initial' => $request->only(['building_id', 'unit_id', 'unit_invoice_id', 'charge_period_id']),
             ],

@@ -37,6 +37,8 @@ final class BuildingAtGlanceService
         $invoiceBase = UnitInvoice::query()->where('building_id', $building->id);
         $debts = (clone $invoiceBase)->whereIn('status', ['issued', 'partial', 'paid', 'overdue'])
             ->selectRaw('unit_id, SUM(outstanding_amount) AS amount')->groupBy('unit_id')->pluck('amount', 'unit_id');
+        $credits = (clone $invoiceBase)->whereIn('status', ['issued', 'partial', 'overdue'])
+            ->selectRaw('unit_id, SUM(credit_remaining_amount) AS amount')->groupBy('unit_id')->pluck('amount', 'unit_id');
         $periodInvoices = collect();
         $calculations = collect();
         $allocations = collect();
@@ -53,13 +55,14 @@ final class BuildingAtGlanceService
                 ->selectRaw('unit_id, SUM(allocated_amount) AS amount')->groupBy('unit_id')->pluck('amount', 'unit_id');
         }
         $names = static fn ($links) => $links->unique('user_id')->map(fn ($link) => trim(($link->user?->first_name ?? '').' '.($link->user?->last_name ?? '')) ?: 'کاربر #'.$link->user_id)->values();
-        $rows = $units->map(function (Unit $unit) use ($debts, $periodInvoices, $calculations, $allocations, $period, $names): array {
+        $rows = $units->map(function (Unit $unit) use ($debts, $credits, $periodInvoices, $calculations, $allocations, $period, $names): array {
             $wallet = $unit->wallets->first();
             $balance = (int) ($wallet?->balance ?? 0);
             $locked = (int) ($wallet?->locked_balance ?? 0);
             $available = $wallet?->is_active ? max(0, $wallet->availableBalance()) : 0;
             $debt = (int) ($debts[$unit->id] ?? 0);
-            $net = $debt - $available;
+            $credit = (int) ($credits[$unit->id] ?? 0);
+            $net = $debt - $available - $credit;
             $latest = null;
             $latestSource = 'none';
             if ($periodInvoices->has($unit->id)) {
@@ -77,7 +80,7 @@ final class BuildingAtGlanceService
                 'occupied' => $occupied, 'people' => $occupied ? max(0, (int) $unit->resident_count) : 0,
                 'balance' => $balance, 'locked' => $locked, 'available' => $available,
                 'walletInactive' => $wallet && ! $wallet->is_active,
-                'debt' => $debt, 'net' => $net,
+                'debt' => $debt, 'credit' => $credit, 'net' => $net,
                 'latest' => $latest, 'latestSource' => $latestSource,
                 'shortfall' => max(0, $net), 'surplus' => max(0, -$net),
             ];
@@ -87,7 +90,7 @@ final class BuildingAtGlanceService
             'period' => $period, 'currency' => $currency, 'generatedAt' => $generatedAt,
             'totals' => [
                 'units' => $rows->count(), 'occupied' => $rows->where('occupied', true)->count(),
-                'people' => $rows->sum('people'), 'debt' => $rows->sum('debt'),
+                'credit' => $rows->sum('credit'), 'people' => $rows->sum('people'), 'debt' => $rows->sum('debt'),
                 'available' => $rows->sum('available'), 'net' => $rows->sum('net'),
                 'shortfall' => $rows->sum('shortfall'), 'surplus' => $rows->sum('surplus'),
             ],

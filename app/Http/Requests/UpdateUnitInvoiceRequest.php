@@ -19,7 +19,7 @@ class UpdateUnitInvoiceRequest extends FormRequest
             'items.*.title'=>['required_with:items','string','max:255'],
             'items.*.description'=>['nullable','string','max:2000'],
             'items.*.quantity'=>['sometimes','integer','min:1'],
-            'items.*.unit_amount'=>['required_with:items','integer','min:0'],
+            'items.*.unit_amount'=>['required_with:items','integer','between:-9007199254740991,9007199254740991'],
             'items.*.metadata'=>['nullable','array'],
         ];
     }

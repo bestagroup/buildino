@@ -19,7 +19,7 @@ class StoreUnitInvoiceRequest extends FormRequest
             'items.*.title'=>['required','string','max:255'],
             'items.*.description'=>['nullable','string','max:2000'],
             'items.*.quantity'=>['sometimes','integer','min:1'],
-            'items.*.unit_amount'=>['required','integer','min:0'],
+            'items.*.unit_amount'=>['required','integer','between:-9007199254740991,9007199254740991'],
             'items.*.metadata'=>['nullable','array'],
         ];
     }

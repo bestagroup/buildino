@@ -4,7 +4,9 @@ namespace Tests\Feature\Financial;
 
 use App\Models\ChargePeriod;
 use App\Models\Unit;
+use App\Models\UnitInvoice;
 use App\Services\Charge\ResidentCountHistory;
+use App\Services\InvoiceService;
 use App\Services\OccupancyService;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
@@ -47,7 +49,7 @@ final class ChargePeriodConcurrencyTest extends TestCase
         parent::tearDown();
     }
 
-    private function startWorker(string $action, ChargePeriod $period, int $actor, string $token): array
+    private function startWorker(string $action, ChargePeriod|UnitInvoice $period, int $actor, string $token): array
     {
         $signal = tempnam(sys_get_temp_dir(), 'charge-worker-');
         $this->signals[] = $signal;
@@ -159,5 +161,32 @@ final class ChargePeriodConcurrencyTest extends TestCase
         DB::commit();
         $this->assertSame(['result' => 'rejected', 'fields' => ['calculation']], $this->workerResult($worker));
         $this->assertDatabaseCount('unit_invoices', 0);
+    }
+
+    public function test_concurrent_credit_notes_cannot_overconsume_the_same_debt(): void
+    {
+        [$graph, $actor] = $this->chargePeriodScenario();
+        $service = app(InvoiceService::class);
+        $create = fn ($amount) => $service->createManual($graph['unit'], $actor, [
+            'issue_date' => '2026-11-05', 'due_date' => '2026-12-05',
+            'items' => [['title' => 'Balance', 'unit_amount' => $amount, 'quantity' => 1]],
+        ]);
+        $debt = $service->issue($create(300000));
+        $firstCredit = $create(-200000);
+        $secondCredit = $create(-200000);
+        DB::beginTransaction();
+        Unit::whereKey($graph['unit']->id)->lockForUpdate()->firstOrFail();
+        [$first, $firstId] = $this->startWorker('credit-issue', $firstCredit, $actor->id, '');
+        [$second, $secondId] = $this->startWorker('credit-issue', $secondCredit, $actor->id, '');
+        $this->awaitRowLock($firstId);
+        $this->awaitRowLock($secondId);
+        DB::commit();
+        $this->assertSame('ok', $this->workerResult($first)['result']);
+        $this->assertSame('ok', $this->workerResult($second)['result']);
+        $this->assertSame(0, $debt->fresh()->outstanding_amount);
+        $this->assertSame(0, $debt->fresh()->paid_amount);
+        $this->assertSame(300000, $debt->fresh()->credit_applied_amount);
+        $this->assertSame(100000, $firstCredit->fresh()->credit_remaining_amount + $secondCredit->fresh()->credit_remaining_amount);
+        $this->assertSame(300000, (int) DB::table('invoice_credit_allocations')->sum('amount'));
     }
 }

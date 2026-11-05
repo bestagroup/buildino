@@ -7,6 +7,8 @@ final class ManagementPageCatalog
 {
     public const STRUCTURE_RESOURCES = ['complexes', 'buildings', 'blocks', 'floors', 'units'];
 
+    public const CHARGE_TABS = ['expense-categories', 'charge-formulas', 'expenses', 'charge-periods', 'invoices'];
+
     public const FINANCE_GROUPS = [
         ['title' => 'صورتحساب و دریافت', 'resources' => ['invoices', 'invoice-installments', 'payments']],
         ['title' => 'شارژ ساختمان', 'resources' => ['expense-categories', 'charge-formulas', 'charge-periods']],

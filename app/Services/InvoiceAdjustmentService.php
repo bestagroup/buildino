@@ -18,8 +18,12 @@ final class InvoiceAdjustmentService
     public function set(UnitInvoice $invoice, User $actor, int $amount, int $expectedAmount, string $reason): UnitInvoice
     {
         return DB::transaction(function () use ($invoice, $actor, $amount, $expectedAmount, $reason): UnitInvoice {
+            \App\Models\Unit::whereKey($invoice->unit_id)->lockForUpdate()->firstOrFail();
             $invoice = UnitInvoice::query()->lockForUpdate()->findOrFail($invoice->getKey());
             $reason = trim($reason);
+            if ($invoice->total_amount < 0) {
+                throw ValidationException::withMessages(['invoice' => 'سند بستانکاری صادرشده قابل تعدیل نیست.']);
+            }
 
             if (! in_array($invoice->status, [InvoiceStatus::Draft, InvoiceStatus::Issued, InvoiceStatus::Partial, InvoiceStatus::Overdue, InvoiceStatus::Paid], true)) {
                 throw ValidationException::withMessages(['invoice' => 'صورتحساب لغوشده یا باطل‌شده قابل تعدیل نیست.']);
@@ -36,7 +40,7 @@ final class InvoiceAdjustmentService
             if ($invoice->paymentAllocations()->whereHas('payment', fn ($query) => $query->whereIn('status', ['pending', 'processing']))->exists()) {
                 throw ValidationException::withMessages(['invoice' => 'ابتدا پرداخت در انتظار یا در حال پردازش این صورتحساب را تعیین تکلیف کنید.']);
             }
-            $total = (int) $invoice->subtotal - (int) $invoice->discount_amount + (int) $invoice->penalty_amount + $amount;
+            $total = (int) $invoice->subtotal - (int) $invoice->discount_amount + (int) $invoice->penalty_amount + $amount - (int) $invoice->credit_applied_amount;
             if ($total < (int) $invoice->paid_amount || $total < 0 || $total > 9007199254740991) {
                 throw ValidationException::withMessages(['amount' => 'مبلغ نهایی نباید منفی، کمتر از پرداخت ثبت‌شده یا خارج از محدوده مجاز باشد.']);
             }
@@ -44,6 +48,8 @@ final class InvoiceAdjustmentService
             $old = $invoice->only(['adjustment_amount', 'adjustment_reason', 'total_amount', 'outstanding_amount', 'status']);
             $invoice->update(['adjustment_amount' => $amount, 'adjustment_reason' => $reason]);
             $invoice = $this->invoices->recalculate($invoice);
+            app(InvoiceCreditService::class)->apply($invoice->unit_id, $invoice->building_id);
+            $invoice->refresh();
 
             FinancialAuditLog::query()->create([
                 'request_id' => request()->header('X-Request-ID') ?: (string) Str::uuid(),

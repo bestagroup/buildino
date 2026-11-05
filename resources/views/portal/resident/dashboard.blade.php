@@ -297,6 +297,9 @@
         </div>
     </article>
 
+    @if (($stats['credit_remaining_total'] ?? 0) > 0)
+    <article class="portal-stat-card"><span>مانده بستانکاری واحدها برای دوره‌های بعد</span><strong>{{ $money($stats['credit_remaining_total']) }}</strong><small>این طلب به‌صورت خودکار از صورتحساب‌های جدید واحد کسر می‌شود.</small></article>
+    @endif
     <article class="portal-stat-card portal-stat-card--wallet">
         <span class="portal-stat-card__icon">
             @include(

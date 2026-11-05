@@ -2,11 +2,13 @@
     $financeVisible = $managementUi['visible_resources'] ?? [];
     $financeGroups = collect(\App\Support\ManagementPageCatalog::FINANCE_GROUPS);
     $financeCurrentGroup = $financeGroups->first(fn ($group) => in_array($currentResource, $group['resources'], true));
+    $financeTabKeys = in_array($currentResource, \App\Support\ManagementPageCatalog::CHARGE_TABS, true)
+        ? \App\Support\ManagementPageCatalog::CHARGE_TABS : ($financeCurrentGroup['resources'] ?? []);
     $financeUrl = fn ($key) => route('management.operations.show', array_filter(['resource' => $key, 'building_id' => request()->integer('building_id') ?: null]));
 @endphp
 <nav class="finance-navigation" aria-label="بخش‌های مالی" data-finance-navigation>
     <div class="finance-tabs">
-        @foreach ($financeCurrentGroup['resources'] ?? [] as $key)
+        @foreach ($financeTabKeys as $key)
             @if (in_array($key, $financeVisible, true))
                 <a href="{{ $financeUrl($key) }}" @if ($key === $currentResource) aria-current="page" @endif>{{ config("management_crud.resources.$key.title") }}</a>
             @endif
