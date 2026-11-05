@@ -31,6 +31,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
 
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->redirectUsersTo(fn (Request $request): string => $request->is('management/login', 'management/login/*')
+            ? route('management.dashboard') : url('/'));
+
         /*
          * Middleware is configured before Laravel's Config Repository has
          * finished bootstrapping (e.g. during composer package discovery).

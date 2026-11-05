@@ -25,6 +25,15 @@ class ManagementDashboardWebTest extends TestCase
             );
     }
 
+    public function test_authenticated_user_opening_management_login_is_redirected_to_management(): void
+    {
+        $this->actingAs($this->createUser(), 'web');
+        $this->get('/management/login')->assertRedirect(route('management.dashboard'));
+        $this->post('/management/login', [])->assertRedirect(route('management.dashboard'));
+        $this->post('/management/login/otp/request', [])->assertRedirect(route('management.dashboard'));
+        $this->get('/portal/login')->assertOk();
+    }
+
     public function test_scoped_manager_can_login_and_view_only_authorized_building_dashboard(): void
     {
         $graph =
