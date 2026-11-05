@@ -100,6 +100,7 @@ class InvoiceService
                 $subtotal
                 - (int) $invoice->discount_amount
                 + (int) $invoice->penalty_amount
+                + (int) $invoice->adjustment_amount
             );
             $paid = min((int) $invoice->paid_amount, $total);
 
@@ -114,7 +115,7 @@ class InvoiceService
                 ],
                 true
             )) {
-                $status = $paid >= $total && $total > 0
+                $status = $paid >= $total
                     ? InvoiceStatus::Paid
                     : (
                         $paid > 0

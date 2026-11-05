@@ -4,6 +4,7 @@ export interface Installment { id?: number; amount: number | string; due_date: s
 export interface Invoice {
     id: number; building_id: number; unit_id: number; invoice_number: string; status: string;
     issue_date: string; due_date: string; period_start?: string | null; period_end?: string | null;
+    adjustment_amount?: number; adjustment_reason?: string | null;
     subtotal: number; discount_amount: number; penalty_amount: number; total_amount: number; paid_amount: number; outstanding_amount: number;
     description?: string | null; items?: InvoiceItem[]; installments?: Installment[];
     charge_period_id?: number | null; payer?: { name: string } | null; payer_responsibility?: string; unit?: { unit_number: string; title?: string };
@@ -27,7 +28,7 @@ export const today = () => { const date = new Date(); return [date.getFullYear()
 export const payable = (invoice: Invoice) => ['issued', 'partial', 'overdue'].includes(invoice.status) && invoice.outstanding_amount > 0;
 export const canPlan = (invoice: Invoice) => ['issued', 'overdue'].includes(invoice.status) && invoice.paid_amount === 0;
 export const itemTotal = (items: InvoiceItem[]) => items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.unit_amount || 0), 0);
-export const invoiceTotal = (items: InvoiceItem[], discount: unknown, penalty: unknown) => Math.max(0, itemTotal(items) - Number(discount || 0) + Number(penalty || 0));
+export const invoiceTotal = (items: InvoiceItem[], discount: unknown, penalty: unknown, adjustment: unknown = 0) => Math.max(0, itemTotal(items) - Number(discount || 0) + Number(penalty || 0) + Number(adjustment || 0));
 export const splitInstallments = (total: number, count: number, firstDate: string): Installment[] => {
     if (!Number.isSafeInteger(total) || !Number.isInteger(count) || count < 2 || count > 60 || total < count || !/^\d{4}-\d{2}-\d{2}$/.test(firstDate)) return [];
     const first = new Date(firstDate + 'T12:00:00'), base = Math.floor(total / count);

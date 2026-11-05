@@ -20,7 +20,7 @@ class UnitInvoice extends Model
     protected $fillable = [
         'building_id','unit_id','charge_period_id','payer_responsibility','payer_user_id','invoice_number',
         'issue_date','due_date','period_start','period_end',
-        'subtotal','discount_amount','penalty_amount','waived_penalty_amount','total_amount',
+        'adjustment_amount','adjustment_reason','subtotal','discount_amount','penalty_amount','waived_penalty_amount','total_amount',
         'paid_amount','outstanding_amount','status','description','created_by',
     ];
 
@@ -30,7 +30,7 @@ class UnitInvoice extends Model
             'issue_date'=>'date','due_date'=>'date','period_start'=>'date',
             'period_end'=>'date','subtotal'=>'integer','discount_amount'=>'integer',
             'penalty_amount'=>'integer','waived_penalty_amount'=>'integer','total_amount'=>'integer',
-            'paid_amount'=>'integer','outstanding_amount'=>'integer',
+            'adjustment_amount'=>'integer','paid_amount'=>'integer','outstanding_amount'=>'integer',
             'payer_responsibility'=>ExpensePayerResponsibility::class,
             'status'=>InvoiceStatus::class,
         ];

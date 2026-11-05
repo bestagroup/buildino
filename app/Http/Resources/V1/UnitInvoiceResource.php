@@ -21,6 +21,8 @@ class UnitInvoiceResource extends JsonResource
             'period_start'=>$this->period_start?->toDateString(),'period_end'=>$this->period_end?->toDateString(),
             'subtotal'=>(int)$this->subtotal,'discount_amount'=>(int)$this->discount_amount,
             'penalty_amount'=>(int)$this->penalty_amount,
+            'adjustment_amount'=>(int)$this->adjustment_amount,
+            'adjustment_reason'=>$this->adjustment_reason,
             'waived_penalty_amount'=>(int)$this->waived_penalty_amount,
             'total_amount'=>(int)$this->total_amount,
             'paid_amount'=>(int)$this->paid_amount,'outstanding_amount'=>(int)$this->outstanding_amount,

@@ -572,6 +572,8 @@ Route::prefix('v1')
             [InvoiceInstallmentController::class, 'destroy']
         );
 
+        Route::put('invoices/{unitInvoice}/adjustment', [InvoiceOperationController::class, 'setAdjustment']);
+
         Route::post(
             'invoices/{unitInvoice}/penalty-adjustments',
             [InvoiceOperationController::class, 'adjustPenalty']

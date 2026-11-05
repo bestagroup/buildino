@@ -28,6 +28,23 @@ class InvoiceOperationController extends Controller
         return new UnitInvoiceResource($invoice);
     }
 
+    public function setAdjustment(
+        \App\Http\Requests\SetInvoiceAdjustmentRequest $request,
+        UnitInvoice $unitInvoice,
+        \App\Services\InvoiceAdjustmentService $service
+    ): UnitInvoiceResource {
+        $this->authorize('adjust', $unitInvoice);
+        $invoice = $service->set(
+            $unitInvoice,
+            $request->user(),
+            (int) $request->validated('amount'),
+            (int) $request->validated('expected_amount'),
+            $request->validated('reason')
+        );
+
+        return new UnitInvoiceResource($invoice->load(['invoiceItems', 'invoiceInstallments']));
+    }
+
     public function adjustPenalty(
         AdjustInvoicePenaltyRequest $request,
         UnitInvoice $unitInvoice,
