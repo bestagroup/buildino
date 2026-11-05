@@ -16,6 +16,7 @@
     const visibleField = key => { const el = field(key); return el.type === 'hidden' ? el.previousElementSibling : el; };
     const value = key => field(key).value.trim();
     const refresh = select => window.BuildinoSelect2?.refresh(select);
+    let review = null;
     let records = [], selected = null, detailId = null, editingId = null, returnView = 'directory', action = null;
     let page = 1, lastPage = 1, total = 0, listTicket = 0, detailTicket = 0, busy = false, loadingList = false, loadingDetail = false, dirty = false;
     const message = (kind, text = '') => {
@@ -66,6 +67,7 @@
         $('detail').setAttribute('aria-busy', String(loadingDetail || busy));
         $('save').textContent = busy ? 'در حال ذخیره…' : editingId ? 'ذخیره تغییرات دوره' : 'ذخیره دوره و ادامه';
         $('action-submit').textContent = busy ? 'در حال اجرا…' : action === 'issue' ? 'تأیید و صدور صورتحساب‌ها' : 'تأیید و محاسبه';
+        $('action-submit').disabled = busy || (action === 'calculate' && (!review || review.errors.length > 0));
     };
     const showView = (name, focus = true) => {
         window.jalaliDatepicker?.hide();
@@ -185,18 +187,54 @@
         } catch (error) { report(error, true); }
         finally { busy = false; sync(); }
     });
-    const confirmAction = kind => {
+    const renderPreview = data => {
+        const target = $('preview'); target.replaceChildren();
+        const currency = { IRR: 'ریال', IRT: 'تومان' }[data.currency] || data.currency;
+        const amount = value => `${number(value)} ${currency}`;
+        const section = (title, headers, rows, empty) => {
+            target.append(node('h5', '', title));
+            if (!rows.length) { target.append(node('p', 'ownership-form-hint', empty)); return; }
+            const wrapper = node('div', 'period-preview-table');
+            const table = node('table'), head = node('thead'), body = node('tbody'), header = node('tr');
+            for (const label of headers) { const cell = node('th', '', label); cell.scope = 'col'; header.append(cell); }
+            head.append(header);
+            for (const values of rows) { const row = node('tr'); for (const value of values) row.append(node('td', '', value ?? '—')); body.append(row); }
+            table.append(head, body); wrapper.append(table); target.append(wrapper);
+        };
+        target.append(node('p', 'ownership-form-hint', `تعداد واحدهای فعال: ${number(data.unit_count)}. مبالغ زیر ورودی محاسبه‌اند؛ سهم نهایی هر واحد پس از محاسبه مشخص می‌شود.`));
+        const payment = { paid: 'پرداخت‌شده', unpaid: 'پرداخت‌نشده' };
+        section('قبض‌ها و هزینه‌های قابل محاسبه', ['عنوان / دسته', 'شماره قبض یا فاکتور', 'تاریخ', 'مبلغ', 'وضعیت پرداخت', 'فرمول تقسیم'], data.expenses.map(row => [row.title + (row.category ? ` / ${row.category}` : ''), row.invoice_number || '—', date(row.date), amount(row.amount), payment[row.payment_status] || 'مشخص نشده', row.formula || 'فرمول معتبر ندارد']), 'هزینه قطعی در بازه این دوره ثبت نشده است.');
+        section('مبالغ ثابت تکرارشونده', ['فرمول', 'مبلغ هر واحد', 'جمع واحدهای فعال'], data.fixed_formulas.map(row => [row.title, amount(row.per_unit), amount(row.total)]), 'فرمول ثابت فعالی برای این ساختمان وجود ندارد.');
+        target.append(node('p', 'ownership-form-hint', `جمع هزینه‌های دوره: ${amount(data.expense_total)} · جمع مبالغ ثابت: ${amount(data.fixed_total)} · مجموع ورودی: ${amount(data.expense_total + data.fixed_total)}`));
+        if (data.formulas_without_expenses?.length) target.append(node('p', 'ownership-form-hint', 'برای این فرمول‌های فعال، هزینه قطعی در دوره ثبت نشده است؛ احتمال فراموشی قبض را بررسی کنید: ' + data.formulas_without_expenses.join('، ')));
+        const statuses = { draft: 'پیش‌نویس', approved: 'تأییدشده ولی ثبت قطعی نشده', cancelled: 'لغوشده' };
+        section('هزینه‌های همین بازه که در محاسبه وارد نمی‌شوند', ['عنوان', 'تاریخ', 'مبلغ', 'علت'], data.excluded_expenses.map(row => [row.title, date(row.date), amount(row.amount), statuses[row.status] || row.status]), 'همه هزینه‌های ثبت‌شده در این بازه قطعی هستند، یا هزینه‌ای وجود ندارد.');
+        section('صورتحساب‌های موجود این دوره؛ ورودی هزینه نیستند', ['شماره صورتحساب', 'شناسه واحد', 'وضعیت', 'مبلغ'], data.existing_invoices.map(row => [row.number, number(row.unit_id), ({ draft: 'پیش‌نویس', issued: 'صادرشده', partial: 'بخشی پرداخت‌شده', paid: 'تسویه‌شده', overdue: 'سررسید گذشته', cancelled: 'لغوشده', void: 'باطل‌شده' })[row.status] || row.status, amount(row.total)]), 'هنوز صورتحسابی برای این دوره ساخته نشده است؛ صدور پس از محاسبه انجام می‌شود.');
+        for (const error of data.errors) target.append(node('p', 'ownership-alert ownership-alert--error', error));
+        target.append(node('p', 'ownership-form-hint', 'پیش از تأیید، کامل بودن قبض‌ها و فرمول‌های ثابت را بررسی کنید. برای افزودن مورد فراموش‌شده، بازگردید و پس از ثبت آن دوباره محاسبه شارژ را بزنید.'));
+    };
+    const confirmAction = async kind => {
         if (busy || loadingDetail || (kind === 'calculate' ? !canCalculate() : !canIssue())) return;
         action = kind; message('', ''); $('confirm').hidden = false; $('detail-actions').hidden = true;
+        review = null; $('preview').replaceChildren(); $('preview').hidden = kind !== 'calculate';
         $('confirm-title').textContent = kind === 'issue' ? 'صورتحساب‌های این دوره صادر شوند؟' : selected.status === 'calculated' ? 'محاسبه قبلی جایگزین شود؟' : 'شارژ این دوره محاسبه شود؟';
         $('confirm-copy').textContent = `دوره «${selected.title}» · ${date(selected.period_start)} تا ${date(selected.period_end)}. ` + (kind === 'issue' ? 'این اقدام صورتحساب واحدها را ایجاد می‌کند و دوره دیگر قابل ویرایش نخواهد بود.' : 'فرمول‌های فعال و هزینه‌های ثبت‌شده ساختمان مبنای محاسبه‌اند. این اقدام به‌تنهایی صورتحساب صادر نمی‌کند.');
         sync(); $('confirm-title').focus();
+        if (kind === 'calculate') {
+            busy = true; sync(); $('preview').textContent = 'در حال دریافت اقلام دوره…';
+            try {
+                const payload = await request(`/api/v1/charge-periods/${selected.id}/preview`);
+                review = payload.data; renderPreview(review);
+            } catch (error) { $('preview').textContent = 'فهرست اقلام دریافت نشد؛ بازگردید و دوباره تلاش کنید.'; report(error); }
+            finally { busy = false; sync(); }
+        }
     };
     $('action-submit').addEventListener('click', async () => {
         if (busy || !action || (action === 'calculate' ? !canCalculate() : !canIssue())) return;
+        if (action === 'calculate' && (!review || review.errors.length)) return;
         const kind = action, id = selected.id; busy = true; sync();
         try {
-            const payload = await request(`/api/v1/charge-periods/${id}/${kind}`, { method: 'POST' });
+            const payload = await request(`/api/v1/charge-periods/${id}/${kind}`, { method: 'POST', ...(kind === 'calculate' ? { body: JSON.stringify({ review_token: review.review_token }) } : {}) });
             selected = payload.data; renderDetail(); message('success', kind === 'issue' ? 'عملیات صدور دوره انجام شد؛ تعداد صورتحساب‌های ثبت‌شده در بالا نمایش داده می‌شود.' : 'محاسبه شارژ دوره انجام شد. نتیجه را بررسی و در صورت آماده‌بودن، صورتحساب‌ها را صادر کنید.');
         } catch (error) { report(error); await openDetail(id, true); }
         finally { busy = false; sync(); }

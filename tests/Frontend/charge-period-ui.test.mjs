@@ -43,6 +43,7 @@ test('charge periods: Jalali dates, validation, permission/state actions, confir
             if (method !== 'GET') {
                 writes++;
                 if (path.endsWith('/calculate') || path.endsWith('/issue')) {
+                    if (path.endsWith('/calculate')) expect(JSON.parse(options.body).review_token === 'a'.repeat(64), 'Calculation must confirm reviewed sources');
                     if (failAction) throw Object.assign(new Error('برای این ساختمان فرمول فعالی تعریف نشده است.'), { status: 422 });
                     row.status = path.endsWith('/issue') ? 'issued' : 'calculated'; row.calculations_count = 4; row.expense_allocations_count = 8; row.invoices_count = row.status === 'issued' ? 4 : 0;
                 } else {
@@ -51,6 +52,7 @@ test('charge periods: Jalali dates, validation, permission/state actions, confir
                 }
                 return { data: { ...row } };
             }
+            if (path.endsWith('/preview')) return { data: { currency: 'IRR', unit_count: 4, expenses: [{ title: 'قبض آب', amount: 120000, date: '2026-10-01', payment_status: 'unpaid', formula: 'آب' }], fixed_formulas: [{ title: 'شارژ ثابت', per_unit: 50000, total: 200000 }], expense_total: 120000, fixed_total: 200000, excluded_expenses: [], existing_invoices: [], errors: [], review_token: 'a'.repeat(64) } };
             if (path.includes('/buildings/')) return { data: [{ ...row }], meta: { current_page: 1, last_page: 2, total: 2 } };
             if (holdRead) await new Promise(resolve => releaseRead = resolve);
             if (failRead) throw Object.assign(new Error('دریافت نشد'), { status: 500 });
@@ -83,9 +85,10 @@ test('charge periods: Jalali dates, validation, permission/state actions, confir
             $('form').elements.title.value = 'پیش‌نویس'; $('form').elements.title.dispatchEvent(new Event('input', { bubbles: true })); $('cancel').click(); only('editor');
             discard = true; $('cancel').click(); only('detail');
             const beforeAction = writes; $('calculate').click(); expect(!$('confirm').hidden && writes === beforeAction, 'Calculation requires explicit confirmation');
+            await until(() => !$('action-submit').disabled); expect($('preview').textContent.includes('قبض آب') && $('preview').textContent.includes('شارژ ثابت'), 'Preview must list bills and recurring fixed charges before execution');
             $('action-cancel').click(); expect($('confirm').hidden && writes === beforeAction, 'Cancel must not mutate finances');
-            $('calculate').click(); $('action-submit').click(); await until(detailReady); only('detail'); expect(!$('error').hidden && row.status === 'draft', 'Failed calculation must not advance lifecycle');
-            failAction = false; $('calculate').click(); $('action-submit').click(); $('action-submit').click(); await until(() => row.status === 'calculated' && !$('close').disabled);
+            $('calculate').click(); await until(() => !$('action-submit').disabled); $('action-submit').click(); await until(detailReady); only('detail'); expect(!$('error').hidden && row.status === 'draft', 'Failed calculation must not advance lifecycle');
+            failAction = false; $('calculate').click(); await until(() => !$('action-submit').disabled); $('action-submit').click(); $('action-submit').click(); await until(() => row.status === 'calculated' && !$('close').disabled);
             expect(!$('issue').hidden && $('edit').hidden && $('invoices').textContent === '۰', 'Calculated period must allow issuance without invented invoices');
             expect($('allocations').textContent === '۸', 'Expense allocation count must use actual response');
             $('issue').click(); expect($('confirm-copy').textContent.includes('شارژ مهر'), 'Issuance confirmation must identify period'); $('action-submit').click();

@@ -31,6 +31,96 @@ final class ChargePeriodService
         private readonly BuildingExpenseRuleService $expenseRules
     ) {}
 
+
+    private function periodFormulas(ChargePeriod $period): Builder
+    {
+        return ChargeFormula::query()->where('building_id', $period->building_id)
+            ->where('is_active', true)->with('chargeItems')->orderBy('id');
+    }
+
+    private function periodExpenses(ChargePeriod $period): Builder
+    {
+        return BuildingExpense::query()->where('building_id', $period->building_id)
+            ->whereDate('expense_date', '>=', $period->period_start->toDateString())
+            ->whereDate('expense_date', '<=', $period->period_end->toDateString())->orderBy('id');
+    }
+
+    private function periodUnits(ChargePeriod $period): Builder
+    {
+        return Unit::query()->with('floor:id,block_id,floor_number')->where('is_active', true)
+            ->whereHas('floor.block', fn (Builder $query) => $query->where('building_id', $period->building_id))
+            ->orderBy('id');
+    }
+
+    /** Read-only inventory of the exact sources used by calculate(). */
+    public function preview(ChargePeriod $period): array
+    {
+        if (! in_array($period->status, [ChargePeriodStatus::Draft, ChargePeriodStatus::Calculated], true)) {
+            throw ValidationException::withMessages(['status' => 'Only draft or calculated charge periods can be recalculated.']);
+        }
+        $formulas = $this->periodFormulas($period)->get();
+        $expenses = $this->periodExpenses($period)->with('category')->get();
+        $units = $this->periodUnits($period)->get();
+        $errors = [];
+        $byCategory = collect();
+        foreach ($formulas as $formula) {
+            $category = $formula->chargeItems->first()?->financial_category_id;
+            if ($formula->chargeItems->count() !== 1 || ! $category || $byCategory->has($category)) {
+                $errors[] = "اتصال دسته هزینه یا یکتایی فرمول فعال «{$formula->title}» را اصلاح کنید.";
+            } else {
+                $byCategory->put($category, $formula);
+            }
+        }
+        $fixed = $formulas->filter(fn ($formula) => $formula->calculation_type === ChargeCalculationType::Fixed);
+        $posted = $expenses->where('status', 'posted');
+        foreach ($posted as $expense) {
+            $formula = $byCategory->get($expense->financial_category_id);
+            if (! $formula || $formula->calculation_type === ChargeCalculationType::Fixed) {
+                $errors[] = "برای هزینه «{$expense->title}» فرمول فعال غیرثابت و معتبر لازم است.";
+            }
+        }
+        if ($units->isEmpty()) $errors[] = 'هیچ واحد فعالی در ساختمان وجود ندارد.';
+        if ($formulas->isEmpty()) $errors[] = 'هیچ فرمول فعالی برای ساختمان تعریف نشده است.';
+        if ($posted->isEmpty() && $fixed->isEmpty()) $errors[] = 'هیچ هزینه قطعی یا فرمول ثابت برای این دوره وجود ندارد.';
+        $expenseRow = fn ($expense) => [
+            'id' => $expense->id, 'title' => $expense->title,
+            'category' => $expense->category?->title,
+            'invoice_number' => $expense->invoice_number,
+            'date' => $expense->expense_date->toDateString(), 'amount' => (int) $expense->amount,
+            'status' => $expense->status, 'payment_status' => $expense->payment_status,
+            'formula' => $byCategory->get($expense->financial_category_id)?->title,
+        ];
+        $data = [
+            'currency' => $period->building->currency,
+            'unit_count' => $units->count(),
+            'expenses' => $posted->map($expenseRow)->values()->all(),
+            'excluded_expenses' => $expenses->where('status', '!=', 'posted')->map($expenseRow)->values()->all(),
+            'fixed_formulas' => $fixed->map(fn ($formula) => [
+                'id' => $formula->id, 'title' => $formula->title,
+                'per_unit' => (int) $formula->chargeItems->sum('base_amount'),
+                'total' => (int) $formula->chargeItems->sum('base_amount') * $units->count(),
+            ])->values()->all(),
+            'formulas_without_expenses' => $formulas->filter(fn ($formula) =>
+                $formula->calculation_type !== ChargeCalculationType::Fixed
+                && ! $posted->contains('financial_category_id', $formula->chargeItems->first()?->financial_category_id)
+            )->pluck('title')->values()->all(),
+            'expense_total' => (int) $posted->sum('amount'),
+            'fixed_total' => (int) $fixed->sum(fn ($formula) => $formula->chargeItems->sum('base_amount')) * $units->count(),
+            'existing_invoices' => $period->unitInvoices()->orderBy('id')->get()->map(fn ($invoice) => [
+                'number' => $invoice->invoice_number, 'unit_id' => $invoice->unit_id,
+                'status' => $invoice->status->value, 'total' => (int) $invoice->total_amount,
+            ])->all(),
+            'errors' => $errors,
+        ];
+        // Detect source edits between review and confirmation without writing any calculation.
+        $data['review_token'] = hash('sha256', json_encode([
+            $period->only(['id', 'period_start', 'period_end', 'updated_at']),
+            $formulas->toArray(), $expenses->toArray(), $units->toArray(), $data,
+        ], JSON_THROW_ON_ERROR));
+
+        return $data;
+    }
+
     public function calculate(ChargePeriod $period): ChargePeriod
     {
         if (! in_array(
@@ -53,15 +143,7 @@ final class ChargePeriodService
 
         try {
             DB::transaction(function () use ($period): void {
-                $formulas = ChargeFormula::query()
-                    ->where(
-                        'building_id',
-                        $period->building_id
-                    )
-                    ->where('is_active', true)
-                    ->with('chargeItems')
-                    ->orderBy('id')
-                    ->get();
+                $formulas = $this->periodFormulas($period)->get();
 
                 if ($formulas->isEmpty()) {
                     throw ValidationException::withMessages([
@@ -123,26 +205,7 @@ final class ChargePeriodService
                     }
                 }
 
-                $expenses = BuildingExpense::query()
-                    ->where(
-                        'building_id',
-                        $period->building_id
-                    )
-                    ->where('status', 'posted')
-                    ->whereDate(
-                        'expense_date',
-                        '>=',
-                        $period->period_start
-                            ->toDateString()
-                    )
-                    ->whereDate(
-                        'expense_date',
-                        '<=',
-                        $period->period_end
-                            ->toDateString()
-                    )
-                    ->orderBy('id')
-                    ->get();
+                $expenses = $this->periodExpenses($period)->where('status', 'posted')->get();
 
                 if (
                     $fixedFormulas->isEmpty()
@@ -154,21 +217,7 @@ final class ChargePeriodService
                     ]);
                 }
 
-                $units = Unit::query()
-                    ->with(
-                        'floor:id,block_id,floor_number'
-                    )
-                    ->where('is_active', true)
-                    ->whereHas(
-                        'floor.block',
-                        fn (Builder $query) =>
-                            $query->where(
-                                'building_id',
-                                $period->building_id
-                            )
-                    )
-                    ->orderBy('id')
-                    ->get();
+                $units = $this->periodUnits($period)->get();
 
                 if ($units->isEmpty()) {
                     throw ValidationException::withMessages([

@@ -506,6 +506,8 @@ Route::prefix('v1')
             [ChargePeriodController::class, 'update']
         );
 
+        Route::get('charge-periods/{chargePeriod}/preview', [ChargePeriodController::class, 'preview']);
+
         Route::post(
             'charge-periods/{chargePeriod}/calculate',
             [ChargePeriodController::class, 'calculate']

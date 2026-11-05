@@ -64,6 +64,7 @@
             </div>
             <div class="period-confirm" data-period-confirm hidden role="region" aria-labelledby="period-confirm-title">
                 <h4 id="period-confirm-title" tabindex="-1" data-period-confirm-title></h4><p data-period-confirm-copy></p>
+                <div data-period-preview aria-live="polite" hidden></div>
                 <div class="ownership-editor__actions"><button type="button" class="ownership-button" data-period-action-cancel>بازگشت بدون اجرا</button><button type="button" class="ownership-button ownership-button--primary" data-period-action-submit>تأیید و اجرا</button></div>
             </div>
         </div>
