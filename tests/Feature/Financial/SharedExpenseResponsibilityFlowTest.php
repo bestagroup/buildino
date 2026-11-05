@@ -149,6 +149,11 @@ class SharedExpenseResponsibilityFlowTest extends TestCase
             ->json('data.id');
 
         $this->postJson("/api/v1/charge-periods/{$periodId}/calculate")
+            ->assertUnprocessable()->assertJsonValidationErrors('review_token');
+
+        $this->postJson("/api/v1/charge-periods/{$periodId}/calculate",
+            ['review_token' => $this->getJson("/api/v1/charge-periods/{$periodId}/preview")
+                ->assertOk()->json('data.review_token')])
             ->assertOk()
             ->assertJsonPath('data.expense_allocations_count', 4);
 

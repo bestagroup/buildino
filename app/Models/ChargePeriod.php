@@ -31,6 +31,7 @@ class ChargePeriod extends Model
             'period_end' => 'date',
             'due_date' => 'date',
             'status' => ChargePeriodStatus::class,
+            'calculation_revision' => 'integer',
         ];
     }
 

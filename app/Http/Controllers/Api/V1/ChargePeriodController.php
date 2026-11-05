@@ -116,13 +116,8 @@ class ChargePeriodController extends Controller
             403
         );
 
-        $request->validate(['review_token' => ['sometimes', 'string', 'size:64']]);
-        if ($request->filled('review_token') && ! hash_equals($service->preview($chargePeriod)['review_token'], $request->string('review_token')->toString())) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'review_token' => 'اطلاعات دوره پس از بازبینی تغییر کرده است؛ دوباره فهرست اقلام را بررسی کنید.',
-            ]);
-        }
-        $chargePeriod = $service->calculate($chargePeriod);
+        $validated = $request->validate(['review_token' => ['required', 'string', 'size:64']]);
+        $chargePeriod = $service->calculate($chargePeriod, $validated['review_token']);
 
         $chargePeriod->loadCount([
             'chargeCalculations',

@@ -179,7 +179,9 @@ class FinancialCoreFlowTest extends TestCase
             ->json('data.id');
 
         $this->postJson(
-            "/api/v1/charge-periods/{$periodId}/calculate"
+            "/api/v1/charge-periods/{$periodId}/calculate",
+            ['review_token' => $this->getJson("/api/v1/charge-periods/{$periodId}/preview")
+                ->assertOk()->json('data.review_token')]
         )
             ->assertOk()
             ->assertJsonPath(
@@ -423,7 +425,9 @@ class FinancialCoreFlowTest extends TestCase
             ->json('data.id');
 
         $this->postJson(
-            "/api/v1/charge-periods/{$augustPeriodId}/calculate"
+            "/api/v1/charge-periods/{$augustPeriodId}/calculate",
+            ['review_token' => $this->getJson("/api/v1/charge-periods/{$augustPeriodId}/preview")
+                ->assertOk()->json('data.review_token')]
         )->assertOk();
 
         $this->assertDatabaseMissing(
@@ -461,7 +465,9 @@ class FinancialCoreFlowTest extends TestCase
             ->json('data.id');
 
         $this->postJson(
-            "/api/v1/charge-periods/{$septemberPeriodId}/calculate"
+            "/api/v1/charge-periods/{$septemberPeriodId}/calculate",
+            ['review_token' => $this->getJson("/api/v1/charge-periods/{$septemberPeriodId}/preview")
+                ->assertOk()->json('data.review_token')]
         )->assertOk();
 
         $this->assertDatabaseHas(
