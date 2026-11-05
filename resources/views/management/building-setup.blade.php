@@ -40,13 +40,13 @@
     @endforeach
 
     <div class="setup-resume" data-setup-resume hidden><span>پیش‌نویس راه‌اندازی قبلی شما بازیابی شد.</span><button type="button" data-setup-reset>شروع راه‌اندازی تازه</button></div>
-    <nav class="setup-steps" aria-label="مراحل راه‌اندازی">
+    <nav class="setup-steps" aria-label="مراحل راه‌اندازی" @if ($setupConfig['completedSetup']) hidden @endif>
         @foreach (['مجموعه و نشانی', 'طبقات', 'واحدها', 'بازبینی و ثبت'] as $title)
             <button type="button" data-setup-step-link="{{ $loop->index }}" @if ($loop->first) aria-current="step" @endif><span>{{ ['۱', '۲', '۳', '۴'][$loop->index] }}</span><strong>{{ $title }}</strong></button>
         @endforeach
     </nav>
 
-    <form class="setup-card" data-setup-form novalidate>
+    <form class="setup-card" data-setup-form novalidate @if ($setupConfig['completedSetup']) hidden @endif>
         <div class="setup-error" role="alert" data-setup-error hidden></div>
         <section data-setup-step="0" aria-labelledby="setup-building-title">
             <div class="setup-section-heading"><span>گام اول</span><h3 id="setup-building-title" tabindex="-1">کدام ساختمان یا بلوک را تکمیل می‌کنید؟</h3><p>برای ادامه ثبت‌نام، همان مورد انتخاب‌شده را تکمیل کنید.</p></div>

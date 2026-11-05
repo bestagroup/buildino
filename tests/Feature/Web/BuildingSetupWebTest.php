@@ -102,6 +102,46 @@ final class BuildingSetupWebTest extends TestCase
         $this->postJson('/management/building-setup/'.$other['building']->id.'/complete')->assertForbidden();
     }
 
+    public function test_completed_setup_reopens_at_next_actions_after_return_or_reload(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $graph['building']->update(['structure_type' => 'standalone']);
+        $user = $this->assigned('building_manager', $graph['building']);
+        $this->actingAs($user)->postJson('/management/building-setup/'.$graph['building']->id.'/complete')->assertOk();
+        foreach (['/management/building-setup?building_id='.$graph['building']->id, '/management/building-setup'] as $url) {
+            $this->get($url)->assertOk()->assertViewHas('setupConfig', fn ($config) => $config['completedSetup']['buildingId'] === $graph['building']->id
+                && $config['completedSetup']['firstUnitId'] === $graph['unit']->id
+                && $config['completedSetup']['floors'] === 1 && $config['completedSetup']['units'] === 1
+                && $config['completedSetup']['canManageOwnership'] && $config['completedSetup']['canInvite'])
+                ->assertSee('data-setup-form novalidate  hidden', false);
+        }
+        $this->assertDatabaseCount('units', 1);
+        $this->assertDatabaseCount('floors', 1);
+    }
+
+    public function test_completion_state_does_not_leak_other_buildings_or_override_incomplete_work(): void
+    {
+        $own = $this->createBuildingGraph();
+        $other = $this->createBuildingGraph();
+        $other['building']->forceFill(['setup_completed_at' => now()])->save();
+        $own['building']->update(['structure_type' => 'standalone']);
+        $this->actingAs($this->assigned('building_manager', $own['building']));
+        $this->get('/management/building-setup?building_id='.$other['building']->id)->assertOk()
+            ->assertViewHas('setupConfig', fn ($config) => $config['completedSetup'] === null);
+        $this->get('/management/building-setup')->assertOk()
+            ->assertViewHas('setupConfig', fn ($config) => $config['completedSetup'] === null && $config['initialBuildingId'] === $own['building']->id);
+    }
+
+    public function test_explicit_new_setup_remains_available_after_existing_building_is_completed(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $graph['building']->forceFill(['setup_completed_at' => now()])->save();
+        $this->actingAs($this->assigned('complex_manager', $graph['complex']))->get('/management/building-setup?new=1')->assertOk()
+            ->assertViewHas('setupConfig', fn ($config) => $config['completedSetup'] === null && $config['startNew'] && $config['initialBuildingId'] === 0);
+        $this->get('/management/building-setup?complex_id='.$graph['complex']->id)->assertOk()
+            ->assertViewHas('setupConfig', fn ($config) => $config['completedSetup'] === null && $config['initialBuildingId'] === 0);
+    }
+
     public function test_empty_structure_cannot_be_marked_complete(): void
     {
         $graph = $this->createBuildingGraph();

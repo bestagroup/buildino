@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Complex;
+use App\Models\Floor;
+use App\Models\Unit;
 use App\Models\BuildingComplexRequest;
 use App\Services\System\IranLocations;
 use App\Services\Web\ManagementDashboardAccessService;
@@ -48,6 +50,24 @@ final class BuildingSetupController extends Controller
                 ->map(fn ($complex) => ['id' => $complex->id, 'title' => $complex->title, 'code' => $complex->code, 'workspaceType' => $complex->workspace_type])->values()
             : collect();
 
+        $canCreateBuilding = $permissions->allowsAnyScope($user, 'buildings.create')
+            && ($permissions->allows($user, 'complexes.create') || $complexes->isNotEmpty());
+        $startNew = $canCreateBuilding && $request->boolean('new');
+        $initialBuildingId = $request->integer('building_id') ?: ($startNew || $request->filled('complex_id')
+            ? 0 : ($incomplete->first()?->id ?? ($available->count() === 1 ? $available->first()->id : 0)));
+        $selected = $available->firstWhere('id', $initialBuildingId);
+        $completedSetup = null;
+        if ($selected?->setup_completed_at && ! $incomplete->contains('id', $selected->id)) {
+            $units = Unit::query()->whereHas('floor.block', fn ($query) => $query->where('building_id', $selected->id));
+            $completedSetup = [
+                'buildingId' => $selected->id, 'complexId' => $selected->complex_id,
+                'floors' => Floor::query()->whereHas('block', fn ($query) => $query->where('building_id', $selected->id))->count(),
+                'units' => (clone $units)->count(), 'firstUnitId' => $units->orderBy('floor_id')->orderBy('unit_number')->value('id'),
+                'canManageOwnership' => $permissions->allows($user, 'unit-ownerships.create', $selected),
+                'canInvite' => $permissions->allows($user, 'unit-invitations.create', $selected),
+            ];
+        }
+
         return view('management.building-setup', [
             'connections' => BuildingComplexRequest::query()->with('building:id,title,complex_id')
                 ->whereIn('building_id', $available->pluck('id'))->latest()->get(),
@@ -61,12 +81,13 @@ final class BuildingSetupController extends Controller
                 'buildings' => $buildings,
                 'complexes' => $complexes,
                 'canCreateComplex' => $permissions->allows($user, 'complexes.create'),
-                'canCreateBuilding' => $permissions->allowsAnyScope($user, 'buildings.create')
-                    && ($permissions->allows($user, 'complexes.create') || $complexes->isNotEmpty()),
+                'canCreateBuilding' => $canCreateBuilding,
+                'startNew' => $startNew,
+                'completedSetup' => $completedSetup,
                 'canInvite' => $permissions->allowsAnyScope($user, 'unit-invitations.create'),
                 'canManageOwnership' => $permissions->allowsAnyScope($user, 'unit-ownerships.create'),
                 'locations' => $locations->forForm(),
-                'initialBuildingId' => $request->integer('building_id') ?: ($request->filled('complex_id') ? 0 : ($incomplete->first()?->id ?? 0)),
+                'initialBuildingId' => $initialBuildingId,
                 'initialComplexId' => $request->integer('complex_id'),
                 'completeUrl' => url('/management/building-setup'),
                 'dashboardUrl' => route('management.dashboard'),

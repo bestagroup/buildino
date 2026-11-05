@@ -6,7 +6,7 @@
     const engine = window.BuildinoBuildingSetupEngine;
     const form = root.querySelector('[data-setup-form]');
     const query = (selector) => root.querySelector(selector);
-    const key = `buildino.building-setup.${config.actorId}.${config.initialBuildingId || 'all'}.${config.initialComplexId || 'all'}`;
+    const key = `buildino.building-setup.${config.actorId}.${config.initialBuildingId || 'all'}.${config.initialComplexId || 'all'}${config.startNew ? '.new' : ''}`;
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
     const fa = (number) => Number(number).toLocaleString('fa-IR');
     const digits = (value) => String(value).replace(/[۰-۹٠-٩]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.includes(digit) ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit) : '٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
@@ -15,12 +15,13 @@
         const chosen = config.buildings.find((building) => Number(building.id) === Number(config.initialBuildingId)) || (config.buildings.length === 1 ? config.buildings[0] : null);
         const block = newBlock(); engine.resizeFloors(block, 3);
         const complex = config.complexes.find((item) => Number(item.id) === Number(config.initialComplexId));
-        return { token: crypto.randomUUID(), mode: complex && !config.initialBuildingId ? 'new' : config.buildings.length ? 'existing' : 'new', buildingId: chosen?.id || '', title: '', complexMode: complex || !config.canCreateComplex ? 'existing' : 'standalone', complexId: complex?.id || (config.complexes.length === 1 ? config.complexes[0].id : ''), complexTitle: '', provinceId: '', cityId: '', province: '', city: '', address: '', postalCode: '', parkingCount: 0, storageCount: 0, blocks: [block], started: false, loadedBuildingId: null };
+        return { token: crypto.randomUUID(), mode: config.startNew || complex && !config.initialBuildingId ? 'new' : config.buildings.length ? 'existing' : 'new', buildingId: chosen?.id || '', title: '', complexMode: complex || !config.canCreateComplex ? 'existing' : 'standalone', complexId: complex?.id || (config.complexes.length === 1 ? config.complexes[0].id : ''), complexTitle: '', provinceId: '', cityId: '', province: '', city: '', address: '', postalCode: '', parkingCount: 0, storageCount: 0, blocks: [block], started: false, loadedBuildingId: null };
     };
     let draft = freshDraft();
     let step = 0;
     let furthest = 0;
     let busy = false;
+    let completed = false;
     let ratePauseUntil = 0;
     let restored = false;
     try {
@@ -198,6 +199,32 @@
         if (!blocks.length) engine.resizeFloors(draft.blocks[0], 3);
         draft.loadedBuildingId = draft.buildingId;
     };
+    const showCompleted = (result, focus = true) => {
+        completed = true;
+        clearError();
+        form.hidden = true; query('.setup-steps').hidden = true; query('[data-setup-resume]').hidden = true;
+        const success = query('[data-setup-success]'); success.hidden = false;
+        query('[data-setup-success-summary]').textContent = `${fa(result.floors)} طبقه و ${fa(result.units)} واحد آماده است.`;
+        const canAddSibling = config.complexes.some((item) => Number(item.id) === Number(result.complexId));
+        query('[data-setup-another]').hidden = !config.canCreateBuilding;
+        query('[data-setup-another]').textContent = canAddSibling ? 'افزودن بلوک دیگر به همین مجتمع' : 'راه‌اندازی مجموعه دیگر';
+        query('[data-setup-another]').dataset.complexId = canAddSibling ? result.complexId : '';
+        for (const [selector, base, allowed] of [
+            ['[data-setup-ownership]', config.ownershipUrl, result.canManageOwnership ?? config.canManageOwnership],
+            ['[data-setup-invite]', config.invitationsUrl, result.canInvite ?? config.canInvite],
+        ]) {
+            const link = query(selector); link.hidden = !allowed || !result.firstUnitId;
+            if (!link.hidden) { const url = new URL(base, location.origin); url.searchParams.set('unit_id', result.firstUnitId); url.searchParams.set('building_id', result.buildingId); link.href = url.pathname + url.search; }
+        }
+        query('[data-setup-unit-link]').href = `${config.unitsUrl}?building_id=${result.buildingId}`;
+        const url = new URL(location.href); url.searchParams.set('building_id', result.buildingId); url.searchParams.delete('complex_id'); url.searchParams.delete('new');
+        history.replaceState(null, '', url);
+        try { sessionStorage.removeItem(key); } catch {}
+        query('.setup-intro .eyebrow').textContent = 'راه‌اندازی تکمیل شده';
+        query('.setup-intro h2').textContent = 'ساختار مجموعه آماده است';
+        query('.setup-intro p').textContent = 'برای ادامه مدیریت واحدها، از گزینه‌های زیر استفاده کنید.';
+        if (focus) success.querySelector('h3').focus();
+    };
     const submitSetup = async () => {
         if (!checkThrough(2)) return;
         draft.started = true; persist(); busy = true; updateNavigation();
@@ -212,26 +239,14 @@
             });
             const completion = await fetch(`${config.completeUrl}/${result.buildingId}/complete`, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': config.csrfToken } });
             if (!completion.ok) throw new Error('ساختار ذخیره شد اما تأیید نهایی کامل نشد. دوباره «ادامه ثبت» را بزنید.');
-            form.hidden = true; query('.setup-steps').hidden = true; query('[data-setup-resume]').hidden = true;
-            const success = query('[data-setup-success]'); success.hidden = false;
-            query('[data-setup-success-summary]').textContent = `${fa(result.floors)} طبقه و ${fa(result.units)} واحد آماده است.`;
-            const canAddSibling = config.complexes.some((item) => Number(item.id) === Number(result.complexId));
-            query('[data-setup-another]').hidden = !config.canCreateBuilding;
-            query('[data-setup-another]').textContent = canAddSibling ? 'افزودن بلوک دیگر به همین مجتمع' : 'راه‌اندازی مجموعه دیگر';
-            query('[data-setup-another]').dataset.complexId = canAddSibling ? result.complexId : '';
-            if (config.canManageOwnership && result.firstUnitId) { const url = new URL(config.ownershipUrl, location.origin); url.searchParams.set('unit_id', result.firstUnitId); url.searchParams.set('building_id', result.buildingId); query('[data-setup-ownership]').href = url.pathname + url.search; query('[data-setup-ownership]').hidden = false; }
-            if (config.canInvite && result.firstUnitId) { const url = new URL(config.invitationsUrl, location.origin); url.searchParams.set('unit_id', result.firstUnitId); url.searchParams.set('building_id', result.buildingId); query('[data-setup-invite]').href = url.pathname + url.search; query('[data-setup-invite]').hidden = false; }
-            const unitLink = success.querySelector('[data-setup-unit-link]');
-            unitLink.href = `${config.unitsUrl}?building_id=${result.buildingId}`;
-            try { sessionStorage.removeItem(key); } catch {}
-            success.querySelector('h3').focus();
+            showCompleted(result);
         } catch (error) {
             query('[data-setup-saving-label]').textContent = 'ثبت متوقف شد؛ بخش‌های ثبت‌شده محفوظ‌اند.';
             errorMessage(error.message);
         } finally { busy = false; form.removeAttribute('aria-busy'); updateNavigation(); }
     };
     form.addEventListener('submit', async (event) => {
-        event.preventDefault(); if (busy) return; clearError();
+        event.preventDefault(); if (busy || completed) return; clearError();
         if (step === 3) { await submitSetup(); return; }
         if (!checkThrough(step)) return;
         if (step === 0) {
@@ -331,13 +346,17 @@
     root.querySelectorAll('[data-setup-step-link]').forEach((button) => button.addEventListener('click', () => { const index = Number(button.dataset.setupStepLink); if (!busy && !draft.started && index <= furthest && (index <= step || checkThrough(index - 1))) { clearError(); showStep(index); } }));
     const reset = () => { if (busy) return; try { sessionStorage.removeItem(key); } catch {} window.location.assign(window.location.pathname); };
     query('[data-setup-reset]').addEventListener('click', reset);
-    query('[data-setup-another]').addEventListener('click', () => { const id = query('[data-setup-another]').dataset.complexId; if (id) window.location.assign(`${location.pathname}?complex_id=${encodeURIComponent(id)}`); else reset(); });
+    query('[data-setup-another]').addEventListener('click', () => { if (busy || !config.canCreateBuilding) return; const id = query('[data-setup-another]').dataset.complexId; window.location.assign(id ? `${location.pathname}?complex_id=${encodeURIComponent(id)}` : `${location.pathname}?new=1`); });
     for (const input of form.querySelectorAll('[data-setup-field]')) { if (input.type === 'radio') input.checked = input.value === draft.mode; else if (input.name !== 'cityId') input.value = draft[input.dataset.setupField] ?? ''; }
     query('[data-setup-optional]').open = draft.optionalOpen ?? Boolean(draft.address || draft.postalCode || Number(draft.parkingCount) || Number(draft.storageCount));
-    syncBasics(); syncLocations(); showStep(step, false);
-    query('[data-setup-resume]').hidden = !restored;
-    if (draft.started) query('[data-setup-resume]').hidden = false;
-    if (!config.canCreateBuilding && draft.mode === 'new') errorMessage('برای این حساب ساختمانی در دسترس نیست. از مدیر مجتمع بخواهید دسترسی ساختمان را بررسی کند.');
+    syncBasics(); syncLocations();
+    if (config.completedSetup) showCompleted(config.completedSetup, false);
+    else {
+        showStep(step, false);
+        query('[data-setup-resume]').hidden = !restored;
+        if (draft.started) query('[data-setup-resume]').hidden = false;
+    }
+    if (!completed && !config.canCreateBuilding && draft.mode === 'new') errorMessage('برای این حساب ساختمانی در دسترس نیست. از مدیر مجتمع بخواهید دسترسی ساختمان را بررسی کند.');
     window.addEventListener('beforeunload', (event) => { if (busy) { event.preventDefault(); event.returnValue = ''; } });
     root.dataset.setupReady = 'true';
 })();
