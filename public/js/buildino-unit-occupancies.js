@@ -218,6 +218,7 @@
         $('user-hint').textContent = 'در حال دریافت کاربران ساختمان…';
         $('account-status').textContent = ''; $('edit-name').textContent = record ? nameOf(record) : '';
         form.elements.namedItem('occupancy_type').value = record?.occupancy_type === 'owner' && !record.is_current_owner ? 'resident' : record?.occupancy_type || '';
+        window.BuildinoSelect2?.refresh(form.elements.namedItem('occupancy_type'));
         setDate(form, 'starts_at', record?.starts_at || today()); setDate(form, 'ends_at', '');
         form.elements.namedItem('is_primary').checked = Boolean(record?.is_primary);
         setDate(form, 'resident_count_effective_from', '');
@@ -344,6 +345,7 @@
         if (!isOwner && form.elements.namedItem('occupancy_type').value === 'owner') {
             form.elements.namedItem('occupancy_type').value = '';
         }
+        window.BuildinoSelect2?.refresh(form.elements.namedItem('occupancy_type'));
         $('invite-wrap').hidden = Boolean(editing) || !building()?.canInvite || !candidate?.hasMobile;
         if ($('invite-wrap').hidden) form.elements.namedItem('send_invitation').checked = false;
         $('account-status').textContent = candidate ? candidate.mobileVerified || candidate.emailVerified ? 'هویت این حساب تأیید شده است.' : candidate.hasMobile ? 'هویت این حساب هنوز تأیید نشده است؛ برای پذیرش دعوت باید آن را تأیید کند.' : 'برای این حساب شماره موبایل ثبت نشده و امکان دعوت پیامکی وجود ندارد.' : '';
