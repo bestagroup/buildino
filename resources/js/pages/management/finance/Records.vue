@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import FinanceFrame from '../../../components/management/FinanceFrame.vue';
 import DynamicForm from '../../../components/management/DynamicForm.vue';
 import UiConfirmDialog from '../../../components/management/UiConfirmDialog.vue';
+import UiRecordCard from '../../../components/management/UiRecordCard.vue';
 import { ApiError, apiRequest, rowsFromPayload } from '../../../lib/management-api';
 import { readValue, payloadFor } from '../../../lib/building-structure';
 import { day, invoiceLabels, money, type InvoiceWorkspace } from '../../../lib/invoice-workspace';
@@ -16,6 +17,10 @@ const form = ref<CrudRecord>({}), errors = ref<Record<string, string[]>>({}), di
 const page = ref(1), lastPage = ref(1), total = ref(0), operation = ref<NonNullable<CrudResource['actions']>[number] | null>(null);
 let ticket = 0, disposed = false, snapshot = '';
 const globalCategories = computed(() => props.resourceKey === 'expense-categories');
+const cardList = computed(() => globalCategories.value || props.resourceKey === 'expenses');
+const cardColumns = computed(() => (props.resource.columns || []).filter(column => !['id', 'building_id', 'created_at', 'title', 'status', 'payment_status', 'is_active'].includes(column.key)));
+const cardStatus = (row: CrudRecord) => globalCategories.value ? [true, 1, '1'].includes(row.is_active as boolean | number | string) ? 'active' : 'inactive' : String(row.payment_status || row.status || '');
+const cardStatusLabel = (row: CrudRecord) => globalCategories.value ? cardStatus(row) === 'active' ? 'فعال' : 'غیرفعال' : format(row.payment_status || row.status, 'status');
 const scopeLabel = computed(() => globalCategories.value ? 'مشترک بین تمام ساختمان‌ها' : building.value?.title || '');
 const building = computed(() => props.workspace.buildings.find(row => String(row.id) === buildingId.value));
 const allowed = (action: string, row: CrudRecord | null = null) => globalCategories.value ? action === 'view' || action === 'create' && Boolean(props.resource.create) : Boolean(building.value?.abilities[props.workspace.prefix + '.' + action]
@@ -59,6 +64,7 @@ const steps = computed(() => globalCategories.value ? ['عنوان دسته هز
 const activeFields = computed(() => !split.value ? fields.value : fields.value.filter(field => props.resourceKey === 'loyalty-rules' ? ['event_type', 'points', 'is_active'].includes(field.name) === (step.value === 0) : mainNames.has(field.name) === (step.value === 0)));
 const review = computed(() => fields.value.filter(field => form.value[field.name] !== '' && form.value[field.name] !== undefined && form.value[field.name] !== null).map(field => ({ label: field.label, value: field.options?.find(option => String(option.value) === String(form.value[field.name]))?.label ?? format(form.value[field.name], field.name) })));
 const format = (value: unknown, key: string): string => {
+    if (props.resourceKey === 'expenses' && key === 'block_id' && !value) return 'کل ساختمان';
     if (value === null || value === undefined || value === '') return '—';
     if (key === 'building_id') return building.value?.title || '—';
     const option = props.workspace.lookups[key]?.find(row => String(row.value) === String(value));
@@ -177,6 +183,15 @@ onBeforeUnmount(() => { disposed = true; ticket++; window.removeEventListener('b
             <section v-if="globalCategories || building" class="ownership-card" :aria-busy="loading"><div class="ownership-card__heading ownership-card__heading--split finance-heading"><div><h3 id="finance-record-list-title" tabindex="-1">{{ title }}</h3><p>{{ money(total) }} مورد ثبت‌شده · {{ scopeLabel }}</p></div><div class="finance-actions"><button type="button" class="ownership-button" :disabled="loading" @click="load(page)">به‌روزرسانی</button><button v-if="canCreate" type="button" class="ownership-button ownership-button--primary" data-finance-create @click="openEditor()">+ {{ resourceKey === 'bank-accounts' ? 'حساب جدید' : resourceKey === 'loyalty-rules' ? 'نسخه جدید قاعده' : resourceKey === 'wallet-payouts' ? 'درخواست برداشت' : resourceKey === 'bill-payments' ? 'ثبت قبض' : 'ثبت جدید' }}</button></div></div>
                 <label class="ownership-field"><span>جست‌وجو در همین صفحه</span><input v-model="search" type="search" placeholder="عنوان، شماره یا وضعیت"></label><p v-if="!globalCategories" class="finance-hint">مبالغ به {{ currency }} نمایش داده می‌شوند.</p>
                 <div v-if="loading" class="finance-empty" role="status">در حال دریافت اطلاعات…</div><div v-else-if="!filtered.length" class="finance-empty">{{ search ? 'موردی در این صفحه پیدا نشد.' : globalCategories ? 'هنوز دسته هزینه‌ای ثبت نشده است. برای شروع «ثبت جدید» را بزنید.' : 'هنوز موردی برای این ساختمان ثبت نشده است.' }}</div>
+                <ul v-else-if="cardList" class="operation-record-list" :class="{ 'operation-record-list--compact': globalCategories }" :aria-label="title">
+                    <li v-for="row in filtered" :key="String(row.id)">
+                        <UiRecordCard :title="rowTitle(row)" :subtitle="globalCategories ? scopeLabel : undefined">
+                            <template #status><span v-if="cardStatus(row)" class="finance-status" :data-status="cardStatus(row)">{{ cardStatusLabel(row) }}</span></template>
+                            <template v-if="!globalCategories" #fields><div v-for="column in cardColumns" :key="column.key"><dt>{{ column.key === 'amount' ? column.label + ' (' + currency + ')' : column.label }}</dt><dd :class="{ 'operation-record__amount': column.key === 'amount' }"><bdi>{{ format(readValue(row, column.key), column.key) }}</bdi></dd></div></template>
+                            <template #actions><button type="button" class="ownership-button" data-finance-open :aria-label="'جزئیات ' + rowTitle(row)" @click="selected = row; view = 'detail'; focus('#finance-record-detail-title')">جزئیات و عملیات</button></template>
+                        </UiRecordCard>
+                    </li>
+                </ul>
                 <div v-else class="finance-table-region" role="region" :aria-label="title" tabindex="0"><table class="finance-table"><caption class="finance-sr-only">{{ title }} · {{ scopeLabel }}</caption><thead><tr><th v-for="column in resource.columns?.filter(column => !['id', 'building_id', 'created_at'].includes(column.key))" :key="column.key" scope="col">{{ column.label }}</th><th scope="col">عملیات</th></tr></thead><tbody><tr v-for="row in filtered" :key="String(row.id)"><td v-for="column in resource.columns?.filter(column => !['id', 'building_id', 'created_at'].includes(column.key))" :key="column.key"><span v-if="column.key === 'status'" class="finance-status" :data-status="String(row.status)">{{ format(row.status, 'status') }}</span><bdi v-else>{{ format(readValue(row, column.key), column.key) }}</bdi></td><td><button type="button" class="ownership-button" data-finance-open @click="selected = row; view = 'detail'; focus('#finance-record-detail-title')">جزئیات و عملیات</button></td></tr></tbody></table></div>
                 <nav v-if="lastPage > 1" class="ownership-actions finance-pagination" aria-label="صفحه‌بندی"><button type="button" class="ownership-button" :disabled="loading || page <= 1" @click="load(page - 1)">صفحه قبل</button><span>صفحه {{ money(page) }} از {{ money(lastPage) }}</span><button type="button" class="ownership-button" :disabled="loading || page >= lastPage" @click="load(page + 1)">صفحه بعد</button></nav>
             </section>

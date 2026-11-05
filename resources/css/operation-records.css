@@ -1,0 +1,39 @@
+/* Shared list presentation for Vue finance pages and the Blade formula builder. */
+.operation-record-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; min-width: 0; }
+.finance-page .operation-record-list { margin-block-start: 16px; }
+.operation-record {
+    display: grid; grid-template-columns: minmax(160px, 1fr) minmax(0, 2fr) auto;
+    gap: 20px; align-items: center; min-width: 0; padding: 18px;
+    border: 1px solid var(--border); border-radius: 14px; background: var(--surface);
+}
+.operation-record__heading { display: grid; justify-items: start; align-content: start; gap: 10px; min-width: 0; }
+.operation-record__identity { min-width: 0; max-width: 100%; }
+.operation-record__heading h4 { margin: 0; color: var(--text); font-size: 14px; font-weight: 700; line-height: 1.9; overflow-wrap: anywhere; }
+.operation-record__heading p { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.operation-record__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; margin: 0; min-width: 0; }
+.operation-record__fields > div { min-width: 0; }
+.operation-record__fields dt { margin: 0 0 4px; color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.8; }
+.operation-record__fields dd { margin: 0; color: var(--text); font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; }
+.operation-record__fields dd small { display: block; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.operation-record__amount { font-variant-numeric: tabular-nums; font-weight: 700; }
+.operation-record__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; min-width: 0; }
+.operation-record__actions :is(.ownership-button, .crud-row-action) { min-height: 42px; margin: 0; font-size: 12px; line-height: 1.8; white-space: normal; text-align: center; }
+.operation-record :is(.finance-status, .crud-status) { max-width: 100%; margin: 0; padding: 4px 10px; font-size: 12px; line-height: 1.8; white-space: normal; }
+.operation-record .finance-status[data-status="active"] { background: var(--success-soft); color: var(--success); }
+.operation-record .finance-status[data-status="inactive"] { background: var(--surface-strong); color: var(--muted); }
+.operation-record .finance-status[data-status="unpaid"] { background: var(--warning-soft); color: var(--warning); }
+.operation-record-list--compact .operation-record { grid-template-columns: minmax(0, 1fr) auto; }
+.operation-record-list--compact .operation-record__heading { grid-template-columns: minmax(0, 1fr) 90px; align-items: center; }
+@media (max-width: 1000px) {
+    .operation-record { grid-template-columns: minmax(150px, 1fr) minmax(0, 2fr); gap: 16px; }
+    .operation-record__actions { grid-column: 1 / -1; padding-top: 12px; border-top: 1px solid var(--border); }
+    .operation-record-list--compact .operation-record__actions { grid-column: auto; padding: 0; border: 0; }
+}
+@media (max-width: 650px) {
+    .operation-record, .operation-record-list--compact .operation-record { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+    .operation-record__heading { grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+    .operation-record__fields { padding-top: 14px; border-top: 1px solid var(--border); gap: 14px; }
+    .operation-record__actions, .operation-record-list--compact .operation-record__actions { grid-column: auto; justify-content: stretch; padding-top: 12px; border-top: 1px solid var(--border); }
+    .operation-record__actions > button { flex: 1 1 auto; }
+}
+@media (max-width: 420px) { .operation-record__fields { grid-template-columns: minmax(0, 1fr); } }

@@ -28,12 +28,12 @@ test('finance: real Vue workflows, Jalali dates, financial safeguards, permissio
         } }],
     });
     const html = `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    ${['/public/css/buildino-fonts.css','/public/css/buildino-management.css','/public/css/buildino-crud.css','/public/css/buildino-design-system.css','/public/css/buildino-unit-ownerships.css','/resources/css/management-inertia.css','/resources/css/finance-workspace.css','/node_modules/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css'].map(path=>'<link rel="stylesheet" href="'+path+'">').join('')}
+    ${['/public/css/buildino-fonts.css','/public/css/buildino-management.css','/public/css/buildino-crud.css','/public/css/buildino-design-system.css','/public/css/buildino-unit-ownerships.css','/resources/css/management-inertia.css','/resources/css/finance-workspace.css','/resources/css/operation-records.css','/node_modules/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css'].map(path=>'<link rel="stylesheet" href="'+path+'">').join('')}
     <div id="app" style="padding:16px;max-width:1200px;margin:auto"></div><pre id="result" hidden></pre>
     <script>window.requestAnimationFrame=callback=>setTimeout(()=>callback(performance.now()),16); window.cancelAnimationFrame=clearTimeout; window.addEventListener('error',event=>document.querySelector('#result').textContent=event.message+' '+event.lineno);</script>
     <script src="/test.js"></script><script>
     const configs=${JSON.stringify(configs)}, groups=${JSON.stringify(groups)}, core=['invoices','invoice-installments','payments'];
-    let posts=[], requests=[], active='invoices', failSave=false, hold=false, release, invoiceStatus='draft', paymentStatus='pending', paymentMethod='cash', initial={building_id:'1'};
+    let posts=[], requests=[], active='invoices', failSave=false, hold=false, release, invoiceStatus='draft', paymentStatus='pending', paymentMethod='cash', initial={building_id:'1'}, stress=false;
     const invoice=()=>({id:11,building_id:1,unit_id:101,invoice_number:'INV-11',status:invoiceStatus,issue_date:'2026-10-29',due_date:'2026-11-30',subtotal:1001,discount_amount:0,penalty_amount:0,total_amount:1001,paid_amount:0,outstanding_amount:1001,unit:{unit_number:'۱۰۱'},payer:{name:'ساکن نمونه'},items:[{title:'شارژ ساختمان',quantity:1,unit_amount:1001,description:'شرح قبلی',metadata:{source:'preserve'},charge_item_id:7}],installments:[]});
     const sample=()=>({id:11,building_id:1,title:'سند مالی نمونه',amount:1001,status:'pending',version:1,event_type:'payment_verified',points:5,is_active:true,is_verified:false,account_holder_name:'مدیر ساختمان',iban:'IR123456789012345678901234',bank_name:'بانک نمونه',required_points:50,expense_date:'2026-10-29',income_date:'2026-10-29',allocation_method:'equal',payer_responsibility:'owner'});
     window.fetch=async(path,options={})=>{
@@ -47,8 +47,9 @@ test('finance: real Vue workflows, Jalali dates, financial safeguards, permissio
             return reply({data:invoice()},201);
         }
         if(url.pathname==='/api/v1/invoices/11') return reply({data:invoice()});
-        const data=core.includes(active)?active==='payments'&&url.pathname.endsWith('/payments')?[{id:21,building_id:1,payment_number:'PAY-21',amount:1001,status:paymentStatus,method:paymentMethod}]:[invoice()]:[sample()];
-        return reply({data,meta:{current_page:1,last_page:1,total:1},current_page:1,last_page:1,total:1});
+        let data=core.includes(active)?active==='payments'&&url.pathname.endsWith('/payments')?[{id:21,building_id:1,payment_number:'PAY-21',amount:1001,status:paymentStatus,method:paymentMethod}]:[invoice()]:[sample()];
+        if(stress) data=[0,1,2].map(index=>({...data[0],id:11+index,title:['نگهداری آسانسور و تجهیزات مشاع ساختمان با عنوان طولانی برای بررسی چیدمان','آب مصرفی','تعمیرات موتورخانه و تأسیسات'][index],invoice_number:'INV-2026-00000000000'+index,total_amount:9876543210987,outstanding_amount:9876543210987,amount:9876543210987,block_id:null,payment_status:index?'paid':'unpaid',is_active:index!==1}));
+        return reply({data,meta:{current_page:1,last_page:1,total:data.length},current_page:1,last_page:1,total:data.length});
     };
     const props=key=>{
         const prefix=configs[key].permission.split('.')[0], abilities={};
@@ -104,8 +105,21 @@ test('finance: real Vue workflows, Jalali dates, financial safeguards, permissio
         const p=props('invoices');for(const b of p.workspace.buildings)for(const key of Object.keys(b.abilities))b.abilities[key]=key.endsWith('.view');await mount('invoices',p);expect(!$('[data-finance-create]'),'Read-only create exposed');await click('[data-finance-open]');expect(!$('[data-finance-pay]')&&!$('[data-finance-plan]')&&!$('[data-finance-edit]'),'Read-only mutation exposed');
         await mount('invoices');await click('[data-finance-create]');await input('description','تغییر ذخیره نشده');await click('.finance-editor .ownership-card__heading button');expect($('.finance-editor [role="alert"]'),'Unsaved edit discarded');
         expect(document.documentElement.scrollWidth<=innerWidth,'Page overflows viewport');
+        stress=true;
+        for(const key of ['invoices','expenses','expense-categories']) {
+            await mount(key);expect(document.querySelectorAll('.operation-record').length===3,'List lost financial rows '+key);
+            expect(document.documentElement.scrollWidth<=innerWidth,'List overflow '+key);
+            for(const card of document.querySelectorAll('.operation-record')) {
+                const rect=card.getBoundingClientRect();expect(rect.left>=0&&rect.right<=innerWidth,'Card escapes viewport '+key);
+                for(const part of card.querySelectorAll('h4,dd,.operation-record__actions')) expect(part.scrollWidth<=part.clientWidth+1,'Long content overlaps '+key);
+            }
+            if(key==='expense-categories')expect($('.finance-status[data-status="inactive"]')?.textContent==='غیرفعال','Inactive category label lost');
+            if(key==='expenses')expect($('.operation-record__fields').textContent.includes('کل ساختمان'),'Expense scope label missing');
+        }
         const capture=${JSON.stringify(process.env.FINANCE_CAPTURE||'')};
         if(capture==='list'){await mount('invoices');}
+        if(capture==='expenses-list'){await mount('expenses');}
+        if(capture==='categories-list'){await mount('expense-categories');}
         if(capture==='editor'){await mount('invoices');await click('[data-finance-create]');await input('unit_id','101');await submit();await input('items.0.title','شارژ ماه آبان');await input('items.0.unit_amount','1250000');}
         if(capture==='generic'){await mount('expenses');await click('[data-finance-create]');await fillRequired();}
         window.scrollTo(0,0);$('#result').dataset.ok='true';$('#result').textContent='Passed';

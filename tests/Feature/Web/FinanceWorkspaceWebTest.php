@@ -35,7 +35,7 @@ final class FinanceWorkspaceWebTest extends TestCase
                 ->where('workspace.buildings.0.id', $inside['building']->id)
                 ->where('workspace.buildings.0.abilities', fn ($abilities) => $abilities['invoices.create'] === false)
                 ->where('workspace.buildings.0.abilities', fn ($abilities) => $abilities['payments.verify'] === false)
-                ->has('workspace.navigation', 13));
+                ->has('workspace.navigation', $resources->count()));
         }
         $this->get('/management/operations/users')->assertForbidden();
     }

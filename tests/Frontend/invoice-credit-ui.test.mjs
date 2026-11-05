@@ -30,7 +30,7 @@ test('credit notes: signed input, review, issue action, ordered finance tabs and
         } }],
     });
     const html = `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    ${['/public/css/buildino-fonts.css','/public/css/buildino-management.css','/public/css/buildino-crud.css','/public/css/buildino-design-system.css','/public/css/buildino-unit-ownerships.css','/resources/css/management-inertia.css','/resources/css/finance-workspace.css','/node_modules/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css'].map(path=>'<link rel="stylesheet" href="'+path+'">').join('')}
+    ${['/public/css/buildino-fonts.css','/public/css/buildino-management.css','/public/css/buildino-crud.css','/public/css/buildino-design-system.css','/public/css/buildino-unit-ownerships.css','/resources/css/management-inertia.css','/resources/css/finance-workspace.css','/resources/css/operation-records.css','/node_modules/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css'].map(path=>'<link rel="stylesheet" href="'+path+'">').join('')}
     <div id="app" style="padding:16px;max-width:1200px;margin:auto"></div><pre id="result" hidden></pre>
     <script>window.requestAnimationFrame=callback=>setTimeout(()=>callback(performance.now()),16); window.cancelAnimationFrame=clearTimeout; window.addEventListener('error',event=>document.querySelector('#result').textContent=event.message+' '+event.lineno);</script>
     <script src="/test.js"></script><script>

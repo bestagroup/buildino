@@ -25,9 +25,10 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
         assert.doesNotMatch(markup + editor, /@foreach|@if|@else|\{\{/);
         const source = path => read(path).replaceAll('window.location.origin', "'http://localhost'").replaceAll('location.origin', "'http://localhost'");
         const asset = path => pathToFileURL(join(project, 'public', path)).href;
-        const fixture = join(directory, 'fixture.html'), screenshot = process.env.FORMULA_PAGE_SCREENSHOT;
+        const fixture = join(directory, 'fixture.html'), screenshot = process.env.FORMULA_PAGE_SCREENSHOT || process.env.FORMULA_LIST_SCREENSHOT;
         writeFileSync(fixture, `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
         ${['css/buildino-fonts.css', 'css/buildino-management.css', 'css/buildino-crud.css', 'css/buildino-unit-ownerships.css', 'css/buildino-charge-formulas.css'].map(path => '<link rel="stylesheet" href="' + asset(path) + '">').join('')}
+        <link rel="stylesheet" href="${pathToFileURL(join(project, 'resources/css/operation-records.css')).href}">
         <style>body{margin:16px}*{box-sizing:border-box}</style>
         <div class="crud-page ownership-page charge-formula-page" id="buildinoCrudApp">${markup}<div id="crudDrawerBackdrop" class="crud-drawer-backdrop"></div>${editor}</div>
         <button id="after-page">خارج از فرم</button><pre id="result" hidden></pre><script>
@@ -36,7 +37,7 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
         const $ = selector => document.querySelector(selector);
         let failSave = true, writes = 0, failList = false, releaseList, holdList = false;
         const errors = []; window.addEventListener('error', event => errors.push(event.error?.stack || event.message));
-        const row = { id: 31, title: 'شارژ نظافت', calculation_type: 'fixed', configuration: {}, is_active: true, items: [{ financial_category_id: 7, title: 'نظافت', base_amount: 5000 }] };
+        const row = { id: 31, title: 'شارژ نظافت و نگهداری تأسیسات و تجهیزات مشترک ساختمان با عنوان طولانی', calculation_type: 'fixed', configuration: {}, is_active: true, items: [{ financial_category_id: 7, title: 'نظافت', base_amount: 5000 }] };
         window.BuildinoCrud = { resourceKey: 'charge-formulas', lookupBase: 'http://localhost/management/lookups',
             formulaBuildings: [{ id: 4, canCreate: true, canUpdate: true, canViewPeriods: true }, { id: 5 }],
             resource: { title: 'فرمول شارژ', context: [{name:'building_id',label:'ساختمان',required:true}],
@@ -67,6 +68,8 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
             await until(()=>$('#buildinoCrudApp').dataset.coreReady==='1');
             expect(!$('[data-charge-location]').hidden && $('[data-charge-directory]').hidden, 'Building selection must be separate');
             chooseBuilding('4'); await until(()=>$('[data-row-action="edit"]'));
+            expect($('#crudTableBody > li .operation-record'),'Formula list did not use record layout');
+            for(const part of $('#crudTableBody').querySelectorAll('h4,dd,.operation-record__actions')) expect(part.scrollWidth<=part.clientWidth+1,'Formula content overflows its column');
             expect($('[data-charge-location]').hidden && !$('[data-charge-directory]').hidden, 'List must replace selection');
             expect($('[data-row-action="edit"]').getAttribute('aria-label').includes(row.title), 'Edit buttons need unique accessible names');
             expect($('#coreRemotePagination').querySelectorAll('button').length===2, 'All server pages must be reachable');
@@ -100,7 +103,8 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
             holdList=true; $('#crudRefreshButton').click(); await until(()=>releaseList); chooseBuilding('5'); holdList=false; releaseList();
             await new Promise(resolve=>setTimeout(resolve,30)); expect(!$('[data-row-action="edit"]'),'Stale list must not restore foreign-context actions');
             expect(document.documentElement.scrollWidth<=innerWidth,'Page must fit viewport'); expect(!errors.length,'No browser runtime errors');
-            if (${Boolean(screenshot)}) { chooseBuilding('4'); await until(()=>$('[data-row-action="edit"]')); $('#crudCreateButton').click(); await until(()=>component() && !save.disabled && !drawer.hidden); const activeCategory=component().querySelector('[data-formula-category]'); activeCategory.value='7'; activeCategory.dispatchEvent(new Event('change',{bubbles:true})); save.click(); await document.fonts.ready; window.scrollTo(0,0); }
+            if (${Boolean(process.env.FORMULA_LIST_SCREENSHOT)}) { chooseBuilding('4'); await until(()=>$('[data-row-action="edit"]')); await document.fonts.ready; }
+            if (${Boolean(screenshot) && !process.env.FORMULA_LIST_SCREENSHOT}) { chooseBuilding('4'); await until(()=>$('[data-row-action="edit"]')); $('#crudCreateButton').click(); await until(()=>component() && !save.disabled && !drawer.hidden); const activeCategory=component().querySelector('[data-formula-category]'); activeCategory.value='7'; activeCategory.dispatchEvent(new Event('change',{bubbles:true})); save.click(); await document.fonts.ready; window.scrollTo(0,0); }
             if (${Boolean(screenshot)}) { window.scrollTo({top:0,left:0,behavior:'instant'}); await new Promise(resolve=>setTimeout(resolve,450)); }
             const bounds=$('#buildinoCrudApp').getBoundingClientRect(); expect(bounds.left>=0 && bounds.right<=innerWidth,'Page bounds: '+JSON.stringify({left:bounds.left,right:bounds.right,width:innerWidth,scrollX}));
             $('#result').dataset.ok='true';

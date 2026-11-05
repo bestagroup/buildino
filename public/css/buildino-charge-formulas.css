@@ -8,12 +8,7 @@
 .charge-page-toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
 .charge-formula-page .ownership-card__heading > .charge-page-toolbar { flex: 0 1 auto; }
 .charge-page-search { margin-block: 22px 16px; }
-.charge-page-table .crud-table { min-width: 560px; }
-.charge-page-table .crud-table td { padding: 16px 12px; white-space: normal; overflow-wrap: anywhere; }
-.charge-page-table .crud-table th { padding: 13px 12px; }
-.charge-page-table .crud-actions-column { min-width: 90px; }
-.charge-page-table .crud-row-action { min-height: 40px; padding: 8px 12px; }
-.charge-page-table:focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
+.charge-page-records { margin-block-start: 16px; }
 .charge-formula-page :is(h3, h4)[tabindex="-1"] { scroll-margin-block-start: 100px; outline: none; }
 .charge-formula-page #coreRemotePagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-block-start: 18px; }
 .charge-formula-page #coreRemotePagination button { min-height: 40px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: var(--text-soft); font: inherit; font-size: 12px; cursor: pointer; }

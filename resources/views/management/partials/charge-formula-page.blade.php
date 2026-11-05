@@ -13,7 +13,8 @@
     @include('management.partials.charge-formula-guide')
     <label class="ownership-field charge-page-search"><span>جست‌وجو در فرمول‌های همین صفحه</span><input type="search" id="crudSearch" placeholder="عنوان فرمول"></label>
     <div class="crud-state" id="crudState" role="status" aria-live="polite"><span>در حال دریافت فرمول‌ها…</span></div>
-    <div class="crud-table-wrap charge-page-table" id="crudTableWrap" hidden role="region" aria-label="فهرست فرمول‌های شارژ" tabindex="0">
-        <table class="crud-table"><caption class="charge-sr-only">عنوان، روش تقسیم، وضعیت و عملیات فرمول‌های شارژ ساختمان انتخاب‌شده</caption><thead><tr id="crudTableHead"></tr></thead><tbody id="crudTableBody"></tbody></table>
+    <div class="charge-page-records" id="crudTableWrap" hidden>
+        <div id="crudTableHead" hidden></div>
+        <ul class="operation-record-list" id="crudTableBody" aria-label="فهرست فرمول‌های شارژ"></ul>
     </div>
 </section>

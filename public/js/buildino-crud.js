@@ -1264,7 +1264,7 @@
             resource.columns || [];
 
         elements.tableHead.innerHTML =
-            columns
+            scopedFormula ? '' : columns
                 .map(
                     (column) =>
                         `<th scope="col">${escapeHtml(column.label)}</th>`
@@ -1288,11 +1288,11 @@
         rows.forEach((row) => {
             const tr =
                 document.createElement(
-                    "tr"
+                    scopedFormula ? "li" : "tr"
                 );
 
             const cells =
-                columns.map(
+                scopedFormula ? [] : columns.map(
                     (column) =>
                         `<td>${formatCell(column, row)}</td>`
                 );
@@ -1344,7 +1344,13 @@
                 `);
             }
 
-            tr.innerHTML =
+            if (scopedFormula) {
+                tr.innerHTML = `<article class="operation-record">
+                    <header class="operation-record__heading"><div class="operation-record__identity"><h4>${escapeHtml(row.title || 'فرمول بدون عنوان')}</h4></div>${formatCell({ key: 'is_active' }, row)}</header>
+                    <dl class="operation-record__fields"><div><dt>روش تقسیم هزینه</dt><dd>${formatCell({ key: 'calculation_type' }, row)}</dd></div></dl>
+                    <div class="operation-record__actions">${actions.join('') || '—'}</div>
+                </article>`;
+            } else tr.innerHTML =
                 cells.join("")
                 + `
                     <td class="crud-actions-column">

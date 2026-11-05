@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import FinanceFrame from '../../../components/management/FinanceFrame.vue';
+import UiRecordCard from '../../../components/management/UiRecordCard.vue';
 import DynamicForm from '../../../components/management/DynamicForm.vue';
 import UiDateInput from '../../../components/management/UiDateInput.vue';
 import UiConfirmDialog from '../../../components/management/UiConfirmDialog.vue';
@@ -269,9 +270,22 @@ onBeforeUnmount(() => { closed = true; listTicket++; detailTicket++; choiceTicke
                 <template v-else>
                     <p class="finance-hint">{{ isPayments ? 'جمع مبالغ' : 'خالص مانده صادرشده' }} {{ isPayments ? shownPayments.length : shownInvoices.length }} سند نمایش‌داده‌شده: {{ money(currentAmount) }} {{ currency }}</p>
                     <div v-if="!(isPayments ? shownPayments.length : shownInvoices.length)" class="finance-empty">{{ search || status ? 'موردی با این جست‌وجو یا وضعیت در این صفحه پیدا نشد.' : 'هنوز سندی برای این محدوده ثبت نشده است.' }}</div>
-                    <div v-else class="finance-table-region" role="region" :aria-label="title" tabindex="0"><table class="finance-table"><caption class="finance-sr-only">{{ title }} در محدوده انتخاب‌شده</caption><thead><tr><th scope="col">شماره سند</th><th scope="col">{{ isPayments ? 'روش پرداخت' : 'واحد / پرداخت‌کننده' }}</th><th scope="col">مبلغ ({{ currency }})</th><th scope="col">{{ isPayments ? 'تاریخ پرداخت' : 'مانده / سررسید' }}</th><th scope="col">وضعیت</th><th scope="col">عملیات</th></tr></thead><tbody>
+                    <ul v-else-if="!isPayments" class="operation-record-list" :aria-label="title">
+                        <li v-for="row in shownInvoices" :key="row.id">
+                            <UiRecordCard :title="row.invoice_number">
+                                <template #status><span class="finance-status" :data-status="row.status">{{ invoiceLabels[row.status] || row.status }}</span></template>
+                                <template #fields>
+                                    <div><dt>واحد / پرداخت‌کننده</dt><dd>{{ workspace.units.find(unit => unit.id === row.unit_id)?.label || (row.unit?.unit_number ? 'واحد ' + row.unit.unit_number : 'واحد ' + row.unit_id) }}<small>{{ row.payer?.name || 'پرداخت‌کننده مشخص نشده' }}</small></dd></div>
+                                    <div><dt>مبلغ کل ({{ currency }})</dt><dd class="operation-record__amount"><bdi>{{ money(row.total_amount) }}</bdi></dd></div>
+                                    <div><dt>مانده ({{ currency }})</dt><dd class="operation-record__amount"><bdi>{{ money(row.outstanding_amount) }}</bdi></dd></div>
+                                    <div><dt>سررسید پرداخت</dt><dd><bdi>{{ day(row.due_date) }}</bdi></dd></div>
+                                </template>
+                                <template #actions><button type="button" class="ownership-button" data-finance-open :aria-label="(isPlans ? 'مشاهده اقساط ' : 'مشاهده صورتحساب ') + row.invoice_number" @click="openInvoice(row.id)">{{ isPlans ? 'مشاهده اقساط' : 'مشاهده صورتحساب' }}</button></template>
+                            </UiRecordCard>
+                        </li>
+                    </ul>
+                    <div v-else class="finance-table-region" role="region" :aria-label="title" tabindex="0"><table class="finance-table"><caption class="finance-sr-only">{{ title }} در محدوده انتخاب‌شده</caption><thead><tr><th scope="col">شماره سند</th><th scope="col">روش پرداخت</th><th scope="col">مبلغ ({{ currency }})</th><th scope="col">تاریخ پرداخت</th><th scope="col">وضعیت</th><th scope="col">عملیات</th></tr></thead><tbody>
                         <template v-if="isPayments"><tr v-for="row in shownPayments" :key="row.id"><td><bdi>{{ row.payment_number }}</bdi></td><td>{{ paymentMethods[row.method] || row.method }}</td><td>{{ money(row.amount) }}</td><td>{{ day(row.paid_at) }}</td><td><span class="finance-status" :data-status="row.status">{{ invoiceLabels[row.status] || row.status }}</span></td><td><button type="button" class="ownership-button" data-finance-open @click="selectedPayment = row; selected = null; view = 'detail'">جزئیات پرداخت</button></td></tr></template>
-                        <template v-else><tr v-for="row in shownInvoices" :key="row.id"><td><bdi>{{ row.invoice_number }}</bdi></td><td>{{ row.unit?.unit_number ? 'واحد ' + row.unit.unit_number : workspace.units.find(unit => unit.id === row.unit_id)?.label || 'واحد ' + row.unit_id }}<small>{{ row.payer?.name || 'پرداخت‌کننده مشخص نشده' }}</small></td><td>{{ money(row.total_amount) }}</td><td>{{ money(row.outstanding_amount) }}<small>{{ day(row.due_date) }}</small></td><td><span class="finance-status" :data-status="row.status">{{ invoiceLabels[row.status] || row.status }}</span></td><td><button type="button" class="ownership-button" data-finance-open @click="openInvoice(row.id)">{{ isPlans ? 'مشاهده اقساط' : 'مشاهده صورتحساب' }}</button></td></tr></template>
                     </tbody></table></div>
                 </template>
                 <nav v-if="lastPage > 1" class="ownership-actions finance-pagination" aria-label="صفحه‌بندی اسناد"><button type="button" class="ownership-button" :disabled="loading || page <= 1" @click="load(page - 1)">صفحه قبل</button><span>صفحه {{ money(page) }} از {{ money(lastPage) }}</span><button type="button" class="ownership-button" :disabled="loading || page >= lastPage" @click="load(page + 1)">صفحه بعد</button></nav>
