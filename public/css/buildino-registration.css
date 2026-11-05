@@ -42,6 +42,23 @@
 .registration-page .core-auth-password > input {
     transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
+.registration-page [data-registration-section="management"] .registration-context__grid {
+    min-width: 0;
+    align-items: start;
+    gap: 16px;
+}
+.registration-page [data-registration-section="management"] .registration-field > span {
+    min-height: 24px;
+    line-height: 1.8;
+}
+.registration-page .registration-context__grid .select2-container { min-width: 0; max-width: 100%; }
+.registration-page [data-registration-section="management"] textarea[name="address"] { min-height: 88px; }
+.registration-page .registration-location-hint {
+    margin: -6px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.8;
+}
 .registration-page .registration-field > input:focus,
 .registration-page .registration-field > textarea:focus,
 .registration-page .core-auth-password > input:focus {

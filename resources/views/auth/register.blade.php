@@ -234,7 +234,7 @@
                         </div>
 
                         <div class="registration-context__grid">
-                            <label class="registration-field">
+                            <label class="registration-field registration-field--wide">
                                 <span>نام مجتمع</span>
                                 <input
                                     type="text"
@@ -245,7 +245,7 @@
                                 >
                             </label>
 
-                            <label class="registration-field">
+                            <label class="registration-field registration-field--wide">
                                 <span data-registration-building-label>نام ساختمان</span>
                                 <input
                                     type="text"
@@ -264,6 +264,7 @@
                                     data-required="1"
                                     data-registration-error-name="province"
                                     data-placeholder="استان را انتخاب کنید"
+                                    autocomplete="address-level1"
                                 >
                                     <option value="">استان را انتخاب کنید</option>
                                     @foreach ($locationProvinces as $province)
@@ -281,6 +282,7 @@
                                     data-registration-error-name="city"
                                     data-placeholder="شهر را انتخاب کنید"
                                     aria-describedby="registration-city-hint"
+                                    autocomplete="address-level2"
                                 >
                                     <option value="">ابتدا استان را انتخاب کنید</option>
                                     @foreach ($locationProvinces as $province)
@@ -291,8 +293,8 @@
                                         </optgroup>
                                     @endforeach
                                 </select>
-                                <small id="registration-city-hint" data-registration-city-hint aria-live="polite">ابتدا استان را انتخاب کنید؛ سپس شهر را جست‌وجو کنید.</small>
                             </label>
+                            <p class="registration-location-hint registration-field--wide" id="registration-city-hint" data-registration-city-hint aria-live="polite">ابتدا استان را انتخاب کنید؛ سپس شهر را جست‌وجو کنید.</p>
 
                             <label class="registration-field registration-field--wide">
                                 <span>نشانی <small>(اختیاری)</small></span>
@@ -301,10 +303,11 @@
                                     rows="2"
                                     placeholder="نشانی مجتمع یا ساختمان"
                                     maxlength="2000"
+                                    autocomplete="street-address"
                                 >{{ old('address') }}</textarea>
                             </label>
 
-                            <label class="registration-field">
+                            <label class="registration-field registration-field--wide">
                                 <span>کد پستی <small>(اختیاری)</small></span>
                                 <input
                                     type="text"
@@ -313,6 +316,8 @@
                                     placeholder="کد پستی"
                                     inputmode="numeric"
                                     maxlength="20"
+                                    autocomplete="postal-code"
+                                    dir="ltr"
                                 >
                             </label>
                         </div>
