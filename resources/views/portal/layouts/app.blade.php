@@ -229,6 +229,17 @@
                 </span>
             </div>
 
+            @if ($portalUser && app(\App\Services\Web\ManagementDashboardAccessService::class)->hasAnyAccess($portalUser))
+                <a
+                    href="{{ route('management.dashboard') }}"
+                    class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2"
+                    data-management-dashboard-link
+                >
+                    @include('management.partials.icon', ['name' => 'building', 'size' => 17])
+                    <span>داشبورد مدیریت</span>
+                </a>
+            @endif
+
             <form
                 method="POST"
                 action="{{ route('portal.logout') }}"
