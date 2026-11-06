@@ -828,7 +828,7 @@ class UnitInvitationFlowTest extends TestCase
     {
         config(['notifications.sms_provider' => 'ghasedak', 'notifications.ghasedak.api_key' => 'test-key']);
         $this->app->instance(SmsSender::class, new \App\Services\Notifications\GhasedakSmsSender());
-        \Illuminate\Support\Facades\Http::fake(['*' => \Illuminate\Support\Facades\Http::response(['result' => ['code' => 200], 'items' => [123]], 200)]);
+        \Illuminate\Support\Facades\Http::fake(['*' => \Illuminate\Support\Facades\Http::response(['result' => 'success', 'status' => 200, 'messageids' => [123]], 200)]);
         $manager = $this->createUser('09121162221', 'sms-manager@example.test');
         $resident = $this->createUser('09121162222', 'sms-resident@example.test');
         $resident->update(['first_name' => 'محمد', 'last_name' => 'رضایی']);

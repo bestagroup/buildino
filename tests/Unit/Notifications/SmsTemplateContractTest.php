@@ -30,7 +30,7 @@ class SmsTemplateContractTest extends TestCase
 
     public function test_login_sends_only_the_explicit_otp_and_preserves_leading_zeroes(): void
     {
-        Http::fake(['*' => Http::response(['result' => ['code' => 200], 'items' => [123]], 200)]);
+        Http::fake(['*' => Http::response(['result' => 'success', 'messageids' => [123]], 200)]);
         app(NotificationOtpSender::class)->send('09121111111', 'sms', '001234');
         Http::assertSent(fn ($request) => $request->data() === [
             'type' => 1, 'receptor' => '09121111111', 'template' => 'buildinoverify', 'param1' => '001234',
@@ -83,9 +83,37 @@ class SmsTemplateContractTest extends TestCase
         app(SmsSender::class)->send('09121111111', new SmsTemplateMessage('auth.otp', ['param1' => '123456']));
     }
 
+    public static function flatResponses(): array
+    {
+        return [
+            'success without numeric status' => [['result' => 'success', 'messageids' => ['12345']], true],
+            'success with status' => [['result' => 'success', 'status' => 200, 'messageids' => ['12345']], true],
+            'live unauthenticated response' => [['result' => 'error', 'message' => 'invalid parameter'], false],
+            'error with HTTP-like success status' => [['result' => 'error', 'status' => 200, 'message' => 'invalid template'], false],
+            'conflicting status' => [['result' => 'success', 'status' => 9], false],
+            'malformed status' => [['result' => 'success', 'status' => '200invalid'], false],
+            'unknown result' => [['result' => 'unknown'], false],
+        ];
+    }
+
+    #[DataProvider('flatResponses')]
+    public function test_flat_gateway_contract(array $body, bool $accepted): void
+    {
+        Http::fake(['*' => Http::response($body, 200)]);
+        if (! $accepted) {
+            $this->expectException(\RuntimeException::class);
+            $this->expectExceptionMessage('Ghasedak SMS failed');
+        }
+        $response = app(SmsSender::class)->send('09121111111', new SmsTemplateMessage('auth.otp', ['param1' => '001234']));
+        $this->assertTrue($response['accepted']);
+        $this->assertSame('12345', $response['provider_message_id']);
+        Http::assertSentCount(1);
+    }
+
     public static function diagnosticResponses(): array
     {
         return [
+            'flat template error' => [['result' => 'error', 'status' => 400, 'message' => 'template invalid; receptor 09121111111; param1 123456; apikey test-key'], 200, 'code=400; reason=provider_rejection; fields=template,apikey,receptor,param1'],
             'template error' => [['result' => ['code' => 400, 'message' => 'template invalid; receptor 09121111111; param1 123456; apikey test-key']], 200, 'code=400; reason=provider_rejection; fields=template,apikey,receptor,param1'],
             'HTTP rejection' => [['result' => ['code' => 401, 'message' => 'apikey test-key invalid']], 401, 'HTTP=401; code=401'],
             'HTML response' => ['<html>test-key 09121111111 123456</html>', 200, 'reason=non_json_response'],
