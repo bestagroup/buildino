@@ -44,7 +44,7 @@ class HttpNotificationSenderTest extends TestCase
             'notifications.ghasedak.endpoint' =>
                 'https://api.ghasedaksms.com/v2/send/verify',
             'notifications.ghasedak.api_key' => 'ghasedak-secret',
-            'notifications.ghasedak.template' => 'buildino-otp',
+            'notifications.sms_templates.auth.otp.template' => 'buildinoverify',
             'notifications.ghasedak.type' => 1,
         ]);
 
@@ -52,6 +52,7 @@ class HttpNotificationSenderTest extends TestCase
             'https://api.ghasedaksms.com/v2/send/verify' =>
                 Http::response([
                     'result' => [
+                        'code' => 200,
                         'items' => [
                             ['messageid' => '123456789'],
                         ],
@@ -61,7 +62,7 @@ class HttpNotificationSenderTest extends TestCase
 
         $response = (new GhasedakSmsSender())->send(
             '09120000000',
-            'کد تأیید Buildino: 482731'
+            new \App\Data\Notifications\SmsTemplateMessage('auth.otp', ['param1' => '482731'])
         );
 
         $this->assertTrue($response['accepted']);
@@ -91,7 +92,7 @@ class HttpNotificationSenderTest extends TestCase
                 && (int) $request['type'] === 1
                 && $request['param1'] === '482731'
                 && $request['receptor'] === '09120000000'
-                && $request['template'] === 'buildino-otp';
+                && $request['template'] === 'buildinoverify';
         });
     }
 

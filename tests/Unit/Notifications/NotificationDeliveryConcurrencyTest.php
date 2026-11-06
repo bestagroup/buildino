@@ -176,7 +176,7 @@ class NotificationDeliveryConcurrencyTest extends TestCase
 
             public function send(
                 string $mobile,
-                string $message
+                string|\App\Data\Notifications\SmsTemplateMessage $message
             ): array {
                 $this->calls++;
 

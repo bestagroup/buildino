@@ -45,13 +45,24 @@ return [
             'https://api.ghasedaksms.com/v2/send/verify'
         ),
         'api_key' => env('GHASEDAK_API_KEY'),
-        'template' => env('GHASEDAK_TEMPLATE'),
         'type' => (int) env('GHASEDAK_TYPE', 1),
         'timeout' => (int) env('GHASEDAK_TIMEOUT', 30),
         'message_id_path' => env(
             'GHASEDAK_MESSAGE_ID_PATH',
-            'result.items.0.messageid'
+            'items.0'
         ),
+    ],
+
+    // Add new purposes only with an approved template and an explicit parameter mapping.
+    'sms_templates' => [
+        'auth' => ['otp' => [
+            'template' => env('SMS_TEMPLATE_AUTH_OTP', 'buildinoverify'),
+            'parameters' => ['param1'],
+        ]],
+        'unit' => ['invitation' => [
+            'template' => env('SMS_TEMPLATE_UNIT_INVITATION', 'BuildinoInvitation'),
+            'parameters' => ['param1', 'param2', 'param3'],
+        ]],
     ],
 
     'http_push' => [

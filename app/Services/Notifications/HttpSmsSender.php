@@ -3,12 +3,13 @@
 namespace App\Services\Notifications;
 
 use App\Contracts\Notifications\SmsSender;
+use App\Data\Notifications\SmsTemplateMessage;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 final class HttpSmsSender implements SmsSender
 {
-    public function send(string $mobile, string $message): array
+    public function send(string $mobile, string|SmsTemplateMessage $message): array
     {
         $endpoint = (string) config('notifications.http_sms.endpoint');
 
@@ -37,11 +38,14 @@ final class HttpSmsSender implements SmsSender
             ]);
         }
 
+        $payload = $message instanceof SmsTemplateMessage
+            ? app(SmsTemplateRegistry::class)->payload($message)
+            : ['message' => $message];
+
         $response = $request->post($endpoint, [
             'to' => $mobile,
-            'message' => $message,
             'sender' => config('notifications.http_sms.sender'),
-        ]);
+        ] + $payload);
 
         if (! $response->successful()) {
             throw new RuntimeException(
@@ -55,26 +59,24 @@ final class HttpSmsSender implements SmsSender
             )
                 ? $response->json()
                 : [
-                    'body' =>
-                        mb_substr(
-                            $response->body(),
-                            0,
-                            2000
-                        ),
+                    'body' => mb_substr(
+                        $response->body(),
+                        0,
+                        2000
+                    ),
                 ];
 
         return [
             'provider' => 'http',
             'accepted' => true,
             'status' => $response->status(),
-            'provider_message_id' =>
-                data_get(
-                    $body,
-                    config(
-                        'notifications.http_sms.message_id_path',
-                        'id'
-                    )
-                ),
+            'provider_message_id' => data_get(
+                $body,
+                config(
+                    'notifications.http_sms.message_id_path',
+                    'id'
+                )
+            ),
             'response' => $body,
         ];
     }

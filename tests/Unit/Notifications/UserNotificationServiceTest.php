@@ -25,7 +25,7 @@ class UserNotificationServiceTest extends TestCase
 
         $sms = new class implements SmsSender {
             public int $calls = 0;
-            public function send(string $mobile, string $message): array
+            public function send(string $mobile, string|\App\Data\Notifications\SmsTemplateMessage $message): array
             {
                 $this->calls++;
                 return ['accepted' => true];

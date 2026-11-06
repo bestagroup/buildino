@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Data\Notifications\SmsTemplateMessage;
+
 use App\Contracts\Notifications\SmsSender;
 use App\Enums\InvitationChannel;
 use App\Enums\InvitationStatus;
@@ -679,14 +681,18 @@ final class UnitInvitationService
         if (
             $invitation->channel === InvitationChannel::Sms
         ) {
-            /*
-             * Ghasedak verify templates receive this value as param1.
-             * Sending only the short code avoids leaking the long bearer
-             * token and lets residents type the code during registration.
-             */
+            $invitation->load('invitedUser', 'unit.floor.block.building');
+            $recipient = $invitation->invitedUser
+                ?? User::query()->where('mobile', $invitation->mobile)->first();
+            $name = trim(($recipient?->first_name ?? '').' '.($recipient?->last_name ?? ''));
+            $building = $invitation->unit?->floor?->block?->building;
             $this->sms->send(
                 (string) $invitation->mobile,
-                $invitationCode
+                new SmsTemplateMessage('unit.invitation', [
+                    'param1' => $invitationCode,
+                    'param2' => $name !== '' ? $name : 'کاربر گرامی',
+                    'param3' => ($building?->title ?? '').'، واحد '.($invitation->unit?->unit_number ?? ''),
+                ])
             );
         } else {
             $message = $invitationText

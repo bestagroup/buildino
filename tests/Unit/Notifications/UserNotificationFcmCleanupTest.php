@@ -100,7 +100,7 @@ class UserNotificationFcmCleanupTest extends TestCase
             new class implements SmsSender {
                 public function send(
                     string $mobile,
-                    string $message
+                    string|\App\Data\Notifications\SmsTemplateMessage $message
                 ): array {
                     return [
                         'accepted' =>

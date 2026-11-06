@@ -7,8 +7,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | The invitation text is server-owned so every invitation uses the same
-    | approved wording. SMS delivery uses the existing Ghasedak verify
-    | template and sends only the short invitation code as param1.
+    | approved wording. SMS delivery uses the unit.invitation template with the short code,
+    | recipient name and building/unit label as param1, param2 and param3.
     |
     */
     'message' => env(

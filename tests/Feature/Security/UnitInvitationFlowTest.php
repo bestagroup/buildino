@@ -44,7 +44,7 @@ class UnitInvitationFlowTest extends TestCase
         ]);
         $this->assignRole($manager, $role, $building['building']);
         $this->app->instance(SmsSender::class, new class implements SmsSender {
-            public function send(string $mobile, string $message): array { return ['accepted' => true]; }
+            public function send(string $mobile, string|\App\Data\Notifications\SmsTemplateMessage $message): array { return ['accepted' => true]; }
         });
 
         Sanctum::actingAs($manager);
@@ -182,7 +182,7 @@ class UnitInvitationFlowTest extends TestCase
 
             public function send(
                 string $mobile,
-                string $message
+                string|\App\Data\Notifications\SmsTemplateMessage $message
             ): array {
                 $this->messages[$mobile] = $message;
 
@@ -247,8 +247,12 @@ class UnitInvitationFlowTest extends TestCase
 
         $this->assertMatchesRegularExpression(
             '/^\\d{8}$/',
-            $sms->messages[$first->mobile]
+            $sms->messages[$first->mobile]->parameters['param1']
         );
+
+        $this->assertSame('unit.invitation', $sms->messages[$first->mobile]->purpose);
+        $this->assertSame(trim($first->first_name.' '.$first->last_name), $sms->messages[$first->mobile]->parameters['param2']);
+        $this->assertSame($inside['building']->title.'، واحد '.$inside['unit']->unit_number, $sms->messages[$first->mobile]->parameters['param3']);
 
         /*
          * Duplicate contact / relationship fields are rejected. The server
@@ -336,7 +340,7 @@ class UnitInvitationFlowTest extends TestCase
 
             public function send(
                 string $mobile,
-                string $message
+                string|\App\Data\Notifications\SmsTemplateMessage $message
             ): array {
                 $this->messages[$mobile] = $message;
 
@@ -818,6 +822,32 @@ class UnitInvitationFlowTest extends TestCase
             'is_active' => true,
             'is_blocked' => false,
         ]);
+    }
+
+    public function test_ghasedak_invitation_and_resend_use_current_recipient_and_unit_data(): void
+    {
+        config(['notifications.sms_provider' => 'ghasedak', 'notifications.ghasedak.api_key' => 'test-key']);
+        $this->app->instance(SmsSender::class, new \App\Services\Notifications\GhasedakSmsSender());
+        \Illuminate\Support\Facades\Http::fake(['*' => \Illuminate\Support\Facades\Http::response(['result' => ['code' => 200], 'items' => [123]], 200)]);
+        $manager = $this->createUser('09121162221', 'sms-manager@example.test');
+        $resident = $this->createUser('09121162222', 'sms-resident@example.test');
+        $resident->update(['first_name' => 'محمد', 'last_name' => 'رضایی']);
+        $structure = $this->createStructure('SMS');
+        $service = app(\App\Services\UnitInvitationService::class);
+        $first = $service->createForUsers($structure['unit'], $manager, collect([$resident]), [
+            'channel' => 'sms', 'relation_type' => OccupancyType::Tenant->value,
+        ])[0];
+        $this->assertSame(InvitationStatus::Sent, $first['invitation']->status);
+        \Illuminate\Support\Facades\Http::assertSent(fn ($request) => $request['template'] === 'BuildinoInvitation'
+            && $request['receptor'] === $resident->mobile && $request['param1'] === $first['invitation_code']
+            && $request['param2'] === 'محمد رضایی'
+            && $request['param3'] === $structure['building']->title.'، واحد '.$structure['unit']->unit_number);
+        $resident->update(['first_name' => 'علی']);
+        $second = $service->resend($first['invitation']);
+        \Illuminate\Support\Facades\Http::assertSent(fn ($request) => $request['param1'] === $second['invitation_code']
+            && $request['param2'] === 'علی رضایی' && $request['template'] === 'BuildinoInvitation');
+        \Illuminate\Support\Facades\Http::assertSentCount(2);
+        $this->assertSame(InvitationStatus::Sent, $second['invitation']->status);
     }
 
     private function createStructure(

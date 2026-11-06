@@ -4,6 +4,7 @@ namespace App\Services\Auth;
 
 use App\Contracts\Auth\OtpSender;
 use App\Contracts\Notifications\SmsSender;
+use App\Data\Notifications\SmsTemplateMessage;
 use Illuminate\Support\Facades\Mail;
 
 final class NotificationOtpSender implements OtpSender
@@ -25,7 +26,7 @@ final class NotificationOtpSender implements OtpSender
         if ($channel === 'sms') {
             $this->sms->send(
                 $identifier,
-                $message
+                new SmsTemplateMessage('auth.otp', ['param1' => $code])
             );
 
             return;

@@ -2,6 +2,8 @@
 
 namespace App\Services\Notifications;
 
+use App\Data\Notifications\SmsTemplateMessage;
+
 use App\Contracts\Notifications\PushSender;
 use App\Contracts\Notifications\SmsSender;
 use App\Data\Notifications\NotificationMessage;
@@ -56,6 +58,12 @@ class UserNotificationService
             return null;
         }
         if (! $this->canSend($user, $channel)) {
+            return null;
+        }
+
+        // Unconfigured Ghasedak purposes are not sent and must not be marked sent.
+        if ($channel === 'sms' && config('notifications.sms_provider') === 'ghasedak'
+            && ! app(SmsTemplateRegistry::class)->configured($notification->type)) {
             return null;
         }
 
@@ -206,7 +214,13 @@ class UserNotificationService
             throw new \RuntimeException('User has no mobile number.');
         }
 
-        return $this->sms->send($user->mobile, $notification->message);
+        $message = app(SmsTemplateRegistry::class)->configured($notification->type)
+            ? new SmsTemplateMessage(
+                $notification->type, $notification->data['sms_parameters'] ?? []
+            )
+            : $notification->message;
+
+        return $this->sms->send($user->mobile, $message);
     }
 
     private function sendEmail(User $user, NotificationMessage $notification): array
