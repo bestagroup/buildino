@@ -198,6 +198,9 @@ Route::middleware([
             ]
         )->name('dashboard');
 
+        Route::post('/buildings/{building}/invitations/send', [\App\Http\Controllers\Web\BuildingInvitationPageController::class, 'send'])
+            ->middleware('throttle:api-v1')->name('building-invitations.send');
+
         Route::get('/at-a-glance', \App\Http\Controllers\Web\BuildingAtGlanceController::class)
             ->name('at-a-glance');
 

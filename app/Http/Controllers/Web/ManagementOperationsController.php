@@ -103,6 +103,10 @@ class ManagementOperationsController extends Controller
             $configuration
         );
 
+        if ($resource === 'invitations') {
+            return app(BuildingInvitationPageController::class)->index(request(), $permissions);
+        }
+
         if ($resource === 'users') {
             $actor = request()->user();
             $canAssign = $permissions->allows($actor, 'users.update') && $ui->canSeeResource($actor, config('management_crud.resources.role-assignments', []));
