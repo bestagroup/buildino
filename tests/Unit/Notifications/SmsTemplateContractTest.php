@@ -79,8 +79,41 @@ class SmsTemplateContractTest extends TestCase
     {
         Http::fake(['*' => Http::response(['result' => ['code' => 400, 'message' => 'private provider detail']], 200)]);
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Ghasedak rejected');
+        $this->expectExceptionMessage('HTTP=200; code=400; reason=provider_rejection');
         app(SmsSender::class)->send('09121111111', new SmsTemplateMessage('auth.otp', ['param1' => '123456']));
+    }
+
+    public static function diagnosticResponses(): array
+    {
+        return [
+            'template error' => [['result' => ['code' => 400, 'message' => 'template invalid; receptor 09121111111; param1 123456; apikey test-key']], 200, 'code=400; reason=provider_rejection; fields=template,apikey,receptor,param1'],
+            'HTTP rejection' => [['result' => ['code' => 401, 'message' => 'apikey test-key invalid']], 401, 'HTTP=401; code=401'],
+            'HTML response' => ['<html>test-key 09121111111 123456</html>', 200, 'reason=non_json_response'],
+            'unknown schema' => [['status' => 200, 'message' => '123456'], 200, 'code=missing; reason=unexpected_response_schema'],
+            'malformed success code' => [['result' => ['code' => '200invalid']], 200, 'code=invalid; reason=unexpected_response_schema'],
+        ];
+    }
+
+    #[DataProvider('diagnosticResponses')]
+    public function test_diagnostics_are_actionable_without_exposing_secrets(array|string $body, int $httpStatus, string $expected): void
+    {
+        Log::spy();
+        Http::fake(['*' => Http::response($body, $httpStatus)]);
+        try {
+            app(SmsSender::class)->send('09121111111', new SmsTemplateMessage('auth.otp', ['param1' => '123456']));
+            $this->fail('Rejected response was accepted.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString($expected, $exception->getMessage());
+            foreach (['09121111111', '123456', 'test-key'] as $secret) {
+                $this->assertStringNotContainsString($secret, $exception->getMessage());
+            }
+        }
+        Log::shouldHaveReceived('warning')->once()->with('Ghasedak SMS request failed', \Mockery::on(function (array $context): bool {
+            $encoded = json_encode($context);
+
+            return ! str_contains($encoded, '09121111111') && ! str_contains($encoded, '123456') && ! str_contains($encoded, 'test-key');
+        }));
+        Http::assertSentCount(1);
     }
 
     public function test_unconfigured_notification_is_skipped_without_a_sent_log_and_database_channel_still_works(): void

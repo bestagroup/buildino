@@ -5,6 +5,7 @@ namespace App\Services\Notifications;
 use App\Contracts\Notifications\SmsSender;
 use App\Data\Notifications\SmsTemplateMessage;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 final class GhasedakSmsSender implements SmsSender
@@ -44,16 +45,38 @@ final class GhasedakSmsSender implements SmsSender
                 'receptor' => $mobile,
             ] + $payload);
 
-        if (! $response->successful()) {
-            throw new RuntimeException(
-                'Ghasedak SMS provider HTTP failure: '.$response->status()
-            );
-        }
-
         $body = $response->json();
-        if (! is_array($body) || (int) data_get($body, 'result.code', 0) !== 200) {
-            // Do not leak the provider response (which may contain codes or phone numbers).
-            throw new RuntimeException('Ghasedak rejected the SMS request or returned an invalid response.');
+        $rawCode = is_array($body) ? data_get($body, 'result.code') : null;
+        $code = (is_int($rawCode) || is_string($rawCode))
+            && preg_match('/^\d{1,4}$/D', (string) $rawCode)
+                ? (string) $rawCode : ($rawCode === null ? 'missing' : 'invalid');
+
+        if (! $response->successful() || $code !== '200') {
+            $reason = ! is_array($body) ? 'non_json_response'
+                : (in_array($code, ['missing', 'invalid'], true) ? 'unexpected_response_schema' : 'provider_rejection');
+            $providerText = is_array($body) ? data_get($body, 'result.message') : null;
+            $fields = [];
+            // Report only known field names, never provider prose or request values.
+            // Upstream errors may echo API keys, mobile numbers and OTPs.
+            if (is_string($providerText)) {
+                foreach (['template', 'apikey', 'receptor', 'param1', 'param2', 'param3', 'balance'] as $field) {
+                    if (preg_match('/\b'.preg_quote($field, '/').'\b/i', $providerText)) {
+                        $fields[] = $field;
+                    }
+                }
+            }
+            $diagnostics = [
+                'http_status' => $response->status(),
+                'provider_code' => $code,
+                'reason' => $reason,
+                'mentioned_fields' => $fields,
+                'purpose' => $message->purpose,
+            ];
+            Log::warning('Ghasedak SMS request failed', $diagnostics);
+            throw new RuntimeException(sprintf(
+                'Ghasedak SMS failed [HTTP=%d; code=%s; reason=%s; fields=%s].',
+                $response->status(), $code, $reason, implode(',', $fields) ?: 'none'
+            ));
         }
         $messageId = data_get($body, config('notifications.ghasedak.message_id_path', 'items.0'))
             ?? data_get($body, 'items.0.messageid')
