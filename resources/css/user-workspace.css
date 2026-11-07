@@ -33,10 +33,10 @@
 .users-page #users-form .ui-form-grid { gap: 16px; align-items: start; }
 .users-page #users-form .ui-field__label { min-height: 20px; }
 .users-page [data-users-step="0"] .ui-field:has([name="mobile"]) { grid-column: 1/-1; }
-.users-page [data-users-step="1"] .ui-field--checkbox { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 64px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); }
-.users-page [data-users-step="1"] .ui-field--checkbox:last-child:nth-child(odd) { grid-column: 1/-1; }
-.users-page [data-users-step="1"] .ui-field__label { min-height: 0; margin: 0; }
-.users-page [data-users-step="1"] .buildino-switch { width: auto; flex-shrink: 0; }
+.users-page [data-users-step="0"] .ui-field--checkbox { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 48px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); }
+.users-page [data-users-step="0"] .ui-field--checkbox:last-child:nth-child(odd) { grid-column: 1/-1; }
+.users-page #users-form .ui-field--checkbox .ui-field__label { min-height: 0; margin: 0; }
+.users-page [data-users-step="0"] .buildino-switch { width: auto; flex-shrink: 0; }
 .users-page .users-form-actions { padding-block-start: 18px; border-top: 1px solid var(--border); }
 @media(max-width: 700px) { .users-form-actions .ownership-button { flex: 1; } }
 @media (max-width: 850px) { .users-list { grid-template-columns: minmax(0, 1fr); } }

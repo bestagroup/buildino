@@ -32,10 +32,10 @@ const canSeeInternal = computed(() => Boolean(selected.value && ticketAbilities(
 const canWriteInternal = computed(() => canSeeInternal.value && selected.value?.user_id !== props.workspace.userId);
 const currentMessages = computed(() => messages.value.filter(item => !item.is_internal || canSeeInternal.value));
 const labels: Record<string, string> = { create: 'تیکت جدید', edit: 'ویرایش تیکت', assign: 'تخصیص کارشناس', start: 'شروع رسیدگی', 'wait-user': 'در انتظار پاسخ کاربر', resolve: 'ثبت راه‌حل', close: 'بستن تیکت', reopen: 'بازگشایی تیکت', delete: 'حذف تیکت' };
-const stages = computed(() => ['create', 'edit'].includes(kind.value) ? ['محدوده و دسته‌بندی', 'موضوع و شرح', 'بررسی نهایی'] : [labels[kind.value], 'بررسی و ثبت']);
+const stages = computed(() => ['create', 'edit'].includes(kind.value) ? ['اطلاعات و محدوده تیکت', 'بررسی نهایی'] : [labels[kind.value], 'بررسی و ثبت']);
 const buildingName = (id: number | null) => id ? props.workspace.buildings.find(item => item.id === id)?.title || 'ساختمان ' + money(id) : 'پشتیبانی عمومی';
 const unitName = (id: number | null) => id ? props.workspace.units.find(item => item.id === id)?.label || 'واحد ' + money(id) : 'بدون واحد مشخص';
-const fields = computed<CrudField[]>(() => kind.value === 'assign' ? [{ name: 'assigned_to', label: 'کارشناس', type: 'select', required: true, options: assignees.value }] : kind.value === 'resolve' ? [{ name: 'resolution', label: 'شرح راه‌حل', type: 'textarea', required: true, maxlength: 20000, help: 'اقدام انجام‌شده و نتیجه را برای کاربر توضیح دهید.' }] : step.value === 0 ? [{ name: 'support_category_id', label: 'دسته‌بندی', type: 'select', options: categories.value.map(item => ({ value: item.id, label: item.title + (item.is_active ? '' : ' (غیرفعال)') })) }] : [
+const fields = computed<CrudField[]>(() => kind.value === 'assign' ? [{ name: 'assigned_to', label: 'کارشناس', type: 'select', required: true, options: assignees.value }] : kind.value === 'resolve' ? [{ name: 'resolution', label: 'شرح راه‌حل', type: 'textarea', required: true, maxlength: 20000, help: 'اقدام انجام‌شده و نتیجه را برای کاربر توضیح دهید.' }] : [{ name: 'support_category_id', label: 'دسته‌بندی', type: 'select', options: categories.value.map(item => ({ value: item.id, label: item.title + (item.is_active ? '' : ' (غیرفعال)') })) },
     { name: 'subject', label: 'موضوع تیکت', required: true, maxlength: 255, placeholder: 'موضوع را کوتاه و مشخص بنویسید' },
     { name: 'priority', label: 'اولویت', type: 'select', required: true, options: Object.entries(ticketPriorities).map(([value, label]) => ({ value, label })) },
     { name: 'description', label: 'شرح درخواست', type: 'textarea', required: true, maxlength: 20000, help: 'مشکل، محل وقوع و جزئیات لازم برای بررسی را بنویسید.' },
@@ -119,13 +119,11 @@ const validate = () => {
         if (kind.value === 'create' && form.value.building_id && !building.value?.canCreate) next.building_id = ['ساختمان مجاز را انتخاب کنید.'];
         if (kind.value === 'create' && form.value.unit_id && !units.value.some(item => item.id === Number(form.value.unit_id))) next.unit_id = ['واحدی از همین ساختمان انتخاب کنید.'];
         if (form.value.support_category_id && !categories.value.some(item => item.id === Number(form.value.support_category_id))) next.support_category_id = ['دسته‌بندی معتبر انتخاب کنید.'];
-        if (step.value > 0) {
-            for (const [key, max] of [['subject', 255], ['description', 20000]] as const) if (!String(form.value[key] || '').trim() || String(form.value[key]).length > max) next[key] = ['این فیلد را با طول مجاز تکمیل کنید.'];
-            if (!ticketPriorities[String(form.value.priority)]) next.priority = ['اولویت را انتخاب کنید.'];
-        }
+        for (const [key, max] of [['subject', 255], ['description', 20000]] as const) if (!String(form.value[key] || '').trim() || String(form.value[key]).length > max) next[key] = ['این فیلد را با طول مجاز تکمیل کنید.'];
+        if (!ticketPriorities[String(form.value.priority)]) next.priority = ['اولویت را انتخاب کنید.'];
     }
     errors.value = next; if (!Object.keys(next).length) return true;
-    step.value = kind.value === 'create' || kind.value === 'edit' ? ['building_id', 'unit_id', 'support_category_id'].some(key => next[key]) ? 0 : 1 : 0;
+    step.value = 0;
     error.value = Object.values(next).flat().join('؛ '); void focus('[data-ticket-error]'); return false;
 };
 const save = async () => {
@@ -140,7 +138,7 @@ const save = async () => {
             const payload = await request<{ data: { id: number } }>('/api/v1/support-tickets' + (id ? '/' + id : ''), id ? 'PATCH' : 'POST', body); id = payload.data.id;
         } else await request('/api/v1/support-tickets/' + id + '/' + (kind.value === 'assign' ? 'assign' : 'resolve'), 'POST', kind.value === 'assign' ? { assigned_to: Number(form.value.assigned_to) } : { resolution: String(form.value.resolution).trim() });
         snapshot = JSON.stringify(form.value); await openDetail(id!); success.value = kind.value === 'resolve' ? 'راه‌حل ثبت شد و تیکت در وضعیت حل‌شده قرار گرفت.' : 'اطلاعات تیکت ثبت شد.';
-    } catch (caught) { report(caught); step.value = ['create', 'edit'].includes(kind.value) && ['subject', 'description', 'priority'].some(key => errors.value[key]) ? 1 : 0; if (unknownOutcome(caught)) { uncertain.value = true; error.value += ' نتیجه ثبت مشخص نیست؛ پیش از تکرار، وضعیت تیکت را بررسی کنید.'; } }
+    } catch (caught) { report(caught); step.value = 0; if (unknownOutcome(caught)) { uncertain.value = true; error.value += ' نتیجه ثبت مشخص نیست؛ پیش از تکرار، وضعیت تیکت را بررسی کنید.'; } }
     finally { busy.value = false; }
 };
 const sendMessage = async () => {

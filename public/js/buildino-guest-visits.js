@@ -109,30 +109,30 @@
             const index = Number(el.dataset.guestStepLabel); el.className = index === step ? 'is-current' : index < step ? 'is-complete' : '';
             if (index === step) el.setAttribute('aria-current', 'step'); else el.removeAttribute('aria-current');
         });
-        $('back').hidden = step === 0; $('continue').textContent = step === 2 ? 'ثبت مراجعه و ایجاد مجوز' : 'ادامه';
+        $('back').hidden = step === 0; $('continue').textContent = step === 1 ? 'ثبت مراجعه و ایجاد مجوز' : 'ادامه';
         $('review').replaceChildren(card(`${value('first_name')} ${value('last_name')}`, [
             $('unit-label').textContent, `موبایل: ${value('mobile') || 'وارد نشده'}`, `کد ملی: ${value('national_code') || 'وارد نشده'}`, `پلاک: ${value('vehicle_plate') || 'وارد نشده'}`,
             `ورود: ${date(value('expected_entry_at'))}`, `خروج: ${date(value('expected_exit_at'))}`, value('description'),
         ]));
     };
     const valid = () => {
-        const panel = root.querySelector(`[data-guest-step="${Math.min(step, 1)}"]`);
+        const panel = root.querySelector('[data-guest-step="0"]');
         for (const input of panel.querySelectorAll('input, textarea')) {
             if (!input.checkValidity()) { message('error', input.validationMessage || 'اطلاعات این مرحله را کامل کنید.'); input.focus(); return false; }
         }
-        const names = step === 0 ? ['first_name', 'last_name'] : ['expected_entry_at'];
+        const names = ['first_name', 'last_name', 'expected_entry_at'];
         for (const key of names) if (!value(key)) {
-            message('error', step === 0 ? 'نام و نام خانوادگی مهمان را وارد کنید.' : 'زمان مراجعه را وارد کنید.');
+            message('error', key === 'expected_entry_at' ? 'زمان مراجعه را وارد کنید.' : 'نام و نام خانوادگی مهمان را وارد کنید.');
             const el = form.elements.namedItem(key); (el.type === 'hidden' ? el.previousElementSibling : el)?.focus(); return false;
         }
-        if (step > 0 && (!Number.isFinite(new Date(value('expected_entry_at')).getTime()) || value('expected_exit_at') && (!Number.isFinite(new Date(value('expected_exit_at')).getTime()) || new Date(value('expected_exit_at')) < new Date(value('expected_entry_at'))))) {
+        if ((!Number.isFinite(new Date(value('expected_entry_at')).getTime()) || value('expected_exit_at') && (!Number.isFinite(new Date(value('expected_exit_at')).getTime()) || new Date(value('expected_exit_at')) < new Date(value('expected_entry_at'))))) {
             message('error', 'زمان‌ها را بررسی کنید؛ خروج نباید قبل از ورود باشد.'); return false;
         }
         message('', ''); return true;
     };
     form.addEventListener('submit', async event => {
         event.preventDefault(); if (busy || !building()?.canCreate || !valid()) return;
-        if (step < 2) { showStep(step + 1); $('editor-title').focus(); return; }
+        if (step < 1) { showStep(step + 1); $('editor-title').focus(); return; }
         const hostUnit = unit();
         lock(true);
         try {

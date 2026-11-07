@@ -32,8 +32,6 @@
             const hours = fields.querySelector('[name="expires_in_hours"]');
             hours.min = '1'; hours.max = '720'; hours.step = '1'; hours.required = true;
             const fieldLabels = [...fields.children];
-            const nav = make('nav', 'ownership-flow invitation-steps', ''); nav.setAttribute('aria-label', 'مراحل ارسال دعوت‌نامه');
-            ['دریافت‌کننده و اعتبار', 'بررسی و ارسال'].forEach((label, index) => { const item = make('span', '', ''); item.append(make('b', '', new Intl.NumberFormat('fa-IR').format(index + 1)), document.createTextNode(label)); nav.append(item); });
             const heading = make('h4', 'invitation-step-title', ''); heading.tabIndex = -1;
             const summary = make('dl', 'invitation-review', ''); summary.hidden = true;
             const empty = make('div', 'invitation-note', ''); empty.style.gridColumn = '1 / -1';
@@ -43,23 +41,21 @@
             empty.append(make('p', '', failed ? 'فهرست دریافت‌کنندگان دریافت نشد. دوباره تلاش کنید.' : 'این واحد کاربر واجد شرایط برای دعوت ندارد. ابتدا اطلاعات مالکیت یا سکونت و شماره موبایل کاربر را بررسی کنید.'));
             const retryButton = make('button', 'crud-button crud-button--soft', 'دریافت دوباره کاربران'); retryButton.type = 'button';
             retryButton.addEventListener('click', retry, { signal: abort.signal }); empty.append(retryButton);
-            fields.prepend(nav, heading); fields.append(empty, summary);
-            const back = make('button', 'crud-button crud-button--soft', 'مرحله قبل'); back.type = 'button';
-            saveButton.before(back);
+            fields.prepend(heading); fields.append(empty, summary);
             const close = $('#crudDrawerClose'), cancel = $('#crudCancelButton');
             close.textContent = 'بازگشت به دعوت‌ها'; close.setAttribute('aria-label', close.textContent);
             $('#crudDrawerTitle').textContent = 'دعوت جدید'; $('#crudDrawerEyebrow').textContent = unitLabel();
             $('#crudFormError').setAttribute('role', 'alert');
-            let step = 0, busy = false;
+            let busy = false;
             const selected = () => [...recipients.selectedOptions].filter(option => option.value);
             const sync = () => {
-                fieldLabels.forEach(label => label.hidden = step !== 0);
-                summary.hidden = step !== 1; empty.hidden = available || step !== 0;
-                heading.textContent = step ? 'بررسی و ارسال دعوت‌نامه' : 'دریافت‌کننده و اعتبار دعوت';
-                [...nav.children].forEach((item, index) => { item.classList.toggle('is-current', index === step); item.classList.toggle('is-complete', index < step); if (index === step) item.setAttribute('aria-current', 'step'); else item.removeAttribute('aria-current'); });
-                back.hidden = step === 0; back.disabled = busy;
+                fieldLabels.forEach(label => label.hidden = false);
+                summary.hidden = !selected().length; empty.hidden = available;
+                heading.textContent = 'دریافت‌کننده و اعتبار دعوت';
+                summary.replaceChildren();
+                for (const [label, value] of [['واحد', unitLabel()], ['دریافت‌کننده', selected().map(option => option.textContent).join('، ')], ['روش ارسال', 'پیامک به شماره ثبت‌شده کاربر']]) summary.append(make('dt', '', label), make('dd', '', value));
                 saveButton.disabled = busy || !available;
-                saveButton.textContent = busy ? 'در حال ارسال…' : step ? 'تأیید و ارسال دعوت' : 'بررسی دعوت';
+                saveButton.textContent = busy ? 'در حال ارسال…' : 'ارسال دعوت';
                 close.disabled = cancel.disabled = busy;
                 form.setAttribute('aria-busy', String(busy));
             };
@@ -80,28 +76,22 @@
                 }
                 return true;
             };
-            back.addEventListener('click', () => { if (!busy) { step = 0; sync(); heading.focus(); } }, { signal: abort.signal });
+            fields.addEventListener('change', sync, { signal: abort.signal });
             controller = {
                 get busy() { return busy; },
                 sync,
                 setBusy(value) { busy = value; sync(); },
                 prepareSubmit() {
                     if (busy || !available) return false;
-                    if (!validate()) { step = 0; sync(); return false; }
-                    if (step === 0) {
-                        summary.replaceChildren();
-                        for (const [label, value] of [['واحد', unitLabel()], ['دریافت‌کننده', selected().map(option => option.textContent).join('، ')], ['اعتبار از زمان ارسال', new Intl.NumberFormat('fa-IR').format(Number(hours.value)) + ' ساعت'], ['روش ارسال', 'پیامک به شماره ثبت‌شده کاربر']]) summary.append(make('dt', '', label), make('dd', '', value));
-                        step = 1; sync(); heading.focus(); return false;
-                    }
-                    return true;
+                    return validate();
                 },
                 showErrors(errors) {
-                    step = 0; sync();
+                    sync();
                     for (const field of [recipients, hours]) field.removeAttribute('aria-invalid');
                     const target = Object.keys(errors).some(key => key === 'user_id' || key === 'user_ids' || key.startsWith('user_ids.')) ? recipients : errors.expires_in_hours ? hours : null;
                     if (target) { target.setAttribute('aria-invalid', 'true'); target.setAttribute('aria-describedby', 'crudFormError'); target.focus(); } else heading.focus();
                 },
-                destroy() { abort.abort(); back.remove(); form.noValidate = originalValidation; close.disabled = cancel.disabled = false; form.removeAttribute('aria-busy'); controller = null; },
+                destroy() { abort.abort(); form.noValidate = originalValidation; close.disabled = cancel.disabled = false; form.removeAttribute('aria-busy'); controller = null; },
             };
             sync(); heading.focus();
         },

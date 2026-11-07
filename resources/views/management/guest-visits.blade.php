@@ -38,20 +38,18 @@
     <section class="ownership-card ownership-editor" data-guest-editor hidden aria-labelledby="guest-editor-title">
         <div class="ownership-card__heading"><span class="ownership-card__index">۲</span><div><h3 id="guest-editor-title" data-guest-editor-title tabindex="-1">ثبت مراجعه مهمان</h3><p>مشخصات و زمان را وارد کنید؛ سپس درخواست را بررسی و ثبت کنید.</p></div></div>
         <p class="ownership-location-hint" data-guest-editor-unit></p>
-        <div class="ownership-flow" aria-label="مراحل ثبت مراجعه">@foreach (['مشخصات مهمان', 'زمان مراجعه', 'بررسی و ثبت'] as $title)<span data-guest-step-label="{{ $loop->index }}"><b>{{ $loop->iteration }}</b>{{ $title }}</span>@endforeach</div>
+        <div class="ownership-flow" style="--ownership-steps: 2" aria-label="مراحل ثبت مراجعه">@foreach (['مهمان و زمان مراجعه', 'بررسی و ثبت'] as $title)<span data-guest-step-label="{{ $loop->index }}"><b>{{ $loop->iteration }}</b>{{ $title }}</span>@endforeach</div>
         <form data-guest-form novalidate>
             <div class="ownership-form-grid" data-guest-step="0">
                 <label class="ownership-field"><span>نام مهمان *</span><input name="first_name" required maxlength="255" autocomplete="given-name"></label>
                 <label class="ownership-field"><span>نام خانوادگی *</span><input name="last_name" required maxlength="255" autocomplete="family-name"></label>
                 <label class="ownership-field"><span>شماره موبایل (اختیاری)</span><input name="mobile" type="tel" maxlength="20" dir="ltr" autocomplete="tel"></label>
                 <details class="ownership-more ownership-field--wide"><summary>اطلاعات تکمیلی <small>اختیاری</small></summary><div class="ownership-form-grid"><label class="ownership-field"><span>کد ملی</span><input name="national_code" inputmode="numeric" maxlength="20" dir="ltr"></label><label class="ownership-field"><span>پلاک خودرو</span><input name="vehicle_plate" maxlength="255"></label></div></details>
-            </div>
-            <div class="ownership-form-grid" data-guest-step="1" hidden>
                 <label class="ownership-field"><span>زمان مورد انتظار ورود *</span><input type="datetime-local" name="expected_entry_at" required></label>
                 <label class="ownership-field"><span>زمان مورد انتظار خروج (اختیاری)</span><input type="datetime-local" name="expected_exit_at"></label>
                 <label class="ownership-field ownership-field--wide"><span>توضیحات (اختیاری)</span><textarea name="description" maxlength="5000" rows="3" placeholder="توضیحی برای هماهنگی مراجعه"></textarea></label>
             </div>
-            <div data-guest-step="2" hidden><div class="ownership-record-list" data-guest-review></div><p class="ownership-form-hint">ثبت مراجعه به معنی ورود مهمان نیست؛ اعتبار مجوز هنگام ثبت ورود توسط سامانه بررسی می‌شود.</p></div>
+            <div data-guest-step="1" hidden><div class="ownership-record-list" data-guest-review></div><p class="ownership-form-hint">ثبت مراجعه به معنی ورود مهمان نیست؛ اعتبار مجوز هنگام ثبت ورود توسط سامانه بررسی می‌شود.</p></div>
             <div class="ownership-editor__actions"><button class="ownership-button ownership-button--soft" type="button" data-guest-cancel>بازگشت به مراجعه‌ها</button><button class="ownership-button" type="button" data-guest-back hidden>مرحله قبل</button><button class="ownership-button ownership-button--primary" type="submit" data-guest-continue>ادامه</button></div>
         </form>
     </section>

@@ -28,7 +28,7 @@ const shown = computed(() => rows.value.filter(row => (!buildingFilter.value || 
 const actions = computed(() => selected.value ? serviceActions(selected.value, props.workspace.buildings.find(row => row.id === selected.value?.building_id), props.workspace.userId) : []);
 const primaryAction = computed(() => ['confirm', 'finish', 'start', 'quote', 'assign'].find(action => actions.value.includes(action)));
 const labels: Record<string, string> = { create: 'درخواست جدید', edit: 'ویرایش درخواست', assign: 'تخصیص ارائه‌دهنده', quote: 'پیشنهاد قیمت', accept: 'پذیرش قیمت و تأمین مبلغ', start: 'شروع خدمت', finish: 'اعلام پایان خدمت', confirm: 'تأیید نهایی و تسویه', 'cancel-financial': 'لغو درخواست', delete: 'حذف درخواست' };
-const stages = computed(() => ['create', 'edit'].includes(kind.value) ? ['محل خدمت', 'اطلاعات درخواست', 'بررسی نهایی'] : [labels[kind.value], 'بررسی و ثبت']);
+const stages = computed(() => ['create', 'edit'].includes(kind.value) ? ['اطلاعات و محل خدمت', 'بررسی نهایی'] : [labels[kind.value], 'بررسی و ثبت']);
 const detailStages = ['ثبت درخواست', 'تخصیص و قیمت', 'تأمین مبلغ', 'اجرای خدمت', 'تأیید و تسویه'];
 const currentStage = computed(() => !selected.value ? 0 : selected.value.status === 'completed' ? 5 : selected.value.status === 'awaiting_confirmation' ? 4 : selected.value.status === 'in_progress' ? 3 : activePayment(selected.value) ? 2 : selected.value.assigned_to ? 1 : 0);
 const walletSources = computed(() => [
@@ -39,10 +39,9 @@ const fields = computed<CrudField[]>(() => {
     if (kind.value === 'assign') return [{ name: 'assigned_to', label: 'ارائه‌دهنده', type: 'select', required: true, options: providers.value }];
     if (kind.value === 'quote') return [{ name: 'amount', label: 'مبلغ کل (' + currency.value + ')', type: 'number', min: 1, step: 1, required: true }, { name: 'valid_until', label: 'اعتبار پیشنهاد تا', type: 'datetime-local', help: 'اختیاری؛ زمان باید در آینده باشد.' }, { name: 'notes', label: 'توضیحات پیشنهاد', type: 'textarea', maxlength: 5000 }];
     if (kind.value === 'accept') return [{ name: 'payer_source', label: 'پرداخت از', type: 'select', required: true, options: walletSources.value }];
-    return step.value === 0 ? [
+    return [
         { name: 'building_id', label: 'ساختمان', type: 'select', required: true, readonly_on_edit: true, options: props.workspace.buildings.filter(row => row.canCreate || row.id === selected.value?.building_id).map(row => ({ value: row.id, label: row.title })) },
         { name: 'unit_id', label: 'محل انجام خدمت', type: 'select', options: [{ value: '', label: 'مشاعات ساختمان' }, ...availableUnits.value.map(row => ({ value: row.id, label: row.label }))], help: 'برای خدمات داخل واحد، همان واحد را انتخاب کنید؛ خالی‌بودن یعنی مشاعات.' },
-    ] : [
         { name: 'title', label: 'عنوان درخواست', required: true, maxlength: 255, placeholder: 'مثلاً تعمیر روشنایی راه‌پله' },
         { name: 'type', label: 'نوع خدمت', required: true, maxlength: 50, placeholder: 'مثلاً برق، نظافت یا تأسیسات' },
         { name: 'priority', label: 'اولویت', type: 'select', required: true, options: Object.entries(servicePriorities).map(([value, label]) => ({ value, label })) },
@@ -106,11 +105,9 @@ const validate = () => {
     if (['create', 'edit'].includes(kind.value)) {
         if (!building.value || kind.value === 'create' && !building.value.canCreate) next.building_id = ['ساختمان مجاز را انتخاب کنید.'];
         if (form.value.unit_id && !availableUnits.value.some(unit => unit.id === Number(form.value.unit_id))) next.unit_id = ['واحدی از همین ساختمان انتخاب کنید.'];
-        if (step.value > 0) {
-            for (const [key, max] of [['title', 255], ['type', 50]] as const) if (!String(form.value[key] || '').trim() || String(form.value[key]).length > max) next[key] = ['این فیلد را با طول مجاز تکمیل کنید.'];
-            if (!servicePriorities[String(form.value.priority)]) next.priority = ['اولویت را انتخاب کنید.'];
-            if (String(form.value.description || '').length > 20000) next.description = ['شرح درخواست بیش از حد طولانی است.'];
-        }
+        for (const [key, max] of [['title', 255], ['type', 50]] as const) if (!String(form.value[key] || '').trim() || String(form.value[key]).length > max) next[key] = ['این فیلد را با طول مجاز تکمیل کنید.'];
+        if (!servicePriorities[String(form.value.priority)]) next.priority = ['اولویت را انتخاب کنید.'];
+        if (String(form.value.description || '').length > 20000) next.description = ['شرح درخواست بیش از حد طولانی است.'];
     } else if (kind.value === 'assign' && !providers.value.some(row => row.value === Number(form.value.assigned_to))) next.assigned_to = ['ارائه‌دهنده را از فهرست انتخاب کنید.'];
     else if (kind.value === 'quote') {
         if (!form.value.amount || !Number.isSafeInteger(Number(form.value.amount)) || Number(form.value.amount) < 1) next.amount = ['مبلغ صحیح و مثبت وارد کنید.'];
@@ -119,7 +116,7 @@ const validate = () => {
     } else if (kind.value === 'accept' && (!quote.value || !canAccept(quote.value) || !walletSources.value.some(row => row.value === form.value.payer_source))) next.payer_source = ['پیشنهاد معتبر و کیف پول مجاز انتخاب کنید.'];
     errors.value = next;
     if (!Object.keys(next).length) return true;
-    step.value = next.building_id || next.unit_id ? 0 : kind.value === 'create' || kind.value === 'edit' ? 1 : 0;
+    step.value = 0;
     error.value = Object.values(next).flat().join('؛ '); void focus('[data-service-error]'); return false;
 };
 const save = async () => {
@@ -136,7 +133,7 @@ const save = async () => {
         else if (kind.value === 'quote') await request('/api/v1/service-requests/' + id + '/quotes', 'POST', { amount: Number(form.value.amount), notes: form.value.notes || null, valid_until: form.value.valid_until || null });
         else await request('/api/v1/service-request-quotes/' + quote.value!.id + '/accept', 'POST', { payer_source: form.value.payer_source });
         snapshot = JSON.stringify(form.value); await openDetail(savedId!); success.value = 'اطلاعات ثبت و وضعیت درخواست به‌روزرسانی شد.';
-    } catch (caught) { explain(caught); step.value = ['create', 'edit'].includes(kind.value) && ['title', 'type', 'priority', 'description'].some(key => errors.value[key]) ? 1 : 0; if (!(caught instanceof ApiError) || caught.status >= 500) { uncertain.value = true; error.value += ' نتیجه ثبت مشخص نیست؛ پیش از تکرار، وضعیت درخواست را بررسی کنید.'; } }
+    } catch (caught) { explain(caught); step.value = 0; if (!(caught instanceof ApiError) || caught.status >= 500) { uncertain.value = true; error.value += ' نتیجه ثبت مشخص نیست؛ پیش از تکرار، وضعیت درخواست را بررسی کنید.'; } }
     finally { busy.value = false; }
 };
 const confirmationText = computed(() => confirmation.value === 'confirm' ? 'با تأیید انجام خدمت، مبلغ مسدودشده بین ارائه‌دهنده و سامانه تسویه می‌شود. ادامه می‌دهید؟' : confirmation.value === 'cancel-financial' ? 'درخواست لغو می‌شود و مبلغ مسدودشده، در صورت وجود، آزاد خواهد شد.' : confirmation.value === 'delete' ? 'این درخواست بدون ارائه‌دهنده حذف شود؟' : confirmation.value === 'finish' ? 'انجام کار برای بررسی و تأیید نهایی ارسال شود؟' : 'اجرای این خدمت آغاز شود؟');

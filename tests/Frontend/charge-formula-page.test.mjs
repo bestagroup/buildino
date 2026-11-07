@@ -83,11 +83,11 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
             category.value='7'; category.dispatchEvent(new Event('change',{bubbles:true})); save.click(); expect(step()==='1','Continue should replace category with method');
             expect(component().querySelector('[role="radiogroup"]'), 'Methods must be an accessible radio group');
             const method=component().querySelector('[data-formula-method][value="fixed"]'); method.checked=true; method.dispatchEvent(new Event('change',{bubbles:true}));
-            save.click(); expect(step()==='2','Method must advance to parameters'); component().querySelector('[data-formula-fixed-amount]').value='5000'; save.click(); expect(step()==='3','Parameters must advance to review');
-            expect(component().querySelector('[role="status"]').textContent.includes('۴'), 'Screen reader should receive current step');
+            expect(step()==='1'&&!component().querySelector('[data-formula-fixed-wrap]').hidden,'Method parameters must appear in the same step'); component().querySelector('[data-formula-fixed-amount]').value='5000'; save.click(); expect(step()==='2','Parameters must advance to review');
+            expect(component().querySelector('[role="status"]').textContent.includes('مرحله ۳ از ۳'), 'Screen reader should receive current step');
             save.focus(); const tab=new KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}); save.dispatchEvent(tab); expect(!tab.defaultPrevented,'Inline form must not trap Tab');
             save.click(); await until(()=>!save.disabled); expect(step()==='0' && form.elements.title.value==='شارژ نظافت ساختمان','Server errors must return to field and retain title');
-            component().querySelectorAll('.charge-wizard__steps button')[3].click(); failSave=false; const before=writes; save.click(); save.click();
+            component().querySelectorAll('.charge-wizard__steps button')[2].click(); failSave=false; const before=writes; save.click(); save.click();
             await until(()=>drawer.hidden && $('[data-row-action="edit"]'));
             expect(writes===before+1,'Duplicate save must be blocked'); expect(document.activeElement.id==='charge-directory-title','After saving, focus must return to refreshed directory');
             $('[data-row-action="edit"]').focus(); $('[data-row-action="edit"]').click(); await until(()=>component() && !save.disabled && !drawer.hidden);

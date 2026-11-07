@@ -26,7 +26,7 @@
     </section>
     <section class="ownership-card" data-facility-editor hidden aria-labelledby="facility-editor-title">
         <div class="ownership-card__heading ownership-card__heading--split"><div><h3 id="facility-editor-title" data-facility-editor-title tabindex="-1">پیکربندی امکان</h3><p data-facility-editor-context></p></div><button type="button" class="ownership-button" data-facility-close>بازگشت به امکانات</button></div>
-        <nav class="facility-steps" aria-label="مراحل پیکربندی">@foreach (['اطلاعات و هزینه', 'برنامه و سانس‌ها', 'قوانین رزرو', 'بررسی و فعال‌سازی'] as $label)<button type="button" data-facility-step-button="{{ $loop->index }}"><b aria-hidden="true">{{ $loop->iteration }}</b><span>{{ $label }}</span></button>@endforeach</nav>
+        <nav class="facility-steps" aria-label="مراحل پیکربندی">@foreach (['اطلاعات و هزینه', 'برنامه و سانس‌ها', 'قوانین و فعال‌سازی'] as $label)<button type="button" data-facility-step-button="{{ $loop->index }}"><b aria-hidden="true">{{ $loop->iteration }}</b><span>{{ $label }}</span></button>@endforeach</nav>
         <div class="facility-step-heading"><h4 data-facility-panel-title tabindex="-1"></h4><p class="ownership-form-hint" data-facility-save-state role="status" aria-live="polite"></p><button type="button" class="ownership-button" data-facility-refresh hidden>دریافت دوباره اطلاعات ذخیره‌شده</button></div>
         <div data-facility-panel="0">
             <form data-facility-base-form novalidate>
@@ -91,13 +91,11 @@
                         <label class="ownership-field"><span>هزینه لغو (<span data-facility-currency>واحد پول ساختمان</span>)</span><input type="number" name="cancellation_fee" min="0" step="1" value="0" required></label><label class="ownership-field"><span>درصد بازپرداخت</span><input type="number" name="refund_percentage" min="0" max="100" step="1" value="100" required></label>
                     </div></details>
                 </div></fieldset>
-                <div class="ownership-editor__actions"><button type="button" class="ownership-button" data-facility-go="1">مرحله قبل</button><button type="button" class="ownership-button" data-facility-view-next="3" hidden>مشاهده بررسی نهایی</button><button type="submit" class="ownership-button ownership-button--primary" data-facility-rule-save>ذخیره قوانین و ادامه</button></div>
+                <div class="ownership-editor__actions"><button type="button" class="ownership-button" data-facility-go="1">مرحله قبل</button><button type="submit" class="ownership-button ownership-button--primary" data-facility-rule-save>ذخیره قوانین</button></div>
             </form>
-        </div>
-        <div data-facility-panel="3" hidden>
             <h4 class="ownership-subheading">بررسی پیش از فعال‌سازی</h4><p class="ownership-form-hint">این فهرست بر اساس آخرین اطلاعات ذخیره‌شده تهیه می‌شود.</p>
             <div class="ownership-record-list" data-facility-checklist aria-live="polite"></div>
-            <div class="ownership-editor__actions"><button type="button" class="ownership-button" data-facility-go="2">مرحله قبل</button><button type="button" class="ownership-button" data-facility-check>بررسی مجدد اطلاعات</button><button type="button" class="ownership-button ownership-button--primary" data-facility-activate disabled>فعال‌سازی امکان</button></div>
+            <div class="ownership-editor__actions"><button type="button" class="ownership-button" data-facility-check>بررسی مجدد اطلاعات</button><button type="button" class="ownership-button ownership-button--primary" data-facility-activate disabled>فعال‌سازی امکان</button></div>
             <p class="ownership-form-hint" data-facility-activation-state role="status"></p>
         </div>
     </section>

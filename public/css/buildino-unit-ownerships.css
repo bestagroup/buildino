@@ -4,7 +4,7 @@
 .ownership-hero__icon { display: grid; place-items: center; flex: 0 0 60px; height: 60px; border-radius: 19px; background: var(--primary-100); color: var(--primary-700); }
 .ownership-hero h2 { margin: 5px 0 7px; font-size: clamp(20px, 2.3vw, 26px); font-weight: 800; }
 .ownership-hero p, .ownership-card__heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.9; }
-.ownership-flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-block-end: 20px; }
+.ownership-flow { display: grid; grid-template-columns: repeat(var(--ownership-steps, 3), minmax(0, 1fr)); gap: 9px; margin-block-end: 20px; }
 .ownership-flow span { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 48px; padding: 8px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); color: var(--muted); font-size: 12px; font-weight: 600; }
 .ownership-flow b { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: var(--surface-strong); font-size: 12px; }
 .ownership-flow .is-current { border-color: var(--primary-500); background: var(--primary-50); color: var(--primary-700); }

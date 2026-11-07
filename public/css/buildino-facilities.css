@@ -1,4 +1,4 @@
-.facility-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-block-end: 22px; }
+.facility-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-block-end: 22px; }
 .facility-steps button { display: flex; align-items: center; justify-content: flex-start; gap: 9px; min-width: 0; min-height: 54px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); color: var(--muted); font: inherit; font-size: 12px; text-align: start; line-height: 1.7; cursor: pointer; }
 .facility-steps button b { display: grid; place-items: center; flex: 0 0 27px; height: 27px; border-radius: 50%; background: var(--surface-strong, var(--surface)); font-size: 12px; }
 .facility-steps button[aria-current="step"] b { background: var(--primary-700); color: #fff; }
@@ -59,4 +59,4 @@
     [data-facility-page] .ownership-record > .ownership-button { width: 100%; }
     .facility-steps button { gap: 7px; padding: 8px; font-size: 11px; }
 }
-@media (max-width: 600px) { .facility-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .facility-steps { grid-template-columns: minmax(0, 1fr); } }

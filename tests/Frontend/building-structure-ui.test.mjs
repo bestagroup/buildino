@@ -84,7 +84,7 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
         delete samples.buildings.structure_type; await mount('buildings'); await until(() => $('[data-structure-edit]'));
         $('[data-structure-add]').click(); await tick(); expect(!$('.structure-record') && $('.structure-editor'), 'Editor must replace list');
         submit(); await tick(); expect($('[aria-invalid="true"]') && posts.length === 0, 'Required fields bypassed');
-        await input('title','ساختمان جدید'); await input('code','B-2'); submit(); await tick();
+        await input('title','ساختمان جدید'); await input('code','B-2');
         await input('address','نشانی جدید');
         expect(!$('[name="latitude"]') && !$('[name="longitude"]') && $('[data-location-open]'), 'Coordinate inputs were not replaced');
         $('[data-location-open]').click(); await tick(); await until(() => $('[data-location-center]') && !$('[data-location-center]').disabled);
@@ -100,11 +100,11 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
         switchRow.click(); await tick(); expect(!switchInput.checked && getComputedStyle(switchRow.querySelector('.buildino-switch__on')).display === 'none', 'Switch state is not synchronized');
         submit(); await tick(); expect($('.structure-review') && posts.length === 0, 'Review missing');
         failSave = true; submit(); await until(() => $('.structure-error')); expect($('[name="code"]').value === 'B-2', 'Validation error lost form data');
-        failSave = false; submit(); await tick(); submit(); await tick(); holdSave = true; submit(); await until(() => releaseSave); const count = posts.length; submit(); expect(posts.length === count, 'Duplicate save'); releaseSave(); await until(() => $('[data-structure-edit]'));
+        failSave = false; submit(); await tick(); holdSave = true; submit(); await until(() => releaseSave); const count = posts.length; submit(); expect(posts.length === count, 'Duplicate save'); releaseSave(); await until(() => $('[data-structure-edit]'));
         expect(posts.at(-1).body.address === 'نشانی جدید' && posts.at(-1).body.complex_id === 4 && posts.at(-1).body.is_active === false, 'Wrong building request or switch value'); holdSave = false;
-        $('[data-structure-edit]').click(); await tick(); submit(); await tick(); expect($('[name="address"]').value === 'نشانی قبلی', 'Nested edit address lost');
+        $('[data-structure-edit]').click(); await tick(); expect($('[name="address"]').value === 'نشانی قبلی', 'Nested edit address lost');
         submit(); await tick(); submit(); await until(() => $('[data-structure-edit]')); expect(posts.at(-1).body.parking_count === 4 && posts.at(-1).body.latitude === 12.5 && posts.at(-1).body.longitude === 45.5 && posts.at(-1).method === 'PATCH', 'Edit changed nested values');
-        $('[data-structure-edit]').click(); await tick(); submit(); await tick();
+        $('[data-structure-edit]').click(); await tick();
         $('[data-location-open]').click(); await tick(); await until(() => $('[data-location-center]') && !$('[data-location-center]').disabled);
         expect($('.location-dialog__selection').textContent.includes('12.500000, 45.500000'), 'Saved location not restored: ' + $('.location-dialog__selection').textContent + ' / ' + $('.location-picker__open').textContent);
         $('[data-location-locate]').click(); await until(() => $('.location-picker__error')?.textContent.includes('مجاز نیست'));
@@ -112,15 +112,15 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
         geoMode = 'pending'; $('[data-location-locate]').click(); await until(() => geoRelease); $('[data-location-center]').click(); await tick(); const manualPoint = $('.location-dialog__selection').textContent; geoRelease(); await tick(); expect($('.location-dialog__selection').textContent === manualPoint, 'Late GPS response replaced manual selection');
         geoMode = 'allowed'; $('[data-location-locate]').click(); await until(() => $('.location-dialog__selection').textContent.includes('35.700000') && !$('[data-location-confirm]').disabled); $('[data-location-confirm]').click(); await until(() => !$('.ui-drawer-layer'));
         submit(); await tick(); submit(); await until(() => $('[data-structure-edit]')); expect(posts.at(-1).body.latitude === 35.7 && posts.at(-1).body.longitude === 51.4, 'Geolocation not stored atomically');
-        $('[data-structure-edit]').click(); await tick(); submit(); await tick();
+        $('[data-structure-edit]').click(); await tick();
         $('.location-picker__clear').click(); await tick(); expect(document.activeElement === $('[data-location-open]'), 'Clear lost keyboard focus'); submit(); await tick(); submit(); await until(() => $('[data-structure-edit]')); expect(posts.at(-1).body.latitude === null && posts.at(-1).body.longitude === null, 'Clearing location was converted to zero');
         const mapConfig = JSON.parse($('#buildino-map-config').textContent); $('#buildino-map-config').textContent = JSON.stringify({ ...mapConfig, tileUrl: '/test-tiles-fail/{z}/{x}/{y}.svg' });
-        $('[data-structure-edit]').click(); await tick(); submit(); await tick(); $('[data-location-open]').click(); await tick(); await until(() => $('[data-location-retry]'));
+        $('[data-structure-edit]').click(); await tick(); $('[data-location-open]').click(); await tick(); await until(() => $('[data-location-retry]'));
         expect($('[data-location-confirm]').disabled && $('.location-dialog__error'), 'Map failure allows confirming an unseen location');
         $('#buildino-map-config').textContent = JSON.stringify(mapConfig); $('[data-location-retry]').click(); await until(() => !$('[data-location-center]').disabled);
         const dialogBounds = $('.ui-drawer--dialog').getBoundingClientRect(); expect(dialogBounds.left >= 0 && dialogBounds.right <= innerWidth, 'Map dialog overflows viewport');
         $('[data-location-cancel]').click(); await until(() => !$('.ui-drawer-layer')); submit(); await tick(); submit(); await until(() => $('[data-structure-edit]'));
-        await mount('complexes'); await until(() => $('[data-structure-edit]')); $('[data-structure-edit]').click(); await tick(); submit(); await tick();
+        await mount('complexes'); await until(() => $('[data-structure-edit]')); $('[data-structure-edit]').click(); await tick();
         expect($('[name="city"]').value === 'تهران', 'Existing city lost'); await input('province','اصفهان'); await tick(); expect($('[name="city"]').value === '', 'City did not reset with province'); submit(); await tick(); expect(!$('.structure-review'), 'City validation skipped'); await input('city','کاشان'); submit(); await tick(); submit(); await until(() => $('[data-structure-edit]')); expect(posts.at(-1).body.city === 'کاشان', 'City name not submitted');
         for (const key of ['blocks','floors','units']) {
             const before = requests.length; await mount(key); expect(!$('[data-structure-add]') && requests.length === before, 'Unselected context issued request');
@@ -128,14 +128,14 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
             await until(() => $('[data-structure-edit]')); expect(!requests.at(-1).includes('{'), 'Context placeholder not interpolated');
             if (key !== 'units') expect($('[data-structure-child]').href.includes(key === 'blocks' ? 'block_id=11' : 'floor_id=11'), 'Child scope missing');
             $('[data-structure-add]').click(); await tick();
-            if (key === 'blocks') await input('title','بلوک جدید');
+            if (key === 'blocks') { const count=posts.length; submit(); await tick(); expect($('[aria-invalid="true"]')&&posts.length===count,'Single-step form skipped required validation'); await input('title','بلوک جدید'); }
             if (key === 'floors') await input('floor_number','-1');
             if (key === 'units') {
                 expect(!$('[name="bedrooms"]').closest('details')&&$('[name="bedrooms"]').getBoundingClientRect().height>0,'Unit bedrooms hidden away from main fields');
                 if(innerWidth>700){const tops=['area','bedrooms','usage_type'].map(name=>$('[name="'+name+'"]').getBoundingClientRect().top);expect(tops.every(top=>Math.abs(top-tops[0])<1),'Unit size, bedrooms and usage are not aligned');}
                 await input('unit_number','۱۰۲'); await input('area','75.5'); await input('usage_type','residential');
             }
-            submit(); await tick(); expect($('.structure-review'), 'Child form cannot advance: ' + key); submit(); await until(() => $('[data-structure-edit]')); expect(posts.at(-1).path.includes('/1/'), 'Saved under wrong parent');
+            const beforeSave = posts.length; submit(); await until(() => $('[data-structure-edit]')); expect(posts.length === beforeSave + 1 && posts.at(-1).path.includes('/1/'), 'Child form must save once under its parent');
         }
         await mount('blocks','?building_id=1'); await until(() => $('[data-structure-edit]'));
         holdList = true; $('.structure-tools button').click(); await until(() => releaseList); $('[data-structure-change-context]').click(); await tick(); const select = $('[data-structure-building]'); select.value = '2'; select.dispatchEvent(new Event('change', { bubbles: true })); await tick(); $('[data-structure-context-confirm]').click(); await until(() => $('.structure-record h4')?.textContent.includes('دوم')); releaseList(); await tick(); expect($('.structure-record h4').textContent.includes('دوم'), 'Stale response replaced new scope');

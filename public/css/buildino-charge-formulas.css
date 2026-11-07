@@ -26,7 +26,7 @@
 .charge-wizard.crud-formula-builder { display: grid; gap: 16px; padding: 0; border: 0; background: transparent; }
 .charge-wizard [hidden], .charge-formula-dialog .crud-form-actions [hidden] { display: none !important; }
 .charge-wizard__context { margin: 0; color: var(--muted); font-size: 12px; }
-.charge-wizard__steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.charge-wizard__steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .charge-wizard__steps button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 54px; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); color: var(--muted); font: inherit; font-size: 11px; cursor: pointer; }
 .charge-wizard__steps b { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: var(--surface-strong); }
 .charge-wizard__steps button[aria-current="step"] { border-color: var(--primary-500); color: var(--primary-700); background: var(--primary-50); font-weight: 800; }

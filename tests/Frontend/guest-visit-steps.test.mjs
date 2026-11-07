@@ -15,7 +15,7 @@ test('guest panels replace each other while preserving registration steps and pe
         .replace(/@if[^]*?@else/, '').replace(/@endif/g, '')
         .replace(/@foreach \(\$guestConfig[^]*?@endforeach/, '<option value="4">ساختمان آزمایشی</option>')
         .replace(/@foreach \(\['block'[^]*?@endforeach/, ['block', 'floor', 'unit'].map(key => `<select data-guest-${key} disabled><option value="">انتخاب کنید</option></select>`).join(''))
-        .replace(/@foreach \(\['مشخصات[^]*?@endforeach/, [0, 1, 2].map(index => `<span data-guest-step-label="${index}"></span>`).join(''))
+        .replace(/@foreach \(\['مهمان[^]*?@endforeach/, [0, 1].map(index => `<span data-guest-step-label="${index}"></span>`).join(''))
         .replace(/@include\([^]*?\)/g, '').replace(/\{\{[^]*?\}\}/g, '#');
     const source = readFileSync(join(project, 'public/js/buildino-guest-visits.js'), 'utf8');
     const fixture = join(directory, 'fixture.html');
@@ -48,10 +48,10 @@ test('guest panels replace each other while preserving registration steps and pe
         $('add').click(); only('editor'); expect($('editor-unit').textContent.includes('۱۰۱'), 'Unit context missing');
         submit(); expect(!$('form').querySelector('[data-guest-step="0"]').hidden, 'Invalid form advanced');
         $('form').elements.first_name.value = 'علی'; $('form').elements.last_name.value = 'آزمایشی'; submit();
-        expect(!$('form').querySelector('[data-guest-step="1"]').hidden, 'Time step missing'); only('editor');
+        expect(!$('form').querySelector('[data-guest-step="0"]').hidden, 'Time step missing'); only('editor');
         $('form').elements.expected_entry_at.value = '2099-01-01T10:00'; submit();
-        expect(!$('form').querySelector('[data-guest-step="2"]').hidden, 'Review missing');
-        $('back').click(); expect(!$('form').querySelector('[data-guest-step="1"]').hidden, 'Back failed');
+        expect(!$('form').querySelector('[data-guest-step="1"]').hidden, 'Review missing');
+        $('back').click(); expect(!$('form').querySelector('[data-guest-step="0"]').hidden, 'Back failed');
         $('cancel').click(); only('records');
         $('list').querySelector('button').click(); only('detail');
         await until(() => $('detail-actions').querySelector('button'));

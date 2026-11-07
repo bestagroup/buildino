@@ -65,11 +65,11 @@ for (const width of [1280, 500]) test(`invitation workflow at ${width}px: valida
         const dropdown = document.querySelector('.select2-dropdown').getBoundingClientRect();
         expect(Math.min(Math.abs(dropdown.top - control.bottom), Math.abs(dropdown.bottom - control.top)) < 8 && Math.abs(dropdown.left - control.left) < 8, 'Recipient dropdown is detached from its field');
         window.jQuery(form.elements.user_id).select2('close');
-        form.elements.expires_in_hours.value = '0'; submit(); expect($('.invitation-review').hidden && posts.length === 0, 'Invalid validity advanced');
-        form.elements.expires_in_hours.value = '72'; submit(); expect(!$('.invitation-review').hidden && posts.length === 0, 'Review must precede request');
+        form.elements.expires_in_hours.value = '0'; submit(); expect(posts.length === 0 && form.elements.expires_in_hours.getAttribute('aria-invalid') === 'true', 'Invalid validity accepted');
+        form.elements.expires_in_hours.value = '72'; expect(!$('.invitation-review').hidden && posts.length === 0, 'Inline summary must precede request');
         expect($('.invitation-review').textContent.includes('علی آزمایشی'), 'Review missing recipient');
         failSave = true; submit(); await until(() => $('#crudFormError').textContent.includes('دعوت فعال'));
-        only('editor'); expect(form.elements.user_id.value === '9' && $('.invitation-review').hidden, 'Error lost data or failed to return to fields');
+        only('editor'); expect(form.elements.user_id.value === '9' && !form.elements.user_id.closest('label').hidden, 'Error lost data or failed to return to fields');
         failSave = false; holdSave = true; submit(); submit(); await until(() => releaseSave); const before = posts.length; submit(); $('#crudDrawerClose').click(); only('editor'); expect(posts.length === before, 'Duplicate submit');
         releaseSave(); await until(() => $('#crudDrawer').hidden); only('directory');
         expect(posts[0].body.user_id === '9' && !('user_ids' in posts[0].body) && posts[0].body.expires_in_hours === 72, 'Wrong actual request payload');
@@ -78,7 +78,7 @@ for (const width of [1280, 500]) test(`invitation workflow at ${width}px: valida
         failLookup = false; $('#crudFormFields .invitation-note button').click(); await until(() => $('#crudFormFields select')?.value === '9'); expect(!$('#crudSaveButton').disabled, 'Retry did not recover'); $('#crudCancelButton').click();
         holdList = true; $('#crudRefreshButton').click(); await until(() => releaseList); $('[data-invitation-change-unit]').click(); only('location'); selectUnit('2'); await until(() => $('#crudTableBody').textContent.includes('unit-two')); releaseList(); await new Promise(resolve => setTimeout(resolve, 30)); expect(!$('#crudTableBody').textContent.includes('unit-one'), 'Stale list replaced current unit');
         expect(document.documentElement.scrollWidth <= innerWidth, 'Page overflows viewport');
-        await open(); submit(); expect(document.documentElement.scrollWidth <= innerWidth, 'Review overflows viewport');
+        await open(); expect(document.documentElement.scrollWidth <= innerWidth, 'Review overflows viewport');
         $('#result').dataset.ok = 'true'; $('#result').textContent = 'Passed';
     })().catch(error => { $('#result').textContent = error.stack; });
     </script></html>`);

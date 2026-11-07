@@ -16,8 +16,8 @@
             floor.dataset.formulaFloorWrap = '';
             floor.replaceChildren(...originalFloor.childNodes); originalFloor.replaceWith(floor);
             const coefficients = $('[data-formula-floor-coefficients]'); coefficients.hidden = true;
-            const headings = ['برای کدام هزینه؟', 'هزینه چگونه تقسیم شود؟', 'تنظیمات روش محاسبه', 'بررسی نهایی فرمول'];
-            const labels = ['نوع هزینه', 'روش محاسبه', 'پارامترها', 'بررسی نهایی'];
+            const headings = ['برای کدام هزینه؟', 'هزینه چگونه تقسیم شود؟', 'بررسی نهایی فرمول'];
+            const labels = ['نوع هزینه', 'روش محاسبه', 'بررسی نهایی'];
             let step = 0, busy = false, disposed = false, dirty = false, allowDiscard = false, loadingCategories = false;
             let titleInput = null, activeInput = null, suggestedTitle = row ? null : '';
             component.firstElementChild.remove();
@@ -39,9 +39,9 @@
             methods.setAttribute('role', 'radiogroup'); methods.setAttribute('aria-label', 'روش تقسیم هزینه بین واحدها');
             if (!row) methods.querySelectorAll('input').forEach(input => input.checked = false);
             panels[1].append(methods);
-            const parameterHint = make('div', 'charge-wizard__note'); panels[2].append(parameterHint, fixed, floor);
+            const parameterHint = make('div', 'charge-wizard__note'); panels[1].append(parameterHint, fixed, floor);
             const summary = make('dl', 'charge-wizard__review'), activation = make('div', 'charge-wizard__activation');
-            panels[3].append(summary, activation, make('p', 'charge-wizard__hint', 'سامانه پیش از ذخیره، اطلاعات را اعتبارسنجی می‌کند. فعال‌بودن این فرمول به معنی صدور شارژ یا صورتحساب نیست.'));
+            panels[2].append(summary, activation, make('p', 'charge-wizard__hint', 'سامانه پیش از ذخیره، اطلاعات را اعتبارسنجی می‌کند. فعال‌بودن این فرمول به معنی صدور شارژ یا صورتحساب نیست.'));
             const discard = make('div', 'charge-wizard__discard'); discard.hidden = true; discard.setAttribute('role', 'alert');
             const keep = make('button', 'crud-button crud-button--primary', 'ادامه ویرایش'), leave = make('button', 'crud-button crud-button--soft', 'خروج بدون ذخیره'); keep.type = leave.type = 'button';
             discard.append(make('strong', '', 'تغییرات شما هنوز ذخیره نشده است.'), keep, leave);
@@ -80,13 +80,13 @@
             const synchronize = () => {
                 if (method()?.value !== 'floor_coefficient') return;
                 const values = [], used = new Set();
-                if (!rows.children.length) fail('حداقل یک طبقه و ضریب آن را اضافه کنید.', 2, add);
+                if (!rows.children.length) fail('حداقل یک طبقه و ضریب آن را اضافه کنید.', 1, add);
                 for (const el of rows.children) {
                     const floorInput = el.querySelector('[data-charge-floor-field="floor"]'), factorInput = el.querySelector('[data-charge-floor-field="coefficient"]');
                     const key = Number(floorInput.value), factor = Number(factorInput.value);
-                    if (!floorInput.value.trim() || !Number.isSafeInteger(key)) fail('شماره طبقه را به‌صورت عدد صحیح وارد کنید؛ برای همکف صفر و برای زیرزمین عدد منفی.', 2, floorInput);
-                    if (!factorInput.value.trim() || !Number.isFinite(factor) || factor <= 0) fail('ضریب سهم باید عددی بزرگ‌تر از صفر باشد.', 2, factorInput);
-                    if (used.has(key)) fail('طبقه ' + number(key) + ' تکراری است؛ برای هر طبقه فقط یک ضریب وارد کنید.', 2, floorInput);
+                    if (!floorInput.value.trim() || !Number.isSafeInteger(key)) fail('شماره طبقه را به‌صورت عدد صحیح وارد کنید؛ برای همکف صفر و برای زیرزمین عدد منفی.', 1, floorInput);
+                    if (!factorInput.value.trim() || !Number.isFinite(factor) || factor <= 0) fail('ضریب سهم باید عددی بزرگ‌تر از صفر باشد.', 1, factorInput);
+                    if (used.has(key)) fail('طبقه ' + number(key) + ' تکراری است؛ برای هر طبقه فقط یک ضریب وارد کنید.', 1, floorInput);
                     used.add(key); values.push([String(key), factor]);
                 }
                 coefficients.value = JSON.stringify(Object.fromEntries(values));
@@ -96,9 +96,9 @@
                 if (!titleInput?.value.trim()) fail('عنوان فرمول را وارد کنید.', 0, titleInput);
                 if (titleInput && !titleInput.checkValidity()) fail(titleInput.validationMessage, 0, titleInput);
                 if (until >= 1 && !method()) fail('یک روش تقسیم هزینه انتخاب کنید.', 1, methods.querySelector('input'));
-                if (until >= 2) {
+                if (until >= 1) {
                     const amount = $('[data-formula-fixed-amount]');
-                    if (method()?.value === 'fixed' && (amount.value === '' || !Number.isSafeInteger(Number(amount.value)) || Number(amount.value) < 0)) fail('مبلغ ثابت هر واحد را با عدد صحیح صفر یا بیشتر وارد کنید.', 2, amount);
+                    if (method()?.value === 'fixed' && (amount.value === '' || !Number.isSafeInteger(Number(amount.value)) || Number(amount.value) < 0)) fail('مبلغ ثابت هر واحد را با عدد صحیح صفر یا بیشتر وارد کنید.', 1, amount);
                     synchronize(); collect();
                 }
             };
@@ -108,9 +108,9 @@
                     ['نوع هزینه', category.selectedOptions[0]?.textContent, 0], ['عنوان فرمول', titleInput?.value.trim(), 0],
                     ['روش تقسیم', method()?.closest('label').querySelector('b').textContent, 1],
                 ];
-                if (data.calculation_type === 'fixed') entries.push(['مبلغ ثابت هر واحد', number(data.fixed_amount) + ' ریال', 2]);
-                else if (data.floor_coefficients) entries.push(['ضرایب طبقات', Object.entries(data.floor_coefficients).map(([key, value]) => 'طبقه ' + number(key) + ': ' + number(value)).join('؛ '), 2]);
-                else entries.push(['پارامترها', 'این روش تنظیمات دستی اضافه ندارد.', 2]);
+                if (data.calculation_type === 'fixed') entries.push(['مبلغ ثابت هر واحد', number(data.fixed_amount) + ' ریال', 1]);
+                else if (data.floor_coefficients) entries.push(['ضرایب طبقات', Object.entries(data.floor_coefficients).map(([key, value]) => 'طبقه ' + number(key) + ': ' + number(value)).join('؛ '), 1]);
+                else entries.push(['پارامترها', 'این روش تنظیمات دستی اضافه ندارد.', 1]);
                 for (const [label, text, target] of entries) {
                     const value = make('dd', '', text), edit = make('button', 'charge-wizard__edit', 'ویرایش'); edit.type = 'button'; edit.setAttribute('aria-label', 'ویرایش ' + label);
                     edit.addEventListener('click', () => navigate(target)); value.append(edit); summary.append(make('dt', '', label), value);
@@ -122,13 +122,14 @@
                 panels.forEach((panel, index) => panel.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = busy || index !== step));
                 const type = method()?.value;
                 fixed.hidden = type !== 'fixed'; floor.hidden = type !== 'floor_coefficient';
-                fixed.querySelectorAll('input').forEach(el => el.disabled = busy || step !== 2 || type !== 'fixed');
-                floor.querySelectorAll('input, textarea, button').forEach(el => el.disabled = busy || step !== 2 || type !== 'floor_coefficient');
+                parameterHint.textContent = type === 'fixed' ? 'مبلغ ثابت هر واحد در هر دوره را وارد کنید.' : type === 'floor_coefficient' ? 'ضریب ۱ سهم مبناست؛ همکف را صفر و زیرزمین را با شماره منفی وارد کنید.' : type ? 'این روش تنظیمات دستی اضافه ندارد.' : 'روش تقسیم را انتخاب کنید تا تنظیمات آن نمایش داده شود.';
+                fixed.querySelectorAll('input').forEach(el => el.disabled = busy || step !== 1 || type !== 'fixed');
+                floor.querySelectorAll('input, textarea, button').forEach(el => el.disabled = busy || step !== 1 || type !== 'floor_coefficient');
                 nav.querySelectorAll('button').forEach(el => el.disabled = busy);
                 back.hidden = step === 0; back.disabled = busy;
                 saveButton.disabled = busy || loadingCategories || step === 0 && !categoryAvailable();
                 for (const id of ['crudDrawerClose', 'crudCancelButton']) { const button = document.getElementById(id); if (button) button.disabled = busy; }
-                saveButton.textContent = busy ? 'در حال اعتبارسنجی و ذخیره…' : step < 3 ? ['ادامه: انتخاب روش', 'ادامه: تنظیم پارامترها', 'مرور تنظیمات'][step] : isActive() ? 'ذخیره و فعال‌سازی فرمول' : 'ذخیره فرمول غیرفعال';
+                saveButton.textContent = busy ? 'در حال اعتبارسنجی و ذخیره…' : step < 2 ? ['ادامه: روش و تنظیمات', 'مرور تنظیمات'][step] : isActive() ? 'ذخیره و فعال‌سازی فرمول' : 'ذخیره فرمول غیرفعال';
                 component.setAttribute('aria-busy', String(busy || loadingCategories));
                 window.BuildinoSelect2?.refresh(category);
             }
@@ -136,10 +137,10 @@
                 step = next; component.dataset.formulaStep = String(step); discard.hidden = true;
                 panels.forEach((panel, index) => panel.hidden = index !== step);
                 [...nav.children].forEach((button, index) => { button.classList.toggle('is-complete', index < step); if (index === step) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current'); });
-                panelHeading.textContent = headings[step]; progress.style.setProperty('--charge-progress', ((step + 1) * 25) + '%');
+                panelHeading.textContent = headings[step]; progress.style.setProperty('--charge-progress', ((step + 1) / labels.length * 100) + '%');
                 announcement.textContent = `مرحله ${number(step + 1)} از ${number(labels.length)}: ${labels[step]}`;
                 parameterHint.textContent = method()?.value === 'fixed' ? 'مبلغی که هر واحد در هر دوره باید بپردازد را وارد کنید. این عدد مبلغ کل ساختمان نیست.' : method()?.value === 'floor_coefficient' ? 'ضریب ۱ سهم مبناست؛ عدد بزرگ‌تر سهم بیشتری می‌دهد. همکف را صفر و زیرزمین را با شماره منفی وارد کنید.' : 'این روش پارامتر دستی ندارد. سامانه هزینه ثبت‌شدهٔ دوره را بر اساس روش انتخابی بین واحدها تقسیم می‌کند.';
-                if (step === 3) renderSummary(); sync(); if (focus) panelHeading.focus();
+                if (step === 2) renderSummary(); sync(); if (focus) panelHeading.focus();
             }
             const showFailure = failure => {
                 if (Number.isInteger(failure.step)) show(failure.step, false);
@@ -174,14 +175,14 @@
             component.markFormulaSaved = () => { dirty = false; };
             component.prepareFormulaSubmit = () => {
                 if (busy || loadingCategories) return false;
-                clearError(); try { validate(step); if (step < 3) { show(step + 1); return false; } return true; } catch (failure) { showFailure(failure); return false; }
+                clearError(); try { validate(step); if (step < 2) { show(step + 1); return false; } return true; } catch (failure) { showFailure(failure); return false; }
             };
             component.syncFormulaFooter = sync;
             component.setFormulaBusy = value => { busy = value; sync(); };
             component.showFormulaErrors = (errors, fallback) => {
                 busy = false;
                 const key = Object.keys(errors || {})[0], text = Object.values(errors || {}).flat().join('؛ ') || fallback || 'اطلاعات ذخیره نشد؛ تنظیمات را بررسی و دوباره تلاش کنید.';
-                const target = key?.includes('financial_category') ? 0 : key === 'title' ? 0 : key?.includes('calculation_type') ? 1 : key?.includes('fixed_amount') || key?.includes('floor_coefficients') || key === 'items' ? 2 : step;
+                const target = key?.includes('financial_category') ? 0 : key === 'title' ? 0 : key?.includes('calculation_type') ? 1 : key?.includes('fixed_amount') || key?.includes('floor_coefficients') || key === 'items' ? 1 : step;
                 const field = key?.includes('financial_category') ? category : key === 'title' ? titleInput : key?.includes('fixed_amount') ? $('[data-formula-fixed-amount]') : null;
                 showFailure({ message: text, step: target, field });
             };
@@ -190,7 +191,7 @@
                 if (event.target === category && titleInput) {
                     if (!titleInput.value.trim() || titleInput.value === suggestedTitle) { suggestedTitle = category.value ? 'شارژ ' + category.selectedOptions[0].textContent : ''; titleInput.value = suggestedTitle; }
                 }
-                if (step === 3) renderSummary(); sync();
+                if (step === 2) renderSummary(); sync();
             };
             form.addEventListener('input', changed, { signal: abort.signal }); form.addEventListener('change', changed, { signal: abort.signal });
             form.addEventListener('buildino:form-mounted', () => {

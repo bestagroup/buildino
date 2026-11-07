@@ -28,7 +28,7 @@ const ownershipReturnUrl = (ownerId?: number) => {
     if (ownerId) query.set('owner_id', String(ownerId));
     return '/management/operations/ownerships?' + query;
 };
-const stages = ['مشخصات کاربر', 'وضعیت حساب', 'بررسی نهایی'];
+const stages = ['مشخصات و وضعیت حساب', 'بررسی نهایی'];
 let version = 0, disposed = false, snapshot = '';
 let original: CrudRecord = {};
 const mode = computed(() => selected.value ? 'edit' as const : 'create' as const);
@@ -43,11 +43,11 @@ const clearCreateQuery = () => {
     url.searchParams.delete('create'); window.history.replaceState(window.history.state, '', url);
 };
 const fields = computed<CrudField[]>(() => {
-    if (step.value === 0) return userIdentityFields(props.resource.fields || []);
     const order = ['is_active', 'is_blocked', 'verify_mobile', 'verify_email'];
-    return (props.resource.fields || []).filter(field => order.includes(field.name) && !(accessFlow.value && mode.value === 'create' && field.name === 'is_active'))
+    const accountFields = (props.resource.fields || []).filter(field => order.includes(field.name) && !(accessFlow.value && mode.value === 'create' && field.name === 'is_active'))
         .sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name))
         .map(field => ({ ...field, ...(field.name === 'verify_mobile' ? { label: 'موبایل تأییدشده' } : field.name === 'verify_email' ? { label: 'ایمیل تأییدشده' } : {}) }));
+    return [...userIdentityFields(props.resource.fields || []), ...accountFields];
 });
 const focus = async (selector: string) => { await nextTick(); root.value?.querySelector<HTMLElement>(selector)?.focus(); };
 const request = <T,>(path: string, method = 'GET', body?: unknown) => apiRequest<T>(path, { csrfToken: props.csrfToken, method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
@@ -83,20 +83,17 @@ const close = async (force = false) => {
     if (!force && JSON.stringify(form.value) !== snapshot) { discard.value = true; return; }
     editing.value = false; discard.value = false; error.value = ''; errors.value = {}; clearCreateQuery(); await load(page.value); await focus('#users-list-title');
 };
-const validate = (index: number) => {
-    const result: Record<string, string[]> = {};
-    if (index === 0) {
-        Object.assign(result, validateUserIdentity(form.value));
-    }
-    if (index === 1 && form.value.verify_email && !String(form.value.email || '').trim()) result.verify_email = ['برای تأیید ایمیل، ابتدا نشانی ایمیل را وارد کنید.'];
+const validate = () => {
+    const result = validateUserIdentity(form.value);
+    if (form.value.verify_email && !String(form.value.email || '').trim()) result.verify_email = ['برای تأیید ایمیل، ابتدا نشانی ایمیل را وارد کنید.'];
     errors.value = result; return Object.keys(result).length === 0;
 };
 const navigate = async (index: number) => { if (!busy.value && index < step.value) { step.value = index; errors.value = {}; error.value = ''; await focus('#users-step-title'); } };
 const submit = async () => {
     if (busy.value || uncertain.value) return;
     error.value = '';
-    if (step.value < 2) { if (validate(step.value)) { step.value++; await focus('#users-step-title'); } else await focus('[aria-invalid="true"]'); return; }
-    for (let index = 0; index < 2; index++) if (!validate(index)) { step.value = index; await focus('[aria-invalid="true"]'); return; }
+    if (!validate()) { step.value = 0; await focus('[aria-invalid="true"]'); return; }
+    if (step.value === 0) { step.value++; await focus('#users-step-title'); return; }
     const current = selected.value;
     if (current ? !current.can_update : !props.workspace.canCreate) return;
     const values = { ...form.value, ...userIdentityValues(form.value) };
@@ -110,7 +107,7 @@ const submit = async () => {
         editing.value = false; search.value = ''; status.value = ''; await load(1); await focus('[data-users-success]');
     } catch (caught) {
         report(caught, true);
-        if (Object.keys(errors.value).length) { step.value = Object.keys(errors.value).some(key => ['first_name', 'last_name', 'mobile', 'email', 'national_code'].includes(key)) ? 0 : 1; await focus('[aria-invalid="true"]'); }
+        if (Object.keys(errors.value).length) { step.value = 0; await focus('[aria-invalid="true"]'); }
     } finally { busy.value = false; if (error.value) await focus(Object.keys(errors.value).length ? '[aria-invalid="true"]' : '[data-users-error]'); }
 };
 const remove = async () => {
@@ -159,12 +156,12 @@ onBeforeUnmount(() => { disposed = true; version++; window.removeEventListener('
         </section>
         <section v-else class="ownership-card finance-editor" :aria-busy="busy">
             <div class="ownership-card__heading ownership-card__heading--split users-editor-heading"><h3>{{ selected ? 'ویرایش کاربر' : 'افزودن کاربر' }}</h3><button type="button" class="ownership-button" :disabled="busy" @click="close()">بازگشت به فهرست</button></div>
-            <ol class="ownership-flow" aria-label="مراحل فرم"><li v-for="(label, index) in stages" :key="label" :aria-current="step === index ? 'step' : undefined" :class="{ 'is-complete': index < step }"><button type="button" :disabled="index >= step || busy" @click="navigate(index)">{{ number(index + 1) }}. {{ label }}</button></li></ol>
+            <ol class="ownership-flow" :style="{ '--finance-steps': stages.length }" aria-label="مراحل فرم"><li v-for="(label, index) in stages" :key="label" :aria-current="step === index ? 'step' : undefined" :class="{ 'is-complete': index < step }"><button type="button" :disabled="index >= step || busy" @click="navigate(index)">{{ number(index + 1) }}. {{ label }}</button></li></ol>
             <form id="users-form" :data-users-step="step" novalidate @submit.prevent="submit"><fieldset :disabled="busy || uncertain"><legend id="users-step-title" tabindex="-1">{{ stages[step] }}</legend>
                 <p v-if="accessFlow && !selected" class="finance-hint">کاربر تا تکمیل نقش و محدوده غیرفعال می‌ماند.</p>
-                <DynamicForm v-if="step < 2" v-model="form" :fields="fields" :mode="mode" :errors="errors" lookup-base="/management/lookups" :csrf-token="csrfToken" :group-optional="false" />
+                <DynamicForm v-if="step < 1" v-model="form" :fields="fields" :mode="mode" :errors="errors" lookup-base="/management/lookups" :csrf-token="csrfToken" :group-optional="false" />
                 <template v-else><dl class="finance-review"><dt>نام و نام خانوادگی</dt><dd>{{ form.first_name }} {{ form.last_name }}</dd><dt>موبایل</dt><dd><bdi>{{ form.mobile }}</bdi></dd><dt>ایمیل</dt><dd><bdi>{{ form.email || '—' }}</bdi></dd><dt>کد ملی</dt><dd><bdi>{{ form.national_code || '—' }}</bdi></dd><dt>وضعیت حساب</dt><dd>{{ form.is_blocked ? 'مسدود' : form.is_active ? 'فعال' : 'غیرفعال' }}</dd><dt>تأیید موبایل / ایمیل</dt><dd>{{ form.verify_mobile ? 'موبایل تأییدشده' : 'موبایل تأییدنشده' }} / {{ form.verify_email ? 'ایمیل تأییدشده' : 'ایمیل تأییدنشده' }}</dd></dl><p v-if="!selected" class="finance-hint">رمز اولیه خودکار تعیین می‌شود؛ تغییر آن در اولین ورود الزامی است. تخصیص نقش پس از ساخت کاربر انجام می‌شود.</p></template>
-            </fieldset><div class="finance-actions users-form-actions"><button v-if="step" type="button" class="ownership-button" :disabled="busy || uncertain" @click="navigate(step - 1)">مرحله قبل</button><button class="ownership-button ownership-button--primary" :disabled="busy || uncertain" data-users-next>{{ busy ? 'در حال ثبت…' : step === 2 ? 'ثبت اطلاعات' : 'ادامه' }}</button></div></form>
+            </fieldset><div class="finance-actions users-form-actions"><button v-if="step" type="button" class="ownership-button" :disabled="busy || uncertain" @click="navigate(step - 1)">مرحله قبل</button><button class="ownership-button ownership-button--primary" :disabled="busy || uncertain" data-users-next>{{ busy ? 'در حال ثبت…' : step === 1 ? 'ثبت اطلاعات' : 'ادامه' }}</button></div></form>
         </section>
         <UiConfirmDialog :open="discard" title="خروج از فرم" message="تغییرات این فرم ذخیره نشده‌اند. از فرم خارج می‌شوید؟" confirm-label="خروج از فرم" @confirm="close(true)" @cancel="discard = false" />
         <UiConfirmDialog :open="Boolean(deleting)" title="حذف کاربر" :message="deleting ? 'کاربر «' + name(deleting) + '» حذف شود؟' : ''" confirm-label="حذف کاربر" :busy="busy" @confirm="remove" @cancel="deleting = null" />

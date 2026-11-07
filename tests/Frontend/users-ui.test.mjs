@@ -55,27 +55,27 @@ test('users: actual Vue wizard, scoped actions, validation, P05, retries and res
         $('[data-users-add]').click();await tick();expect(!$('.users-list')&&$('#users-form'),'Editor did not replace list');
         await submit();expect($('[aria-invalid="true"]')&&posts.length===0,'Required validation bypassed');
         await input('first_name','<img src=x onerror=alert(1)>');await input('last_name','جدید');await input('mobile','09124444444');await input('email','invalid');await submit();expect($('[name="email"]').getAttribute('aria-invalid')==='true','Invalid email accepted');
-        await input('email','user@example.test');await submit();expect(!$('[name="first_name"]')&&$('[name="verify_mobile"]'),'Step form appended instead of replaced');
+        await input('email','user@example.test');expect($('[name="first_name"]')&&$('[name="verify_mobile"]'),'Identity and status must share a step');
         expect(!$('[name="is_active"]'),'P05 user could be prematurely activated');expect(document.documentElement.scrollWidth<=innerWidth,'Switch stage overflows');
         await submit();expect($('.finance-review')&&!$('.finance-review img'),'Review or escaping failed');
-        const previous=$$('.users-form-actions button').find(el=>el.type==='button');previous.click();await tick();$$('.users-form-actions button').find(el=>el.type==='button').click();await tick();expect($('[name="mobile"]').value==='09124444444','Back lost entered data');
-        await submit();await submit();fail='validation';await submit();expect($('[name="mobile"]').getAttribute('aria-invalid')==='true'&&$('#users-form'),'Server errors lost form');
-        await input('mobile','09125555555');await submit();await submit();await submit();await until(()=>$('[data-users-success]'));
+        const previous=$$('.users-form-actions button').find(el=>el.type==='button');previous.click();await tick();expect($('[name="mobile"]').value==='09124444444','Back lost entered data');
+        await submit();fail='validation';await submit();expect($('[name="mobile"]').getAttribute('aria-invalid')==='true'&&$('#users-form'),'Server errors lost form');
+        await input('mobile','09125555555');await submit();await submit();await until(()=>$('[data-users-success]'));
         expect(posts.length===2&&posts[1].is_active===false&&!('password'in posts[1]),'Creation changed initial password/activation contract');
         expect($('[data-ownership-return] a').getAttribute('href').includes('owner_id=4'),'Return did not carry created owner');
         expect($('[data-users-success] a').href.includes('user_id=4')&&$('[data-users-success] a').href.includes('flow=P05'),'Role assignment lost created user');
         expect(!$('#users-form')&&document.documentElement.scrollWidth<=innerWidth,'Success layout wrong');
-        $('[data-users-edit]').click();await tick();await input('first_name','نام ویرایش‌شده');await submit();await submit();await submit();await until(()=>patches.length===1&&!$('#users-form'));
+        $('[data-users-edit]').click();await tick();await input('first_name','نام ویرایش‌شده');await submit();await submit();await until(()=>patches.length===1&&!$('#users-form'));
         expect(Object.keys(patches[0]).join(',')==='first_name','Edit overwrote untouched fields');
         const search=$('.users-filters input');search.value='ناموجود';search.dispatchEvent(new Event('input',{bubbles:true}));$('.users-filters').dispatchEvent(new Event('submit',{cancelable:true}));await until(()=>!$('.users-item'));expect(queries.at(-1).get('search')==='ناموجود','Search never reached server');
         search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));await inputStatus('blocked');await until(()=>$('.users-item'));
         expect($$('.users-item').length===1&&$('.users-item').textContent.includes('محمد'),'Status filter wrong');
         $$('.users-item button').find(el=>el.textContent.includes('حذف')).click();await until(()=>$('[role="alertdialog"]'));$$('[role="alertdialog"] button').find(el=>el.textContent.trim()==='حذف کاربر').click();await until(()=>deletes.length===1&&!$('[role="alertdialog"]'));expect(deletes[0]===3,'Wrong deletion target');
-        $('[data-users-add]').click();await tick();await input('first_name','تست');await input('last_name','شبکه');await input('mobile','09126666666');await submit();await submit();fail='server';await submit();
+        $('[data-users-add]').click();await tick();await input('first_name','تست');await input('last_name','شبکه');await input('mobile','09126666666');await submit();fail='server';await submit();
         expect($('[data-users-next]').disabled&&!$('#app').textContent.includes('SQLSTATE')&&!$('[data-users-success]'),'Unknown result leaked SQL or announced success');
         $('[data-users-error] button').click();await until(()=>!$('#users-form'));const count=posts.length;await tick();expect(posts.length===count,'Mutation automatically retried');
         history.replaceState({},'', '/management/operations/users?create=1');mountUsers(props());await until(()=>$('#users-form'));
-        expect([...$$('#users-form input')].map(el=>el.name).join(',')==='first_name,last_name,mobile,email,national_code','Direct creation link or identity field order is wrong');
+        expect([...$$('#users-form input')].filter(el=>el.type!=='checkbox').map(el=>el.name).join(',')==='first_name,last_name,mobile,email,national_code','Direct creation link or identity field order is wrong');
         if(${JSON.stringify(process.env.USERS_FORM_PREVIEW || '')}){
             if(${JSON.stringify(process.env.USERS_FORM_PREVIEW || '')}==='status'){await input('first_name','کاربر');await input('last_name','آزمایشی');await input('mobile','09121112233');await submit();}
             $('#result').dataset.ok='true';return;

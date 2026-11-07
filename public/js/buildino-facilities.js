@@ -169,12 +169,12 @@
         if (busy || loadingDetail || !facility?.id && next > 0) return;
         if (!keepMessage) message('', '');
         step = next;
-        $('panel-title').textContent = ['اطلاعات پایه و هزینه استفاده', 'تنظیم برنامه هفتگی و سانس‌ها', 'قوانین و محدودیت‌های رزرو', 'بررسی نهایی و فعال‌سازی'][step];
+        $('panel-title').textContent = ['اطلاعات پایه و هزینه استفاده', 'تنظیم برنامه هفتگی و سانس‌ها', 'قوانین و فعال‌سازی'][step];
         root.querySelectorAll('[data-facility-panel]').forEach(el => el.hidden = Number(el.dataset.facilityPanel) !== step);
         root.querySelectorAll('[data-facility-step-button]').forEach(el => {
             if (Number(el.dataset.facilityStepButton) === step) el.setAttribute('aria-current', 'step'); else el.removeAttribute('aria-current');
         });
-        if (step === 3) renderReview(); sync(); $('panel-title').focus();
+        if (step === 2) renderReview(); sync(); $('panel-title').focus();
     }
     async function loadList(target = page) {
         if (!building()) return;
@@ -285,7 +285,7 @@
             try {
                 await request(`/api/v1/facilities/${facility.id}`, { method: 'PATCH', body: JSON.stringify({ requires_approval: checked(form, 'requires_approval') }) });
             } catch (error) { error.partial = true; throw error; }
-        }, 3);
+        }, 2);
     });
     $('activate').addEventListener('click', async () => {
         if (busy || loadingDetail || refreshRequired || !facility?.id || !building()?.canUpdate || dirty.size) return;
@@ -307,7 +307,7 @@
         busy = true; sync();
         try { await readFacility(); renderSchedules(); message('success', 'اطلاعات ذخیره‌شده دریافت شد؛ می‌توانید ادامه دهید.'); }
         catch (error) { report(error); }
-        finally { busy = false; if (step === 3) renderReview(); else sync(); }
+        finally { busy = false; if (step === 2) renderReview(); else sync(); }
     });
     for (const [key, form] of Object.entries(forms)) {
         const markDirty = () => { dirty.add(key); $('activate').disabled = true; updateState(); };

@@ -13,7 +13,7 @@ test('facility configuration: separate views, saved context, dirty forms, time s
     const view = readFileSync(join(project, 'resources/views/management/facility-configuration.blade.php'), 'utf8');
     const loops = [
         '<option value="4">ساختمان آزمایشی</option>',
-        ['اطلاعات و هزینه', 'برنامه و سانس‌ها', 'قوانین رزرو', 'بررسی و فعال‌سازی'].map((label, i) => `<button type="button" data-facility-step-button="${i}"><b aria-hidden="true">${i + 1}</b><span>${label}</span></button>`).join(''),
+        ['اطلاعات و هزینه', 'برنامه و سانس‌ها', 'قوانین و فعال‌سازی'].map((label, i) => `<button type="button" data-facility-step-button="${i}"><b aria-hidden="true">${i + 1}</b><span>${label}</span></button>`).join(''),
         ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'].map((day, i) => `<label><input name="days" type="checkbox" value="${(i + 6) % 7}">${day}</label>`).join(''),
         [['min_duration_minutes','حداقل مدت رزرو (دقیقه)',1,''],['max_duration_minutes','حداکثر مدت رزرو (دقیقه)',1,60],['min_advance_minutes','فاصله رزرو تا شروع (دقیقه)',0,0],['max_advance_days','امکان رزرو تا چند روز آینده',1,''],['max_reservation_per_unit','حداکثر رزرو فعال هر واحد',1,1],['cancel_before_minutes','مهلت لغو پیش از شروع (دقیقه)',0,0]].map(([name,label,min,value]) => `<label class="ownership-field"><span>${label}</span><input name="${name}" type="number" min="${min}" value="${value}" step="1" placeholder="بدون محدودیت"></label>`).join(''),
         [['max_reservations_per_day','حداکثر رزرو روزانه'],['max_reservations_per_week','حداکثر رزرو هفتگی'],['max_reservations_per_month','حداکثر رزرو ماهانه']].map(([name,label]) => `<label class="ownership-field"><span>${label}</span><input name="${name}" type="number" min="1" placeholder="بدون محدودیت"></label>`).join(''),
@@ -91,7 +91,7 @@ test('facility configuration: separate views, saved context, dirty forms, time s
         // Reopen the saved record to discard this deliberately unsaved rule draft.
         allowDiscard = true; $('close').click(); await until(() => $('list').querySelector('button'));
         $('list').querySelector('button').click(); await until(() => !$('base-fields').disabled);
-        go(3); expect(!$('activate').disabled, 'Complete stored configuration must remain activatable');
+        go(2); expect(!$('activate').disabled, 'Complete stored configuration must remain activatable');
         layoutFits();
         allowDiscard = false;
         go(0); const title = $('base-form').elements.title; title.value = 'عنوان جدید'; title.dispatchEvent(new Event('input', { bubbles: true }));
@@ -124,14 +124,14 @@ test('facility configuration: separate views, saved context, dirty forms, time s
         const viewNext = document.querySelector('[data-facility-view-next="1"]');
         expect(!viewNext.hidden, 'Viewers need a visible way to continue'); viewNext.click();
         expect(!document.querySelector('[data-facility-panel="1"]').hidden && $('schedule-save').hidden, 'View-only navigation must retain permissions');
-        go(3); expect($('activate').hidden, 'Viewers must not be offered activation');
+        go(2); expect($('activate').hidden, 'Viewers must not be offered activation');
         expect(!document.querySelector('[data-facility-flow]'), 'Directory must not become a configuration step');
         expect(document.documentElement.scrollWidth <= window.innerWidth, 'Layout must fit mobile viewport');
         if (${JSON.stringify(process.env.FACILITY_CAPTURE || '')}) {
             access.canCreate = true; access.canUpdate = true; $('close').click(); await until(() => $('list').querySelector('button'));
             if (${JSON.stringify(process.env.FACILITY_CAPTURE || '')} !== 'directory') {
                 $('list').querySelector('button').click(); await until(() => !$('base-fields').disabled);
-                go(({base:0,schedule:1,rules:2,review:3})[${JSON.stringify(process.env.FACILITY_CAPTURE || '')}] ?? 0);
+                go(({base:0,schedule:1,rules:2,review:2})[${JSON.stringify(process.env.FACILITY_CAPTURE || '')}] ?? 0);
             }
             window.scrollTo(0, 0);
         }

@@ -74,7 +74,7 @@ test('finance: real Vue workflows, Jalali dates, financial safeguards, permissio
         expect($('.finance-review').textContent.includes('۹۱۰')&&posts.length===0,'Invoice total/review wrong');
         hold=true;await submit();await until(()=>release);const n=posts.length;await submit();expect(posts.length===n,'Duplicate invoice write');hold=false;release();await until(()=>$('[data-finance-edit]'));
         expect(posts.at(-1).path==='/api/v1/units/101/invoices'&&posts.at(-1).body.issue_date==='2026-10-29'&&posts.at(-1).body.items[0].quantity===2,'Invoice payload wrong');
-        await click('[data-finance-edit]');await submit();await input('items.0.title','ویرایش عنوان');await submit();await submit();await until(()=>$('[data-finance-issue]'));
+        await click('[data-finance-edit]');await input('items.0.title','ویرایش عنوان');await submit();await submit();await until(()=>$('[data-finance-issue]'));
         expect(posts.at(-1).body.items[0].metadata.source==='preserve'&&posts.at(-1).body.items[0].description==='شرح قبلی'&&posts.at(-1).body.items[0].charge_item_id===7,'Editing lost item metadata');
         const beforeIssue=posts.length;await click('[data-finance-issue]');expect($('[role="alertdialog"]')&&posts.length===beforeIssue,'Issue ran without confirmation');await click('[role="alertdialog"] .ui-dialog__actions button:last-child');await until(()=>$('[data-finance-plan]'));
         expect(!$('[data-finance-edit]')&&$('[data-finance-pay]'),'Issued invoice exposes draft editing');
@@ -94,14 +94,15 @@ test('finance: real Vue workflows, Jalali dates, financial safeguards, permissio
             else {const back=$$('.ownership-card button').find(el=>el.textContent.includes('بازگشت به فهرست'));back.click();await tick();}
             if(!$('[data-finance-create]'))continue;
             await click('[data-finance-create]');expect(!$('textarea[name="configuration"]')&&!$('.finance-table'),'Raw JSON or old list in editor');
-            await fillRequired();await submit();
-            if(!$('.finance-review')){await fillRequired();if(key==='loyalty-rules'){await input('starts_at','۱۴۰۷/۰۱/۰۱ ۱۴:۳۰');await input('ends_at','۱۴۰۷/۰۱/۰۲ ۱۴:۳۰');}await submit();}
+            await fillRequired();if(key==='loyalty-rules'){await input('starts_at','۱۴۰۷/۰۱/۰۱ ۱۴:۳۰');await input('ends_at','۱۴۰۷/۰۱/۰۲ ۱۴:۳۰');}
+            const before=posts.length;await submit();
+            if(key==='expense-categories'){await until(()=>$('[data-finance-open]'));expect(posts.length===before+1,'Category must save in one step');continue;}
             expect($('.finance-review'),'Missing final review for '+key+' / '+$('#app').textContent);
-            const before=posts.length;await submit();await until(()=>$('[data-finance-open]'));expect(posts.length===before+1,'Generic write failed '+key);
+            await submit();await until(()=>$('[data-finance-open]'));expect(posts.length===before+1,'Generic write failed '+key);
             expect(!posts.at(-1).path.includes('{'),'Unresolved endpoint '+key);
             if(key==='loyalty-rules')expect(posts.at(-1).body.starts_at==='2028-03-20T14:30','Date and time conversion failed');
         }
-        await mount('expenses');await click('[data-finance-create]');await fillRequired();await submit();await fillRequired();await submit();failSave=true;await submit();await until(()=>$('[data-finance-error]'));expect($('[name="title"]').value==='نمونه آزمایشی','Server validation discarded input');failSave=false;
+        await mount('expenses');await click('[data-finance-create]');await fillRequired();await submit();failSave=true;await submit();await until(()=>$('[data-finance-error]'));expect($('[name="title"]').value==='نمونه آزمایشی','Server validation discarded input');failSave=false;
         const p=props('invoices');for(const b of p.workspace.buildings)for(const key of Object.keys(b.abilities))b.abilities[key]=key.endsWith('.view');await mount('invoices',p);expect(!$('[data-finance-create]'),'Read-only create exposed');await click('[data-finance-open]');expect(!$('[data-finance-pay]')&&!$('[data-finance-plan]')&&!$('[data-finance-edit]'),'Read-only mutation exposed');
         await mount('invoices');await click('[data-finance-create]');await input('description','تغییر ذخیره نشده');await click('.finance-editor .ownership-card__heading button');expect($('.finance-editor [role="alert"]'),'Unsaved edit discarded');
         expect(document.documentElement.scrollWidth<=innerWidth,'Page overflows viewport');

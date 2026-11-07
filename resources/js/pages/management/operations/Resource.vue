@@ -4,7 +4,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import DynamicForm from '../../../components/management/DynamicForm.vue';
 import UiConfirmDialog from '../../../components/management/UiConfirmDialog.vue';
 import { ApiError, apiRequest, rowsFromPayload } from '../../../lib/management-api';
-import { display, payloadFor, primaryFields, readValue, structure, type StructureKey, type StructureUi } from '../../../lib/building-structure';
+import { display, payloadFor, readValue, structure, type StructureKey, type StructureUi } from '../../../lib/building-structure';
 import { useStructureScope } from '../../../lib/structure-scope';
 import type { CrudField, CrudRecord, ResourcePageProps } from '../../../types/management';
 
@@ -27,7 +27,7 @@ const ready = computed(() => !meta.value.context || Boolean(context.value));
 const canCreate = computed(() => Boolean(props.resource.create && props.structureUi.canCreate && ready.value && (!meta.value.context || context.value?.create) && (props.resourceKey !== 'buildings' || props.structureUi.createParents.length)));
 const allowed = (row: CrudRecord, action: 'update' | 'delete') => Boolean(props.resource[action] && (meta.value.context ? context.value?.[action] : (props.structureUi.abilities[String(row.id)] ?? props.structureUi.parentAbilities[String(row.complex_id)] ?? props.structureUi.globalAbilities)?.[action]));
 const canViewChild = (row: CrudRecord) => Boolean(child.value && (meta.value.context ? context.value?.childView : (props.structureUi.abilities[String(row.id)] ?? props.structureUi.parentAbilities[String(row.complex_id)] ?? props.structureUi.globalAbilities)?.childView));
-const labels = computed(() => ['complexes', 'buildings'].includes(props.resourceKey) ? ['مشخصات اصلی', 'نشانی و تنظیمات', 'بررسی نهایی'] : ['اطلاعات ' + meta.value.singular, 'بررسی نهایی']);
+const labels = computed(() => ['complexes', 'buildings'].includes(props.resourceKey) ? ['مشخصات و نشانی', 'بررسی نهایی'] : ['اطلاعات ' + meta.value.singular]);
 const reviewStep = computed(() => labels.value.length - 1);
 const visibleRows = computed(() => rows.value.filter(row => JSON.stringify(row).toLocaleLowerCase('fa').includes(search.value.trim().toLocaleLowerCase('fa'))));
 const rowTitle = (row: CrudRecord) => {
@@ -110,8 +110,7 @@ const fields = computed<CrudField[]>(() => (props.resource.fields ?? []).map(fie
     }
     return result;
 }));
-const groupFields = (index: number) => labels.value.length === 2 ? fields.value : fields.value.filter(field => primaryFields.has(field.name) === (index === 0));
-const activeFields = computed(() => groupFields(step.value));
+const activeFields = fields;
 const review = computed(() => fields.value.filter(field => form.value[field.name] !== '' && form.value[field.name] !== null && form.value[field.name] !== undefined).map(field => ({ label: field.label, value: field.options?.find(option => String(option.value) === String(form.value[field.name]))?.label ?? display(form.value[field.name]) })));
 watch(() => form.value.province, (value, old) => { if (editor.value && !initializing && value !== old) form.value.city = ''; });
 const openEditor = async (requestedMode: 'create' | 'edit', row: CrudRecord | null = null) => {
@@ -128,9 +127,9 @@ const closeEditor = (force = false) => {
     if (!force && JSON.stringify(form.value) !== snapshot.value) { discard.value = true; return; }
     editor.value = false; discard.value = false; void focus('#structure-list-title');
 };
-const validate = (index: number) => {
+const validate = () => {
     const errors: Record<string, string[]> = {};
-    for (const field of groupFields(index)) {
+    for (const field of fields.value) {
         const value = form.value[field.name];
         if ((field.required || (mode.value === 'create' && field.required_on_create)) && (typeof value === 'string' ? !value.trim() : value === null || value === undefined)) errors[field.name] = ['این فیلد را تکمیل کنید.'];
         else if (field.type === 'number' && value !== '' && value !== null && value !== undefined) {
@@ -143,11 +142,8 @@ const validate = (index: number) => {
 const submit = async () => {
     if (saving.value || lookupsLoading.value) return;
     formError.value = '';
-    if (step.value < reviewStep.value) {
-        if (validate(step.value)) { step.value++; await focus('#structure-step-title'); } else await focus('[aria-invalid="true"]');
-        return;
-    }
-    for (let index = 0; index < reviewStep.value; index++) if (!validate(index)) { step.value = index; await focus('[aria-invalid="true"]'); return; }
+    if (!validate()) { step.value = 0; await focus('[aria-invalid="true"]'); return; }
+    if (step.value < reviewStep.value) { step.value++; await focus('#structure-step-title'); return; }
     const operation = mode.value === 'edit' ? props.resource.update : props.resource.create;
     if (!operation || (mode.value === 'edit' ? !selected.value || !allowed(selected.value, 'update') : !canCreate.value)) return;
     saving.value = true;
@@ -157,7 +153,7 @@ const submit = async () => {
     } catch (error) {
         formError.value = error instanceof Error ? error.message : 'اطلاعات ذخیره نشد.';
         if (error instanceof ApiError) formErrors.value = error.errors;
-        const invalid = Object.keys(formErrors.value)[0]; step.value = invalid && labels.value.length === 3 && !primaryFields.has(invalid) ? 1 : 0;
+        step.value = 0;
         await focus(Object.keys(formErrors.value).length ? '[aria-invalid="true"]' : '#structure-step-title');
     } finally { saving.value = false; }
 };
@@ -225,10 +221,10 @@ onBeforeUnmount(() => { disposed = true; listTicket++; window.removeEventListene
         </template>
         <section v-else class="ownership-card structure-editor" aria-labelledby="structure-editor-title" :aria-busy="saving">
             <div class="ownership-card__heading ownership-card__heading--split structure-toolbar"><div><h3 id="structure-editor-title" tabindex="-1">{{ mode === 'edit' ? 'ویرایش' : 'افزودن' }} {{ meta.singular }}</h3><p>{{ context?.label || 'اطلاعات موردنیاز را تکمیل کنید.' }}</p></div><button type="button" class="ownership-button" :disabled="saving" @click="closeEditor()">بازگشت به فهرست</button></div>
-            <nav class="ownership-flow structure-steps" :style="{ '--structure-steps': labels.length }" aria-label="مراحل ثبت اطلاعات"><span v-for="(label, index) in labels" :key="label" :class="{ 'is-current': index === step, 'is-complete': index < step }" :aria-current="index === step ? 'step' : undefined"><b>{{ index + 1 }}</b>{{ label }}</span></nav>
+            <nav v-if="labels.length > 1" class="ownership-flow structure-steps" :style="{ '--structure-steps': labels.length }" aria-label="مراحل ثبت اطلاعات"><span v-for="(label, index) in labels" :key="label" :class="{ 'is-current': index === step, 'is-complete': index < step }" :aria-current="index === step ? 'step' : undefined"><b>{{ index + 1 }}</b>{{ label }}</span></nav>
             <h4 id="structure-step-title" tabindex="-1">{{ labels[step] }}</h4>
             <form id="structure-form" novalidate @submit.prevent="submit">
-                <fieldset :disabled="saving"><DynamicForm v-if="step < reviewStep" v-model="form" :fields="activeFields" :mode="mode" :lookup-base="lookupBase" :csrf-token="csrfToken" :errors="formErrors" :group-optional="resourceKey !== 'units'" @loading="lookupsLoading = $event" /><dl v-else class="structure-review"><template v-for="item in review" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></template></dl></fieldset>
+                <fieldset :disabled="saving"><DynamicForm v-if="reviewStep === 0 || step < reviewStep" v-model="form" :fields="activeFields" :mode="mode" :lookup-base="lookupBase" :csrf-token="csrfToken" :errors="formErrors" :group-optional="resourceKey !== 'units'" @loading="lookupsLoading = $event" /><dl v-else class="structure-review"><template v-for="item in review" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></template></dl></fieldset>
                 <div v-if="formError" class="structure-error" role="alert">{{ formError }}</div>
                 <div v-if="discard" class="structure-discard" role="alert"><p>تغییرات ذخیره نشده‌اند. از فرم خارج می‌شوید؟</p><button type="button" class="ownership-button" @click="discard = false">ادامه ویرایش</button><button type="button" class="ownership-button structure-delete" @click="closeEditor(true)">خروج بدون ذخیره</button></div>
                 <div class="ownership-actions structure-form-actions"><button v-if="step > 0" type="button" class="ownership-button" :disabled="saving" @click="step--; formError = ''; focus('#structure-step-title')">مرحله قبل</button><button type="submit" class="ownership-button ownership-button--primary" :disabled="saving || lookupsLoading" data-structure-next>{{ saving ? 'در حال ذخیره…' : step === reviewStep ? 'تأیید و ذخیره' : 'ادامه' }}</button></div>
