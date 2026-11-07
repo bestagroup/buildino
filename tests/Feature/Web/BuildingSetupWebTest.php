@@ -54,7 +54,8 @@ final class BuildingSetupWebTest extends TestCase
         $user = $this->assigned('superadmin');
         $this->actingAs($user)->get('/management/building-setup')->assertOk()
             ->assertSee('data-building-setup', false)
-            ->assertSee('data-setup-step="3"', false)
+            ->assertSee('data-setup-step="2"', false)
+            ->assertDontSee('data-setup-step="3"', false)
             ->assertSee('data-setup-ownership', false)
             ->assertSee('buildino-building-setup-engine.js', false)
             ->assertViewHas('setupConfig', fn (array $config) => $config['canCreateComplex'] && $config['canCreateBuilding']

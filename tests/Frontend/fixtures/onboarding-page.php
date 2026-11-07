@@ -33,7 +33,7 @@ $setupConfig = ['actorId' => 1, 'apiBase' => '/api/v1', 'csrfToken' => 'fixture'
     'buildings' => collect($mode === 'complex' ? [] : [$building]),
     'complexes' => collect($mode === 'complex' ? [['id' => 10, 'title' => 'مجتمع بهار', 'code' => 'CMP-TEST', 'workspaceType' => 'complex']] : []),
     'canCreateComplex' => false, 'canCreateBuilding' => $mode === 'complex', 'canInvite' => true, 'canManageOwnership' => true,
-    'locations' => [$province], 'initialBuildingId' => $mode === 'complex' ? 0 : 1, 'initialComplexId' => $mode === 'complex' ? 10 : 0,
+    'locations' => [$province], 'initialBuildingId' => $mode === 'complex' ? 0 : 1, 'initialComplexId' => $mode === 'complex' ? 10 : 0, 'completedSetup' => null,
     'completeUrl' => '/management/building-setup', 'dashboardUrl' => '/management', 'unitsUrl' => '/management/operations/units',
     'invitationsUrl' => '/management/operations/invitations', 'ownershipUrl' => '/management/operations/ownerships'];
 $source = file_get_contents(resource_path('views/management/building-setup.blade.php'));

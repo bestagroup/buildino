@@ -18,11 +18,11 @@ $source = explode("@section('content')", $source, 2)[1];
 $source = explode('@endsection', $source, 2)[0];
 echo Illuminate\\Support\\Facades\\Blade::render($source, ['setupConfig'=>$config, 'connections'=>collect(), 'connectionReviews'=>collect(), 'errors'=>new Illuminate\\Support\\ViewErrorBag()]);`;
 
-for (const scenario of ['completed', 'completed-with-stale-draft', 'incomplete-draft']) {
+for (const scenario of ['completed', 'completed-with-stale-draft', 'incomplete-draft', 'legacy-review-draft']) {
     test('setup return: ' + scenario, { skip: !existsSync(chrome) }, () => {
         const directory = mkdtempSync(join(tmpdir(), 'buildino-setup-return-'));
         try {
-            const completed = scenario !== 'incomplete-draft';
+            const completed = scenario.startsWith('completed');
             const config = {
                 actorId: 9, apiBase: 'http://localhost/api/v1', completeUrl: 'http://localhost/management/building-setup', csrfToken: '',
                 initialBuildingId: 7, initialComplexId: 0, startNew: false,
@@ -43,7 +43,7 @@ for (const scenario of ['completed', 'completed-with-stale-draft', 'incomplete-d
             if(${scenario !== 'completed'}) {
                 const block={title:'طبقات',startFloor:1,unitsPerFloor:2,defaultArea:'',defaultBedrooms:'',usage:'residential',floors:[]};
                 BuildinoBuildingSetupEngine.resizeFloors(block,3);
-                sessionStorage.setItem(key,JSON.stringify({version:3,step:2,draft:{token:crypto.randomUUID(),mode:'existing',buildingId:7,blocks:[block],started:false}}));
+                sessionStorage.setItem(key,JSON.stringify({version:3,step:${scenario === 'legacy-review-draft' ? 3 : 2},draft:{token:crypto.randomUUID(),mode:'existing',buildingId:7,blocks:[block],started:false}}));
             }
             </script><script>${source}</script><script>
             try {

@@ -47,8 +47,10 @@ test('actual registration/setup UI keeps standalone, block, complex and legacy j
         }
         field('persona','block_manager');field('complex_title','مجتمع بهار');field('building_title','بلوک A');
         $('[data-registration-next]').click();expect(!$('[data-registration-step="1"]').hidden,'Step 1 failed');
+        expect($('[data-registration-step="1"] [name="password"]'),'Credentials must share the identity step');
+        field('password_confirmation','mismatch123');$('[data-registration-next]').click();expect(!$('[data-registration-step="1"]').hidden,'Password mismatch bypassed validation');field('password_confirmation','password123');
         $('[data-registration-next]').click();expect(!$('[data-registration-step="2"]').hidden,'Step 2 failed');
-        $('[data-registration-next]').click();expect(!$('[data-registration-step="3"]').hidden,'Step 3 failed');
+        expect(document.querySelectorAll('[data-registration-step]').length===3,'Registration must have three steps');
         $('[data-registration-previous]').click();expect($('[name="building_title"]').value==='بلوک A','Back lost context');
         expect(!fixtureErrors.length,fixtureErrors.join(';'));document.querySelector('#result').dataset.ok='true';
     })().catch(e=>document.querySelector('#result').textContent=e.stack);
@@ -91,7 +93,7 @@ test('actual registration/setup UI keeps standalone, block, complex and legacy j
         if(innerWidth>=1000)expect(cards.every((el,index)=>!index||el.getBoundingClientRect().top>cards[index-1].getBoundingClientRect().top),'Desktop list rows overlap');
         await resizeFloor(2);expect($('.setup-unit-card [data-unit-field="unit_number"]').value==='11','Layout switching lost entered unit number');
         if(new URLSearchParams(location.search).get('preview')==='units'){$('#result').dataset.ok='true';return;}
-        $('[data-setup-next]').click();await pause();expect(!$('[data-setup-step="3"]').hidden,'Cannot reach review');
+        expect(!$('[data-setup-step="2"]').hidden&&$('[data-setup-review]').textContent,'Unit stage must include the final review');
         $('[data-setup-next]').click();await pause();await pause();expect($('[data-setup-success]').hidden,'Failed final confirmation announced success');
         $('[data-setup-next]').click();await pause();await pause();expect(!$('[data-setup-success]').hidden,'Explicit confirmation retry failed');
         expect(db.buildings.length===1&&db.blocks.length===1&&db.units.length===6,'Registration workspace duplicated on setup/retry');

@@ -48,7 +48,7 @@
 .core-auth-helper { font-size: 13px; line-height: 1.8; color: var(--muted, var(--portal-muted, #718096)); }
 .core-otp-timer { display: block; margin-block-start: 6px; font-size: 13px; }
 .registration-progress { margin-block-end: 26px; scroll-margin-block-start: 20px; }
-.registration-progress ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0; margin: 0 0 14px; list-style: none; }
+.registration-progress ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0; margin: 0 0 14px; list-style: none; }
 .registration-progress button { display: grid; justify-items: center; gap: 8px; width: 100%; padding: 0; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 12px; line-height: 1.8; cursor: pointer; }
 .registration-progress button:disabled { cursor: default; opacity: 1; }
 .registration-progress__number { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--border-strong); border-radius: 50%; background: var(--surface-soft); font-weight: 700; }

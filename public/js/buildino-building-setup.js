@@ -27,7 +27,7 @@
     try {
         const saved = JSON.parse(sessionStorage.getItem(key) || 'null');
         if (saved?.version === 3 && Array.isArray(saved.draft?.blocks) && saved.draft.blocks.length <= 20 && saved.draft.blocks.every((block) => Array.isArray(block.floors) && block.floors.length <= 100 && block.floors.every((floor) => Array.isArray(floor.units) && floor.units.length <= 2000))) {
-            draft = saved.draft; step = draft.started ? 3 : Math.max(0, Math.min(3, Number(saved.step) || 0)); furthest = step; restored = true;
+            draft = saved.draft; step = draft.started ? 2 : Math.max(0, Math.min(2, Number(saved.step) || 0)); furthest = step; restored = true;
         }
     } catch { /* A broken or unavailable browser draft does not block setup. */ }
     const persist = () => { try { sessionStorage.setItem(key, JSON.stringify({ version: 3, draft, step })); } catch {} };
@@ -172,16 +172,15 @@
         query('[data-setup-previous]').hidden = step === 0 || draft.started;
         query('[data-setup-previous]').disabled = busy;
         query('[data-setup-next]').disabled = busy;
-        query('[data-setup-next]').textContent = ['ادامه به طبقات', 'مشاهده واحدها', 'بازبینی اطلاعات', draft.started ? 'ادامه ثبت' : 'ثبت و راه‌اندازی'][step];
-        query('[data-setup-step-status]').textContent = `گام ${fa(step + 1)} از ۴`;
+        query('[data-setup-next]').textContent = ['ادامه به طبقات', 'مشاهده واحدها', draft.started ? 'ادامه ثبت' : 'ثبت و راه‌اندازی'][step];
+        query('[data-setup-step-status]').textContent = `گام ${fa(step + 1)} از ۳`;
         query('[data-setup-reset]').disabled = busy;
     };
     const showStep = (index, focus = true) => {
         step = index; furthest = Math.max(furthest, index);
         root.querySelectorAll('[data-setup-step]').forEach((panel) => { panel.hidden = Number(panel.dataset.setupStep) !== step; });
         if (step === 1) renderBlocks();
-        if (step === 2) renderUnits();
-        if (step === 3) renderReview();
+        if (step === 2) { renderUnits(); renderReview(); }
         updateNavigation(); persist();
         if (focus) { query(`[data-setup-step="${step}"] h3`).focus({ preventScroll: true }); query('.setup-steps').scrollIntoView({ block: 'start', behavior: 'smooth' }); }
     };
@@ -247,7 +246,7 @@
     };
     form.addEventListener('submit', async (event) => {
         event.preventDefault(); if (busy || completed) return; clearError();
-        if (step === 3) { await submitSetup(); return; }
+        if (step === 2) { await submitSetup(); return; }
         if (!checkThrough(step)) return;
         if (step === 0) {
             busy = true; updateNavigation(); query('[data-setup-next]').textContent = 'در حال آماده‌سازی…'; form.setAttribute('aria-busy', 'true');

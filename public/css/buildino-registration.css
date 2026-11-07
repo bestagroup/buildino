@@ -34,7 +34,7 @@
 }
 .registration-page .registration-progress__track { height: 4px; background: #e8eef7; }
 .registration-page .registration-progress__track > span {
-    width: 100%; transform: scaleX(var(--registration-progress-scale, .25)); transform-origin: right;
+    width: 100%; transform: scaleX(var(--registration-progress-scale, .333333)); transform-origin: right;
     background: linear-gradient(90deg, #7bb7ee, #276db5); transition: transform 320ms cubic-bezier(.2,.8,.2,1);
 }
 .registration-page .registration-field > input,

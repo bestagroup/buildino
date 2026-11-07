@@ -12,7 +12,7 @@
 <div class="building-setup" data-building-setup>
     <header class="setup-intro">
         <div class="setup-intro__icon">@include('management.partials.icon', ['name' => 'building', 'size' => 28])</div>
-        <div><span class="eyebrow">راه‌اندازی در ۴ گام</span><h2>مجموعه‌تان را آماده کنید</h2><p>اطلاعات ثبت‌نام شما آماده است؛ طبقات و واحدها را تکمیل و تأیید کنید.</p></div>
+        <div><span class="eyebrow">راه‌اندازی در ۳ گام</span><h2>مجموعه‌تان را آماده کنید</h2><p>اطلاعات ثبت‌نام شما آماده است؛ طبقات و واحدها را تکمیل و تأیید کنید.</p></div>
     </header>
 
     @if ($errors->any())<div class="setup-error" role="alert">{{ $errors->first() }}</div>@endif
@@ -41,8 +41,8 @@
 
     <div class="setup-resume" data-setup-resume hidden><span>پیش‌نویس راه‌اندازی قبلی شما بازیابی شد.</span><button type="button" data-setup-reset>شروع راه‌اندازی تازه</button></div>
     <nav class="setup-steps" aria-label="مراحل راه‌اندازی" @if ($setupConfig['completedSetup']) hidden @endif>
-        @foreach (['مجموعه و نشانی', 'طبقات', 'واحدها', 'بازبینی و ثبت'] as $title)
-            <button type="button" data-setup-step-link="{{ $loop->index }}" @if ($loop->first) aria-current="step" @endif><span>{{ ['۱', '۲', '۳', '۴'][$loop->index] }}</span><strong>{{ $title }}</strong></button>
+        @foreach (['مجموعه و نشانی', 'طبقات', 'واحدها و ثبت'] as $title)
+            <button type="button" data-setup-step-link="{{ $loop->index }}" @if ($loop->first) aria-current="step" @endif><span>{{ ['۱', '۲', '۳'][$loop->index] }}</span><strong>{{ $title }}</strong></button>
         @endforeach
     </nav>
 
@@ -97,14 +97,10 @@
         </section>
 
         <section data-setup-step="2" aria-labelledby="setup-units-title" hidden>
-            <div class="setup-section-heading"><span>گام سوم</span><h3 id="setup-units-title" tabindex="-1">واحدهای پیشنهادی را بررسی کنید</h3><p>واحدها در پیش‌نویس آماده‌اند. اگر شماره‌ها درست هستند، مستقیم به بازبینی بروید؛ برای اصلاح هر طبقه، آن را باز کنید.</p></div>
+            <div class="setup-section-heading"><span>گام سوم</span><h3 id="setup-units-title" tabindex="-1">واحدهای پیشنهادی را بررسی کنید</h3><p>واحدها در پیش‌نویس آماده‌اند. برای اصلاح شماره‌ها، کارت طبقه را باز کنید. پس از بررسی واحدها، «ثبت و راه‌اندازی» را بزنید.</p></div>
             <div class="setup-totals" data-setup-totals></div>
             <div data-setup-units></div>
-        </section>
-
-        <section data-setup-step="3" aria-labelledby="setup-review-title" hidden>
-            <div class="setup-section-heading"><span>گام آخر</span><h3 id="setup-review-title" tabindex="-1">همه‌چیز برای ثبت آماده است؟</h3><p>اطلاعات زیر را مرور کنید. با زدن «ثبت و راه‌اندازی»، ساختار ساختمان ذخیره می‌شود.</p></div>
-            <div data-setup-review></div>
+            <details class="setup-more"><summary>خلاصه اطلاعات ساختمان</summary><div data-setup-review></div></details>
             <div class="setup-saving" role="status" aria-live="polite" data-setup-saving hidden><strong data-setup-saving-label></strong><progress max="100" value="0" data-setup-progress aria-label="پیشرفت ثبت ساختار"></progress><span data-setup-saving-count></span></div>
         </section>
 

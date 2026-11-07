@@ -182,7 +182,7 @@
     provinceSelect?.addEventListener('change', syncCities);
     sync();
 
-    if (steps.length !== 4 || !next || !previous || !submit) return;
+    if (steps.length !== 3 || !next || !previous || !submit) return;
 
     const fieldsIn = (step) => [...step.querySelectorAll('input, select, textarea')]
         .filter((field) => !field.disabled && field.type !== 'hidden');
@@ -212,7 +212,7 @@
         document.querySelector('[data-registration-current-step]').textContent = (index + 1).toLocaleString('fa-IR');
         const bar = document.querySelector('[data-registration-progress-bar]');
         bar.setAttribute('aria-valuenow', String(index + 1));
-        bar.setAttribute('aria-valuetext', `مرحله ${(index + 1).toLocaleString('fa-IR')} از ۴: ${steps[index].querySelector('h3').textContent}`);
+        bar.setAttribute('aria-valuetext', `مرحله ${(index + 1).toLocaleString('fa-IR')} از ${steps.length.toLocaleString('fa-IR')}: ${steps[index].querySelector('h3').textContent}`);
         bar.style.setProperty('--registration-progress', `${((index + 1) / steps.length) * 100}%`);
         bar.style.setProperty('--registration-progress-scale', String((index + 1) / steps.length));
         updateCompletion();

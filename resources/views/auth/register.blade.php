@@ -43,28 +43,28 @@
                     <span class="eyebrow">ایجاد حساب جدید</span>
                     <h2>به Buildino بپیوندید</h2>
                     <p>
-                        در چهار مرحله اطلاعات حساب را تکمیل کنید.
+                        در سه مرحله اطلاعات حساب را تکمیل کنید.
                     </p>
                 </div>
 
                 <div class="registration-step" aria-live="polite" aria-atomic="true">
                     <strong data-registration-current-step>۱</strong>
-                    <span>از ۴</span>
+                    <span>از ۳</span>
                 </div>
             </div>
 
             <nav class="registration-progress" aria-label="مراحل ثبت ‌نام" data-registration-progress>
                 <ol>
-                    @foreach (['نوع حساب', 'مشخصات فردی', 'رمز عبور', 'فضای کار و نشانی'] as $stepTitle)
+                    @foreach (['نوع حساب', 'مشخصات و رمز عبور', 'فضای کار و نشانی'] as $stepTitle)
                         <li @if ($loop->first) aria-current="step" @endif>
                             <button type="button" data-registration-go="{{ $loop->index }}" disabled>
-                                <span class="registration-progress__number">{{ ['۱', '۲', '۳', '۴'][$loop->index] }}</span>
+                                <span class="registration-progress__number">{{ ['۱', '۲', '۳'][$loop->index] }}</span>
                                 <span @if ($loop->last) data-registration-context-label @endif>{{ $stepTitle }}</span>
                             </button>
                         </li>
                     @endforeach
                 </ol>
-                <div class="registration-progress__track" role="progressbar" aria-label="پیشرفت مراحل فرم ثبت‌نام" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1" data-registration-progress-bar>
+                <div class="registration-progress__track" role="progressbar" aria-label="پیشرفت مراحل فرم ثبت‌نام" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1" data-registration-progress-bar>
                     <span></span>
                 </div>
             </nav>
@@ -177,9 +177,7 @@
                             maxlength="190"
                         >
                     </label>
-                </section>
 
-                <section class="registration-wizard-panel" data-registration-step="2" aria-labelledby="registration-password-heading">
                     <div class="registration-wizard-heading">
                         <h3 id="registration-password-heading" tabindex="-1">رمز عبور حساب</h3>
                         <p>رمزی با حداقل ۸ کاراکتر و شامل حرف و عدد انتخاب کنید.</p>
@@ -211,7 +209,7 @@
                     </label>
                 </section>
 
-                <section class="registration-wizard-panel" data-registration-step="3" aria-labelledby="registration-context-heading">
+                <section class="registration-wizard-panel" data-registration-step="2" aria-labelledby="registration-context-heading">
                     <div class="registration-wizard-heading">
                         <h3 id="registration-context-heading" tabindex="-1" data-registration-context-heading>فضای کار اولیه و نشانی</h3>
                         <p data-registration-context-description>اطلاعات اولیه مجتمع و ساختمان را وارد کنید؛ نشانی و کد پستی اختیاری‌اند.</p>
