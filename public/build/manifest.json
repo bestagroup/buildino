@@ -3,11 +3,11 @@
     "file": "assets/DynamicForm-CDDWXYNe.css",
     "src": "_DynamicForm-CDDWXYNe.css"
   },
-  "_DynamicForm.vue_vue_type_script_setup_true_lang-CqKWFA-B.js": {
-    "file": "assets/DynamicForm.vue_vue_type_script_setup_true_lang-CqKWFA-B.js",
+  "_DynamicForm.vue_vue_type_script_setup_true_lang-BuG7vh8q.js": {
+    "file": "assets/DynamicForm.vue_vue_type_script_setup_true_lang-BuG7vh8q.js",
     "name": "DynamicForm.vue_vue_type_script_setup_true_lang",
     "imports": [
-      "_management-inertia-qjGB3YLl.js",
+      "_management-inertia-pLNNlcIf.js",
       "_preload-helper-I4rgV-VL.js"
     ],
     "dynamicImports": [
@@ -17,19 +17,19 @@
       "assets/DynamicForm-CDDWXYNe.css"
     ]
   },
-  "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-CwJcxuF6.js": {
-    "file": "assets/UiConfirmDialog.vue_vue_type_script_setup_true_lang-CwJcxuF6.js",
+  "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-DdAe6bwF.js": {
+    "file": "assets/UiConfirmDialog.vue_vue_type_script_setup_true_lang-DdAe6bwF.js",
     "name": "UiConfirmDialog.vue_vue_type_script_setup_true_lang",
     "imports": [
-      "_management-inertia-qjGB3YLl.js"
+      "_management-inertia-pLNNlcIf.js"
     ]
   },
-  "_UiRecordCard.vue_vue_type_script_setup_true_lang-DGM6YfvU.js": {
-    "file": "assets/UiRecordCard.vue_vue_type_script_setup_true_lang-DGM6YfvU.js",
+  "_UiRecordCard.vue_vue_type_script_setup_true_lang-DfKe2Zpm.js": {
+    "file": "assets/UiRecordCard.vue_vue_type_script_setup_true_lang-DfKe2Zpm.js",
     "name": "UiRecordCard.vue_vue_type_script_setup_true_lang",
     "imports": [
       "resources/js/management.ts",
-      "_management-inertia-qjGB3YLl.js"
+      "_management-inertia-pLNNlcIf.js"
     ],
     "css": [
       "assets/finance-workspace-DWDBH7m1.css"
@@ -39,8 +39,8 @@
     "file": "assets/_commonjsHelpers-CqkleIqs.js",
     "name": "_commonjsHelpers"
   },
-  "_building-structure-cIXDmECG.js": {
-    "file": "assets/building-structure-cIXDmECG.js",
+  "_building-structure-Bn42cvp9.js": {
+    "file": "assets/building-structure-Bn42cvp9.js",
     "name": "building-structure"
   },
   "_invoice-workspace-DU10ieZO.js": {
@@ -59,8 +59,8 @@
     "file": "assets/management-inertia-CqWvugvL.css",
     "src": "_management-inertia-CqWvugvL.css"
   },
-  "_management-inertia-qjGB3YLl.js": {
-    "file": "assets/management-inertia-qjGB3YLl.js",
+  "_management-inertia-pLNNlcIf.js": {
+    "file": "assets/management-inertia-pLNNlcIf.js",
     "name": "management-inertia",
     "css": [
       "assets/management-inertia-CqWvugvL.css"
@@ -95,7 +95,7 @@
     "src": "node_modules/leaflet/dist/leaflet.css"
   },
   "resources/css/app.css": {
-    "file": "assets/app-DRN_UK8w.css",
+    "file": "assets/app-BDKrL3Iw.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -113,7 +113,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-DBVCwK1Z.js",
+    "file": "assets/app-eadZTTis.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -129,13 +129,13 @@
     ]
   },
   "resources/js/management.ts": {
-    "file": "assets/management-C9reeog4.js",
+    "file": "assets/management-DGtSreXz.js",
     "name": "management",
     "src": "resources/js/management.ts",
     "isEntry": true,
     "imports": [
       "_preload-helper-I4rgV-VL.js",
-      "_management-inertia-qjGB3YLl.js"
+      "_management-inertia-pLNNlcIf.js"
     ],
     "dynamicImports": [
       "resources/js/pages/management/access/Users.vue",
@@ -147,33 +147,33 @@
     ]
   },
   "resources/js/pages/management/access/Users.vue": {
-    "file": "assets/Users-DPZetb9r.js",
+    "file": "assets/Users-akzF3FI7.js",
     "name": "Users",
     "src": "resources/js/pages/management/access/Users.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_management-inertia-qjGB3YLl.js",
+      "_management-inertia-pLNNlcIf.js",
       "resources/js/management.ts",
-      "_DynamicForm.vue_vue_type_script_setup_true_lang-CqKWFA-B.js",
-      "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-CwJcxuF6.js",
+      "_DynamicForm.vue_vue_type_script_setup_true_lang-BuG7vh8q.js",
+      "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-DdAe6bwF.js",
       "_user-identity-dc-SFzJu.js",
       "_preload-helper-I4rgV-VL.js"
     ],
     "css": [
-      "assets/Users-Bdp6XYSi.css",
+      "assets/Users-DgfdPAQT.css",
       "assets/finance-workspace-DWDBH7m1.css"
     ]
   },
   "resources/js/pages/management/finance/Invoices.vue": {
-    "file": "assets/Invoices-DwBGVMal.js",
+    "file": "assets/Invoices-DU82LbB6.js",
     "name": "Invoices",
     "src": "resources/js/pages/management/finance/Invoices.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_management-inertia-qjGB3YLl.js",
-      "_UiRecordCard.vue_vue_type_script_setup_true_lang-DGM6YfvU.js",
-      "_DynamicForm.vue_vue_type_script_setup_true_lang-CqKWFA-B.js",
-      "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-CwJcxuF6.js",
+      "_management-inertia-pLNNlcIf.js",
+      "_UiRecordCard.vue_vue_type_script_setup_true_lang-DfKe2Zpm.js",
+      "_DynamicForm.vue_vue_type_script_setup_true_lang-BuG7vh8q.js",
+      "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-DdAe6bwF.js",
       "_invoice-workspace-DU10ieZO.js",
       "resources/js/management.ts",
       "_preload-helper-I4rgV-VL.js"
@@ -183,16 +183,16 @@
     ]
   },
   "resources/js/pages/management/finance/Records.vue": {
-    "file": "assets/Records-DPqcdQlb.js",
+    "file": "assets/Records-qJob1ftm.js",
     "name": "Records",
     "src": "resources/js/pages/management/finance/Records.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_management-inertia-qjGB3YLl.js",
-      "_UiRecordCard.vue_vue_type_script_setup_true_lang-DGM6YfvU.js",
-      "_DynamicForm.vue_vue_type_script_setup_true_lang-CqKWFA-B.js",
-      "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-CwJcxuF6.js",
-      "_building-structure-cIXDmECG.js",
+      "_management-inertia-pLNNlcIf.js",
+      "_UiRecordCard.vue_vue_type_script_setup_true_lang-DfKe2Zpm.js",
+      "_DynamicForm.vue_vue_type_script_setup_true_lang-BuG7vh8q.js",
+      "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-DdAe6bwF.js",
+      "_building-structure-Bn42cvp9.js",
       "_invoice-workspace-DU10ieZO.js",
       "resources/js/management.ts",
       "_preload-helper-I4rgV-VL.js"
@@ -202,29 +202,29 @@
     ]
   },
   "resources/js/pages/management/operations/Resource.vue": {
-    "file": "assets/Resource-Bb9XFsug.js",
+    "file": "assets/Resource-CTADnkE1.js",
     "name": "Resource",
     "src": "resources/js/pages/management/operations/Resource.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_management-inertia-qjGB3YLl.js",
+      "_management-inertia-pLNNlcIf.js",
       "resources/js/management.ts",
-      "_DynamicForm.vue_vue_type_script_setup_true_lang-CqKWFA-B.js",
-      "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-CwJcxuF6.js",
-      "_building-structure-cIXDmECG.js",
+      "_DynamicForm.vue_vue_type_script_setup_true_lang-BuG7vh8q.js",
+      "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-DdAe6bwF.js",
+      "_building-structure-Bn42cvp9.js",
       "_preload-helper-I4rgV-VL.js"
     ]
   },
   "resources/js/pages/management/services/Requests.vue": {
-    "file": "assets/Requests-c9ZpsSiU.js",
+    "file": "assets/Requests-B5ceNNnu.js",
     "name": "Requests",
     "src": "resources/js/pages/management/services/Requests.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_management-inertia-qjGB3YLl.js",
+      "_management-inertia-pLNNlcIf.js",
       "resources/js/management.ts",
-      "_DynamicForm.vue_vue_type_script_setup_true_lang-CqKWFA-B.js",
-      "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-CwJcxuF6.js",
+      "_DynamicForm.vue_vue_type_script_setup_true_lang-BuG7vh8q.js",
+      "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-DdAe6bwF.js",
       "_invoice-workspace-DU10ieZO.js",
       "_service-requests-BSJggRKa.js",
       "_preload-helper-I4rgV-VL.js"
@@ -235,15 +235,15 @@
     ]
   },
   "resources/js/pages/management/support/Tickets.vue": {
-    "file": "assets/Tickets-CREYksBu.js",
+    "file": "assets/Tickets-Cv_GVeDO.js",
     "name": "Tickets",
     "src": "resources/js/pages/management/support/Tickets.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_management-inertia-qjGB3YLl.js",
+      "_management-inertia-pLNNlcIf.js",
       "resources/js/management.ts",
-      "_DynamicForm.vue_vue_type_script_setup_true_lang-CqKWFA-B.js",
-      "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-CwJcxuF6.js",
+      "_DynamicForm.vue_vue_type_script_setup_true_lang-BuG7vh8q.js",
+      "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-DdAe6bwF.js",
       "_invoice-workspace-DU10ieZO.js",
       "_service-requests-BSJggRKa.js",
       "_preload-helper-I4rgV-VL.js"
@@ -254,13 +254,13 @@
     ]
   },
   "resources/js/user-create-dialog.ts": {
-    "file": "assets/user-create-dialog-DZTM9n56.js",
+    "file": "assets/user-create-dialog-B5RmOxjp.js",
     "name": "user-create-dialog",
     "src": "resources/js/user-create-dialog.ts",
     "isDynamicEntry": true,
     "imports": [
-      "_management-inertia-qjGB3YLl.js",
-      "_DynamicForm.vue_vue_type_script_setup_true_lang-CqKWFA-B.js",
+      "_management-inertia-pLNNlcIf.js",
+      "_DynamicForm.vue_vue_type_script_setup_true_lang-BuG7vh8q.js",
       "_user-identity-dc-SFzJu.js",
       "_preload-helper-I4rgV-VL.js"
     ],
