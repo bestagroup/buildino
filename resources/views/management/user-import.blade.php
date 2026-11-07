@@ -17,13 +17,15 @@
     @endif
     @if($building)
     <h3>{{ $building->title }}</h3>
-    <p>ابتدا واحدها را ایجاد کنید و فایل نمونه همین ساختمان را دانلود کنید. شناسه و شماره واحد را تغییر ندهید. برای چند مالک یا ساکن، ردیف واحد را کپی کنید.</p>
-    <p>ستون‌ها: شناسه واحد، شماره واحد، نام، نام خانوادگی، موبایل، نوع رابطه، تعداد کل نفرات واحد و تاریخ شروع میلادی (YYYY-MM-DD). موبایل را به صورت متن وارد کنید. نوع رابطه: owner (مالک)، resident (ساکن)، tenant (مستاجر)، owner_resident (مالک ساکن). حداکثر ۵۰۰ ردیف، فایل XLSX تا ۲ مگابایت؛ فقط برگه اول خوانده می‌شود.</p>
-    <p>شماره موبایل شناسه کاربر است؛ نام حساب موجود باید مطابقت داشته باشد. حساب موجود، ارتباط فعال قبلی و کیف پول‌ها بازنویسی نمی‌شوند. برای هر واحد در یک تاریخ، تعداد کل نفرات یکسان درج شود. پیامک خودکار ارسال نمی‌شود.</p>
+    <p>فایل نمونه با ۱۵ ستون و اطلاعات طبقات و واحدهای همین ساختمان آماده می‌شود. نام ساختمان، کد ساختمان، شماره طبقه و شماره واحد را تغییر ندهید. هر واحد یک ردیف دارد؛ برای هر ساختمان فایل جداگانه بارگذاری کنید.</p>
+    <p>مشخصات مالک الزامی و مشخصات مستاجر اختیاری است. اگر مستاجر خالی و تعداد ساکن بیشتر از صفر باشد، مالک ساکن محسوب می‌شود؛ تعداد صفر یعنی واحد خالی. شروع ارتباط‌های جدید و تغییر تعداد نفرات از تاریخ ثبت فایل است. متراژ و تعداد اتاق و تعداد اعلام‌شده پارکینگ قابل تکمیل‌اند؛ تعداد پارکینگ تخصیص جای پارک مشخص نیست.</p>
+    <p>موبایل را به صورت متن وارد کنید. حساب موجود باید با نام واردشده تطبیق داشته باشد. ارتباط فعال ناسازگار جایگزین نمی‌شود؛ ابتدا آن را در فرم مالکیت یا سکونت اصلاح کنید. حداکثر ۵۰۰ ردیف، XLSX تا ۲ مگابایت؛ فقط برگه اول خوانده می‌شود. ردیف‌های بدون مشخصات مالک و مستاجر نادیده گرفته می‌شوند. پیامک خودکار ارسال نمی‌شود.</p>
     <a class="btn btn-outline-primary" href="{{ route('management.user-import.template', $building) }}">دانلود فایل نمونه واحدهای ساختمان</a>
     @isset($rows)
-        <div class="table-responsive mt-3"><table class="table"><thead><tr><th>واحد</th><th>نام</th><th>موبایل</th><th>رابطه</th><th>نفرات</th><th>شروع</th></tr></thead><tbody>
-        @foreach($rows as $row)<tr><td>{{ $row['unit_number'] }}</td><td>{{ $row['first_name'] }} {{ $row['last_name'] }}</td><td dir="ltr">{{ $row['mobile'] }}</td><td>{{ $row['relation'] }}</td><td>{{ $row['resident_count'] }}</td><td dir="ltr">{{ $row['starts_at'] }}</td></tr>@endforeach
+        <div class="table-responsive mt-3"><table class="table"><thead><tr>
+        @foreach(\App\Services\Web\BuildingWorkbookService::HEADERS as $header)<th>{{ $header }}</th>@endforeach
+        </tr></thead><tbody>
+        @foreach($rows as $row)<tr>@foreach(\App\Services\Web\BuildingWorkbookService::KEYS as $key)<td>{{ $row[$key] }}</td>@endforeach</tr>@endforeach
         </tbody></table></div>
         <form method="post" action="{{ route('management.user-import.commit', $building) }}">@csrf<input type="hidden" name="token" value="{{ $token }}"><button class="btn btn-primary">تأیید و ثبت {{ count($rows) }} ردیف</button></form>
     @else

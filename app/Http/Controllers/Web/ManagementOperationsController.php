@@ -103,6 +103,10 @@ class ManagementOperationsController extends Controller
             $configuration
         );
 
+        if ($resource === 'user-import') {
+            return app(BuildingUserImportController::class)->index(request());
+        }
+
         if ($resource === 'invitations') {
             return app(BuildingInvitationPageController::class)->index(request(), $permissions);
         }

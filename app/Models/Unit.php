@@ -24,6 +24,7 @@ class Unit extends Model
         'title',
         'area',
         'bedrooms',
+        'parking_count',
         'resident_count',
         'usage_type',
         'is_active',
@@ -50,6 +51,7 @@ class Unit extends Model
         return [
             'area' => 'decimal:2',
             'bedrooms' => 'integer',
+            'parking_count' => 'integer',
             'resident_count' => 'integer',
             'is_active' => 'boolean',
             'usage_type' => UnitUsageType::class,

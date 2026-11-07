@@ -20,7 +20,7 @@ final class BuildingUserImportService
 {
     public const HEADERS = ['unit_id', 'unit_number', 'first_name', 'last_name', 'mobile', 'relation', 'resident_count', 'starts_at'];
 
-    public function read(string $path): array
+    public function read(string $path, array $headers = self::HEADERS, ?array $keys = null): array
     {
         $zip = new \ZipArchive;
         if ($zip->open($path) !== true) {
@@ -51,7 +51,7 @@ final class BuildingUserImportService
                         return app(DigitNormalizer::class)->normalize(trim((string) $value));
                     }, $row->toArray());
                     if ($index === 1) {
-                        if ($values !== self::HEADERS) {
+                        if ($values !== $headers) {
                             $this->fail('ستون‌ها باید مطابق فایل نمونه باشند.');
                         }
 
@@ -60,14 +60,17 @@ final class BuildingUserImportService
                     if (count($rows) >= 500) {
                         $this->fail('حداکثر ۵۰۰ ردیف در هر فایل مجاز است.');
                     }
-                    $values = array_pad($values, count(self::HEADERS), '');
-                    if (count($values) !== count(self::HEADERS)) {
+                    $values = array_pad($values, count($headers), '');
+                    if (count($values) !== count($headers)) {
                         $this->fail("تعداد ستون‌های ردیف {$index} نادرست است.");
                     }
-                    if ($values[2] === '' && $values[4] === '') {
+                    if ($keys === null && $values[2] === '' && $values[4] === '') {
                         continue;
                     }
-                    $rows[] = array_combine(self::HEADERS, $values);
+                    if ($keys !== null && count(array_filter(array_slice($values, 8, 6), fn ($v) => $v !== '')) === 0) {
+                        continue;
+                    }
+                    $rows[] = array_combine($keys ?? $headers, $values);
                 }
                 break; // The template has exactly one data sheet.
             }

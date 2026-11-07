@@ -558,6 +558,7 @@ return [
                 ]
             ]
         ],
+        'user-import' => ['permission' => 'users.create', 'group' => 'access', 'title' => 'ورود اطلاعات کاربران از طریق فایل اکسل', 'description' => 'دانلود فایل واحدهای ساختمان و ثبت مالک و مستاجر از اکسل', 'icon' => 'users'],
         'users' => [
         'permission' => 'users.view',
         'permission_scope' => 'any',
