@@ -198,6 +198,11 @@ Route::middleware([
             ]
         )->name('dashboard');
 
+        Route::get('/user-import', [\App\Http\Controllers\Web\BuildingUserImportController::class, 'index'])->name('user-import.index');
+        Route::get('/user-import/{building}/template', [\App\Http\Controllers\Web\BuildingUserImportController::class, 'template'])->name('user-import.template');
+        Route::post('/user-import/{building}/preview', [\App\Http\Controllers\Web\BuildingUserImportController::class, 'preview'])->middleware('throttle:api-v1')->name('user-import.preview');
+        Route::post('/user-import/{building}/commit', [\App\Http\Controllers\Web\BuildingUserImportController::class, 'commit'])->middleware('throttle:api-v1')->name('user-import.commit');
+
         Route::post('/buildings/{building}/invitations/send', [\App\Http\Controllers\Web\BuildingInvitationPageController::class, 'send'])
             ->middleware('throttle:api-v1')->name('building-invitations.send');
 

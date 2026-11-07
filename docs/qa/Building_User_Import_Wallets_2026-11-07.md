@@ -1,0 +1,13 @@
+# Wallet separation and building user import
+
+Existing architecture retained: creation observers provision distinct User, Unit and Building wallets. A unit wallet remains with the unit after ownership/occupancy ends. Managers require scoped building-wallet.view; building permissions do not expose others' personal wallets. PortalAccessService enumerates all currently linked units across buildings.
+
+New `/management/user-import`: users page and setup completion link; auto-select one authorized building, otherwise select. Download a building-specific XLSX template containing stable unit IDs and unit numbers. First sheet only, 2 MiB upload, 20 MiB expanded ZIP, maximum 500 data rows; dates use Gregorian YYYY-MM-DD. Mobile is a text cell; Persian digits and missing leading zero in a 10-digit Iranian mobile are normalized.
+
+Relations: owner, resident, tenant, owner_resident (Persian labels also accepted). Resident count is total for the UNIT, not each user. Repeat unit rows for additional people; repeat a mobile for multiple units. Blank recipient rows ignored. Existing accounts must match names and be active/unblocked; passwords, verification and personal details are never overwritten. Active existing relationships are skipped without change; edit those explicitly in the regular forms. No automatic SMS.
+
+Preview is stored server-side in the authenticated session for 20 minutes, with a random token, actor and building binding. Confirmation checks authorization and database validity again, locks the building and units, and commits atomically. User mobile uniqueness and locked duplicate checks prevent duplicate records. All public actions use the existing authenticated management middleware and CSRF protection. Permissions required: users.create plus the relevant unit-ownerships.create/unit-occupancies.create in that building.
+
+Deploy: composer install --no-dev --optimize-autoloader (OpenSpout 4.28.5; PHP 8.2–8.4, ZIP/XMLReader/DOM extensions), php artisan optimize:clear. No schema migration or frontend rebuild; the existing users navigation receives its new link from the controller. For legacy missing wallets: php artisan wallets:provision (idempotent; does not change balances). This command has NOT been run on production.
+
+Focused automated checks cover wallet provisioning/backfill/access, multi-building ownership, manager personal/building/unit separation, revocation, actual XLSX preview and confirmation, foreign-unit rejection, account mismatch, replay rejection, unchanged existing credentials, repeated import, and rollback on assignment failure. Browser visual QA and production import have not been executed.
