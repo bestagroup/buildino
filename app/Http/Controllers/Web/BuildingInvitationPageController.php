@@ -95,10 +95,17 @@ final class BuildingInvitationPageController extends Controller
             } catch (ValidationException $e) {
                 throw $e;
             } catch (\Throwable $e) {
+                $reference = (string) \Illuminate\Support\Str::uuid();
+                \Illuminate\Support\Facades\Log::error('Invitation delivery failed', [
+                    'reference' => $reference,
+                    'building_id' => $building->id,
+                    'invitation_id' => $invitation?->id,
+                    'exception_class' => $e::class,
+                ]);
                 report($e);
 
                 // Persist pending state/code rotation; never claim a failed/uncertain delivery was sent.
-                return response()->json(['message' => 'ارسال تأیید نشد؛ وضعیت دعوت را بررسی و در صورت نیاز ارسال مجدد کنید.'], 502);
+                return response()->json(['message' => 'ارسال تأیید نشد؛ کد پیگیری خطا: '.$reference], 502);
             }
         });
     }

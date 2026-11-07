@@ -17,6 +17,7 @@
         controls.forEach(([el]) => { el.disabled = true; });
         root.setAttribute('aria-busy', 'true');
         let succeeded = 0;
+        const resendResults = new Map();
         for (const [index, el] of elements.entries()) {
             const result = el.closest('tr').querySelector('[data-row-result]');
             result.textContent = 'در حال ارسال…';
@@ -33,6 +34,7 @@
                 el.checked = false;
                 succeeded++;
             } catch (error) { result.textContent = error.message || 'ارتباط قطع شد؛ پیش از تلاش مجدد سوابق را بررسی کنید.'; }
+            if (el.dataset.resend) resendResults.set(el.dataset.resend, result.textContent);
         }
         status.textContent = `${succeeded} ارسال تأیید شد؛ ${elements.length - succeeded} ارسال تأیید نشد.`;
         // Reload only the history region; retain individual outcomes and selections on screen.
@@ -41,7 +43,13 @@
             if (!page.ok) throw new Error();
             const html = new DOMParser().parseFromString(await page.text(), 'text/html');
             const history = html.querySelector('#invitation-history');
-            if (history) root.querySelector('#invitation-history').replaceWith(history);
+            if (history) {
+                history.querySelectorAll('[data-resend]').forEach(button => {
+                    const outcome = resendResults.get(button.dataset.resend);
+                    if (outcome) button.closest('tr').querySelector('[data-row-result]').textContent = outcome;
+                });
+                root.querySelector('#invitation-history').replaceWith(history);
+            }
         } catch { status.textContent += ' برای مشاهده سوابق جدید، به‌روزرسانی فهرست را بزنید.'; }
         controls.forEach(([el, disabled]) => { el.disabled = disabled; });
         root.removeAttribute('aria-busy');

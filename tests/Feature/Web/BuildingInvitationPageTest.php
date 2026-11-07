@@ -40,6 +40,28 @@ class BuildingInvitationPageTest extends TestCase
         return [$manager, $owner, $unit, $unit->floor->block->building, $sms];
     }
 
+    public function test_invitation_and_resend_reach_ghasedak_with_all_parameters(): void
+    {
+        [$manager, $owner, $unit, $building] = $this->scenario();
+        $this->app->instance(SmsSender::class, new \App\Services\Notifications\GhasedakSmsSender);
+        config(['notifications.ghasedak.api_key' => 'test-key']);
+        \Illuminate\Support\Facades\Http::preventStrayRequests();
+        \Illuminate\Support\Facades\Http::fake(['*' => \Illuminate\Support\Facades\Http::response(['result' => ['code' => 200], 'items' => [123]])]);
+        $url = route('management.building-invitations.send', $building);
+        $payload = ['unit_id' => $unit->id, 'user_id' => $owner->id, 'expires_in_hours' => 72];
+        $id = $this->postJson($url, $payload)->assertOk()->json('id');
+        $this->postJson($url, $payload + ['invitation_id' => $id])->assertOk();
+        \Illuminate\Support\Facades\Http::assertSentCount(2);
+        \Illuminate\Support\Facades\Http::assertSent(fn ($request) =>
+            $request['receptor'] === $owner->mobile
+            && $request['template'] === 'BuildinoInvitation'
+            && preg_match('/^[0-9]{8}$/', $request['param1'])
+            && $request['param2'] === trim($owner->first_name.' '.$owner->last_name)
+            && $request['param3'] === $building->title.'، واحد '.$unit->unit_number
+        );
+        $this->assertDatabaseHas('unit_invitations', ['id' => $id, 'status' => 'sent']);
+    }
+
     public function test_single_building_is_selected_and_history_is_visible(): void
     {
         [$manager, $owner, $unit, $building] = $this->scenario();

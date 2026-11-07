@@ -25,3 +25,16 @@ test('group sends preserve each unit/user pair, report partial failure and refre
     assert.equal(window.document.querySelector('[data-recipient]').checked, false);
     dom.window.close();
 });
+test('resend failure remains visible after history refresh', async () => {
+    const history = '<section id="invitation-history"><table><tr><td><button data-resend="9" data-unit="12" data-user="7">Resend</button></td><td data-row-result></td></tr></table></section>';
+    const dom = new JSDOM(`<meta name="csrf-token" content="csrf"><div data-building-invitations data-send-url="/send"><input id="invitation-hours" type="number" value="72"><div data-send-result></div><a data-refresh-invitations href="/history"></a>${history}</div>`, {url: 'https://buildino.test', runScripts: 'outside-only'});
+    dom.window.fetch = async (url, options) => options.method
+        ? {ok: false, json: async () => ({message: 'Failure reference: test-reference'})}
+        : {ok: true, text: async () => history};
+    dom.window.eval(source);
+    dom.window.document.querySelector('[data-resend]').click();
+    for (let i = 0; i < 30 && dom.window.document.querySelector('[aria-busy]'); i++) await new Promise(resolve => setTimeout(resolve, 5));
+    assert.equal(dom.window.document.querySelector('[data-row-result]').textContent, 'Failure reference: test-reference');
+    assert.equal(dom.window.document.querySelector('[data-resend]').disabled, false);
+    dom.window.close();
+});
