@@ -65,6 +65,15 @@ final class GhasedakSmsSender implements SmsSender
             $reason = ! is_array($body) ? 'non_json_response'
                 : (! $knownFlatResult && in_array($code, ['missing', 'invalid'], true) ? 'unexpected_response_schema' : 'provider_rejection');
             $providerText = is_array($body) ? ($flatResult ? ($body['message'] ?? null) : data_get($body, 'result.message')) : null;
+            // Only expose recognized complete messages; never log arbitrary provider text.
+            $providerError = match (is_string($providerText) ? strtolower(trim($providerText)) : '') {
+                'invalid parameter', 'invalid parameters' => 'invalid_parameter',
+                'invalid template' => 'invalid_template',
+                'invalid apikey', 'invalid api key' => 'invalid_api_key',
+                'invalid receptor' => 'invalid_receptor',
+                'insufficient balance' => 'insufficient_balance',
+                default => 'unclassified',
+            };
             $fields = [];
             // Report only known field names, never provider prose or request values.
             // Upstream errors may echo API keys, mobile numbers and OTPs.
@@ -81,14 +90,15 @@ final class GhasedakSmsSender implements SmsSender
                 'reason' => $reason,
                 'mentioned_fields' => $fields,
                 'purpose' => $message->purpose,
+                'provider_error' => $providerError,
                 'response_format' => $flatResult ? 'flat' : 'nested',
                 'result' => $knownFlatResult ? $result : 'unrecognized',
             ];
             Log::warning('Ghasedak SMS request failed', $diagnostics);
             throw new RuntimeException(sprintf(
-                'Ghasedak SMS failed [HTTP=%d; code=%s; reason=%s; fields=%s; format=%s; result=%s].',
+                'Ghasedak SMS failed [HTTP=%d; code=%s; reason=%s; fields=%s; format=%s; result=%s; detail=%s].',
                 $response->status(), $code, $reason, implode(',', $fields) ?: 'none',
-                $diagnostics['response_format'], $diagnostics['result']
+                $diagnostics['response_format'], $diagnostics['result'], $providerError
             ));
         }
         $messageId = data_get($body, config('notifications.ghasedak.message_id_path', 'items.0'))

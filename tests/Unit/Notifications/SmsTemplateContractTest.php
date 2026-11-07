@@ -51,6 +51,35 @@ class SmsTemplateContractTest extends TestCase
         ]);
     }
 
+    public function test_login_and_invitation_use_identical_http_transport(): void
+    {
+        Http::fake(['*' => Http::response(['result' => 'success'])]);
+        app(NotificationOtpSender::class)->send('09121111111', 'sms', '001234');
+        app(SmsSender::class)->send('09121111111', new SmsTemplateMessage('unit.invitation', [
+            'param1' => '00123456', 'param2' => 'محمد رضایی', 'param3' => 'نیلوفر 46، واحد 12',
+        ]));
+        $requests = Http::recorded()->pluck(0);
+        $this->assertCount(2, $requests);
+        foreach ($requests as $request) {
+            $this->assertSame('POST', $request->method());
+            $this->assertSame(config('notifications.ghasedak.endpoint'), $request->url());
+            $this->assertTrue($request->hasHeader('apikey', 'test-key'));
+            $this->assertTrue($request->hasHeader('Content-Type', 'application/x-www-form-urlencoded'));
+            parse_str($request->body(), $decoded);
+            $this->assertEquals($request->data(), $decoded);
+        }
+    }
+
+    public function test_known_provider_message_is_classified_without_exposing_values(): void
+    {
+        Http::fake(['*' => Http::response(['result' => 'error', 'message' => 'invalid parameter'])]);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('detail=invalid_parameter');
+        app(SmsSender::class)->send('09121111111', new SmsTemplateMessage('unit.invitation', [
+            'param1' => '00123456', 'param2' => 'محمد رضایی', 'param3' => 'نیلوفر، واحد 12',
+        ]));
+    }
+
     public static function invalidMessages(): array
     {
         return [
