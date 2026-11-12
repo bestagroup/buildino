@@ -178,10 +178,10 @@
                         >
                     </label>
 
-                    <div class="registration-wizard-heading">
-                        <h3 id="registration-password-heading" tabindex="-1">رمز عبور حساب</h3>
-                        <p>رمزی با حداقل ۸ کاراکتر و شامل حرف و عدد انتخاب کنید.</p>
-                    </div>
+{{--                    <div class="registration-wizard-heading">--}}
+{{--                        <h3 id="registration-password-heading" tabindex="-1">رمز عبور حساب</h3>--}}
+{{--                        <p>رمزی با حداقل ۸ کاراکتر و شامل حرف و عدد انتخاب کنید.</p>--}}
+{{--                    </div>--}}
                     <label class="registration-field">
                         <span>رمز عبور</span>
                         <input
@@ -295,17 +295,6 @@
                             <p class="registration-location-hint registration-field--wide" id="registration-city-hint" data-registration-city-hint aria-live="polite">ابتدا استان را انتخاب کنید؛ سپس شهر را جست‌وجو کنید.</p>
 
                             <label class="registration-field registration-field--wide">
-                                <span>نشانی <small>(اختیاری)</small></span>
-                                <textarea
-                                    name="address"
-                                    rows="2"
-                                    placeholder="نشانی مجتمع یا ساختمان"
-                                    maxlength="2000"
-                                    autocomplete="street-address"
-                                >{{ old('address') }}</textarea>
-                            </label>
-
-                            <label class="registration-field registration-field--wide">
                                 <span>کد پستی <small>(اختیاری)</small></span>
                                 <input
                                     type="text"
@@ -317,6 +306,17 @@
                                     autocomplete="postal-code"
                                     dir="ltr"
                                 >
+                            </label>
+
+                            <label class="registration-field registration-field--wide">
+                                <span>نشانی <small>(اختیاری)</small></span>
+                                <textarea
+                                    name="address"
+                                    rows="2"
+                                    placeholder="نشانی مجتمع یا ساختمان"
+                                    maxlength="2000"
+                                    autocomplete="street-address"
+                                >{{ old('address') }}</textarea>
                             </label>
                         </div>
                     </section>
