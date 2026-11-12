@@ -108,9 +108,9 @@
                             tabindex="-1"
                             data-registration-personal-heading
                         >مشخصات فردی شما</h3>
-                        <p data-registration-personal-description>
-                            کد تأیید به شماره موبایلی که اینجا وارد می‌کنید ارسال می‌شود.
-                        </p>
+{{--                        <p data-registration-personal-description>--}}
+{{--                            کد تأیید به شماره موبایلی که اینجا وارد می‌کنید ارسال می‌شود.--}}
+{{--                        </p>--}}
                     </div>
                     <label
                         class="registration-field"
