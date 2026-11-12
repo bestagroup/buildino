@@ -23,6 +23,8 @@ test('at a glance: real Blade cards, Persian search, combined filters, scope lin
         expect(!$('[data-glance-filters]').hidden&&shown().length===3,'Cards/filter initialization failed');
         expect(!window.glanceXss&&!$('.glance-unit img'),'Report names injected HTML');
         expect(!$('.glance-scroll')&&!$('table'),'Legacy horizontal table remains');
+        expect(!$('[data-glance-view-button]')&&!$('.glance-row-actions'),'List UI must be removed');
+        if(innerWidth>1000){const boxes=$$('.glance-stat').map(el=>el.getBoundingClientRect()),grid=$('.glance-stats').getBoundingClientRect();expect(boxes.slice(0,3).every(box=>Math.abs(box.top-boxes[0].top)<1)&&boxes.slice(3).every(box=>Math.abs(box.top-boxes[3].top)<1)&&boxes[3].top>boxes[0].bottom,'Summary must have three cards then four');for(const row of [boxes.slice(0,3),boxes.slice(3)])expect(Math.abs(Math.min(...row.map(box=>box.left))-grid.left)<1&&Math.abs(Math.max(...row.map(box=>box.right))-grid.right)<1,'Both summary rows must fill the available width');}
         input('[data-glance-search]','101');expect(shown().length===1&&shown()[0].dataset.search.includes('۱۰۱'),'English search did not match Persian digits');
         input('[data-glance-search]','۱۰۲');expect(shown().length===1,'Persian search did not match English digits');
         input('[data-glance-search]','علي رضايي');expect(shown().length===1,'Arabic/Persian letter search failed');

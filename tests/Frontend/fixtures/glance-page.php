@@ -16,13 +16,13 @@ foreach ([[101, 1, '۱۰۱', ['علی رضایی'], ['سارا احمدی'], tru
     $floor = (new \App\Models\Floor())->forceFill(['id' => $blockId, 'block_id' => $blockId, 'floor_number' => 1, 'title' => 'طبقه اول'])->setRelation('block', $block);
     $unit = (new \App\Models\Unit())->forceFill(['id' => $id, 'unit_number' => $number, 'title' => '', 'is_active' => $active])->setRelation('floor', $floor);
     $rows->push(['unit' => $unit, 'floor' => $floor, 'owners' => collect($owners), 'residents' => collect($residents), 'occupied' => $occupied, 'people' => $people,
-        'debt' => $debt, 'available' => $available, 'balance' => $available + 1000, 'locked' => 1000, 'walletInactive' => ! $active,
+        'debt' => $debt, 'credit' => 0, 'available' => $available, 'balance' => $available + 1000, 'locked' => 1000, 'walletInactive' => ! $active,
         'net' => $debt - $available, 'shortfall' => max(0, $debt - $available), 'surplus' => max(0, $available - $debt),
         'latest' => $id === 101 ? 5000 : null, 'latestSource' => $id === 101 ? 'invoice' : 'none']);
 }
 $period = (new \App\Models\ChargePeriod())->forceFill(['id' => 1, 'title' => 'شارژ آبان', 'period_start' => '2026-10-23', 'period_end' => '2026-11-21', 'status' => 'calculated']);
 $report = ['rows' => $rows, 'floors' => $rows->groupBy(fn ($row) => $row['floor']->id), 'period' => $period, 'currency' => 'IRR', 'generatedAt' => \Carbon\Carbon::parse('2026-10-29 14:30:00', 'Asia/Tehran'),
-    'totals' => ['units' => 3, 'occupied' => 2, 'people' => 5, 'debt' => 12000, 'available' => 13000, 'shortfall' => 8000, 'surplus' => 9000, 'net' => -1000]];
+    'totals' => ['units' => 3, 'occupied' => 2, 'people' => 5, 'debt' => 12000, 'credit' => 0, 'available' => 13000, 'shortfall' => 8000, 'surplus' => 9000, 'net' => -1000]];
 $buildings = collect([$building]);
 if (($argv[1] ?? '') === 'empty') { $report = null; $building = null; $buildings = collect(); }
 $source = file_get_contents(resource_path('views/management/at-a-glance.blade.php'));
