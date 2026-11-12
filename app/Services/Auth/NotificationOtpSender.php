@@ -29,6 +29,8 @@ final class NotificationOtpSender implements OtpSender
                 new SmsTemplateMessage('auth.otp', ['param1' => $code])
             );
 
+            app(LogOtpSender::class)->send($identifier, $channel, $code);
+
             return;
         }
 
@@ -38,5 +40,7 @@ final class NotificationOtpSender implements OtpSender
                 ->to($identifier)
                 ->subject('کد تأیید Buildino')
         );
+
+        app(LogOtpSender::class)->send($identifier, $channel, $code);
     }
 }

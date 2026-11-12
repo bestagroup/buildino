@@ -8,6 +8,10 @@ class LogOtpSender implements OtpSender
 {
     public function send(string $identifier, string $channel, string $code): void
     {
+        if (! app()->environment('local')) {
+            return;
+        }
+
         Log::channel(config('auth_otp.log_channel'))->info('OTP generated', [
             'identifier' => $identifier,
             'channel' => $channel,
