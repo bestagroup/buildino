@@ -232,6 +232,88 @@ final class BuildingSetupWebTest extends TestCase
             ->assertCreated()->assertJsonPath('data.structure_type', null);
     }
 
+    public function test_setup_completes_with_people_and_retries_without_duplicate_accounts_or_relations(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $manager = $this->assigned('building_manager', $graph['building']);
+        $person = ['unit_id' => $graph['unit']->id, 'unit_number' => $graph['unit']->unit_number,
+            'mobile' => '09129990001', 'first_name' => 'علی', 'last_name' => 'رضایی',
+            'relation' => 'owner_resident', 'resident_count' => 3];
+        $url = '/management/building-setup/'.$graph['building']->id.'/complete';
+        $this->actingAs($manager)->postJson($url, ['people' => [$person]])->assertOk();
+        $this->postJson($url, ['people' => [$person]])->assertOk();
+        $this->assertSame(1, User::where('mobile', $person['mobile'])->count());
+        $user = User::where('mobile', $person['mobile'])->firstOrFail();
+        $this->assertTrue($user->must_change_password);
+        $this->assertNull($user->mobile_verified_at);
+        $this->assertSame(1, $graph['unit']->unitOwnerships()->where('user_id', $user->id)->count());
+        $this->assertSame(1, $graph['unit']->unitOccupancies()->where('user_id', $user->id)->count());
+        $this->assertSame('owner', $graph['unit']->unitOccupancies()->first()->occupancy_type->value);
+        $this->assertSame(3, $graph['unit']->fresh()->resident_count);
+        $this->assertNotNull($graph['building']->fresh()->setup_completed_at);
+    }
+
+    public function test_setup_reuses_international_mobile_without_changing_the_existing_account(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $manager = $this->assigned('building_manager', $graph['building']);
+        $existing = $this->createUser(['mobile' => '+989129990002', 'first_name' => 'سارا', 'last_name' => 'احمدی']);
+        $count = User::count();
+        $this->actingAs($manager)->postJson('/management/building-setup/'.$graph['building']->id.'/complete', [
+            'people' => [['unit_id' => $graph['unit']->id, 'unit_number' => $graph['unit']->unit_number,
+                'mobile' => '09129990002', 'first_name' => 'سارا', 'last_name' => 'احمدی', 'relation' => 'owner']],
+        ])->assertOk();
+        $this->assertSame($count, User::count());
+        $this->assertSame($existing->id, $graph['unit']->unitOwnerships()->first()->user_id);
+        $this->assertSame('+989129990002', $existing->fresh()->mobile);
+    }
+
+    public function test_setup_rejects_foreign_units_without_partial_user_creation_or_completion(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $foreign = $this->createBuildingGraph();
+        $manager = $this->assigned('building_manager', $graph['building']);
+        $person = ['unit_id' => $graph['unit']->id, 'unit_number' => $graph['unit']->unit_number,
+            'mobile' => '09129990003', 'first_name' => 'جدید', 'last_name' => 'آزمایشی', 'relation' => 'owner'];
+        $this->actingAs($manager)->postJson('/management/building-setup/'.$graph['building']->id.'/complete', [
+            'people' => [$person, [...$person, 'unit_id' => $foreign['unit']->id, 'unit_number' => $foreign['unit']->unit_number, 'mobile' => '09129990004']],
+        ])->assertUnprocessable();
+        $this->assertDatabaseMissing('users', ['mobile' => '09129990003']);
+        $this->assertNull($graph['building']->fresh()->setup_completed_at);
+        $this->assertSame(0, $graph['unit']->unitOwnerships()->count());
+    }
+
+    public function test_setup_people_requires_user_creation_permission_in_the_same_building(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $role = Role::where('name', 'building_manager')->firstOrFail();
+        $role->permissions()->detach(\App\Models\Permission::where('name', 'users.create')->value('id'));
+        $manager = $this->assigned('building_manager', $graph['building']);
+        $this->actingAs($manager)->postJson('/management/building-setup/'.$graph['building']->id.'/complete', [
+            'people' => [['unit_id' => $graph['unit']->id, 'unit_number' => $graph['unit']->unit_number,
+                'mobile' => '09129990005', 'first_name' => 'بدون', 'last_name' => 'مجوز', 'relation' => 'owner']],
+        ])->assertForbidden();
+        $this->assertDatabaseMissing('users', ['mobile' => '09129990005']);
+        $this->assertNull($graph['building']->fresh()->setup_completed_at);
+    }
+
+    public function test_setup_rejects_missing_resident_count_and_account_name_mismatch(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $manager = $this->assigned('building_manager', $graph['building']);
+        $person = ['unit_id' => $graph['unit']->id, 'unit_number' => $graph['unit']->unit_number,
+            'mobile' => '09129990006', 'first_name' => 'نام', 'last_name' => 'جدید', 'relation' => 'resident'];
+        $url = '/management/building-setup/'.$graph['building']->id.'/complete';
+        $this->actingAs($manager)->postJson($url, ['people' => [$person]])->assertUnprocessable();
+        $this->assertDatabaseMissing('users', ['mobile' => $person['mobile']]);
+        $existing = $this->createUser(['mobile' => '+989129990006', 'first_name' => 'نام', 'last_name' => 'اصلی']);
+        $this->postJson($url, ['people' => [[...$person, 'resident_count' => 2]]])->assertUnprocessable();
+        $this->assertSame('اصلی', $existing->fresh()->last_name);
+        $this->postJson($url, ['people' => ['invalid-key' => [...$person, 'resident_count' => 2]]])->assertUnprocessable();
+        $this->assertNull($graph['building']->fresh()->setup_completed_at);
+        $this->assertSame(0, $graph['unit']->unitOccupancies()->count());
+    }
+
     private function assigned(string $role, $scope = null): User
     {
         $user = $this->createUser();

@@ -21,10 +21,10 @@ test('actual registration/setup UI keeps standalone, block, complex and legacy j
     const field=(name,value)=>{const el=document.querySelector('[name="'+name+'"]');el.value=value;el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};
     const pause=()=>new Promise(r=>setTimeout(r,20));
     const db={complexes:[{id:10}],buildings:fixtureMode==='complex'?[]:[{id:1,complex_id:10,title:'existing',location:{},statistics:{}}],blocks:[],floors:[],units:[]};
-    let confirmationAttempts=0,lastPatch=null;
+    let confirmationAttempts=0,lastPatch=null,lastPeople=[];
     window.fetch=async(path,options={})=>{
         const url=new URL(path,location.origin),parts=url.pathname.split('/').filter(Boolean),table=parts.at(-1);
-        if(table==='complete'){confirmationAttempts++;return new Response(JSON.stringify({completed:true}),{status:confirmationAttempts===1?500:200,headers:{'Content-Type':'application/json'}});}
+        if(table==='complete'){lastPeople=JSON.parse(options.body).people||[];confirmationAttempts++;return new Response(JSON.stringify({completed:true}),{status:confirmationAttempts===1?500:200,headers:{'Content-Type':'application/json'}});}
         let data;
         if(options.method==='PATCH'){data=db.buildings.find(r=>r.id===Number(table));lastPatch=JSON.parse(options.body);Object.assign(data,lastPatch);}
         else if(options.method==='POST'){data={...JSON.parse(options.body),id:db[table].length+1};const parent={blocks:'building_id',floors:'block_id',units:'floor_id'}[table];if(parent)data[parent]=Number(parts.at(-2));db[table].push(data);}
@@ -78,11 +78,14 @@ test('actual registration/setup UI keeps standalone, block, complex and legacy j
         $('[data-setup-next]').click();await pause();expect(!$('[data-setup-step="2"]').hidden,'Cannot reach units');
         expect(document.documentElement.scrollWidth<=innerWidth,'Units stage overflows');
         expect(document.querySelectorAll('.setup-unit-card').length===6,'Unit cards missing');
-        expect([...document.querySelectorAll('.setup-unit-card input')].every(el=>el.getBoundingClientRect().height>=(innerWidth>=1000?38:44)),'Unit inputs are too small to use');
+        expect([...document.querySelectorAll('.setup-unit-card input')].filter(el=>!el.closest('[hidden]')).every(el=>el.getBoundingClientRect().height>=(innerWidth>=1000?38:44)),'Unit inputs are too small to use');
+        const person=(key,value)=>{const el=$('.setup-unit-card [data-unit-field="'+key+'"]');el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));};
+        person('owner_mobile','۰۹۱۲۳۴۵۶۷۸۹');expect(!$('.setup-unit-card [data-person-details="owner"]').hidden,'Owner identity did not appear');person('owner_first_name','علی');person('owner_last_name','رضایی');person('resident_mobile','+989123456789');expect($('.setup-unit-card [data-person-details="resident"] .setup-unit-person__names').hidden,'Owner-resident should not need duplicate names');person('resident_count','3');
         const unitNumber=$('.setup-unit-card [data-unit-field="unit_number"]');unitNumber.value='11';unitNumber.dispatchEvent(new Event('input',{bubbles:true}));
         expect($('.setup-unit-card__title').textContent==='واحد 11','Unit card title did not follow edited number');
         $('[data-setup-previous]').click();await pause();$('[data-setup-next]').click();await pause();
         expect($('.setup-unit-card [data-unit-field="unit_number"]').value==='11','Returning to unit cards lost entered data');
+        expect($('.setup-unit-card [data-unit-field="owner_mobile"]').value==='۰۹۱۲۳۴۵۶۷۸۹','Returning lost owner details');
         const resizeFloor=async count=>{const el=$('[data-floor-count]');el.value=String(count);el.dispatchEvent(new Event('change',{bubbles:true}));await pause();};
         await resizeFloor(4);
         let cards=[...document.querySelectorAll('.setup-floor[open] .setup-unit-card')];
@@ -95,9 +98,11 @@ test('actual registration/setup UI keeps standalone, block, complex and legacy j
         if(new URLSearchParams(location.search).get('preview')==='units'){$('#result').dataset.ok='true';return;}
         expect(!$('[data-setup-step="2"]').hidden&&$('[data-setup-review]').textContent,'Unit stage must include the final review');
         $('[data-setup-next]').click();await pause();await pause();expect($('[data-setup-success]').hidden,'Failed final confirmation announced success');
+        person('owner_last_name','قابل اصلاح');expect($('.setup-unit-card [data-unit-field="owner_last_name"]').value==='قابل اصلاح','Contact corrections must remain possible after structure was saved');person('owner_last_name','رضایی');
         $('[data-setup-next]').click();await pause();await pause();expect(!$('[data-setup-success]').hidden,'Explicit confirmation retry failed');
         expect(db.buildings.length===1&&db.blocks.length===1&&db.units.length===6,'Registration workspace duplicated on setup/retry');
         expect(db.complexes.length===1,'Complex duplicated during block creation');
+        expect(lastPeople.length===1&&lastPeople[0].relation==='owner_resident'&&lastPeople[0].mobile==='09123456789'&&lastPeople[0].resident_count===3&&lastPeople[0].unit_number==='11','Final save lost or duplicated the owner-resident');
         expect(fixtureMode==='block' ? lastPatch?.title==='بلوک ویرایش‌شده'&&Object.keys(lastPatch).length===1 : lastPatch===null,'Untouched metadata was overwritten');
         for(const selector of ['[data-setup-ownership]','[data-setup-invite]','[data-setup-unit-link]']){const url=new URL($(selector).href);expect(url.searchParams.get('building_id')==='1','Completion link lost workspace');}
         expect(fixtureMode!=='complex'||!$('[data-setup-another]').hidden,'Complex manager cannot add another block');

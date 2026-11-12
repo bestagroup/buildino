@@ -2,6 +2,11 @@
     'use strict';
     const positiveId = (value) => /^[1-9]\d*$/.test(String(value ?? ''));
     const same = (a, b) => String(a).trim() === String(b).trim();
+    const normalizeMobile = value => {
+        let phone = String(value || '').replace(/[۰-۹٠-٩]/g, digit => String('۰۱۲۳۴۵۶۷۸۹'.includes(digit) ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit) : '٠١٢٣٤٥٦٧٨٩'.indexOf(digit))).replace(/[\s\-()]/g, '');
+        phone = phone.replace(/^(?:\+98|0098|98)(?=9\d{9}$)/, '0');
+        return /^9\d{9}$/.test(phone) ? '0' + phone : phone;
+    };
     const labelForFloor = (number) => number === 0 ? 'همکف' : number < 0 ? `زیرزمین ${Math.abs(number).toLocaleString('fa-IR')}` : `طبقه ${number.toLocaleString('fa-IR')}`;
     const totals = (blocks) => ({ blocks: blocks.length, floors: blocks.reduce((sum, block) => sum + block.floors.length, 0), units: blocks.reduce((sum, block) => sum + block.floors.reduce((count, floor) => count + floor.units.length, 0), 0) });
     const makeUnit = (block) => ({
@@ -10,6 +15,7 @@
         area: block.defaultArea ?? '',
         bedrooms: block.defaultBedrooms ?? '',
         usage_type: block.usage || 'residential',
+        owner_mobile: '', resident_mobile: '', owner_first_name: '', owner_last_name: '', resident_first_name: '', resident_last_name: '', resident_count: '',
     });
 
     const renumberGeneratedUnits = (block) => {
@@ -128,6 +134,14 @@
                     const number = String(unit.unit_number ?? '').trim();
                     if (!number || number.length > 100 || units.has(number)) errors.push({ step: 2, message: `شماره واحدهای ${title}، ${floor.title} را بررسی کنید؛ شماره‌ها نباید در یک طبقه تکراری باشند.` });
                     units.add(number);
+                    const ownerPhone = normalizeMobile(unit.owner_mobile), residentPhone = normalizeMobile(unit.resident_mobile);
+                    for (const [kind, label, phone] of [['owner', 'مالک', ownerPhone], ['resident', 'ساکن', residentPhone]]) {
+                        if (!phone) continue;
+                        if (!/^09\d{9}$/.test(phone)) errors.push({ step: 2, message: `شماره موبایل ${label} واحد ${number} معتبر نیست.` });
+                        if (kind === 'resident' && phone === ownerPhone) continue;
+                        if (['first_name', 'last_name'].some(key => !String(unit[`${kind}_${key}`] || '').trim() || String(unit[`${kind}_${key}`]).length > 100)) errors.push({ step: 2, message: `نام و نام خانوادگی ${label} واحد ${number} را تکمیل کنید.` });
+                    }
+                    if (residentPhone && (!String(unit.resident_count ?? '').trim() || !Number.isInteger(Number(unit.resident_count)) || Number(unit.resident_count) < 1 || Number(unit.resident_count) > 1000)) errors.push({ step: 2, message: `تعداد ساکنان واحد ${number} باید بین ۱ تا ۱۰۰۰ باشد.` });
                     if (unit.area !== '' && unit.area != null && (!Number.isFinite(Number(unit.area)) || Number(unit.area) < 0)) errors.push({ step: 2, message: 'متراژ واحد باید عددی بزرگ‌تر یا مساوی صفر باشد.' });
                     if (unit.bedrooms !== '' && unit.bedrooms != null && (!Number.isInteger(Number(unit.bedrooms)) || Number(unit.bedrooms) < 0 || Number(unit.bedrooms) > 50)) errors.push({ step: 2, message: 'تعداد اتاق‌ها باید عددی بین صفر و ۵۰ باشد.' });
                     if (!['residential', 'commercial', 'office', 'other'].includes(unit.usage_type)) errors.push({ step: 2, message: 'کاربری واحد معتبر نیست.' });
@@ -171,6 +185,7 @@
     // Every explicit run reads current records before writes. A lost response
     // is recovered by stable codes and parent-scoped natural keys, not re-posted.
     const execute = async (draft, api, progress = () => {}) => {
+        const people = [];
         const problems = validate(draft);
         if (problems.length) throw new Error(problems[0].message);
         const counts = totals(draft.blocks);
@@ -229,6 +244,15 @@
                         units.push(unit);
                     }
                     firstUnitId ||= unit.id;
+                    const owner = normalizeMobile(plannedUnit.owner_mobile), resident = normalizeMobile(plannedUnit.resident_mobile);
+                    for (const kind of ['owner', 'resident']) {
+                        const mobile = kind === 'owner' ? owner : resident;
+                        if (!mobile || kind === 'resident' && resident === owner) continue;
+                        const relation = kind === 'owner' && owner === resident ? 'owner_resident' : kind;
+                        people.push({ unit_id: unit.id, unit_number: String(unit.unit_number), mobile,
+                            first_name: String(plannedUnit[`${kind}_first_name`] || '').trim(), last_name: String(plannedUnit[`${kind}_last_name`] || '').trim(),
+                            relation, resident_count: relation === 'owner' ? null : Number(plannedUnit.resident_count) });
+                    }
                     tick(`واحد ${plannedUnit.unit_number}، ${plannedFloor.title}`, freshUnit);
                 }
             }
@@ -241,7 +265,7 @@
                 await api(`buildings/${building.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
             }
         }
-        return { buildingId: building.id, complexId: building.complex_id, firstUnitId, created, ...counts };
+        return { buildingId: building.id, complexId: building.complex_id, firstUnitId, created, people, ...counts };
     };
-    root.BuildinoBuildingSetupEngine = Object.freeze({ labelForFloor, totals, resizeUnits, resizeFloors, renumberGeneratedUnits, validate, execute, readStructure, list });
+    root.BuildinoBuildingSetupEngine = Object.freeze({ labelForFloor, totals, resizeUnits, resizeFloors, renumberGeneratedUnits, normalizeMobile, validate, execute, readStructure, list });
 })(typeof window === 'undefined' ? globalThis : window);

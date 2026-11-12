@@ -100,6 +100,14 @@
 .setup-unit-card [data-status="draft"] { color: var(--muted); background: var(--surface-strong); }
 .setup-unit-card__fields { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.25fr) minmax(0,.7fr); gap: 10px; align-items: end; }
 .setup-unit-card__fields > .setup-field { gap: 7px; }
+.setup-unit-card__fields > .setup-field--contact { grid-column: 1/-1; }
+.setup-unit-people { display: grid; gap: 12px; margin-block-start: 12px; }
+.setup-unit-person { display: grid; gap: 10px; padding-block-start: 12px; border-block-start: 1px solid var(--border); }
+.setup-unit-person h6 { margin: 0; font-size: 12px; color: var(--text); }
+.setup-unit-person__names { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.setup-unit-person input { width: 100%; min-width: 0; min-height: 44px; }
+.setup-unit-person[hidden], .setup-unit-person__names[hidden], .setup-person-owner-note[hidden] { display: none !important; }
+.setup-person-owner-note { margin: 0; font-size: 12px; color: var(--muted); }
 .setup-unit-card__fields .setup-field > span { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; min-height: 32px; font-size: 12px; font-weight: 500; }
 .setup-unit-card__fields input { min-height: 44px; padding: 8px; border-radius: 9px; font-size: 13px; }
 .building-setup .setup-unit-card__fields input { direction: ltr; text-align: center; }
@@ -112,12 +120,15 @@
     .setup-unit-card { padding: 12px; }
     .setup-unit-card__fields { grid-template-columns: minmax(0,1fr); gap: 8px; }
     .setup-unit-card__fields > .setup-field { display: grid; grid-template-columns: minmax(0,1fr) minmax(52px,80px); align-items: center; gap: 8px; }
+    .setup-unit-card__fields > .setup-field--contact { grid-template-columns: minmax(0,1fr); }
     .setup-unit-card__fields .setup-field > span { min-height: 0; line-height: 1.6; }
     .setup-unit-card__fields input { min-height: 38px; padding: 6px; background: var(--surface-soft); border-color: var(--border); }
     .setup-unit-grid--list { grid-template-columns: minmax(0,1fr); gap: 8px; }
     .setup-unit-grid--list .setup-unit-card { display: grid; grid-template-columns: minmax(100px,1fr) minmax(0,3fr); align-items: center; gap: 20px; }
     .setup-unit-grid--list .setup-unit-card__header { margin: 0; }
-    .setup-unit-grid--list .setup-unit-card__fields { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+    .setup-unit-grid--list .setup-unit-card__fields { grid-template-columns: repeat(3,minmax(0,1fr)) repeat(2,minmax(130px,1.4fr)); gap: 12px; }
+    .setup-unit-grid--list .setup-unit-card__fields > .setup-field { grid-column: auto; grid-template-columns: minmax(0,1fr); }
+    .setup-unit-grid--list .setup-unit-people { grid-column: 1/-1; grid-template-columns: repeat(2,minmax(0,1fr)); margin: 0; }
 }
 .setup-review { display: grid; gap: 14px; }
 .setup-review__building { padding: 20px; border-radius: 16px; background: var(--primary-50); }

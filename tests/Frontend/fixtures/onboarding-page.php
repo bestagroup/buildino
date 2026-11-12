@@ -28,11 +28,11 @@ if ($mode === 'register') {
 $building = ['id' => 1, 'title' => $mode === 'block' ? 'بلوک آفتاب' : 'ساختمان سرو',
     'complexTitle' => 'مجتمع بهار', 'complexId' => 10, 'complexType' => $mode === 'block' ? 'unlinked' : 'standalone',
     'structureType' => $mode === 'legacy' ? null : ($mode === 'block' ? 'complex_block' : 'standalone'),
-    'address' => 'نشانی قبلی', 'canUpdate' => true, 'postalCode' => '1234567890', 'parkingCount' => 3, 'storageCount' => 1];
+    'address' => 'نشانی قبلی', 'canUpdate' => true, 'canSetupOwners' => true, 'canSetupResidents' => true, 'postalCode' => '1234567890', 'parkingCount' => 3, 'storageCount' => 1];
 $setupConfig = ['actorId' => 1, 'apiBase' => '/api/v1', 'csrfToken' => 'fixture',
     'buildings' => collect($mode === 'complex' ? [] : [$building]),
     'complexes' => collect($mode === 'complex' ? [['id' => 10, 'title' => 'مجتمع بهار', 'code' => 'CMP-TEST', 'workspaceType' => 'complex']] : []),
-    'canCreateComplex' => false, 'canCreateBuilding' => $mode === 'complex', 'canInvite' => true, 'canManageOwnership' => true,
+    'canCreateComplex' => false, 'canCreateBuilding' => $mode === 'complex', 'canInvite' => true, 'canManageOwnership' => true, 'canSetupOwners' => true, 'canSetupResidents' => true,
     'locations' => [$province], 'initialBuildingId' => $mode === 'complex' ? 0 : 1, 'initialComplexId' => $mode === 'complex' ? 10 : 0, 'completedSetup' => null,
     'completeUrl' => '/management/building-setup', 'dashboardUrl' => '/management', 'unitsUrl' => '/management/operations/units',
     'invitationsUrl' => '/management/operations/invitations', 'ownershipUrl' => '/management/operations/ownerships'];

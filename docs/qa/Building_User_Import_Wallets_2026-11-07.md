@@ -1,5 +1,13 @@
 # Wallet separation and building user import
 
+## People entered during building setup
+
+`POST /management/building-setup/{building}/complete` now accepts an optional `people` array (maximum 4,000 entries). Entries contain `unit_id`, `unit_number`, `first_name`, `last_name`, a canonical Iranian `mobile` (`09…`), `relation` (`owner`, `resident`, `owner_resident`) and, for occupancy, `resident_count` (1–1,000). Without this array the existing completion behavior is unchanged. Dates are set to today and displayed as such in the wizard.
+
+Completion reuses BuildingUserImportService inside the building completion transaction: it checks building membership and scoped user/relationship permissions before creating accounts and relationships. Invalid entries return 422, missing permission returns 403, and neither marks setup complete. Existing accounts must match names and remain unchanged; blocked/deleted accounts and ambiguous mobile aliases are rejected. `09…`, `+98…`, `0098…` and national-format aliases identify the same existing account. Repeated identical completion keeps the same users and active relationships. No automatic SMS or database migration is introduced.
+
+The wizard keeps both numbers optional, conditionally asks for identity/count information, and combines identical owner/resident mobiles into one `owner_resident` entry. Contacts remain correctable after partial structural saves; normal structural retry checks remain in place.
+
 Existing architecture retained: creation observers provision distinct User, Unit and Building wallets. A unit wallet remains with the unit after ownership/occupancy ends. Managers require scoped building-wallet.view; building permissions do not expose others' personal wallets. PortalAccessService enumerates all currently linked units across buildings.
 
 ## Updated 15-column building workbook

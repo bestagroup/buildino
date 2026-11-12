@@ -136,7 +136,18 @@
         const count = engine.totals(draft.blocks);
         query('[data-setup-totals]').innerHTML = `${draft.structureType ? '' : `<span>${fa(count.blocks)} بخش</span>`}<span>${fa(count.floors)} طبقه</span><span>${fa(count.units)} واحد</span>`;
     };
+    const unitPeople = unit => ['owner', 'resident'].map(kind => {
+        const phone = engine.normalizeMobile(unit[`${kind}_mobile`]), samePerson = kind === 'resident' && phone && phone === engine.normalizeMobile(unit.owner_mobile);
+        const label = kind === 'owner' ? 'مالک' : 'ساکن';
+        return `<section class="setup-unit-person" data-person-details="${kind}" ${!phone ? 'hidden' : ''}><h6>مشخصات ${label}</h6>
+            <p class="setup-person-owner-note" ${!samePerson ? 'hidden' : ''}>مالک، ساکن همین واحد است.</p>
+            <div class="setup-unit-person__names" ${samePerson ? 'hidden' : ''}>${[['first_name', 'نام'], ['last_name', 'نام خانوادگی']].map(([key, title]) => `<label class="setup-field"><span>${title} ${label}</span><input type="text" data-unit-field="${kind}_${key}" value="${esc(unit[`${kind}_${key}`] || '')}" maxlength="100" autocomplete="off"></label>`).join('')}</div>
+            ${kind === 'resident' ? `<label class="setup-field"><span>تعداد ساکنان واحد</span><input type="number" data-unit-field="resident_count" value="${esc(unit.resident_count || '')}" min="1" max="1000" step="1"></label>` : ''}</section>`;
+    }).join('');
     const renderUnits = () => {
+        const selected = config.buildings.find(item => String(item.id) === String(draft.buildingId));
+        const canOwner = draft.mode === 'existing' ? selected?.canSetupOwners : config.canSetupOwners;
+        const canResident = draft.mode === 'existing' ? selected?.canSetupResidents : config.canSetupResidents;
         renderTotals();
         query('[data-setup-units]').innerHTML = draft.blocks.map((block, blockIndex) => `<div class="setup-unit-group" data-block="${blockIndex}">
             ${draft.structureType ? '' : `<h4>${esc(block.title)}</h4>`}${block.floors.map((floor, floorIndex) => `<details class="setup-floor" data-floor="${floorIndex}" ${floorIndex === 0 ? 'open' : ''}>
@@ -149,7 +160,9 @@
                             <label class="setup-field"><span>شماره واحد</span><input type="text" data-unit-field="unit_number" value="${esc(unit.unit_number)}" maxlength="100" ${unit.existing ? 'readonly' : ''}></label>
                             <label class="setup-field"><span>متراژ <small>مترمربع</small></span><input type="number" data-unit-field="area" value="${esc(unit.area)}" min="0" step="0.01" ${unit.existing ? 'readonly' : ''}></label>
                             <label class="setup-field"><span>اتاق</span><input type="number" data-unit-field="bedrooms" value="${esc(unit.bedrooms)}" min="0" max="50" step="1" ${unit.existing ? 'readonly' : ''}></label>
+                            ${[['owner', 'شماره موبایل مالک', canOwner], ['resident', 'شماره موبایل ساکن', canResident]].filter(([, , allowed]) => allowed).map(([kind, label]) => `<label class="setup-field setup-field--contact"><span>${label} <small>اختیاری</small></span><input type="tel" data-unit-field="${kind}_mobile" value="${esc(unit[`${kind}_mobile`] || '')}" maxlength="20" dir="ltr" inputmode="tel" placeholder="09xxxxxxxxx" autocomplete="off"></label>`).join('')}
                         </div>
+                        ${(canOwner || canResident) ? `<div class="setup-unit-people">${unit.existing ? '<p class="setup-note">برای افزودن افراد، شماره وارد کنید؛ ارتباط‌های قبلی واحد حفظ می‌شوند.</p>' : ''}${unitPeople(unit)}</div>` : ''}
                     </article>`).join('')}</div>${!floor.units.length ? '<p class="setup-note">این طبقه واحدی ندارد. با دکمه + واحد اضافه کنید.</p>' : ''}
                 </div>
             </details>`).join('')}
@@ -175,6 +188,10 @@
         query('[data-setup-next]').textContent = ['ادامه به طبقات', 'مشاهده واحدها', draft.started ? 'ادامه ثبت' : 'ثبت و راه‌اندازی'][step];
         query('[data-setup-step-status]').textContent = `گام ${fa(step + 1)} از ۳`;
         query('[data-setup-reset]').disabled = busy;
+        form.querySelectorAll('[data-unit-field]').forEach(input => {
+            input.disabled = busy;
+            if (draft.started && !/^(?:owner_|resident_)/.test(input.dataset.unitField)) input.readOnly = true;
+        });
     };
     const showStep = (index, focus = true) => {
         step = index; furthest = Math.max(furthest, index);
@@ -236,10 +253,14 @@
                 query('[data-setup-saving-label]').textContent = `در حال ثبت: ${label}`;
                 query('[data-setup-saving-count]').textContent = `${fa(done)} از ${fa(total)} بخش بررسی و ثبت شد`;
             });
-            const completion = await fetch(`${config.completeUrl}/${result.buildingId}/complete`, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': config.csrfToken } });
-            if (!completion.ok) throw new Error('ساختار ذخیره شد اما تأیید نهایی کامل نشد. دوباره «ادامه ثبت» را بزنید.');
+            const completion = await fetch(`${config.completeUrl}/${result.buildingId}/complete`, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken }, body: JSON.stringify({ people: result.people || [] }) });
+            const details = await completion.json().catch(() => null);
+            if (!completion.ok || details?.completed !== true) {
+                throw new Error(Object.values(details?.errors || {}).flat().join('؛ ') || (completion.status === 403 ? 'برای ساخت حساب یا ثبت ارتباط افراد در این ساختمان دسترسی کافی ندارید.' : completion.status === 401 || completion.redirected ? 'نشست شما پایان یافته است؛ دوباره وارد شوید و ثبت را ادامه دهید.' : 'ساختار ذخیره شد اما تأیید نهایی کامل نشد. دوباره «ادامه ثبت» را بزنید.'));
+            }
             showCompleted(result);
         } catch (error) {
+            renderUnits();
             query('[data-setup-saving-label]').textContent = 'ثبت متوقف شد؛ بخش‌های ثبت‌شده محفوظ‌اند.';
             errorMessage(error.message);
         } finally { busy = false; form.removeAttribute('aria-busy'); updateNavigation(); }
@@ -270,10 +291,12 @@
     form.addEventListener('input', fieldChanged);
     form.addEventListener('change', fieldChanged);
     form.addEventListener('input', (event) => {
-        if (draft.started || !event.target.matches('[data-unit-field]')) return;
+        if (busy || !event.target.matches('[data-unit-field]')) return;
+        const personField = /^(?:owner_|resident_)/.test(event.target.dataset.unitField);
+        if (draft.started && !personField) return;
         const floor = draft.blocks[Number(event.target.closest('[data-block]').dataset.block)].floors[Number(event.target.closest('[data-floor]').dataset.floor)];
         const unit = floor.units[Number(event.target.closest('[data-unit]').dataset.unit)];
-        if (!unit.existing) {
+        if (!unit.existing || personField) {
             const field =
                 event.target.dataset.unitField;
 
@@ -285,6 +308,17 @@
             if (field === 'unit_number') {
                 unit.auto_numbered = false;
                 event.target.closest('[data-unit]').querySelector('.setup-unit-card__title').textContent = `واحد ${unit[field]}`;
+            }
+            if (field.endsWith('_mobile')) {
+                const card = event.target.closest('[data-unit]');
+                for (const kind of ['owner', 'resident']) {
+                    const phone = engine.normalizeMobile(unit[`${kind}_mobile`]), panel = card.querySelector(`[data-person-details="${kind}"]`);
+                    if (!panel) continue;
+                    panel.hidden = !phone;
+                    const samePerson = kind === 'resident' && phone && phone === engine.normalizeMobile(unit.owner_mobile);
+                    panel.querySelector('.setup-unit-person__names').hidden = Boolean(samePerson);
+                    panel.querySelector('.setup-person-owner-note').hidden = !samePerson;
+                }
             }
         }
         clearError(); persist();

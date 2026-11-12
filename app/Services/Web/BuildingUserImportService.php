@@ -127,7 +127,7 @@ final class BuildingUserImportService
                 $this->fail('نام‌های متفاوت برای یک شماره موبایل ثبت شده است.');
             }
             $identities[$row['mobile']] = $identity;
-            $user = User::withTrashed()->where('mobile', $row['mobile'])->first();
+            $user = $this->findUserByMobile($row['mobile']);
             if ($user && ($user->trashed() || ! $user->is_active || $user->is_blocked || [$user->first_name, $user->last_name ?? ''] !== $identity)) {
                 $this->fail('اطلاعات یکی از شماره‌ها با حساب موجود قابل تطبیق نیست؛ ثبت دستی بررسی شود.');
             }
@@ -150,7 +150,7 @@ final class BuildingUserImportService
             $rows = $this->validate($building, $actor, $rows);
             Unit::whereIn('id', array_column($rows, 'unit_id'))->orderBy('id')->lockForUpdate()->get();
             foreach ($rows as $row) {
-                $user = User::where('mobile', $row['mobile'])->first();
+                $user = $this->findUserByMobile($row['mobile']);
                 if (! $user) {
                     $user = User::create(['first_name' => $row['first_name'], 'last_name' => $row['last_name'], 'mobile' => $row['mobile'], 'password' => Str::random(48), 'must_change_password' => true, 'is_active' => true, 'is_blocked' => false]);
                     ManagedUserScope::firstOrCreate(['user_id' => $user->id, 'scope_type' => $building->getMorphClass(), 'scope_id' => $building->id], ['assigned_by' => $actor->id]);
@@ -169,6 +169,19 @@ final class BuildingUserImportService
                 }
             }
         });
+    }
+
+    private function findUserByMobile(string $mobile): ?User
+    {
+        $national = substr($mobile, 1);
+        $users = User::withTrashed()->whereIn('mobile', [
+            $mobile, $national, '+98'.$national, '0098'.$national, '98'.$national,
+        ])->get();
+        if ($users->count() > 1) {
+            $this->fail('برای یک شماره موبایل چند حساب موجود است؛ ابتدا حساب‌های تکراری را بررسی کنید.');
+        }
+
+        return $users->first();
     }
 
     private function fail(string $message): never

@@ -83,6 +83,40 @@ test('new setup starts at floor one and keeps generated unit numbers sequential'
     );
 });
 
+test('setup maps normalized contacts to actual saved units and combines owner-residents', async () => {
+    const plan = draft(), backend = memoryApi(), unit = plan.blocks[0].floors[0].units[0];
+    Object.assign(unit, { owner_mobile: '۰۹۱۲۳۴۵۶۷۸۹', owner_first_name: 'علی', owner_last_name: 'رضایی', resident_mobile: '+98 912 345 6789', resident_count: '3' });
+    const result = await engine.execute(plan, backend.api);
+    assert.equal(result.people.length, 1);
+    assert.equal(result.people[0].unit_id, backend.data.units[0].id);
+    assert.equal(result.people[0].mobile, '09123456789');
+    assert.equal(result.people[0].relation, 'owner_resident');
+    assert.equal(result.people[0].resident_count, 3);
+    unit.existing = true; unit.id = result.people[0].unit_id;
+    const retry = await engine.execute(plan, backend.api);
+    assert.equal(backend.data.units.length, 4);
+    assert.equal(retry.people[0].unit_id, result.people[0].unit_id);
+    unit.resident_mobile = '09128888888'; unit.resident_first_name = 'سارا'; unit.resident_last_name = 'احمدی';
+    const separate = await engine.execute(plan, backend.api);
+    assert.equal(separate.people.length, 2);
+    assert.equal(separate.people[1].relation, 'resident');
+    assert.equal(separate.people[1].first_name, 'سارا');
+});
+
+test('invalid contact information blocks structural writes before setup starts', async () => {
+    const plan = draft(), backend = memoryApi(), unit = plan.blocks[0].floors[0].units[0];
+    unit.owner_mobile = '123';
+    await assert.rejects(() => engine.execute(plan, backend.api));
+    assert.equal(backend.writes.length, 0);
+    unit.owner_mobile = '09123456789';
+    await assert.rejects(() => engine.execute(plan, backend.api));
+    assert.equal(backend.writes.length, 0);
+    unit.owner_first_name = 'علی'; unit.owner_last_name = 'رضایی';
+    unit.resident_mobile = unit.owner_mobile; unit.resident_count = '0';
+    await assert.rejects(() => engine.execute(plan, backend.api));
+    assert.equal(backend.writes.length, 0);
+});
+
 test('bulk generation preserves edited and existing rows when counts change', () => {
     const plan = draft(); const block = plan.blocks[0];
     assert.equal(engine.totals(plan.blocks).units, 4);

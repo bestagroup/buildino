@@ -99,6 +99,7 @@
         <section data-setup-step="2" aria-labelledby="setup-units-title" hidden>
             <div class="setup-section-heading"><span>گام سوم</span><h3 id="setup-units-title" tabindex="-1">واحدهای پیشنهادی را بررسی کنید</h3><p>واحدها در پیش‌نویس آماده‌اند. برای اصلاح شماره‌ها، کارت طبقه را باز کنید. پس از بررسی واحدها، «ثبت و راه‌اندازی» را بزنید.</p></div>
             <div class="setup-totals" data-setup-totals></div>
+            <p class="setup-note">شماره مالک و ساکن اختیاری است. با واردکردن شماره، مشخصات فرد را تکمیل کنید؛ حساب و ارتباط او با واحد هنگام ثبت نهایی از تاریخ امروز ایجاد می‌شود. اگر مالک در همین واحد ساکن است، شماره یکسان وارد کنید.</p>
             <div data-setup-units></div>
             <details class="setup-more"><summary>خلاصه اطلاعات ساختمان</summary><div data-setup-review></div></details>
             <div class="setup-saving" role="status" aria-live="polite" data-setup-saving hidden><strong data-setup-saving-label></strong><progress max="100" value="0" data-setup-progress aria-label="پیشرفت ثبت ساختار"></progress><span data-setup-saving-count></span></div>

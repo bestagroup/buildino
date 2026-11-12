@@ -8,6 +8,7 @@ use App\Models\BuildingComplexRequest;
 use App\Models\Floor;
 use App\Models\Unit;
 use App\Services\Web\BuildingComplexConnectionService;
+use App\Services\Web\BuildingUserImportService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -16,16 +17,33 @@ use Illuminate\Support\Facades\DB;
 
 final class BuildingSetupActionsController extends Controller
 {
-    public function complete(Request $request, Building $building, PermissionChecker $permissions): JsonResponse
+    public function complete(Request $request, Building $building, PermissionChecker $permissions, BuildingUserImportService $people): JsonResponse
     {
         foreach (['blocks.create', 'floors.create', 'units.create'] as $permission) {
             abort_unless($permissions->allows($request->user(), $permission, $building), 403);
         }
-        DB::transaction(function () use ($building): void {
+        $data = $request->validate([
+            'people' => ['sometimes', 'array', 'list', 'max:4000'],
+            'people.*.unit_id' => ['required', 'integer', 'min:1'],
+            'people.*.unit_number' => ['required', 'string', 'max:100'],
+            'people.*.first_name' => ['required', 'string', 'max:100'],
+            'people.*.last_name' => ['required', 'string', 'max:100'],
+            'people.*.mobile' => ['required', 'string', 'regex:/^09[0-9]{9}$/'],
+            'people.*.relation' => ['required', 'in:owner,resident,owner_resident'],
+            'people.*.resident_count' => ['nullable', 'integer', 'min:1', 'max:1000'],
+        ]);
+        DB::transaction(function () use ($building, $request, $data, $people): void {
             $building = Building::query()->lockForUpdate()->findOrFail($building->id);
             $floors = Floor::query()->whereHas('block', fn ($q) => $q->where('building_id', $building->id))->count();
             $units = Unit::query()->whereHas('floor.block', fn ($q) => $q->where('building_id', $building->id))->count();
             abort_unless($floors > 0 && $units > 0, 422, 'ابتدا طبقات و حداقل یک واحد را ثبت کنید.');
+            if ($data['people'] ?? []) {
+                $rows = array_map(fn (array $row): array => [
+                    ...$row, 'resident_count' => $row['resident_count'] ?? '',
+                    'starts_at' => today()->toDateString(),
+                ], $data['people']);
+                $people->commit($building, $request->user(), $rows);
+            }
             $building->forceFill(['floors_count' => $floors, 'units_count' => $units, 'setup_completed_at' => now()])->save();
         });
         return response()->json(['completed' => true]);
