@@ -141,8 +141,8 @@
         const label = kind === 'owner' ? 'مالک' : 'ساکن';
         return `<section class="setup-unit-person" data-person-details="${kind}" ${!phone ? 'hidden' : ''}><h6>مشخصات ${label}</h6>
             <p class="setup-person-owner-note" ${!samePerson ? 'hidden' : ''}>مالک، ساکن همین واحد است.</p>
-            <div class="setup-unit-person__names" ${samePerson ? 'hidden' : ''}>${[['first_name', 'نام'], ['last_name', 'نام خانوادگی']].map(([key, title]) => `<label class="setup-field"><span>${title} ${label}</span><input type="text" data-unit-field="${kind}_${key}" value="${esc(unit[`${kind}_${key}`] || '')}" maxlength="100" autocomplete="off"></label>`).join('')}</div>
-            ${kind === 'resident' ? `<label class="setup-field"><span>تعداد ساکنان واحد</span><input type="number" data-unit-field="resident_count" value="${esc(unit.resident_count || '')}" min="1" max="1000" step="1"></label>` : ''}</section>`;
+            <div class="setup-unit-person__names" ${samePerson ? 'hidden' : ''}>${[['first_name', 'نام'], ['last_name', 'نام خانوادگی']].map(([key, title]) => `<label class="setup-field"><span>${title} ${label} <span class="setup-required" aria-hidden="true">*</span></span><input type="text" aria-required="true" data-unit-field="${kind}_${key}" value="${esc(unit[`${kind}_${key}`] || '')}" maxlength="100" autocomplete="off"></label>`).join('')}</div>
+            ${kind === 'resident' ? `<label class="setup-field"><span>تعداد ساکنان واحد <span class="setup-required" aria-hidden="true">*</span></span><input type="number" aria-required="true" data-unit-field="resident_count" value="${esc(unit.resident_count || '')}" min="1" max="1000" step="1"></label>` : ''}</section>`;
     }).join('');
     const renderUnits = () => {
         const selected = config.buildings.find(item => String(item.id) === String(draft.buildingId));
