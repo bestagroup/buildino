@@ -952,7 +952,7 @@
                         >
                             {{
                                 $headerUnreadCount > 99
-                                    ? '99+'
+                                    ? '۹۹+'
                                     : $headerUnreadCount
                             }}
                         </span>
@@ -1411,12 +1411,12 @@
 ></script>
 
 <script
-    src="{{ asset('js/buildino-datatables.js') }}"
+    src="{{ asset('js/buildino-datatables.js') }}?v={{ filemtime(public_path('js/buildino-datatables.js')) }}"
     defer
 ></script>
 
 <script
-    src="{{ asset('js/buildino-management.js') }}"
+    src="{{ asset('js/buildino-management.js') }}?v={{ filemtime(public_path('js/buildino-management.js')) }}"
     defer
 ></script>
 

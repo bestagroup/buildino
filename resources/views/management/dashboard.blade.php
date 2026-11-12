@@ -40,17 +40,17 @@
         $roleDashboard['profile'] ?? [];
     $roleSections =
         $roleDashboard['sections'] ?? [];
-    $roleQuickActions =
-        $roleDashboard['quick_actions'] ?? [];
-    $roleModules =
-        $roleDashboard['modules'] ?? [];
     $roleOperationKeys =
         $roleDashboard['operation_keys'] ?? [];
     $roleRecentKeys =
         $roleDashboard['recent_keys'] ?? [];
 
-    $money = static fn ($value) =>
-        number_format((int) ($value ?? 0));
+    $digits = static fn ($value) => strtr((string) $value, [
+        '0' => '۰', '1' => '۱', '2' => '۲', '3' => '۳', '4' => '۴',
+        '5' => '۵', '6' => '۶', '7' => '۷', '8' => '۸', '9' => '۹',
+    ]);
+    $number = static fn ($value) => $digits(number_format((int) ($value ?? 0)));
+    $money = $number;
 
     $personName = static function ($user): string {
         if (! $user) {
@@ -122,13 +122,13 @@
             ->map(
                 static function (
                     array $item
-                ) use ($money): array {
+                ) use ($money, $number): array {
                     return [
                         ...$item,
                         'value' =>
                             ($item['money'] ?? false)
                                 ? $money($item['value'] ?? 0)
-                                : number_format(
+                                : $number(
                                     (int) (
                                         $item['value']
                                         ?? 0
@@ -180,16 +180,16 @@
 
             @if ($selectedBuilding)
                 <small class="hero-role-scope">
-                    {{ $selectedBuilding->title }}
+                    {{ $digits($selectedBuilding->title) }}
                 </small>
             @endif
         </h2>
 
         <p>
             داده‌ها برای بازه
-            <strong>{{ $dashboard['period']['from_jalali'] }}</strong>
+            <strong>{{ $digits($dashboard['period']['from_jalali']) }}</strong>
             تا
-            <strong>{{ $dashboard['period']['to_jalali'] }}</strong>
+            <strong>{{ $digits($dashboard['period']['to_jalali']) }}</strong>
             نمایش داده می‌شوند.
         </p>
     </div>
@@ -219,9 +219,9 @@
                             && $selectedBuilding->id === $building->id
                         )
                     >
-                        {{ $building->title }}
+                        {{ $digits($building->title) }}
                         @if ($building->complex)
-                            — {{ $building->complex->title }}
+                            — {{ $digits($building->complex->title) }}
                         @endif
                     </option>
                 @endforeach
@@ -280,37 +280,6 @@
         </div>
     </div>
 
-    @if ($roleQuickActions)
-        <div class="role-workspace__actions">
-            @foreach ($roleQuickActions as $action)
-                <a
-                    class="role-quick-action"
-                    href="{{
-                        route(
-                            'management.operations.show',
-                            $action['resource']
-                        )
-                        . (
-                            ($action['create'] ?? false)
-                                ? '?create=1'
-                                : ''
-                        )
-                    }}"
-                >
-                    @include(
-                        'management.partials.icon',
-                        [
-                            'name' => $action['icon'] ?? 'grid',
-                            'size' => 17,
-                        ]
-                    )
-                    <span>
-                        {{ $action['title'] }}
-                    </span>
-                </a>
-            @endforeach
-        </div>
-    @endif
 </section>
 
 <section class="dashboard-glance-grid" aria-label="خلاصه حساب جاری">
@@ -323,7 +292,7 @@
             <strong
                 data-money-value="{{ (int) ($headerWallet['available_balance'] ?? 0) }}"
             >
-                {{ number_format((int) ($headerWallet['available_balance'] ?? 0)) }}
+                {{ $number($headerWallet['available_balance'] ?? 0) }}
             </strong>
             <small>{{ $headerWallet['currency'] ?? 'IRR' }} قابل استفاده</small>
         </div>
@@ -336,7 +305,7 @@
         <div>
             <span>اعلان‌های جدید</span>
             <strong>
-                {{ number_format((int) ($headerNotifications['unread_count'] ?? 0)) }}
+                {{ $number($headerNotifications['unread_count'] ?? 0) }}
             </strong>
             <small>پیام خوانده‌نشده</small>
         </div>
@@ -363,7 +332,7 @@
                 class="glance-card__text-value"
                 data-jdate="{{ now()->toISOString() }}"
             >
-                {{ now()->format('Y/m/d') }}
+                {{ $digits(now()->format('Y/m/d')) }}
             </strong>
             <small>تقویم شمسی</small>
         </div>
@@ -408,33 +377,13 @@
 </section>
 
 @if ($roleSections['modules'] ?? true)
-<section class="section-block" id="modules">
+<section class="section-block" id="upcoming-services">
     <div class="crud-group">
     <div class="section-heading">
-        <div>
-            <span class="eyebrow">قابلیت‌های سامانه</span>
-            <h3>ماژول‌های سامانه</h3>
-            <p>
-                دسترسی به بخش‌های مدیریتی ساختمان و خدمات پیش رو.
-            </p>
-        </div>
-
-        <div class="section-heading__meta">
-            <strong>{{ count($roleModules) + 1 }}</strong>
-            <span>حوزه اصلی</span>
-        </div>
+        <h3>خدمات آینده</h3>
     </div>
 
     <div class="crud-resource-grid">
-        @foreach ($roleModules as $module)
-            <x-management.operation-card
-                :title="$module['title']"
-                :description="$module['description']"
-                :url="route('management.operations.show', $module['target_resource'])"
-                :value="($module['money'] ?? false) ? $money($module['count']) : number_format((int) $module['count'])"
-                :unit="$module['unit']"
-            />
-        @endforeach
         <x-management.operation-card title="خدمات بیمه آپارتمان" status="به‌زودی" />
     </div>
     </div>
@@ -565,7 +514,7 @@
                 <div>
                     <span>مغایرت تطبیق مالی</span>
                     <strong>
-                        {{ number_format(
+                        {{ $number(
                             data_get(
                                 $platformSummary,
                                 'platform_wallets.reconciliation_mismatch_count',
@@ -699,7 +648,7 @@
                                 <span>
                                     {{ $statusLabels[$status] ?? $status }}
                                 </span>
-                                <strong>{{ number_format($count) }}</strong>
+                                <strong>{{ $number($count) }}</strong>
                             </div>
                         @endif
                     @empty
@@ -1019,6 +968,7 @@
                             . $table[
                                 'count_id'
                             ],
+                        'persianDigits' => true,
                     ]
                 )
             </article>
@@ -1108,19 +1058,19 @@
         <div class="api-stat-grid">
             <div>
                 <span>نسخه</span>
-                <strong>v{{ $dashboard['api']['version'] }}</strong>
+                <strong>v{{ $digits($dashboard['api']['version']) }}</strong>
             </div>
             <div>
                 <span>مسیر</span>
-                <strong>{{ number_format($dashboard['api']['paths']) }}</strong>
+                <strong>{{ $number($dashboard['api']['paths']) }}</strong>
             </div>
             <div>
                 <span>قرارداد</span>
-                <strong>{{ number_format($dashboard['api']['contracts']) }}</strong>
+                <strong>{{ $number($dashboard['api']['contracts']) }}</strong>
             </div>
             <div>
                 <span>محافظت‌شده</span>
-                <strong>{{ number_format($dashboard['api']['protected_paths']) }}</strong>
+                <strong>{{ $number($dashboard['api']['protected_paths']) }}</strong>
             </div>
         </div>
 
@@ -1137,12 +1087,12 @@
     <div>
         داشبورد مدیریتی Buildino
         <span>•</span>
-        Backend/API v{{ $dashboard['api']['version'] }}
+        Backend/API v{{ $digits($dashboard['api']['version']) }}
     </div>
 
     <div>
         آخرین تولید داده:
-        {{ \Carbon\Carbon::parse($dashboard['generated_at'])->format('Y-m-d H:i') }}
+        {{ $digits(\Carbon\Carbon::parse($dashboard['generated_at'])->format('Y-m-d H:i')) }}
     </div>
 </footer>
 @endsection

@@ -105,7 +105,7 @@ class ManagementDashboardWebTest extends TestCase
             ->assertDontSee(
                 $other['building']->title
             )
-            ->assertSee(
+            ->assertDontSee(
                 'ماژول‌های سامانه'
             )
             ->assertSee(
@@ -198,10 +198,10 @@ class ManagementDashboardWebTest extends TestCase
                 'نمای کل پلتفرم'
             )
             ->assertSee(
-                '1405/05/10'
+                '۱۴۰۵/۰۵/۱۰'
             )
             ->assertSee(
-                '1405/05/30'
+                '۱۴۰۵/۰۵/۳۰'
             );
     }
 

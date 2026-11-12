@@ -366,6 +366,17 @@
                             persianLanguage,
                         drawCallback:
                             function () {
+                                if (table.dataset.dtPersianDigits === "1") {
+                                    table.querySelectorAll("tbody td").forEach((cell) => {
+                                        const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+                                        while (walker.nextNode()) {
+                                            walker.currentNode.nodeValue = walker.currentNode.nodeValue.replace(/[0-9٠-٩]/g, (digit) => {
+                                                const code = digit.charCodeAt(0);
+                                                return "۰۱۲۳۴۵۶۷۸۹"[code >= 0x660 ? code - 0x660 : code - 0x30];
+                                            });
+                                        }
+                                    });
+                                }
                                 loading
                                     ?.setAttribute(
                                         "hidden",

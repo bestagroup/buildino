@@ -32,6 +32,9 @@
             data-dt-url="{{ $url }}"
             data-dt-columns="{{ $encodedColumns }}"
             data-dt-page-length="{{ $pageLength ?? 10 }}"
+            @if ($persianDigits ?? false)
+                data-dt-persian-digits="1"
+            @endif
             @if (! empty($countTarget))
                 data-dt-count-target="{{ $countTarget }}"
             @endif

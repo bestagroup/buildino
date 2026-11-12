@@ -623,7 +623,7 @@
 
                 notificationBadge.textContent =
                     safeCount > 99
-                        ? "99+"
+                        ? "۹۹+"
                         : toFaDigits(
                             safeCount
                         );
