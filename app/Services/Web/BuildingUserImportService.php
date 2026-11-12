@@ -20,7 +20,7 @@ final class BuildingUserImportService
 {
     public const HEADERS = ['unit_id', 'unit_number', 'first_name', 'last_name', 'mobile', 'relation', 'resident_count', 'starts_at'];
 
-    public function read(string $path, array $headers = self::HEADERS, ?array $keys = null): array
+    public function read(string $path, array $headers = self::HEADERS, ?array $keys = null, bool $skipEmptyPeople = true): array
     {
         $zip = new \ZipArchive;
         if ($zip->open($path) !== true) {
@@ -67,7 +67,7 @@ final class BuildingUserImportService
                     if ($keys === null && $values[2] === '' && $values[4] === '') {
                         continue;
                     }
-                    if ($keys !== null && count(array_filter(array_slice($values, 8, 6), fn ($v) => $v !== '')) === 0) {
+                    if ($skipEmptyPeople && $keys !== null && count(array_filter(array_slice($values, 8, 6), fn ($v) => $v !== '')) === 0) {
                         continue;
                     }
                     $rows[] = array_combine($keys ?? $headers, $values);

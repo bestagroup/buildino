@@ -4,14 +4,12 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Building;
-use App\Models\Unit;
+use App\Services\Web\BuildingWorkbookExporter;
 use App\Services\Web\BuildingWorkbookService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use OpenSpout\Common\Entity\Row;
-use OpenSpout\Writer\XLSX\Writer;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 final class BuildingUserImportController extends Controller
@@ -36,15 +34,7 @@ final class BuildingUserImportController extends Controller
         $this->authorizeBuilding($request, $building);
         $path = tempnam(sys_get_temp_dir(), 'buildino-import-');
         try {
-            $writer = new Writer;
-            $writer->openToFile($path);
-            $writer->addRow(Row::fromValues(BuildingWorkbookService::HEADERS));
-            $units = Unit::with('floor')->whereHas('floor.block', fn ($q) => $q->where('building_id', $building->id))->get()->sortBy(fn ($u) => [$u->floor->floor_number, $u->unit_number]);
-            foreach ($units->values() as $index => $unit) {
-                $parking = $unit->parking_count ?? $unit->unitParkingAssignments()->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', today()))->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', today()))->count();
-                $writer->addRow(Row::fromValues([(string) ($index + 1), $building->title, $building->code, (string) $unit->floor->floor_number, (string) $unit->unit_number, (string) $unit->area, (string) ($unit->bedrooms ?? 0), (string) $parking, '', '', '', '', '', '', (string) $unit->resident_count]));
-            }
-            $writer->close();
+            app(BuildingWorkbookExporter::class)->write($path, $building, $request->user());
 
             return response()->download($path, 'building-users.xlsx', ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])->deleteFileAfterSend();
         } catch (\Throwable $e) {
@@ -67,7 +57,7 @@ final class BuildingUserImportController extends Controller
             throw ValidationException::withMessages(['file' => 'فایل قابل خواندن نیست؛ از فایل نمونه XLSX استفاده کنید.']);
         }
         $token = (string) Str::uuid();
-        $request->session()->put('building_user_import', ['format' => 2, 'token' => $token, 'user_id' => $request->user()->id, 'building_id' => $building->id, 'expires_at' => now()->addMinutes(20)->timestamp, 'rows' => $rows]);
+        $request->session()->put('building_user_import', ['format' => 3, 'token' => $token, 'user_id' => $request->user()->id, 'building_id' => $building->id, 'expires_at' => now()->addMinutes(20)->timestamp, 'rows' => $rows]);
 
         return view('management.user-import', ['buildings' => collect([$building]), 'building' => $building, 'rows' => $rows, 'token' => $token]);
     }
@@ -76,10 +66,10 @@ final class BuildingUserImportController extends Controller
     {
         $this->authorizeBuilding($request, $building);
         $preview = $request->session()->get('building_user_import');
-        abort_unless($preview && ($preview['format'] ?? null) === 2 && $preview['user_id'] === $request->user()->id && $preview['building_id'] === $building->id && $preview['expires_at'] > time() && hash_equals($preview['token'], (string) $request->input('token')), 419);
+        abort_unless($preview && ($preview['format'] ?? null) === 3 && $preview['user_id'] === $request->user()->id && $preview['building_id'] === $building->id && $preview['expires_at'] > time() && hash_equals($preview['token'], (string) $request->input('token')), 419);
         $imports->commit($building, $request->user(), $preview['rows']);
         $request->session()->forget('building_user_import');
 
-        return redirect()->route('management.user-import.index', ['building_id' => $building->id])->with('status', 'اطلاعات ثبت شد؛ ارتباط‌های فعال موجود بدون تغییر حفظ شدند. دعوت‌نامه را در بخش دعوت کاربران ارسال کنید.');
+        return redirect()->route('management.user-import.index', ['building_id' => $building->id])->with('status', 'اطلاعات جدید و اصلاحات فایل با موفقیت ثبت شد؛ ارتباط حساب‌ها با واحد حفظ شد. دعوت‌نامه را در بخش دعوت کاربران ارسال کنید.');
     }
 }
