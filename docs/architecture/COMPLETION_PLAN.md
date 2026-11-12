@@ -23,7 +23,7 @@
 | 16 | گزارش/خروجی | تکمیل | گزارش مالی/عملیاتی، export صفی CSV/Excel/PDF، retention و permission scope |
 | 17 | وفاداری | تکمیل | ledger idempotent، FIFO allocation، expiry، reversal، rule versioning و claim workflow |
 | 18 | مشاهده‌پذیری | تکمیل کد | readiness/admin health، scheduler/queue heartbeat، integrity/accounting/gateway audits |
-| 19 | QA و انتشار | تکمیل repository | PHPUnit/contract/build/audit/CI، Docker production، backup/restore/rollback runbook؛ restore drill و UAT باید روی staging اجرا شود |
+| 19 | QA و انتشار | تکمیل repository | PHPUnit/contract/build/audit/CI، استقرار Laravel روی cPanel و راهنمای backup/restore/rollback؛ restore drill و UAT باید روی staging اجرا شود |
 | 20 | اشتراک و لایسنس | تکمیل کد | پلن Trial/Basic/Pro/Enterprise، چرخه فعال‌سازی/تمدید/تعلیق/لغو، Grace Period، Feature override و UI مدیریتی |
 | 21 | وب‌سایت عمومی | تکمیل | صفحه عمومی responsive با مسیرهای ثبت‌نام، پرتال کاربران و پنل مدیریت |
 

@@ -171,7 +171,7 @@ final class BuildingUserImportService
         });
     }
 
-    private function findUserByMobile(string $mobile): ?User
+    public function findUserByMobile(string $mobile): ?User
     {
         $national = substr($mobile, 1);
         $users = User::withTrashed()->whereIn('mobile', [

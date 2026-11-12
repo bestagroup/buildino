@@ -63,14 +63,16 @@ final class BuildingWorkbookService
                 $relation = $kind === 'tenant' ? 'tenant' : (! $tenant && (int) $row['resident_count'] > 0 ? 'owner_resident' : 'owner');
                 $person = ['unit_id' => (string) $unit->id, 'unit_number' => (string) $unit->unit_number, 'first_name' => $row[$kind.'_first'], 'last_name' => $row[$kind.'_last'], 'mobile' => $mobile, 'relation' => $relation, 'resident_count' => $relation === 'owner' ? '' : $row['resident_count'], 'starts_at' => $row['starts_at'] ?? today()->toDateString()];
                 $people[] = $person;
+                $existingUser = app(BuildingUserImportService::class)->findUserByMobile($mobile);
                 $relations = $kind === 'owner' ? $unit->unitOwnerships() : $unit->unitOccupancies();
-                if ($relations->where('is_active', true)->where(fn ($q) => $q->whereNull('ends_at')->orWhereDate('ends_at', '>=', today()))->whereHas('user', fn ($q) => $q->where('mobile', '!=', $mobile))->exists()) {
+                if ($relations->where('is_active', true)->where(fn ($q) => $q->whereNull('ends_at')->orWhereDate('ends_at', '>=', today()))->where('user_id', '!=', $existingUser?->id ?? 0)->exists()) {
                     $this->fail('واحد '.$row['unit'].' ارتباط فعال متفاوت دارد؛ ابتدا در فرم مالکیت یا سکونت اصلاح کنید.');
                 }
             }
             $occupantMobile = $tenant ? $row['tenant_mobile'] : ((int) $row['resident_count'] > 0 ? $row['owner_mobile'] : null);
+            $occupant = $occupantMobile ? app(BuildingUserImportService::class)->findUserByMobile($occupantMobile) : null;
             $occupancies = $unit->unitOccupancies()->where('is_active', true)->where(fn ($q) => $q->whereNull('ends_at')->orWhereDate('ends_at', '>=', today()));
-            if ($occupancies->whereHas('user', fn ($q) => $occupantMobile ? $q->where('mobile', '!=', $occupantMobile) : $q)->exists()) {
+            if ($occupancies->where('user_id', '!=', $occupant?->id ?? 0)->exists()) {
                 $this->fail('سکونت فعال واحد با فایل مطابقت ندارد.');
             }
             $row['starts_at'] ??= today()->toDateString();

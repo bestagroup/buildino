@@ -3,6 +3,7 @@ set -eu
 
 BRANCH="${DEPLOY_BRANCH:-main}"
 PHP_BIN="${PHP_BIN:-php}"
+COMPOSER_BIN="${COMPOSER_BIN:-composer}"
 SKIP_GIT="${SKIP_GIT:-0}"
 
 if [ ! -f artisan ]; then
@@ -21,17 +22,16 @@ if [ "$SKIP_GIT" != "1" ]; then
     git pull --ff-only origin "$BRANCH"
 fi
 
-maintenance=0
-restore_application() {
-    if [ "$maintenance" = "1" ]; then
-        "$PHP_BIN" artisan up >/dev/null 2>&1 || true
-    fi
+# Resolve Composer before changing availability; it must use the deployment PHP runtime.
+composer_path="$(command -v "$COMPOSER_BIN")" || {
+    echo "Composer is required to install the locked application dependencies." >&2
+    exit 1
 }
-trap restore_application EXIT INT TERM
 
-if "$PHP_BIN" artisan down --retry=60; then
-    maintenance=1
-fi
+"$PHP_BIN" artisan down --retry=60
+# On failure, keep maintenance mode active until the operator resolves or rolls back the release.
+"$PHP_BIN" "$composer_path" install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+"$PHP_BIN" "$composer_path" check-platform-reqs --no-dev
 
 "$PHP_BIN" artisan migrate --force
 "$PHP_BIN" artisan optimize:clear
@@ -39,7 +39,7 @@ fi
 "$PHP_BIN" artisan route:cache
 "$PHP_BIN" artisan view:cache
 
-"$PHP_BIN" artisan up || true
-maintenance=0
+"$PHP_BIN" artisan queue:restart
+"$PHP_BIN" artisan up
 
 echo "Buildino cPanel deployment completed on branch: $BRANCH"

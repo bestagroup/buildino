@@ -173,6 +173,23 @@ class BuildingUserImportTest extends TestCase
         $this->assertDatabaseHas('unit_occupancies', ['unit_id' => $unit->id, 'user_id' => $tenant->id, 'occupancy_type' => 'tenant']);
     }
 
+    public function test_existing_owner_resident_with_international_mobile_is_not_a_conflict(): void
+    {
+        [$manager, $unit, $building] = $this->scenario();
+        $rows = [array_combine(BuildingWorkbookService::KEYS, $this->workbookRow($unit, '09129998877', 'مالک'))];
+        $service = app(BuildingWorkbookService::class);
+        $service->commit($building, $manager, $rows);
+        $owner = User::where('mobile', '09129998877')->firstOrFail();
+        $owner->update(['mobile' => '+989129998877']);
+
+        $service->commit($building, $manager, $rows);
+
+        $this->assertSame(1, $unit->unitOwnerships()->count());
+        $this->assertSame(1, $unit->unitOccupancies()->count());
+        $this->assertDatabaseMissing('users', ['mobile' => '09129998877']);
+        $this->assertDatabaseHas('unit_occupancies', ['unit_id' => $unit->id, 'user_id' => $owner->id]);
+    }
+
     public function test_conflicting_or_incomplete_tenant_is_not_written(): void
     {
         [$manager, $unit, $building] = $this->scenario();

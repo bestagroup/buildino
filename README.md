@@ -83,28 +83,13 @@ php artisan api:contract:export
 
 `release:gate --production` علاوه بر یکپارچگی داده، تنظیمات سرویس‌های واقعی و heartbeat صف/scheduler را نیز بررسی می‌کند و باید روی همان محیط production اجرا شود.
 
-## استقرار کانتینری
+## استقرار Laravel روی cPanel
 
-فایل‌های `Dockerfile` و `compose.production.yml` سرویس‌های زیر را تعریف می‌کنند:
-
-```text
-Nginx + PHP-FPM
-MariaDB + Redis + ClamAV
-default / notifications / reports workers
-Laravel scheduler
-```
-
-نمونه تنظیمات را کپی و همه secretها را از secret manager یا محیط استقرار تزریق کنید:
+راهنمای انتشار، تنظیم صف و زمان‌بندی در `docs/production/CPANEL_DEPLOYMENT.md` و کنترل‌های انتشار در `docs/production/DEPLOYMENT_RUNBOOK.md` قرار دارند.
 
 ```bash
-cp .env.production.example .env.production
-docker compose --env-file .env.production -f compose.production.yml build
-docker compose --env-file .env.production -f compose.production.yml up -d
-docker compose --env-file .env.production -f compose.production.yml exec app php artisan migrate --force
-docker compose --env-file .env.production -f compose.production.yml exec app php artisan release:gate --production
+sh scripts/deploy-cpanel.sh
 ```
-
-راهنمای کامل انتشار، rollback و restore در `docs/production/DEPLOYMENT_RUNBOOK.md` قرار دارد.
 
 ## امنیت و داده حساس
 

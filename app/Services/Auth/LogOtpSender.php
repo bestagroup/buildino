@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Auth;
 
 use App\Contracts\Auth\OtpSender;
@@ -8,7 +9,7 @@ class LogOtpSender implements OtpSender
 {
     public function send(string $identifier, string $channel, string $code): void
     {
-        if (! app()->environment('local')) {
+        if (! app()->environment('local') || ! config('auth_otp.log_codes', false)) {
             return;
         }
 

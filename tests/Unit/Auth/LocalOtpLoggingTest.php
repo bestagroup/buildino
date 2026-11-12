@@ -14,10 +14,11 @@ use Tests\TestCase;
 final class LocalOtpLoggingTest extends TestCase
 {
     #[DataProvider('environmentsAndChannels')]
-    public function test_delivered_otp_is_logged_only_locally(string $environment, string $channel): void
+    public function test_delivered_otp_is_logged_only_locally(string $environment, string $channel, bool $enabled): void
     {
         $this->app->instance('env', $environment);
         config()->set('auth_otp.log_channel', 'single');
+        config()->set('auth_otp.log_codes', $enabled);
         $identifier = $channel === 'sms' ? '09121111111' : 'local@example.test';
         $sms = Mockery::mock(SmsSender::class);
 
@@ -32,7 +33,7 @@ final class LocalOtpLoggingTest extends TestCase
             Mail::shouldReceive('raw')->once()->with('کد تأیید Buildino: 001234', Mockery::type('callable'));
         }
 
-        if ($environment === 'local') {
+        if ($environment === 'local' && $enabled) {
             Log::shouldReceive('channel')->once()->with('single')->andReturnSelf();
             Log::shouldReceive('info')->once()->with('OTP generated', [
                 'identifier' => $identifier, 'channel' => $channel, 'code' => '001234',
@@ -51,7 +52,9 @@ final class LocalOtpLoggingTest extends TestCase
         $cases = [];
         foreach (['local', 'production', 'staging', 'testing'] as $environment) {
             foreach (['sms', 'email'] as $channel) {
-                $cases[$environment.' '.$channel] = [$environment, $channel];
+                foreach ([false, true] as $enabled) {
+                    $cases[$environment.' '.$channel.' '.(int) $enabled] = [$environment, $channel, $enabled];
+                }
             }
         }
 
