@@ -37,7 +37,7 @@ class EnsureSubscriptionIsActive
             return response()->json([
                 'success' => false,
                 'code' => 'SUBSCRIPTION_INACTIVE',
-                'message' => 'The building subscription is inactive, suspended or expired.',
+                'message' => 'اشتراک قابل استفاده‌ای برای این ساختمان وجود ندارد. برای بررسی وضعیت یا تمدید اشتراک با پشتیبانی سامانه تماس بگیرید.',
             ], 403);
         }
 

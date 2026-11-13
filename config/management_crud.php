@@ -3872,7 +3872,7 @@ return [
         ],
         'announcements' => [
         'permission' => 'announcements.view',
-        'permission_scope' => 'any',
+        'permission_scope' => 'global',
             'group' => 'content',
             'title' => 'اطلاعیه‌ها',
             'description' => 'ثبت و انتشار اطلاعیه',

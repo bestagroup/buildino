@@ -11,6 +11,7 @@ import type { CrudField, CrudRecord, CrudResource } from '../../../types/managem
 
 const props = defineProps<{ resourceKey: string; title: string; resource: CrudResource; workspace: InvoiceWorkspace; csrfToken: string }>();
 const root = ref<HTMLElement | null>(null), buildingId = ref(''), search = ref(''), rows = ref<CrudRecord[]>([]);
+const listLoaded = ref(false);
 const loading = ref(false), busy = ref(false), lookupLoading = ref(false), error = ref(''), success = ref(''), uncertain = ref(false);
 const view = ref<'list' | 'detail' | 'editor'>('list'), selected = ref<CrudRecord | null>(null), editing = ref(false), step = ref(0);
 const form = ref<CrudRecord>({}), errors = ref<Record<string, string[]>>({}), discard = ref(false), deleting = ref(false);
@@ -91,12 +92,14 @@ const report = (caught: unknown) => {
     void focus('[data-finance-error]');
 };
 const load = async (target = 1) => {
+    listLoaded.value = false; total.value = 0; lastPage.value = 1;
     const version = ++ticket; rows.value = []; error.value = ''; if ((!globalCategories.value && !building.value) || !props.resource.list) { loading.value = false; total.value = 0; lastPage.value = 1; return; }
     loading.value = true;
     try {
         const url = new URL(endpoint(props.resource.list.url), window.location.origin); url.searchParams.set('page', String(target)); url.searchParams.set('per_page', '20'); if (!globalCategories.value) url.searchParams.set('building_id', buildingId.value);
         const payload = await apiRequest<{ data: CrudRecord[]; meta?: { current_page: number; last_page: number; total: number }; current_page?: number; last_page?: number; total?: number }>(url.toString(), { csrfToken: props.csrfToken });
         if (disposed || version !== ticket) return;
+        listLoaded.value = true;
         rows.value = rowsFromPayload(payload); page.value = payload.meta?.current_page || payload.current_page || 1; lastPage.value = payload.meta?.last_page || payload.last_page || 1; total.value = payload.meta?.total ?? payload.total ?? rows.value.length;
     } catch (caught) { if (!disposed && version === ticket) report(caught); }
     finally { if (version === ticket) loading.value = false; }
@@ -174,9 +177,9 @@ onBeforeUnmount(() => { disposed = true; ticket++; window.removeEventListener('b
         <div v-if="error" role="alert" tabindex="-1" class="ownership-alert ownership-alert--error" data-finance-error>{{ error }}</div><div v-if="success" role="status" class="ownership-alert ownership-alert--success">{{ success }}</div>
         <template v-if="view === 'list'">
             <section v-if="!globalCategories" class="ownership-card"><div class="ownership-card__heading"><div><h3>انتخاب ساختمان</h3><p>{{ resource.description }}</p></div></div><label class="ownership-field"><span>ساختمان</span><select v-model="buildingId" data-finance-building data-select2="off" @change="changeBuilding"><option value="">انتخاب ساختمان</option><option v-for="item in workspace.buildings" :key="item.id" :value="String(item.id)">{{ item.title }}</option></select></label><p v-if="!workspace.buildings.length" class="finance-empty">ساختمان قابل دسترسی وجود ندارد.</p></section>
-            <section v-if="globalCategories || building" class="ownership-card" :aria-busy="loading"><div class="ownership-card__heading ownership-card__heading--split finance-heading"><div><h3 id="finance-record-list-title" tabindex="-1">{{ title }}</h3><p>{{ money(total) }} مورد ثبت‌شده · {{ scopeLabel }}</p></div><div class="finance-actions"><button type="button" class="ownership-button" :disabled="loading" @click="load(page)">به‌روزرسانی</button><button v-if="canCreate" type="button" class="ownership-button ownership-button--primary" data-finance-create @click="openEditor()">+ {{ resourceKey === 'bank-accounts' ? 'حساب جدید' : resourceKey === 'loyalty-rules' ? 'نسخه جدید قاعده' : resourceKey === 'wallet-payouts' ? 'درخواست برداشت' : resourceKey === 'bill-payments' ? 'ثبت قبض' : 'ثبت جدید' }}</button></div></div>
+            <section v-if="globalCategories || building" class="ownership-card" :aria-busy="loading"><div class="ownership-card__heading ownership-card__heading--split finance-heading"><div><h3 id="finance-record-list-title" tabindex="-1">{{ title }}</h3><p v-if="listLoaded">{{ money(total) }} مورد ثبت‌شده · {{ scopeLabel }}</p></div><div class="finance-actions"><button type="button" class="ownership-button" :disabled="loading" @click="load(page)">به‌روزرسانی</button><button v-if="canCreate" type="button" class="ownership-button ownership-button--primary" data-finance-create @click="openEditor()">+ {{ resourceKey === 'bank-accounts' ? 'حساب جدید' : resourceKey === 'loyalty-rules' ? 'نسخه جدید قاعده' : resourceKey === 'wallet-payouts' ? 'درخواست برداشت' : resourceKey === 'bill-payments' ? 'ثبت قبض' : 'ثبت جدید' }}</button></div></div>
                 <label class="ownership-field"><span>جست‌وجو در همین صفحه</span><input v-model="search" type="search" placeholder="عنوان، شماره یا وضعیت"></label><p v-if="!globalCategories" class="finance-hint">مبالغ به {{ currency }} نمایش داده می‌شوند.</p>
-                <div v-if="loading" class="finance-empty" role="status">در حال دریافت اطلاعات…</div><div v-else-if="!filtered.length" class="finance-empty">{{ search ? 'موردی در این صفحه پیدا نشد.' : globalCategories ? 'هنوز دسته هزینه‌ای ثبت نشده است. برای شروع «ثبت جدید» را بزنید.' : 'هنوز موردی برای این ساختمان ثبت نشده است.' }}</div>
+                <div v-if="loading" class="finance-empty" role="status">در حال دریافت اطلاعات…</div><div v-else-if="!listLoaded" class="finance-empty" role="status" data-finance-load-failed>اطلاعات دریافت نشد؛ برای تلاش دوباره «به‌روزرسانی» را بزنید.</div><div v-else-if="!filtered.length" class="finance-empty">{{ search ? 'موردی در این صفحه پیدا نشد.' : globalCategories ? 'هنوز دسته هزینه‌ای ثبت نشده است. برای شروع «ثبت جدید» را بزنید.' : 'هنوز موردی برای این ساختمان ثبت نشده است.' }}</div>
                 <ul v-else-if="cardList" class="operation-record-list" :class="{ 'operation-record-list--compact': globalCategories }" :aria-label="title">
                     <li v-for="row in filtered" :key="String(row.id)">
                         <UiRecordCard :title="rowTitle(row)" :subtitle="globalCategories ? scopeLabel : undefined">

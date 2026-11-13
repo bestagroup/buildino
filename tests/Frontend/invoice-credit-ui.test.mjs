@@ -35,7 +35,7 @@ test('credit notes: signed input, review, issue action, ordered finance tabs and
     <script>window.requestAnimationFrame=callback=>setTimeout(()=>callback(performance.now()),16); window.cancelAnimationFrame=clearTimeout; window.addEventListener('error',event=>document.querySelector('#result').textContent=event.message+' '+event.lineno);</script>
     <script src="/test.js"></script><script>
     const configs=${JSON.stringify(configs)}, groups=${JSON.stringify(groups)}, core=['invoices','invoice-installments','payments'], chargeTabs=${JSON.stringify(chargeTabs)};
-    let signedTotal=1001; let posts=[], requests=[], active='invoices', failSave=false, hold=false, release, invoiceStatus='draft', paymentStatus='pending', paymentMethod='cash', initial={building_id:'1'};
+    let failList=false, emptyList=false; let signedTotal=1001; let posts=[], requests=[], active='invoices', failSave=false, hold=false, release, invoiceStatus='draft', paymentStatus='pending', paymentMethod='cash', initial={building_id:'1'};
     const invoice=()=>({id:11,building_id:1,unit_id:101,invoice_number:'INV-11',status:invoiceStatus,issue_date:'2026-10-29',due_date:'2026-11-30',subtotal:1001,discount_amount:0,penalty_amount:0,total_amount:signedTotal,paid_amount:0,outstanding_amount:Math.max(0,signedTotal),credit_remaining_amount:Math.max(0,-signedTotal),unit:{unit_number:'۱۰۱'},payer:{name:'ساکن نمونه'},items:[{title:'شارژ ساختمان',quantity:1,unit_amount:1001,description:'شرح قبلی',metadata:{source:'preserve'},charge_item_id:7}],installments:[]});
     const sample=()=>({id:11,building_id:1,title:'سند مالی نمونه',amount:1001,status:'pending',version:1,event_type:'payment_verified',points:5,is_active:true,is_verified:false,account_holder_name:'مدیر ساختمان',iban:'IR123456789012345678901234',bank_name:'بانک نمونه',required_points:50,expense_date:'2026-10-29',income_date:'2026-10-29',allocation_method:'equal',payer_responsibility:'owner'});
     window.fetch=async(path,options={})=>{
@@ -48,6 +48,8 @@ test('credit notes: signed input, review, issue action, ordered finance tabs and
             if(url.pathname.endsWith('/issue')) invoiceStatus='issued';
             return reply({data:invoice()},201);
         }
+        if(failList) return reply({code:'SUBSCRIPTION_INACTIVE',message:'اشتراک ساختمان قابل استفاده نیست.'},403);
+        if(emptyList) return reply({data:[],meta:{current_page:1,last_page:1,total:0}});
         if(url.pathname==='/api/v1/invoices/11') return reply({data:invoice()});
         const data=core.includes(active)?active==='payments'&&url.pathname.endsWith('/payments')?[{id:21,building_id:1,payment_number:'PAY-21',amount:1001,status:paymentStatus,method:paymentMethod}]:[invoice()]:[sample()];
         return reply({data,meta:{current_page:1,last_page:1,total:1},current_page:1,last_page:1,total:1});
@@ -85,6 +87,20 @@ test('credit notes: signed input, review, issue action, ordered finance tabs and
         const restricted=props('invoices');restricted.workspace.navigation=restricted.workspace.navigation.filter(link=>link.key!=='expenses');
         await mount('invoices',restricted);expect($$('.finance-tabs a').length===4,'Unauthorized expense tab exposed');
         if (!${Boolean(domModule)}) expect(document.documentElement.scrollWidth<=innerWidth,'Page overflows viewport');
+        for (const key of ['invoices','invoice-installments','payments','expenses','bank-accounts']) {
+            await mount(key);
+            failList=true;
+            const refresh=()=>$$('button').find(button=>button.textContent.includes('به‌روزرسانی'));
+            refresh().click(); await until(()=>$('[data-finance-load-failed]'));
+            expect(!$('#app').textContent.includes('مورد ثبت‌شده'),'Failed request showed a record count: '+key);
+            expect(!$('#app').textContent.includes('هنوز'),'Failed request showed empty-state: '+key);
+            expect(!$('#app').textContent.includes('سند نمایش‌داده‌شده'),'Failed request showed a financial total: '+key);
+            failList=false; refresh().click(); await until(()=>$('[data-finance-open]'));
+            expect(!$('[data-finance-load-failed]'),'Retry did not recover: '+key);
+            emptyList=true; refresh().click(); await until(()=>$('#app').textContent.includes('هنوز'));
+            expect(!$('[data-finance-load-failed]'),'Successful empty response treated as failure: '+key);
+            emptyList=false;
+        }
         window.scrollTo(0,0);$('#result').dataset.ok='true';$('#result').textContent='Passed';
     })().catch(error=>{$('#result').textContent=error.stack;});
     </script></html>`;

@@ -90,3 +90,18 @@ test('network failure neither advances a step nor retries a write automatically'
     await assert.rejects(app.core.request('https://other.example/api'), /آدرس درخواست/);
     assert.equal(app.calls.length, 1);
 });
+
+
+test('subscription denial is distinct from scoped permission denial', async () => {
+    for (const code of ['SUBSCRIPTION_INACTIVE', 'FORBIDDEN']) {
+        const app = browser({ fetchImpl: async () => ({
+            ok: false, status: 403, headers: { get: () => 'application/json' },
+            json: async () => ({ code, message: 'Server error' }),
+        }) });
+        await assert.rejects(app.core.request('/api/v1/buildings/1/charge-periods'), error => {
+            assert.equal(error.status, 403);
+            assert.match(error.message, code === 'SUBSCRIPTION_INACTIVE' ? /اشتراک/ : /دسترسی/);
+            return true;
+        });
+    }
+});

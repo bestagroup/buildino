@@ -233,6 +233,29 @@ class ManagementUiUxAccessTest extends TestCase
         $this->get('/management/operations/users')->assertOk();
     }
 
+    public function test_announcement_navigation_matches_global_api_permission(): void
+    {
+        $graph = $this->createBuildingGraph();
+        $manager = $this->createUser();
+        $this->grant($manager->id, ['reports.dashboard.view', 'announcements.view'], $graph['building']);
+
+        $this->actingAs($manager, 'web')->get('/management/operations')
+            ->assertOk()->assertViewHas('groups', fn ($groups) => ! collect($groups)->pluck('resources')->flatten(1)->contains('key', 'announcements'));
+        $this->get('/management/operations/announcements')->assertForbidden();
+        $this->getJson('/api/v1/announcements')->assertForbidden();
+
+    }
+
+    public function test_global_announcement_permission_keeps_page_and_api_available(): void
+    {
+        $administrator = $this->createUser();
+        $this->grant($administrator->id, ['reports.dashboard.view', 'announcements.view'], null);
+        $this->actingAs($administrator, 'web')->get('/management/operations')
+            ->assertOk()->assertSee(route('management.operations.show', 'announcements'), false);
+        $this->get('/management/operations/announcements')->assertOk();
+        $this->getJson('/api/v1/announcements')->assertOk();
+    }
+
     private function grant(
         int $userId,
         array $permissionNames,

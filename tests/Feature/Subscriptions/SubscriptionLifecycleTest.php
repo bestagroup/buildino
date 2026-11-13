@@ -16,6 +16,36 @@ class SubscriptionLifecycleTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_inactive_subscription_response_is_actionable_and_still_denies_access(): void
+    {
+        $complex = Complex::query()->create([
+            'code' => 'C-GATE', 'title' => 'Complex',
+            'province' => 'Tehran', 'city' => 'Tehran', 'is_active' => true,
+        ]);
+        $building = Building::query()->create([
+            'complex_id' => $complex->id, 'code' => 'B-GATE', 'title' => 'Building',
+            'timezone' => 'Asia/Tehran', 'currency' => 'IRR', 'is_active' => true,
+        ]);
+        $subscription = app(SubscriptionService::class)->current($building);
+        $subscription->update(['status' => SubscriptionStatus::Suspended]);
+        $request = \Illuminate\Http\Request::create('/api/v1/buildings/'.$building->id.'/payments');
+        $request->attributes->set('building_context', $building);
+        $reachedController = false;
+        $response = app(\App\Http\Middleware\EnsureSubscriptionIsActive::class)->handle(
+            $request,
+            function () use (&$reachedController) {
+                $reachedController = true;
+                return response()->json(['success' => true]);
+            }
+        );
+
+        $this->assertFalse($reachedController);
+        $this->assertSame(403, $response->getStatusCode());
+        $this->assertSame('SUBSCRIPTION_INACTIVE', $response->getData(true)['code']);
+        $this->assertStringContainsString('پشتیبانی', $response->getData(true)['message']);
+        $this->assertSame(SubscriptionStatus::Suspended, $subscription->fresh()->status);
+    }
+
     public function test_subscription_can_be_activated_and_renewed_with_grace_period(): void
     {
         $user = User::factory()->create();

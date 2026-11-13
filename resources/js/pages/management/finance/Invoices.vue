@@ -12,6 +12,7 @@ import type { CrudField, CrudRecord } from '../../../types/management';
 const props = defineProps<{ resourceKey: InvoiceResource; title: string; workspace: InvoiceWorkspace; csrfToken: string }>();
 const root = ref<HTMLElement | null>(null), buildingId = ref(''), unitId = ref(''), search = ref(''), status = ref('');
 const view = ref<'list' | 'detail' | 'editor'>('list'), loading = ref(false), detailLoading = ref(false), busy = ref(false);
+const listLoaded = ref(false);
 const error = ref(''), success = ref(''), errors = ref<Record<string, string[]>>({});
 const invoiceRows = ref<Invoice[]>([]), paymentRows = ref<Payment[]>([]), selected = ref<Invoice | null>(null), selectedPayment = ref<Payment | null>(null);
 const page = ref(1), lastPage = ref(1), total = ref(0), editorKind = ref<'invoice' | 'plan' | 'payment' | 'penalty' | 'adjustment'>('invoice'), step = ref(0);
@@ -90,6 +91,7 @@ const updateUrl = () => {
     window.history.replaceState(window.history.state, '', url);
 };
 const load = async (target = 1) => {
+    listLoaded.value = false; total.value = 0; lastPage.value = 1;
     const ticket = ++listTicket; invoiceRows.value = []; paymentRows.value = []; error.value = '';
     if (!building.value) { loading.value = false; total.value = 0; lastPage.value = 1; return; }
     loading.value = true;
@@ -98,6 +100,7 @@ const load = async (target = 1) => {
         if (!isPayments.value && !allowed('invoices.view')) throw new Error('برای مشاهده صورتحساب‌ها، دسترسی مشاهده صورتحساب ساختمان لازم است.');
         const result = await request<{ data: (Invoice | Payment)[]; meta?: { current_page: number; last_page: number; total: number } }>(path + `?page=${target}&per_page=20`);
         if (closed || ticket !== listTicket) return;
+        listLoaded.value = true;
         if (isPayments.value) paymentRows.value = result.data as Payment[]; else invoiceRows.value = result.data as Invoice[];
         page.value = result.meta?.current_page || 1; lastPage.value = result.meta?.last_page || 1; total.value = result.meta?.total ?? result.data.length;
     } catch (caught) { if (!closed && ticket === listTicket) report(caught); }
@@ -261,10 +264,11 @@ onBeforeUnmount(() => { closed = true; listTicket++; detailTicket++; choiceTicke
                 <p v-if="!workspace.buildings.length" class="finance-empty">ساختمان قابل دسترسی برای این بخش وجود ندارد.</p>
             </section>
             <section v-if="view === 'list' && building" class="ownership-card" aria-labelledby="finance-list-title" :aria-busy="loading">
-                <div class="ownership-card__heading ownership-card__heading--split finance-heading"><div><h3 id="finance-list-title" tabindex="-1">{{ isPlans ? 'انتخاب صورتحساب برای اقساط' : isPayments ? 'فهرست پرداخت‌ها' : 'فهرست صورتحساب‌ها' }}</h3><p>{{ total.toLocaleString('fa-IR') }} مورد ثبت‌شده · {{ currency }}</p></div><div class="finance-actions"><button type="button" class="ownership-button" :disabled="loading" @click="load(page)">به‌روزرسانی</button><button v-if="!isPayments && !isPlans && allowed('invoices.create')" type="button" class="ownership-button ownership-button--primary" data-finance-create @click="openEditor('invoice')">+ صورتحساب جدید</button><button v-if="isPayments && allowed('payments.create') && allowed('invoices.view')" type="button" class="ownership-button ownership-button--primary" data-finance-create @click="selected = null; openEditor('payment')">+ ثبت پرداخت</button></div></div>
+                <div class="ownership-card__heading ownership-card__heading--split finance-heading"><div><h3 id="finance-list-title" tabindex="-1">{{ isPlans ? 'انتخاب صورتحساب برای اقساط' : isPayments ? 'فهرست پرداخت‌ها' : 'فهرست صورتحساب‌ها' }}</h3><p v-if="listLoaded">{{ total.toLocaleString('fa-IR') }} مورد ثبت‌شده · {{ currency }}</p></div><div class="finance-actions"><button type="button" class="ownership-button" :disabled="loading" @click="load(page)">به‌روزرسانی</button><button v-if="!isPayments && !isPlans && allowed('invoices.create')" type="button" class="ownership-button ownership-button--primary" data-finance-create @click="openEditor('invoice')">+ صورتحساب جدید</button><button v-if="isPayments && allowed('payments.create') && allowed('invoices.view')" type="button" class="ownership-button ownership-button--primary" data-finance-create @click="selected = null; openEditor('payment')">+ ثبت پرداخت</button></div></div>
                 <p v-if="isPlans" class="finance-hint">صورتحساب را باز کنید تا برنامه اقساط آن را ببینید یا تنظیم کنید. تقسیط پیش از اعمال پرداخت و برای صورتحساب صادرشده انجام می‌شود.</p>
                 <div class="finance-filters"><label class="ownership-field"><span>جست‌وجو در همین صفحه</span><input v-model="search" type="search" placeholder="شماره سند یا نام پرداخت‌کننده"></label><label class="ownership-field"><span>وضعیت در همین صفحه</span><select v-model="status" data-select2="off"><option value="">همه وضعیت‌ها</option><option v-for="key in (isPayments ? ['pending','processing','paid','failed','cancelled','refunded','partial_refund'] : ['draft','issued','partial','paid','overdue','void','cancelled'])" :key="key" :value="key">{{ invoiceLabels[key] }}</option></select></label></div>
                 <div v-if="loading" class="finance-empty" role="status">در حال دریافت اطلاعات…</div>
+                <div v-else-if="!listLoaded" class="finance-empty" role="status" data-finance-load-failed>اطلاعات دریافت نشد؛ برای تلاش دوباره «به‌روزرسانی» را بزنید.</div>
                 <template v-else>
                     <p class="finance-hint">{{ isPayments ? 'جمع مبالغ' : 'خالص مانده صادرشده' }} {{ isPayments ? shownPayments.length : shownInvoices.length }} سند نمایش‌داده‌شده: {{ money(currentAmount) }} {{ currency }}</p>
                     <div v-if="!(isPayments ? shownPayments.length : shownInvoices.length)" class="finance-empty">{{ search || status ? 'موردی با این جست‌وجو یا وضعیت در این صفحه پیدا نشد.' : 'هنوز سندی برای این محدوده ثبت نشده است.' }}</div>

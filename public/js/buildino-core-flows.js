@@ -41,6 +41,7 @@
         const payload = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
         if (!response.ok) {
             const error = new Error(response.status === 401 || response.status === 419 ? 'نشست شما پایان یافته است؛ دوباره وارد شوید.'
+                : response.status === 403 && payload?.code === 'SUBSCRIPTION_INACTIVE' ? 'اشتراک قابل استفاده‌ای برای این ساختمان وجود ندارد. برای بررسی وضعیت یا تمدید اشتراک با پشتیبانی سامانه تماس بگیرید.'
                 : response.status === 403 ? 'این عملیات در محدوده دسترسی شما مجاز نیست.'
                 : response.status === 429 ? 'درخواست‌های زیادی ارسال شده است؛ کمی بعد دوباره تلاش کنید.'
                 : Object.values(payload?.errors || {}).flat().join('؛ ') || payload?.message || 'درخواست انجام نشد؛ دوباره تلاش کنید.');
