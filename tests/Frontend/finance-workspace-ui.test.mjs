@@ -54,7 +54,7 @@ test('finance: real Vue workflows, Jalali dates, financial safeguards, permissio
     const props=key=>{
         const prefix=configs[key].permission.split('.')[0], abilities={};
         for(const p of ['invoices','payments',prefix]) for(const a of ['view','create','update','delete','issue','adjust','verify','approve','reject','pay','complete','fail']) abilities[p+'.'+a]=true;
-        return {resourceKey:key,title:configs[key].title,resource:configs[key],csrfToken:'test',workspace:{buildings:[1,2].map(id=>({id,title:'ساختمان '+id,currency:'IRR',abilities:{...abilities}})),units:[{id:101,building_id:1,label:'بلوک اصلی / همکف / واحد ۱۰۱'}],groups,navigation:Object.keys(configs).map(key=>({key,title:configs[key].title,url:'/management/operations/'+key})),prefix,actionPermissions:Object.fromEntries((configs[key].actions||[]).map(a=>[a.key,prefix+'.'+(key==='loyalty-claims'?'update':a.key==='paid'?'pay':a.key)])),blocks:[],lookups:Object.fromEntries(['fund_id','financial_category_id','building_bank_account_id','block_id'].map(key=>[key,[{value:1,label:'گزینه مجاز',building_id:1}]])),initial:{...initial}}};
+        return {resourceKey:key,title:configs[key].title,resource:configs[key],csrfToken:'test',workspace:{periods:[{id:4,building_id:1,title:'مهر',status:'draft'}],buildings:[1,2].map(id=>({id,title:'ساختمان '+id,currency:'IRR',abilities:{...abilities}})),units:[{id:101,building_id:1,label:'بلوک اصلی / همکف / واحد ۱۰۱'}],groups,navigation:Object.keys(configs).map(key=>({key,title:configs[key].title,url:'/management/operations/'+key})),prefix,actionPermissions:Object.fromEntries((configs[key].actions||[]).map(a=>[a.key,prefix+'.'+(key==='loyalty-claims'?'update':a.key==='paid'?'pay':a.key)])),blocks:[],lookups:Object.fromEntries(['fund_id','financial_category_id','building_bank_account_id','block_id'].map(key=>[key,[{value:1,label:'گزینه مجاز',building_id:1}]])),initial:{...initial}}};
     };
     const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], tick=()=>new Promise(r=>setTimeout(r,10));
     const expect=(value,message)=>{if(!value) throw Error(message);};
@@ -68,13 +68,13 @@ test('finance: real Vue workflows, Jalali dates, financial safeguards, permissio
         for(const key of ['invoices','expenses']){const cached=props(key);cached.workspace.groups=null;await mount(key,cached);expect($('[data-finance-create]'),'Missing groups blanked workspace '+key);}
         await mount('invoices'); expect($$('.finance-tabs a').length===3,'Related navigation must be grouped');
         await click('[data-finance-create]');expect(!$('.finance-table'),'Editor did not replace list');await submit();expect($('[aria-invalid="true"]')&&posts.length===0,'Missing unit accepted');
-        await input('unit_id','101');await input('issue_date','۱۴۰۵/۰۸/۰۷');await input('due_date','۱۴۰۵/۰۹/۰۹');
-        expect($('[name="issue_date"]').value==='2026-10-29','Jalali date did not synchronize canonical value');
-        await submit();await input('items.0.title','شارژ آبان');await input('items.0.quantity','2');await input('items.0.unit_amount','500');await input('discount_amount','100');await input('penalty_amount','10');await submit();
-        expect($('.finance-review').textContent.includes('۹۱۰')&&posts.length===0,'Invoice total/review wrong');
+        await input('unit_id','101');await input('start_charge_period_id','4');
+        expect(!$('[name="issue_date"]'),'Manual issue date should be hidden');
+        await submit();await input('items.0.title','شارژ آبان');await input('items.0.quantity','2');await input('items.0.unit_amount','500');await submit();
+        expect($('.finance-review').textContent.includes('مهر')&&posts.length===0,'Invoice total/review wrong');
         hold=true;await submit();await until(()=>release);const n=posts.length;await submit();expect(posts.length===n,'Duplicate invoice write');hold=false;release();await until(()=>$('[data-finance-edit]'));
-        expect(posts.at(-1).path==='/api/v1/units/101/invoices'&&posts.at(-1).body.issue_date==='2026-10-29'&&posts.at(-1).body.items[0].quantity===2,'Invoice payload wrong');
-        await click('[data-finance-edit]');await input('items.0.title','ویرایش عنوان');await submit();await submit();await until(()=>$('[data-finance-issue]'));
+        expect(posts.at(-1).path==='/api/v1/units/101/invoices'&&posts.at(-1).body.start_charge_period_id===4&&posts.at(-1).body.items[0].quantity===2,'Invoice payload wrong');
+        await click('[data-finance-edit]');await input('start_charge_period_id','4');await input('items.0.title','ویرایش عنوان');await submit();await submit();await until(()=>$('[data-finance-issue]'));
         expect(posts.at(-1).body.items[0].metadata.source==='preserve'&&posts.at(-1).body.items[0].description==='شرح قبلی'&&posts.at(-1).body.items[0].charge_item_id===7,'Editing lost item metadata');
         const beforeIssue=posts.length;await click('[data-finance-issue]');expect($('[role="alertdialog"]')&&posts.length===beforeIssue,'Issue ran without confirmation');await click('[role="alertdialog"] .ui-dialog__actions button:last-child');await until(()=>$('[data-finance-plan]'));
         expect(!$('[data-finance-edit]')&&$('[data-finance-pay]'),'Issued invoice exposes draft editing');

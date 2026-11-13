@@ -34,7 +34,15 @@ class InvoiceService
             $actor,
             $data
         ): UnitInvoice {
+            $schedules = app(InvoicePeriodScheduleService::class);
+            $schedules->lockBuilding($building->id);
+            $periods = isset($data['start_charge_period_id']) ? $schedules->periods($building->id, (int) $data['start_charge_period_id'], (int) $data['period_installment_count']) : null;
+            if ($periods) {
+                $data = $this->scheduledData($data, $periods);
+            }
             $invoice = UnitInvoice::query()->create([
+                'start_charge_period_id' => $data['start_charge_period_id'] ?? null,
+                'period_installment_count' => $data['period_installment_count'] ?? null,
                 'building_id' => $building->getKey(),
                 'unit_id' => $unit->getKey(),
                 'charge_period_id' => null,
@@ -56,7 +64,10 @@ class InvoiceService
 
             $this->replaceItems($invoice, $data['items']);
 
-            return $this->recalculate($invoice);
+            $invoice = $this->recalculate($invoice);
+            if ($periods) $schedules->replace($invoice, $periods);
+
+            return $invoice;
         });
     }
 
@@ -65,16 +76,29 @@ class InvoiceService
         array $data
     ): UnitInvoice {
         return DB::transaction(function () use ($invoice, $data): UnitInvoice {
+            app(InvoicePeriodScheduleService::class)->lockBuilding($invoice->building_id);
             Unit::whereKey($invoice->unit_id)->lockForUpdate()->firstOrFail();
             $invoice = UnitInvoice::query()->lockForUpdate()->findOrFail($invoice->id);
             if ($invoice->status !== InvoiceStatus::Draft) {
                 throw ValidationException::withMessages(['status' => 'Only draft invoices can be edited.']);
             }
+            $schedules = app(InvoicePeriodScheduleService::class);
+            $schedules->assertEditable($invoice);
+            $startId = $data['start_charge_period_id'] ?? $invoice->start_charge_period_id;
+            $periods = null;
+            if ($startId) {
+                if ($invoice->charge_period_id || $invoice->paid_amount || $invoice->adjustment_amount || $invoice->credit_applied_amount || $invoice->discount_amount || $invoice->penalty_amount) {
+                    throw ValidationException::withMessages(['invoice' => 'صورتحساب دوره یا سند دارای پرداخت، تعدیل، تخفیف یا جریمه قابل تبدیل به برنامه بدهی نیست.']);
+                }
+                $count = (int) ($data['period_installment_count'] ?? $invoice->period_installment_count ?? 1);
+                $periods = $schedules->periods($invoice->building_id, (int) $startId, $count);
+                $data = $this->scheduledData([...$data, 'start_charge_period_id' => $startId, 'period_installment_count' => $count], $periods);
+            }
             $invoice->update(
                 array_intersect_key(
                     $data,
                     array_flip([
-                        'issue_date','due_date','period_start','period_end',
+                        'start_charge_period_id','period_installment_count','issue_date','due_date','period_start','period_end',
                         'discount_amount','penalty_amount','description',
                     ])
                 )
@@ -84,8 +108,18 @@ class InvoiceService
                 $this->replaceItems($invoice, $data['items']);
             }
 
-            return $this->recalculate($invoice);
+            $invoice = $this->recalculate($invoice);
+            if ($periods) $schedules->replace($invoice, $periods);
+
+            return $invoice;
         });
+    }
+
+    private function scheduledData(array $data, \Illuminate\Support\Collection $periods): array
+    {
+        return [...$data, 'issue_date' => today()->toDateString(), 'due_date' => $periods->first()->due_date,
+            'period_start' => $periods->first()->period_start, 'period_end' => $periods->last()->period_end,
+            'discount_amount' => 0, 'penalty_amount' => 0];
     }
 
     public function recalculate(UnitInvoice $invoice): UnitInvoice
@@ -143,17 +177,21 @@ class InvoiceService
     public function issue(UnitInvoice $invoice): UnitInvoice
     {
         DB::transaction(function () use ($invoice): void {
+            app(InvoicePeriodScheduleService::class)->lockBuilding($invoice->building_id);
             Unit::whereKey($invoice->unit_id)->lockForUpdate()->firstOrFail();
             $invoice = UnitInvoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            if ($invoice->start_charge_period_id) {
+                throw ValidationException::withMessages(['invoice' => 'این بدهی فقط از طریق محاسبه و صدور دوره‌های انتخاب‌شده اعمال می‌شود.']);
+            }
             if ($invoice->status !== InvoiceStatus::Draft) {
                 throw ValidationException::withMessages(['status' => 'Only draft invoices can be issued.']);
             }
             $invoice = $this->recalculate($invoice);
-            if ($invoice->total_amount === 0) {
+            if ($invoice->total_amount === 0 && ! $invoice->charge_period_id) {
                 throw ValidationException::withMessages(['total_amount' => 'مبلغ نهایی صورتحساب نباید صفر باشد.']);
             }
             $invoice->forceFill([
-                'status' => InvoiceStatus::Issued,
+                'status' => $invoice->total_amount === 0 ? InvoiceStatus::Paid : InvoiceStatus::Issued,
                 'outstanding_amount' => max(0, $invoice->total_amount),
                 'credit_remaining_amount' => max(0, -$invoice->total_amount),
             ])->save();
@@ -167,11 +205,16 @@ class InvoiceService
     public function voidDraft(UnitInvoice $invoice): void
     {
         DB::transaction(function () use ($invoice): void {
+            app(InvoicePeriodScheduleService::class)->lockBuilding($invoice->building_id);
             Unit::whereKey($invoice->unit_id)->lockForUpdate()->firstOrFail();
             $invoice = UnitInvoice::query()->lockForUpdate()->findOrFail($invoice->id);
             if ($invoice->status !== InvoiceStatus::Draft) {
                 throw ValidationException::withMessages(['status' => 'Only draft invoices can be deleted.']);
             }
+            app(InvoicePeriodScheduleService::class)->assertEditable($invoice);
+            \App\Models\ChargePeriod::whereIn('id', $invoice->periodAllocations()->pluck('charge_period_id'))->where('status', 'calculated')
+                ->update(['status' => 'draft', 'calculation_source_hash' => null]);
+            $invoice->periodAllocations()->delete();
             $invoice->delete();
         }, 3);
     }

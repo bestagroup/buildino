@@ -18,7 +18,7 @@ class UnitInvoice extends Model
     protected $table = 'unit_invoices';
 
     protected $fillable = [
-        'building_id','unit_id','charge_period_id','payer_responsibility','payer_user_id','invoice_number',
+        'start_charge_period_id','period_installment_count','building_id','unit_id','charge_period_id','payer_responsibility','payer_user_id','invoice_number',
         'issue_date','due_date','period_start','period_end',
         'adjustment_amount','adjustment_reason','subtotal','discount_amount','penalty_amount','waived_penalty_amount','total_amount',
         'paid_amount','outstanding_amount','status','description','created_by',
@@ -27,7 +27,7 @@ class UnitInvoice extends Model
     protected function casts(): array
     {
         return [
-            'issue_date'=>'date','due_date'=>'date','period_start'=>'date',
+            'period_installment_count'=>'integer','start_charge_period_id'=>'integer','issue_date'=>'date','due_date'=>'date','period_start'=>'date',
             'period_end'=>'date','subtotal'=>'integer','discount_amount'=>'integer',
             'penalty_amount'=>'integer','waived_penalty_amount'=>'integer','total_amount'=>'integer',
             'credit_applied_amount'=>'integer','credit_remaining_amount'=>'integer','adjustment_amount'=>'integer','paid_amount'=>'integer','outstanding_amount'=>'integer',
@@ -36,6 +36,7 @@ class UnitInvoice extends Model
         ];
     }
 
+    public function periodAllocations(): HasMany { return $this->hasMany(InvoicePeriodAllocation::class); }
     public function building(): BelongsTo { return $this->belongsTo(Building::class); }
     public function unit(): BelongsTo { return $this->belongsTo(Unit::class); }
     public function chargePeriod(): BelongsTo { return $this->belongsTo(ChargePeriod::class); }

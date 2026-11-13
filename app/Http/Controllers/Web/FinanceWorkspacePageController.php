@@ -105,6 +105,7 @@ final class FinanceWorkspacePageController extends Controller
             'title' => config("management_crud.resources.$resource.title"),
             'resource' => $configuration,
             'workspace' => [
+                'periods' => in_array($resource, ['invoices', 'invoice-installments'], true) ? \App\Models\ChargePeriod::whereIn('building_id', $readableIds)->whereIn('status', ['draft', 'calculated'])->orderBy('period_start')->orderBy('id')->get(['id', 'building_id', 'title', 'period_start', 'period_end', 'due_date', 'status']) : [],
                 'buildings' => $buildings, 'units' => $units, 'navigation' => $navigation,
                 'chargeTabs' => ManagementPageCatalog::CHARGE_TABS, 'groups' => ManagementPageCatalog::FINANCE_GROUPS, 'prefix' => $prefix, 'actionPermissions' => $actionPermissions,
                 'lookups' => $lookups, 'blocks' => $blocks,

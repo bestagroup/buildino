@@ -42,7 +42,10 @@ final class BuildingAtGlanceService
         $periodInvoices = collect();
         $calculations = collect();
         $allocations = collect();
+        $scheduledDebts = collect();
         if ($period) {
+            $scheduledDebts = app(\App\Services\InvoicePeriodScheduleService::class)->forPeriod($period)
+                ->groupBy(fn ($row) => $row->sourceInvoice->unit_id)->map(fn ($rows) => $rows->sum('amount'));
             $statuses = ['issued', 'partial', 'paid', 'overdue'];
             if ($period->status === ChargePeriodStatus::Calculated) $statuses[] = 'draft';
             $placeholders = implode(',', array_fill(0, count($statuses), '?'));
@@ -55,7 +58,7 @@ final class BuildingAtGlanceService
                 ->selectRaw('unit_id, SUM(allocated_amount) AS amount')->groupBy('unit_id')->pluck('amount', 'unit_id');
         }
         $names = static fn ($links) => $links->unique('user_id')->map(fn ($link) => trim(($link->user?->first_name ?? '').' '.($link->user?->last_name ?? '')) ?: 'کاربر #'.$link->user_id)->values();
-        $rows = $units->map(function (Unit $unit) use ($debts, $credits, $periodInvoices, $calculations, $allocations, $period, $names): array {
+        $rows = $units->map(function (Unit $unit) use ($debts, $credits, $periodInvoices, $calculations, $allocations, $scheduledDebts, $period, $names): array {
             $wallet = $unit->wallets->first();
             $balance = (int) ($wallet?->balance ?? 0);
             $locked = (int) ($wallet?->locked_balance ?? 0);
@@ -69,8 +72,8 @@ final class BuildingAtGlanceService
                 $invoice = $periodInvoices->get($unit->id);
                 $latestSource = (int) $invoice->active_count > 0 ? 'invoice' : 'excluded';
                 $latest = (int) $invoice->active_count > 0 ? (int) $invoice->amount : null;
-            } elseif ($period?->status === ChargePeriodStatus::Calculated && ($calculations->has($unit->id) || $allocations->has($unit->id))) {
-                $latest = (int) ($calculations[$unit->id] ?? 0) + (int) ($allocations[$unit->id] ?? 0);
+            } elseif ($period?->status === ChargePeriodStatus::Calculated && ($calculations->has($unit->id) || $allocations->has($unit->id) || $scheduledDebts->has($unit->id))) {
+                $latest = (int) ($calculations[$unit->id] ?? 0) + (int) ($allocations[$unit->id] ?? 0) + (int) ($scheduledDebts[$unit->id] ?? 0);
                 $latestSource = 'calculation';
             }
             $occupied = $unit->unitOccupancies->isNotEmpty();

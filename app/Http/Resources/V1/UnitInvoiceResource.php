@@ -8,6 +8,11 @@ class UnitInvoiceResource extends JsonResource
     {
         return [
             'id'=>$this->id,'building_id'=>$this->building_id,'unit_id'=>$this->unit_id,
+            'start_charge_period_id'=>$this->start_charge_period_id,
+            'period_installment_count'=>$this->period_installment_count,
+            'period_allocations'=>$this->whenLoaded('periodAllocations', fn () => $this->periodAllocations->map(fn ($row) => [
+                'period_id'=>$row->charge_period_id, 'title'=>$row->chargePeriod?->title, 'sequence'=>$row->sequence, 'amount'=>$row->amount, 'issued_invoice_id'=>$row->issued_invoice_id,
+            ])->values()),
             'charge_period_id'=>$this->charge_period_id,'invoice_number'=>$this->invoice_number,
             'payer_responsibility'=>is_object($this->payer_responsibility)
                 ? $this->payer_responsibility->value

@@ -20,6 +20,9 @@ final class InvoiceAdjustmentService
         return DB::transaction(function () use ($invoice, $actor, $amount, $expectedAmount, $reason): UnitInvoice {
             \App\Models\Unit::whereKey($invoice->unit_id)->lockForUpdate()->firstOrFail();
             $invoice = UnitInvoice::query()->lockForUpdate()->findOrFail($invoice->getKey());
+            if ($invoice->start_charge_period_id) {
+                throw ValidationException::withMessages(['invoice' => 'برای تغییر بدهی زمان‌بندی‌شده، برنامه بدهی را پیش از صدور دوره ویرایش کنید.']);
+            }
             $reason = trim($reason);
             if ($invoice->total_amount < 0) {
                 throw ValidationException::withMessages(['invoice' => 'سند بستانکاری صادرشده قابل تعدیل نیست.']);

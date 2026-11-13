@@ -63,6 +63,7 @@ final class ChargePeriodService
 
     private function lockPeriodAndUnits(ChargePeriod $period): ChargePeriod
     {
+        app(InvoicePeriodScheduleService::class)->lockBuilding($period->building_id);
         $period = ChargePeriod::query()->lockForUpdate()->findOrFail($period->getKey());
         // Occupancy, ownership and resident-count writers already lock their unit.
         // Use the same mutex, in stable order, before any snapshot reads.
@@ -100,7 +101,13 @@ final class ChargePeriodService
             $this->periodFormulas($period)->get()->toArray(),
             $this->periodExpenses($period)->get()->toArray(),
             $units->toArray(), $relationships,
+            $this->scheduledDebts($period)->map(fn ($row) => [$row->id, $row->unit_invoice_id, $row->sequence, $row->amount, $row->sourceInvoice->unit_id, $row->sourceInvoice->invoiceItems->toArray()])->all(),
         ], JSON_THROW_ON_ERROR));
+    }
+
+    private function scheduledDebts(ChargePeriod $period): \Illuminate\Support\Collection
+    {
+        return app(InvoicePeriodScheduleService::class)->forPeriod($period);
     }
 
     private function buildPreview(ChargePeriod $period): array
@@ -111,7 +118,9 @@ final class ChargePeriodService
         $formulas = $this->periodFormulas($period)->get();
         $expenses = $this->periodExpenses($period)->with('category')->get();
         $units = $this->periodUnits($period)->get();
+        $debts = $this->scheduledDebts($period);
         $errors = [];
+        if ($debts->contains(fn ($debt) => ! in_array($debt->sourceInvoice->unit_id, $units->modelKeys(), true))) $errors[] = 'واحد یکی از اقساط فعال نیست یا دیگر متعلق به این ساختمان نیست.';
         $byCategory = collect();
         foreach ($formulas as $formula) {
             $category = $formula->chargeItems->first()?->financial_category_id;
@@ -130,8 +139,8 @@ final class ChargePeriodService
             }
         }
         if ($units->isEmpty()) $errors[] = 'هیچ واحد فعالی در ساختمان وجود ندارد.';
-        if ($formulas->isEmpty()) $errors[] = 'هیچ فرمول فعالی برای ساختمان تعریف نشده است.';
-        if ($posted->isEmpty() && $fixed->isEmpty()) $errors[] = 'هیچ هزینه قطعی یا فرمول ثابت برای این دوره وجود ندارد.';
+        if ($formulas->isEmpty() && $debts->isEmpty()) $errors[] = 'هیچ فرمول فعالی برای ساختمان تعریف نشده است.';
+        if ($posted->isEmpty() && $fixed->isEmpty() && $debts->isEmpty()) $errors[] = 'هیچ هزینه قطعی یا فرمول ثابت برای این دوره وجود ندارد.';
         $expenseRow = fn ($expense) => [
             'id' => $expense->id, 'title' => $expense->title,
             'category' => $expense->category?->title,
@@ -146,6 +155,8 @@ final class ChargePeriodService
         $priorDebt = (int) $accountInvoices->sum('outstanding_amount');
         $remainingCredit = (int) $accountInvoices->sum('credit_remaining_amount');
         $data = [
+            'scheduled_debt_total' => (int) $debts->sum('amount'),
+            'scheduled_debts' => $debts->map(fn ($row) => ['id' => $row->id, 'number' => $row->sourceInvoice->invoice_number, 'unit_id' => $row->sourceInvoice->unit_id, 'sequence' => $row->sequence, 'amount' => $row->amount])->all(),
             'prior_debt_total' => $priorDebt,
             'remaining_credit_total' => $remainingCredit,
             'account_invoices' => $accountInvoices->map(fn ($invoice) => [
@@ -190,10 +201,11 @@ final class ChargePeriodService
                     'review_token' => 'اطلاعات دوره یا ساکنان پس از بازبینی تغییر کرده است؛ دوباره فهرست اقلام را بررسی کنید.',
                 ]);
             }
+            if ($preview['errors']) throw ValidationException::withMessages(['calculation' => $preview['errors']]);
             $period->update(['status' => ChargePeriodStatus::Calculating]);
             $formulas = $this->periodFormulas($period)->get();
 
-            if ($formulas->isEmpty()) {
+            if ($formulas->isEmpty() && $this->scheduledDebts($period)->isEmpty()) {
                 throw ValidationException::withMessages([
                     'formulas' =>
                         'برای این ساختمان هیچ فرمول شارژ فعالی تعریف نشده است.',
@@ -258,6 +270,7 @@ final class ChargePeriodService
             if (
                 $fixedFormulas->isEmpty()
                 && $expenses->isEmpty()
+                && $this->scheduledDebts($period)->isEmpty()
             ) {
                 throw ValidationException::withMessages([
                     'expenses' =>
@@ -510,7 +523,7 @@ final class ChargePeriodService
                 ->orderBy('id')
                 ->get();
 
-            if ($calculations->isEmpty() && $expenseAllocations->isEmpty()) {
+            if ($calculations->isEmpty() && $expenseAllocations->isEmpty() && $this->scheduledDebts($period)->isEmpty()) {
                 throw ValidationException::withMessages([
                     'calculations' => 'هیچ محاسبه شارژ یا سهم هزینه‌ای برای این دوره وجود ندارد.',
                 ]);
@@ -600,6 +613,17 @@ final class ChargePeriodService
                 ];
             }
 
+            foreach ($this->scheduledDebts($period) as $debt) {
+                $unitId = (int) $debt->sourceInvoice->unit_id;
+                $key = $this->invoiceGroupKey($unitId, ExpensePayerResponsibility::Unit, null);
+                $invoiceGroups[$key] ??= ['unit_id' => $unitId, 'payer_responsibility' => ExpensePayerResponsibility::Unit, 'payer_user_id' => null, 'items' => []];
+                $invoiceGroups[$key]['items'][] = [
+                    'title' => \Illuminate\Support\Str::limit($debt->sourceInvoice->invoiceItems->pluck('title')->join('، '), 200, '').' · قسط '.$debt->sequence,
+                    'quantity' => 1, 'unit_amount' => $debt->amount,
+                    'metadata' => ['source' => 'scheduled_unit_debt', 'invoice_period_allocation_id' => $debt->id, 'source_invoice_id' => $debt->unit_invoice_id],
+                ];
+            }
+
             foreach ($invoiceGroups as $group) {
                 if ($group['items'] === []) {
                     continue;
@@ -647,6 +671,11 @@ final class ChargePeriodService
                 $this->invoices->replaceItems($invoice, $group['items']);
                 $this->invoices->recalculate($invoice);
                 $this->invoices->issue($invoice);
+                foreach ($group['items'] as $item) {
+                    if ($id = $item['metadata']['invoice_period_allocation_id'] ?? null) {
+                        \App\Models\InvoicePeriodAllocation::whereKey($id)->update(['issued_invoice_id' => $invoice->id]);
+                    }
+                }
             }
 
             $period->update([

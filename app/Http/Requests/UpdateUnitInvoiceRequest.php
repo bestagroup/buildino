@@ -7,6 +7,8 @@ class UpdateUnitInvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'start_charge_period_id'=>['sometimes','required','integer','exists:charge_periods,id'],
+            'period_installment_count'=>['required_with:start_charge_period_id','integer','between:1,5'],
             'issue_date'=>['sometimes','date'],
             'due_date'=>['sometimes','date'],
             'period_start'=>['sometimes','nullable','date'],

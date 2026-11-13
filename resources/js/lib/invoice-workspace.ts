@@ -3,6 +3,8 @@ export interface InvoiceItem { id?: number; title: string; quantity: number | st
 export interface Installment { id?: number; amount: number | string; due_date: string; installment_number?: number; paid_amount?: number; penalty_amount?: number; waived_amount?: number; status?: string; metadata?: unknown }
 export interface Invoice {
     id: number; building_id: number; unit_id: number; invoice_number: string; status: string;
+    start_charge_period_id?: number | null; period_installment_count?: number | null;
+    period_allocations?: { period_id: number; title: string; sequence: number; amount: number; issued_invoice_id: number | null }[];
     issue_date: string; due_date: string; period_start?: string | null; period_end?: string | null;
     credit_applied_amount?: number; credit_remaining_amount?: number;
     adjustment_amount?: number; adjustment_reason?: string | null;
@@ -12,6 +14,7 @@ export interface Invoice {
 }
 export interface Payment { id: number; building_id: number; payment_number: string; amount: number; method: string; status: string; currency?: string; description?: string; paid_at?: string; allocations?: { payable_id: number; payable_type: string; amount: number }[] }
 export interface InvoiceWorkspace {
+    periods?: { id: number; building_id: number; title: string; period_start: string; period_end: string; due_date: string; status: string }[];
     buildings: { id: number; title: string; currency: string; abilities: Record<string, boolean> }[];
     units: { id: number; building_id: number; label: string }[];
     navigation: { key: string; title: string; url: string }[];

@@ -132,6 +132,7 @@ class UnitInvoiceController extends Controller
         $invoice->load([
             'unit:id,floor_id,unit_number,title',
             'invoiceItems',
+            'periodAllocations.chargePeriod',
             'invoiceInstallments',
             'payer:id,first_name,last_name',
         ]);
@@ -157,6 +158,7 @@ class UnitInvoiceController extends Controller
         $unitInvoice->load([
             'unit:id,floor_id,unit_number,title',
             'invoiceItems',
+            'periodAllocations.chargePeriod',
             'invoiceInstallments',
             'payer:id,first_name,last_name',
         ]);
@@ -179,6 +181,7 @@ class UnitInvoiceController extends Controller
         $unitInvoice->load([
             'unit:id,floor_id,unit_number,title',
             'invoiceItems',
+            'periodAllocations.chargePeriod',
             'invoiceInstallments',
         ]);
 
