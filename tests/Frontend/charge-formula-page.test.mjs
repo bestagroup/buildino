@@ -8,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const chrome = process.env.CHROME_BIN || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
-test('formula page reuses CRUD with inline stages, scoped actions, keyboard focus and safe save recovery', { skip: !existsSync(chrome) }, () => {
+test('formula page reuses CRUD with inline stages, scoped actions, keyboard focus and safe save recovery', { skip: !process.env.JSDOM_MODULE && !existsSync(chrome) }, async () => {
     const directory = mkdtempSync(join(tmpdir(), 'buildino-formula-page-'));
     try {
         const read = path => readFileSync(join(project, path), 'utf8');
@@ -50,9 +50,9 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
             let data, ok = true;
             if (options.method && options.method !== 'GET') {
                 writes++; ok = !failSave;
-                if (ok) { const payload = JSON.parse(options.body); row.title = payload.title; row.calculation_type = payload.builder.calculation_type; row.is_active = payload.is_active; }
+                if (ok) { const payload = JSON.parse(options.body); if (payload.builder) { row.title = payload.title; row.calculation_type = payload.builder.calculation_type; } else expect(Object.keys(payload).join() === 'is_active', 'Toggle must only update status'); row.is_active = payload.is_active; }
                 data = ok ? { data: row } : { message:'خطای اعتبارسنجی', errors:{'builder.financial_category_id':['برای این دسته هزینه فرمول دیگری وجود دارد.']} };
-            } else if (path.includes('/lookups/')) data = {data:[{id:7,label:'نظافت ساختمان'}]};
+            } else if (path.includes('/lookups/')) data = {data:[{id:7,label:'نظافت ساختمان',parent_id:2,parent_title:'نظافت'}]};
             else { if (holdList) await new Promise(resolve => releaseList = resolve); if (failList) throw Error('Network failed'); data = {data:[row],meta:{current_page:Number(url.searchParams.get('page')||1),last_page:2}}; }
             return {ok,status:ok?200:422,headers:{get:()=> 'application/json'},json:async()=>data};
         };
@@ -72,6 +72,15 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
             for(const part of $('#crudTableBody').querySelectorAll('h4,dd,.operation-record__actions')) expect(part.scrollWidth<=part.clientWidth+1,'Formula content overflows its column');
             expect($('[data-charge-location]').hidden && !$('[data-charge-directory]').hidden, 'List must replace selection');
             expect($('[data-row-action="edit"]').getAttribute('aria-label').includes(row.title), 'Edit buttons need unique accessible names');
+            const toggle = () => $('[data-row-action="toggle-formula"]');
+            expect(toggle().textContent.includes('غیرفعال کردن'), 'Active formula must offer deactivation');
+            const failedWrites = writes; toggle().click(); toggle().click();
+            await until(() => !toggle().disabled);
+            expect(writes === failedWrites + 1 && row.is_active, 'Failed request must preserve state and block duplicate click');
+            failSave = false; toggle().click(); await until(() => !toggle().disabled && !row.is_active);
+            expect(toggle().textContent.includes('فعال کردن'), 'Inactive formula must offer activation');
+            toggle().click(); await until(() => !toggle().disabled && row.is_active);
+            failSave = true;
             expect($('#coreRemotePagination').querySelectorAll('button').length===2, 'All server pages must be reachable');
             $('#crudCreateButton').focus(); $('#crudCreateButton').click(); await until(()=>component() && !save.disabled);
             expect(!drawer.hidden && $('[data-charge-directory]').hidden && !$('body').classList.contains('crud-overlay-open'), 'Editor must replace directory without modal scroll lock');
@@ -80,6 +89,7 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
             save.click(); expect(step()==='0', 'Missing category must block advance');
             const category = component().querySelector('[data-formula-category]');
             expect(category.getAttribute('aria-invalid')==='true' && category.getAttribute('aria-describedby'), 'Validation must expose field and error association');
+            const parent = component().querySelector('[data-formula-parent]'); parent.value='2'; parent.dispatchEvent(new Event('change',{bubbles:true}));
             category.value='7'; category.dispatchEvent(new Event('change',{bubbles:true})); save.click(); expect(step()==='1','Continue should replace category with method');
             expect(component().querySelector('[role="radiogroup"]'), 'Methods must be an accessible radio group');
             const method=component().querySelector('[data-formula-method][value="fixed"]'); method.checked=true; method.dispatchEvent(new Event('change',{bubbles:true}));
@@ -98,7 +108,7 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
             document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})); expect(!$('[data-charge-location]').hidden,'Escape outside editor must not change the current view');
             chooseBuilding('5'); await until(()=>!$('#crudState').hidden || $('#crudTableBody').children.length);
             await new Promise(resolve=>setTimeout(resolve,20));
-            expect($('#crudCreateButton').hidden && !$('[data-row-action="edit"]'),'Viewer must not see mutations');
+            expect($('#crudCreateButton').hidden && !$('[data-row-action="edit"]') && !toggle(),'Viewer must not see mutations');
             chooseBuilding('4'); await until(()=>$('[data-row-action="edit"]'));
             holdList=true; $('#crudRefreshButton').click(); await until(()=>releaseList); chooseBuilding('5'); holdList=false; releaseList();
             await new Promise(resolve=>setTimeout(resolve,30)); expect(!$('[data-row-action="edit"]'),'Stale list must not restore foreign-context actions');
@@ -110,7 +120,19 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
             $('#result').dataset.ok='true';
         })().catch(error=>$('#result').textContent=error.stack);
         </script></html>`);
-        const output = execFileSync(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--no-first-run', '--allow-file-access-from-files', '--force-device-scale-factor=1', '--window-size=' + (process.env.FORMULA_PAGE_VIEWPORT || '500,1000'), '--user-data-dir=' + join(directory, 'profile'), '--virtual-time-budget=7000', ...(screenshot ? ['--screenshot=' + resolve(screenshot)] : []), '--dump-dom', pathToFileURL(fixture).href], { encoding: 'utf8', timeout: 30000, maxBuffer: 2 * 1024 * 1024, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+        let output;
+        if (process.env.JSDOM_MODULE) {
+            const { JSDOM } = await import(process.env.JSDOM_MODULE);
+            const dom = new JSDOM(readFileSync(fixture, 'utf8'), { runScripts: 'dangerously', pretendToBeVisual: true, url: 'http://localhost', beforeParse(window) { window.HTMLElement.prototype.scrollIntoView = () => {}; window.scrollTo = () => {}; } });
+            try {
+                for (let i = 0; i < 500; i++) {
+                    const result = dom.window.document.getElementById('result');
+                    if (result?.dataset.ok || result?.textContent) break;
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+                output = dom.serialize();
+            } finally { dom.window.close(); }
+        } else output = execFileSync(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--no-first-run', '--allow-file-access-from-files', '--force-device-scale-factor=1', '--window-size=' + (process.env.FORMULA_PAGE_VIEWPORT || '500,1000'), '--user-data-dir=' + join(directory, 'profile'), '--virtual-time-budget=7000', ...(screenshot ? ['--screenshot=' + resolve(screenshot)] : []), '--dump-dom', pathToFileURL(fixture).href], { encoding: 'utf8', timeout: 30000, maxBuffer: 2 * 1024 * 1024, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
         const result = output.match(/<pre id="result"[^>]*>[\s\S]*?<\/pre>/)?.[0] || output.slice(-1000);
         assert.match(result, /data-ok="true"/, result);
     } finally {

@@ -98,6 +98,7 @@
         listRenderId: 0,
     };
 
+    const pendingFormulaUpdates = new Set();
     const lookupCache = new Map();
 
     const nextPaint = () =>
@@ -1312,6 +1313,14 @@
                         ویرایش
                     </button>
                 `);
+            }
+
+            if (scopedFormula && resource.update && formulaPermission('update')) {
+                const label = row.is_active ? 'غیرفعال کردن' : 'فعال کردن';
+                actions.push(`<button type="button" class="crud-row-action crud-row-action--edit"
+                    data-row-action="toggle-formula" data-id="${escapeHtml(row.id)}"
+                    aria-label="${label} ${escapeHtml(row.title || resource.title)}"
+                    ${pendingFormulaUpdates.has(String(row.id)) ? 'disabled aria-busy="true"' : ''}>${label}</button>`);
             }
 
             (resource.actions || []).filter((action) => bootstrap.resourceKey !== "invitations" || (
@@ -3206,7 +3215,39 @@
         }
     };
 
+    const toggleFormula = async (button) => {
+        const id = button.dataset.id;
+        const row = findRow(id);
+        if (!scopedFormula || !resource.update || !formulaPermission('update') || !row || pendingFormulaUpdates.has(id)) return;
+
+        const buildingId = $("[data-context-name='building_id']")?.value;
+        const active = !row.is_active;
+        pendingFormulaUpdates.add(id);
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        try {
+            await apiFetch(interpolate(resource.update.url, row), {
+                method: resource.update.method || 'PATCH',
+                body: JSON.stringify({ is_active: active }),
+            });
+            if ($("[data-context-name='building_id']")?.value !== buildingId) return;
+            toast(active ? 'فرمول فعال شد.' : 'فرمول غیرفعال شد.');
+            await loadRows();
+        } catch (error) {
+            if ($("[data-context-name='building_id']")?.value === buildingId) toast(error.message, 'danger');
+        } finally {
+            pendingFormulaUpdates.delete(id);
+            $$("[data-row-action='toggle-formula']", elements.tableBody)
+                .filter(candidate => candidate.dataset.id === id)
+                .forEach(candidate => { candidate.disabled = false; candidate.removeAttribute('aria-busy'); });
+        }
+    };
+
     const bindTableActions = () => {
+        $$("[data-row-action='toggle-formula']", elements.tableBody).forEach(button => {
+            button.addEventListener('click', () => toggleFormula(button));
+        });
+
         $$(
             "[data-row-action='edit']",
             elements.tableBody
