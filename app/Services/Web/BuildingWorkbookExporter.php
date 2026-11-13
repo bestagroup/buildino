@@ -14,6 +14,9 @@ use OpenSpout\Writer\AutoFilter;
 use OpenSpout\Writer\XLSX\Entity\SheetView;
 use OpenSpout\Writer\XLSX\Options;
 use OpenSpout\Writer\XLSX\Writer;
+use OpenSpout\Writer\XLSX\Options\SheetProtection;
+use OpenSpout\Writer\XLSX\Options\WorkbookProtection;
+use Illuminate\Support\Str;
 
 final class BuildingWorkbookExporter
 {
@@ -25,18 +28,25 @@ final class BuildingWorkbookExporter
         if ($units->count() > 500) {
             throw ValidationException::withMessages(['file' => 'حداکثر ۵۰۰ واحد در هر فایل پشتیبانی می‌شود.']);
         }
+        $workbookId = (string) Str::uuid();
+        $password = Str::random(24);
+        $protection = new SheetProtection(password: $password, lockSheet: true, lockColumnInsert: true,
+            lockColumnDelete: true, lockColumnFormatting: true, lockRowInsert: true, lockRowDelete: true,
+            lockRowFormatting: true, lockSort: true, lockCellFormatting: true);
         $options = new Options;
+        $options->setWorkbookProtection(new WorkbookProtection(password: $password, lockStructure: true));
         $options->DEFAULT_ROW_STYLE = (new Style)->setFontName('B Nazanin')->setFontSize(12)->setFontColor('1F2937')->setCellAlignment('center')->setShouldWrapText();
         $options->DEFAULT_ROW_HEIGHT = 30;
         $writer = new Writer($options);
         $writer->openToFile($path);
         try {
             $sheet = $writer->getCurrentSheet()->setName('اطلاعات واحدها');
+            $sheet->setSheetProtection($protection);
             $sheet->setSheetView((new SheetView)->setRightToLeft(true)->setShowGridLines(false)->setFreezeRow(2));
             $sheet->setColumnWidth(9, 1, 4, 5);
-            $sheet->setColumnWidth(25, 2, 3, 9, 10, 12, 13);
-            $sheet->setColumnWidth(20, 6, 7, 8, 11, 14, 15);
-            $sheet->setAutoFilter(new AutoFilter(0, 1, 14, max(1, $units->count() + 1)));
+            $sheet->setColumnWidth(25, 2, 3, 10, 11, 12, 14, 15);
+            $sheet->setColumnWidth(20, 6, 7, 8, 9, 13, 16, 17);
+            $sheet->setAutoFilter(new AutoFilter(0, 1, 16, max(1, $units->count() + 1)));
             $sheet->setPrintTitleRows('1:1');
             $header = Row::fromValues(BuildingWorkbookService::HEADERS, (new Style)->setFontName('B Nazanin')->setFontSize(12)->setFontBold()->setFontColor('FFFFFF')->setBackgroundColor('24476B')->setShouldWrapText()->setCellAlignment('center'));
             $header->setHeight(52);
@@ -48,8 +58,8 @@ final class BuildingWorkbookExporter
                 $cells = [];
                 foreach ($values as $column => $value) {
                     $style = (new Style)->setFontName('B Nazanin')->setFontSize(12)->setFontColor('1F2937')->setCellAlignment('center')->setShouldWrapText()
-                        ->setBackgroundColor($column < 5 ? 'E2E8F0' : ($index % 2 ? 'EDF6FF' : 'FFFFFF'));
-                    if (in_array($column, [0, 3, 5, 6, 7, 14], true)) {
+                        ->setBackgroundColor($column < 4 ? 'E2E8F0' : ($index % 2 ? 'EDF6FF' : 'FFFFFF'));
+                    if (in_array($column, [0, 3, 5, 6, 7, 8, 16], true)) {
                         $cells[] = new NumericCell($column === 5 ? (float) $value : (int) $value, $style->setFormat($column === 5 ? '0.00' : '0'));
                     } else {
                         // Explicit StringCell prevents spreadsheet formula injection and lost leading zeroes.
@@ -57,12 +67,13 @@ final class BuildingWorkbookExporter
                     }
                 }
                 $writer->addRow(new Row($cells));
-                $metadata[] = Row::fromValues([(string) ($index + 1), $snapshots->token($state, $building, $actor)]);
+                $metadata[] = Row::fromValues([(string) ($index + 1), $snapshots->token($state, $building, $actor, $workbookId, $index + 1, $units->count())]);
             }
-            $writer->addNewSheetAndMakeItCurrent()->setName('_buildino')->setIsVisible(false);
+            $writer->addNewSheetAndMakeItCurrent()->setName('_buildino')->setIsVisible(false)->setSheetProtection($protection);
             $writer->addRows($metadata);
         } finally {
             $writer->close();
         }
+        app(BuildingWorkbookProtection::class)->unlockInputCells($path);
     }
 }

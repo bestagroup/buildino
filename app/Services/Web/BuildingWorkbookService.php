@@ -14,9 +14,11 @@ use OpenSpout\Reader\XLSX\Reader;
 
 final class BuildingWorkbookService
 {
-    public const HEADERS = ['ردیف', 'نام ساختمان', 'کد شناسایی ساختمان', 'شماره طبقه', 'شماره واحد', 'متراژ واحد', 'تعداد اتاق های واحد', 'تعداد پارکینگ واحد', 'نام مالک', 'نام خانوادگی مالک', 'شماره موبایل مالک', 'نام مستاجر در صورت وجود', 'نام خانوادگی مستاجر در صورت وجود', 'شماره موبایل مستاجر در صورت وجود', 'تعداد ساکن در واحد'];
+    public const HEADERS = ['ردیف', 'نام ساختمان', 'کد شناسایی ساختمان', 'طبقه', 'واحد', 'متراژ', 'تعداد اتاق', 'تعداد پارکینگ', 'تعداد انباری', 'نوع کاربری واحد', 'نام مالک', 'نام خانوادگی مالک', 'موبایل مالک', 'نام ساکن/مستاجر', 'نام خانوادگی ساکن/مستاجر', 'شماره موبایل ساکن/مستاجر', 'تعداد ساکن در واحد'];
 
-    public const KEYS = ['row', 'building', 'code', 'floor', 'unit', 'area', 'bedrooms', 'parking_count', 'owner_first', 'owner_last', 'owner_mobile', 'tenant_first', 'tenant_last', 'tenant_mobile', 'resident_count'];
+    public const KEYS = ['row', 'building', 'code', 'floor', 'unit', 'area', 'bedrooms', 'parking_count', 'storage_count', 'usage_type', 'owner_first', 'owner_last', 'owner_mobile', 'tenant_first', 'tenant_last', 'tenant_mobile', 'resident_count'];
+
+    public const USAGE_LABELS = ['residential' => 'مسکونی', 'commercial' => 'تجاری', 'office' => 'اداری', 'other' => 'سایر'];
 
     public function read(string $path): array
     {
@@ -42,14 +44,25 @@ final class BuildingWorkbookService
         } finally {
             $reader->close();
         }
-        if ($hasMetadata) {
-            foreach ($rows as &$row) {
-                if (! isset($metadata[$row['row']])) {
-                    $this->fail('شناسه ردیف در فایل یافت نشد؛ فایل جدید دریافت کنید.');
-                }
-                $row['_snapshot'] = $metadata[$row['row']];
-            }
+        if (! $hasMetadata || count($metadata) !== count($rows)) {
+            $this->fail('ساختار ردیف‌های فایل تغییر کرده یا شناسه داخلی موجود نیست؛ فایل جدید دانلود کنید.');
         }
+        $workbookId = null;
+        $seen = [];
+        foreach ($rows as $index => &$row) {
+            $number = $index + 1;
+            $token = $metadata[$number] ?? '';
+            $snapshot = app(BuildingWorkbookSnapshot::class)->decode($token);
+            $workbookId ??= $snapshot['workbook_id'];
+            if ($snapshot['row_number'] !== $number || $snapshot['row_count'] !== count($rows)
+                || $snapshot['workbook_id'] !== $workbookId || isset($seen[$snapshot['state']['unit_id']])) {
+                $this->fail('افزودن، حذف یا جابه‌جایی ردیف‌ها مجاز نیست؛ فایل جدید دانلود کنید.');
+            }
+            $seen[$snapshot['state']['unit_id']] = true;
+            $row['row'] = (string) $number;
+            $row['_snapshot'] = $token;
+        }
+        unset($row);
 
         return $rows;
     }
@@ -65,18 +78,28 @@ final class BuildingWorkbookService
         $seen = [];
         $people = [];
         foreach ($rows as &$row) {
-            $v = Validator::make($row, ['row' => 'required|integer|min:1', 'building' => 'required|string', 'code' => 'required|string', 'floor' => 'required|integer', 'unit' => 'required|string', 'area' => 'required|numeric|min:0.01|max:99999999', 'bedrooms' => 'required|integer|min:0|max:255', 'parking_count' => 'required|integer|min:0|max:1000', 'resident_count' => 'required|integer|min:0|max:1000', 'owner_first' => 'nullable|string|max:100', 'owner_last' => 'nullable|string|max:100', 'owner_mobile' => 'nullable|string', 'tenant_first' => 'nullable|string|max:100', 'tenant_last' => 'nullable|string|max:100', 'tenant_mobile' => 'nullable|string']);
+            $row['usage_type'] = array_search($row['usage_type'], self::USAGE_LABELS, true) ?: $row['usage_type'];
+            $v = Validator::make($row, ['row' => 'required|integer|min:1', 'building' => 'required|string', 'code' => 'required|string', 'floor' => 'required|integer', 'unit' => 'required|string|max:100', 'area' => 'required|numeric|min:0.01|max:99999999', 'bedrooms' => 'required|integer|min:0|max:255', 'parking_count' => 'required|integer|min:0|max:1000', 'storage_count' => 'required|integer|min:0|max:1000', 'usage_type' => ['required', \Illuminate\Validation\Rule::in(array_keys(self::USAGE_LABELS))], 'resident_count' => 'required|integer|min:0|max:1000', 'owner_first' => 'nullable|string|max:100', 'owner_last' => 'nullable|string|max:100', 'owner_mobile' => 'nullable|string', 'tenant_first' => 'nullable|string|max:100', 'tenant_last' => 'nullable|string|max:100', 'tenant_mobile' => 'nullable|string']);
             if ($v->fails()) {
                 $this->fail('ردیف '.$row['row'].': '.implode(' ', $v->errors()->all()));
             }
             if ($row['building'] !== $building->title || $row['code'] !== $building->code) {
                 $this->fail('نام یا کد ساختمان با ساختمان انتخابی مطابقت ندارد.');
             }
-            $units = Unit::when(isset($row['unit_id']), fn ($q) => $q->whereKey($row['unit_id']))->where('unit_number', $row['unit'])->whereHas('floor', fn ($q) => $q->where('floor_number', $row['floor'])->whereHas('block', fn ($q) => $q->where('building_id', $building->id)))->get();
+            $units = Unit::when(isset($row['unit_id']), fn ($q) => $q->whereKey($row['unit_id']))->when(! isset($row['unit_id']), fn ($q) => $q->where('unit_number', $row['unit']))->whereHas('floor', fn ($q) => $q->where('floor_number', $row['floor'])->whereHas('block', fn ($q) => $q->where('building_id', $building->id)))->get();
             if ($units->count() !== 1) {
                 $this->fail('واحد ردیف '.$row['row'].' یافت نشد یا بین بلوک‌ها مبهم است.');
             }
             $unit = $units->first();
+            if (Unit::withTrashed()->where('floor_id', $unit->floor_id)->where('unit_number', $row['unit'])->whereKeyNot($unit->id)->exists()) {
+                $this->fail('شماره واحد ردیف '.$row['row'].' در این طبقه تکراری است. ابتدا شماره آزاد انتخاب کنید.');
+            }
+            $numberKey = $unit->floor_id.':'.$row['unit'];
+            if (isset($seen['number:'.$numberKey])) {
+                $this->fail('شماره واحد تکراری در ردیف‌های یک طبقه مجاز نیست.');
+            }
+            $seen['number:'.$numberKey] = true;
+
             if (isset($seen[$unit->id])) {
                 $this->fail('هر واحد باید فقط یک ردیف داشته باشد.');
             }
@@ -155,7 +178,7 @@ final class BuildingWorkbookService
             app(BuildingUserImportService::class)->commit($building, $actor, $plan['people']);
             foreach ($plan['rows'] as $row) {
                 $unit = Unit::findOrFail($row['unit_id']);
-                $unit->update(['area' => $row['area'], 'bedrooms' => $row['bedrooms'], 'parking_count' => $row['parking_count']]);
+                $unit->update(['unit_number' => $row['unit'], 'storage_count' => $row['storage_count'], 'usage_type' => $row['usage_type'], 'area' => $row['area'], 'bedrooms' => $row['bedrooms'], 'parking_count' => $row['parking_count']]);
                 if ((int) $unit->resident_count !== (int) $row['resident_count']) {
                     app(ResidentCountHistory::class)->record($unit, (int) $row['resident_count'], $row['starts_at']);
                 }

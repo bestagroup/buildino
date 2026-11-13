@@ -41,17 +41,37 @@ class BuildingUserImportTest extends TestCase
     {
         $building = $unit->floor->block->building;
 
-        return ['1', $building->title, $building->code, (string) $unit->floor->floor_number, (string) $unit->unit_number, '120', '3', '2', $name, 'اکسل', $mobile, '', '', '', '3'];
+        return ['1', $building->title, $building->code, (string) $unit->floor->floor_number, (string) $unit->unit_number, '120', '3', '2', '1', 'مسکونی', $name, 'اکسل', $mobile, '', '', '', '3'];
     }
 
     private function file(array $rows): UploadedFile
     {
+        $building = \App\Models\Building::where('code', $rows[0][2])->firstOrFail();
+        $exported = $this->exportedRows($building);
+        foreach ($rows as $values) {
+            foreach ($exported as &$record) {
+                if ($record['unit'] === $values[4] && $record['floor'] === $values[3]) {
+                    $record = array_replace($record, array_combine(BuildingWorkbookService::KEYS, $values));
+                }
+            }
+            unset($record);
+        }
+
+        return $this->signedFile($exported);
+    }
+
+    private function signedFile(array $rows, ?array $dataRows = null, ?array $headers = null): UploadedFile
+    {
         $path = tempnam(sys_get_temp_dir(), 'import-test');
         $writer = new Writer;
         $writer->openToFile($path);
-        $writer->addRow(Row::fromValues(BuildingWorkbookService::HEADERS));
-        foreach ($rows as $row) {
-            $writer->addRow(Row::fromValues($row));
+        $writer->addRow(Row::fromValues($headers ?? BuildingWorkbookService::HEADERS));
+        foreach ($dataRows ?? $rows as $row) {
+            $writer->addRow(Row::fromValues(array_map(fn ($key) => $row[$key], BuildingWorkbookService::KEYS)));
+        }
+        $writer->addNewSheetAndMakeItCurrent()->setName('_buildino')->setIsVisible(false);
+        foreach ($rows as $index => $row) {
+            $writer->addRow(Row::fromValues([(string) ($index + 1), $row['_snapshot']]));
         }
         $writer->close();
         $file = UploadedFile::fake()->createWithContent('users.xlsx', file_get_contents($path));
@@ -84,6 +104,10 @@ class BuildingUserImportTest extends TestCase
         [$manager, $unit, $building] = $this->scenario();
         $foreign = Unit::whereHas('floor.block', fn ($q) => $q->where('building_id', '!=', $building->id))->firstOrFail();
         foreach ([[$foreign, '09129998877', 'جدید'], [$unit, $manager->mobile, 'نام نادرست']] as [$target, $mobile, $name]) {
+            if ($target->id === $foreign->id) {
+                $this->get(route('management.user-import.template', $target->floor->block->building))->assertForbidden();
+                continue;
+            }
             $file = $this->file([$this->workbookRow($target, $mobile, $name)]);
             $this->post(route('management.user-import.preview', $building), ['file' => $file])->assertSessionHasErrors('file');
             $this->assertNull(session('building_user_import'));
@@ -135,7 +159,7 @@ class BuildingUserImportTest extends TestCase
         $this->get('/management/operations/user-import')->assertOk()->assertSee('id="import-building"', false)->assertDontSee('دانلود فایل نمونه');
     }
 
-    public function test_template_has_exact_fifteen_headers_and_structure(): void
+    public function test_template_has_exact_seventeen_headers_and_structure(): void
     {
         [, $unit, $building] = $this->scenario();
         $response = $this->get(route('management.user-import.template', $building))->assertOk();
@@ -147,7 +171,7 @@ class BuildingUserImportTest extends TestCase
                 if ($index === 1) {
                     $this->assertSame(BuildingWorkbookService::HEADERS, $row->toArray());
                 } else {
-                    $this->assertCount(15, $row->toArray());
+                    $this->assertCount(17, $row->toArray());
                     $this->assertSame($building->code, $row->toArray()[2]);
                 }
             }
@@ -161,9 +185,9 @@ class BuildingUserImportTest extends TestCase
     {
         [$manager, $unit, $building] = $this->scenario();
         $values = $this->workbookRow($unit, '09129998877', 'مالک');
-        $values[11] = 'مستاجر';
-        $values[12] = 'اکسل';
-        $values[13] = '09129998878';
+        $values[13] = 'مستاجر';
+        $values[14] = 'اکسل';
+        $values[15] = '09129998878';
         $rows = [array_combine(BuildingWorkbookService::KEYS, $values)];
         app(BuildingWorkbookService::class)->commit($building, $manager, $rows);
         app(BuildingWorkbookService::class)->commit($building, $manager, $rows);
@@ -254,7 +278,7 @@ class BuildingUserImportTest extends TestCase
         $this->assertStringContainsString('24476B', $zip->getFromName('xl/styles.xml'));
         $this->assertStringContainsString('rightToLeft="true"', $zip->getFromName('xl/worksheets/sheet1.xml'));
         $this->assertStringContainsString('state="hidden"', $zip->getFromName('xl/workbook.xml'));
-        $this->assertMatchesRegularExpression('/<c[^>]*r="K[0-9]+"[^>]*t="inlineStr"/', $zip->getFromName('xl/worksheets/sheet1.xml'));
+        $this->assertMatchesRegularExpression('/<c[^>]*r="M[0-9]+"[^>]*t="inlineStr"/', $zip->getFromName('xl/worksheets/sheet1.xml'));
         $zip->close();
         unlink($path);
     }
@@ -371,7 +395,7 @@ class BuildingUserImportTest extends TestCase
     {
         [$manager, $unit, $building] = $this->scenario();
         $values = $this->workbookRow($unit, '09129998877', 'مالک');
-        $values[14] = '0';
+        $values[16] = '0';
         $service = app(BuildingWorkbookService::class);
         $service->commit($building, $manager, [array_combine(BuildingWorkbookService::KEYS, $values)]);
         $rows = $this->exportedRows($building);
@@ -390,7 +414,7 @@ class BuildingUserImportTest extends TestCase
     {
         [$manager, $unit, $building] = $this->scenario();
         $values = $this->workbookRow($unit, '', '');
-        $values[9] = '';
+        $values[11] = '';
         $this->expectException(ValidationException::class);
         app(BuildingWorkbookService::class)->commit($building, $manager, [array_combine(BuildingWorkbookService::KEYS, $values)]);
     }
@@ -407,13 +431,139 @@ class BuildingUserImportTest extends TestCase
     {
         [$manager, $unit, $building] = $this->scenario();
         $values = $this->workbookRow($unit, '09129998877', 'مالک');
-        $values[11] = 'ناقص';
+        $values[13] = 'ناقص';
         $this->post(route('management.user-import.preview', $building), ['file' => $this->file([$values])])->assertSessionHasErrors('file');
-        $values[11] = '';
+        $values[13] = '';
+        $fileBeforeOwnership = $this->file([$values]);
         $existing = User::factory()->create();
         UnitOwnership::create(['unit_id' => $unit->id, 'user_id' => $existing->id, 'is_active' => true, 'starts_at' => today()]);
-        $this->post(route('management.user-import.preview', $building), ['file' => $this->file([$values])])->assertSessionHasErrors('file');
+        $this->post(route('management.user-import.preview', $building), ['file' => $fileBeforeOwnership])->assertSessionHasErrors('file');
         $this->assertDatabaseMissing('users', ['mobile' => '09129998877']);
+    }
+
+    public function test_number_storage_and_usage_edit_preserves_unit_identity_and_ignores_locked_cells(): void
+    {
+        [$manager, $unit, $building, $user, $rows, $index] = $this->populatedWorkbook();
+        $ownershipId = $unit->unitOwnerships()->firstOrFail()->id;
+        $occupancyId = $unit->unitOccupancies()->firstOrFail()->id;
+        $rows[$index] = array_replace($rows[$index], [
+            'row' => '999', 'building' => 'تغییر غیرمجاز', 'code' => 'BAD', 'floor' => '999',
+            'unit' => '001-A', 'storage_count' => '2', 'usage_type' => 'اداری', 'area' => '145',
+        ]);
+        $file = $this->signedFile($rows);
+        $this->post(route('management.user-import.preview', $building), ['file' => $file])->assertOk();
+        $this->post(route('management.user-import.commit', $building), ['token' => session('building_user_import.token')])->assertRedirect();
+        $this->assertDatabaseHas('units', ['id' => $unit->id, 'floor_id' => $unit->floor_id,
+            'unit_number' => '001-A', 'storage_count' => 2, 'usage_type' => 'office', 'area' => 145]);
+        $this->assertSame($building->title, $building->fresh()->title);
+        $this->assertSame($building->code, $building->fresh()->code);
+        $this->assertSame($ownershipId, $unit->unitOwnerships()->first()->id);
+        $this->assertSame($occupancyId, $unit->unitOccupancies()->first()->id);
+        $this->assertSame($user->id, $unit->unitOwnerships()->first()->user_id);
+    }
+
+    public function test_added_rows_columns_or_removed_metadata_cannot_be_imported(): void
+    {
+        [$manager, $unit, $building, $user, $rows, $index] = $this->populatedWorkbook();
+        $rows[$index]['area'] = '180';
+        $extra = [...$rows, $rows[$index]];
+        $files = [
+            $this->signedFile($rows, $extra),
+            $this->signedFile($rows, null, [...BuildingWorkbookService::HEADERS, 'ستون اضافه']),
+            $this->signedFile($extra), // Even copied hidden metadata cannot extend the authenticated row count.
+        ];
+        $unsigned = $this->signedFile($rows);
+        $zip = new \ZipArchive;
+        $zip->open($unsigned->getRealPath());
+        $zip->deleteName('xl/worksheets/sheet2.xml');
+        $zip->close();
+        $files[] = $unsigned;
+        foreach ($files as $file) {
+            $this->post(route('management.user-import.preview', $building), ['file' => $file])->assertSessionHasErrors('file');
+            $this->assertNull(session('building_user_import'));
+            $this->assertNotEquals(180, $unit->fresh()->area);
+        }
+    }
+
+    public function test_duplicate_unit_number_and_invalid_usage_are_rejected_atomically(): void
+    {
+        [$manager, $unit, $building, $user, $rows, $index] = $this->populatedWorkbook();
+        $other = Unit::create(['floor_id' => $unit->floor_id, 'unit_number' => 'TAKEN', 'area' => 90, 'usage_type' => 'residential']);
+        foreach ([['unit' => 'TAKEN'], ['usage_type' => 'invalid'], ['storage_count' => '-1']] as $invalid) {
+            $candidate = $rows;
+            $candidate[$index] = array_replace($candidate[$index], $invalid, ['owner_first' => 'نباید ثبت شود']);
+            try {
+                app(BuildingWorkbookService::class)->commit($building, $manager, $candidate);
+                $this->fail('Invalid changes accepted');
+            } catch (ValidationException) {
+                $this->assertSame('مالک', $user->fresh()->first_name);
+                $this->assertSame($unit->unit_number, $unit->fresh()->unit_number);
+            }
+        }
+    }
+
+    public function test_locked_cell_only_edits_are_a_noop_and_number_changes_after_preview_are_rejected(): void
+    {
+        [$manager, $unit, $building, $user, $rows, $index] = $this->populatedWorkbook();
+        $rows[$index] = array_replace($rows[$index], ['row' => '999', 'building' => 'ignored', 'code' => 'ignored', 'floor' => '999']);
+        $service = app(BuildingWorkbookService::class);
+        $this->assertSame([], $service->validate($building, $manager, $rows)['rows']);
+        $rows[$index]['unit'] = 'NEW-1';
+        $plan = $service->validate($building, $manager, $rows);
+        $unit->update(['unit_number' => 'CONCURRENT']);
+        try {
+            $service->commit($building, $manager, $plan['rows']);
+            $this->fail('Stale number change accepted');
+        } catch (ValidationException) {
+            $this->assertSame('CONCURRENT', $unit->fresh()->unit_number);
+        }
+    }
+
+    public function test_two_rows_cannot_claim_the_same_new_number(): void
+    {
+        [$manager, $unit, $building] = $this->scenario();
+        $second = Unit::create(['floor_id' => $unit->floor_id, 'unit_number' => 'SECOND', 'area' => 90, 'usage_type' => 'residential']);
+        $rows = $this->exportedRows($building);
+        foreach ($rows as &$row) {
+            if (in_array($row['unit'], [$unit->unit_number, 'SECOND'], true)) {
+                $row['unit'] = 'SAME-NEW';
+            }
+        }
+        unset($row);
+        $this->expectException(ValidationException::class);
+        app(BuildingWorkbookService::class)->commit($building, $manager, $rows);
+    }
+
+    public function test_workbook_protects_structure_and_only_unlocks_existing_input_cells(): void
+    {
+        [$manager, $unit, $building] = $this->scenario();
+        $response = $this->get(route('management.user-import.template', $building))->assertOk();
+        $path = $response->baseResponse->getFile()->getPathname();
+        $zip = new \ZipArchive;
+        $zip->open($path);
+        $sheet = simplexml_load_string($zip->getFromName('xl/worksheets/sheet1.xml'));
+        $styles = simplexml_load_string($zip->getFromName('xl/styles.xml'));
+        $this->assertSame('true', (string) $sheet->sheetProtection['sheet']);
+        foreach (['insertColumns', 'deleteColumns', 'insertRows', 'deleteRows', 'sort'] as $attribute) {
+            $this->assertSame('true', (string) $sheet->sheetProtection[$attribute]);
+        }
+        $seen = [];
+        foreach ($sheet->sheetData->row as $row) {
+            foreach ($row->c as $cell) {
+                $reference = (string) $cell['r'];
+                $style = $styles->cellXfs->xf[(int) $cell['s']];
+                $unlocked = (string) $style->protection['locked'] === '0';
+                $expected = preg_match('/^[E-Q][0-9]+$/', $reference) && (int) $row['r'] > 1;
+                $this->assertSame((bool) $expected, $unlocked, $reference);
+                $seen[$reference] = true;
+            }
+        }
+        foreach (range('E', 'Q') as $column) {
+            $this->assertArrayHasKey($column.'2', $seen, 'Blank input cells must also be editable.');
+        }
+        $this->assertStringContainsString('lockStructure="true"', $zip->getFromName('xl/workbook.xml'));
+        $zip->close();
+        unlink($path);
     }
 
     public function test_import_existing_user_in_multiple_units_does_not_duplicate_or_reset_account(): void

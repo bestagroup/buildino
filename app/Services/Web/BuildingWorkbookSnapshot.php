@@ -39,8 +39,11 @@ final class BuildingWorkbookSnapshot
         $parking = $unit->parking_count ?? $unit->unitParkingAssignments()
             ->where(fn ($q) => $q->whereNull('starts_at')->orWhereDate('starts_at', '<=', today()))
             ->where(fn ($q) => $q->whereNull('ends_at')->orWhereDate('ends_at', '>=', today()))->count();
+        $storage = $unit->storage_count ?? $unit->unitStorageAssignments()
+            ->where(fn ($q) => $q->whereNull('starts_at')->orWhereDate('starts_at', '<=', today()))
+            ->where(fn ($q) => $q->whereNull('ends_at')->orWhereDate('ends_at', '>=', today()))->count();
         $values = [$building->title, $building->code, (string) $unit->floor->floor_number, (string) $unit->unit_number,
-            (string) $unit->area, (string) ($unit->bedrooms ?? 0), (string) $parking,
+            (string) $unit->area, (string) ($unit->bedrooms ?? 0), (string) $parking, (string) $storage, BuildingWorkbookService::USAGE_LABELS[$unit->usage_type->value],
             $owner?->first_name ?? '', $owner?->last_name ?? '', $owner ? $this->mobile($owner->mobile ?? '') : '',
             $tenant?->first_name ?? '', $tenant?->last_name ?? '', $tenant ? $this->mobile($tenant->mobile ?? '') : '', (string) $unit->resident_count];
 
@@ -49,16 +52,16 @@ final class BuildingWorkbookSnapshot
             'users' => collect([$owner, $tenant])->filter()->map(fn ($u) => [$u->id, $u->updated_at?->toISOString(), $u->mobile, $u->is_active, $u->is_blocked])->values()->all()];
     }
 
-    public function token(array $state, Building $building, User $actor): string
+    public function token(array $state, Building $building, User $actor, string $workbookId, int $rowNumber, int $rowCount): string
     {
-        return Crypt::encryptString(json_encode(['version' => 1, 'building_id' => $building->id, 'actor_id' => $actor->id, 'state' => $state], JSON_THROW_ON_ERROR));
+        return Crypt::encryptString(json_encode(['version' => 2, 'workbook_id' => $workbookId, 'row_number' => $rowNumber, 'row_count' => $rowCount, 'building_id' => $building->id, 'actor_id' => $actor->id, 'state' => $state], JSON_THROW_ON_ERROR));
     }
 
     public function decode(string $token): array
     {
         try {
             $data = json_decode(Crypt::decryptString($token), true, 512, JSON_THROW_ON_ERROR);
-            if (($data['version'] ?? null) !== 1 || ! isset($data['state']['unit_id'], $data['building_id'], $data['actor_id'])) {
+            if (($data['version'] ?? null) !== 2 || ! isset($data['state']['unit_id'], $data['building_id'], $data['actor_id'], $data['workbook_id'], $data['row_number'], $data['row_count'])) {
                 $this->fail('شناسه داخلی فایل معتبر نیست.');
             }
 
@@ -81,16 +84,18 @@ final class BuildingWorkbookSnapshot
             if ($current !== $snapshot['state']) {
                 $this->fail('اطلاعات واحد '.$unit->unit_number.' پس از دانلود یا پیش‌نمایش تغییر کرده است؛ فایل جدید دریافت کنید.');
             }
-            foreach (['building', 'code', 'floor', 'unit'] as $n => $key) {
-                if ((string) $row[$key] !== $current['values'][$n]) {
-                    $this->fail('مشخصات شناسایی ساختمان، طبقه و واحد قابل تغییر در این فایل نیست.');
-                }
+            // The authenticated identity owns these values, never editable cells.
+            $row['row'] = (string) $snapshot['row_number'];
+            foreach (['building', 'code', 'floor'] as $n => $key) {
+                $row[$key] = $current['values'][$n];
             }
+            $row['usage_type'] = BuildingWorkbookService::USAGE_LABELS[$row['usage_type']] ?? $row['usage_type'];
+            $legacy[$i] = $row;
             unset($legacy[$i]['_snapshot']);
             $legacy[$i]['unit_id'] = $unit->id;
             $legacy[$i]['_bound_users'] = array_filter([$current['owner_id'], $current['tenant_id']]);
             $legacy[$i]['_occupant_id'] = $current['occupant_id'];
-            $legacy[$i]['_create_owner_occupancy'] = ! $current['occupant_id'] && (int) $current['values'][13] === 0 && (int) $row['resident_count'] > 0;
+            $legacy[$i]['_create_owner_occupancy'] = ! $current['occupant_id'] && (int) $current['values'][15] === 0 && (int) $row['resident_count'] > 0;
             foreach (['owner', 'tenant'] as $kind) {
                 $row[$kind.'_mobile'] = $this->mobile($row[$kind.'_mobile']);
                 $legacy[$i][$kind.'_mobile'] = $row[$kind.'_mobile'];
@@ -135,7 +140,7 @@ final class BuildingWorkbookSnapshot
             $original = $this->decode($row['_snapshot'])['state']['values'];
             $values = array_map(fn ($key) => (string) $row[$key], array_slice(BuildingWorkbookService::KEYS, 1));
             foreach ($values as $column => $value) {
-                $same = in_array($column, [2, 4, 5, 6, 13], true)
+                $same = in_array($column, [2, 4, 5, 6, 7, 15], true)
                     ? is_numeric($value) && (float) $value === (float) $original[$column]
                     : $value === $original[$column];
                 if (! $same) {

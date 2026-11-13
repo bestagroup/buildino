@@ -57,7 +57,7 @@ final class BuildingUserImportController extends Controller
             throw ValidationException::withMessages(['file' => 'فایل قابل خواندن نیست؛ از فایل نمونه XLSX استفاده کنید.']);
         }
         $token = (string) Str::uuid();
-        $request->session()->put('building_user_import', ['format' => 3, 'token' => $token, 'user_id' => $request->user()->id, 'building_id' => $building->id, 'expires_at' => now()->addMinutes(20)->timestamp, 'rows' => $rows]);
+        $request->session()->put('building_user_import', ['format' => 4, 'token' => $token, 'user_id' => $request->user()->id, 'building_id' => $building->id, 'expires_at' => now()->addMinutes(20)->timestamp, 'rows' => $rows]);
 
         return view('management.user-import', ['buildings' => collect([$building]), 'building' => $building, 'rows' => $rows, 'token' => $token]);
     }
@@ -66,7 +66,7 @@ final class BuildingUserImportController extends Controller
     {
         $this->authorizeBuilding($request, $building);
         $preview = $request->session()->get('building_user_import');
-        abort_unless($preview && ($preview['format'] ?? null) === 3 && $preview['user_id'] === $request->user()->id && $preview['building_id'] === $building->id && $preview['expires_at'] > time() && hash_equals($preview['token'], (string) $request->input('token')), 419);
+        abort_unless($preview && ($preview['format'] ?? null) === 4 && $preview['user_id'] === $request->user()->id && $preview['building_id'] === $building->id && $preview['expires_at'] > time() && hash_equals($preview['token'], (string) $request->input('token')), 419);
         $imports->commit($building, $request->user(), $preview['rows']);
         $request->session()->forget('building_user_import');
 
