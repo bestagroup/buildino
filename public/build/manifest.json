@@ -24,8 +24,8 @@
       "_management-inertia-pLNNlcIf.js"
     ]
   },
-  "_UiRecordCard.vue_vue_type_script_setup_true_lang-h9n7ghaL.js": {
-    "file": "assets/UiRecordCard.vue_vue_type_script_setup_true_lang-h9n7ghaL.js",
+  "_UiRecordCard.vue_vue_type_script_setup_true_lang-5UoSBXj_.js": {
+    "file": "assets/UiRecordCard.vue_vue_type_script_setup_true_lang-5UoSBXj_.js",
     "name": "UiRecordCard.vue_vue_type_script_setup_true_lang",
     "imports": [
       "resources/js/management.ts",
@@ -129,7 +129,7 @@
     ]
   },
   "resources/js/management.ts": {
-    "file": "assets/management-B2mzj1Bo.js",
+    "file": "assets/management-BwqcRwjo.js",
     "name": "management",
     "src": "resources/js/management.ts",
     "isEntry": true,
@@ -147,7 +147,7 @@
     ]
   },
   "resources/js/pages/management/access/Users.vue": {
-    "file": "assets/Users-CanwBGQC.js",
+    "file": "assets/Users-B7kVMMBy.js",
     "name": "Users",
     "src": "resources/js/pages/management/access/Users.vue",
     "isDynamicEntry": true,
@@ -165,13 +165,13 @@
     ]
   },
   "resources/js/pages/management/finance/Invoices.vue": {
-    "file": "assets/Invoices-wPYu9gz6.js",
+    "file": "assets/Invoices-OvQvQc-s.js",
     "name": "Invoices",
     "src": "resources/js/pages/management/finance/Invoices.vue",
     "isDynamicEntry": true,
     "imports": [
       "_management-inertia-pLNNlcIf.js",
-      "_UiRecordCard.vue_vue_type_script_setup_true_lang-h9n7ghaL.js",
+      "_UiRecordCard.vue_vue_type_script_setup_true_lang-5UoSBXj_.js",
       "_DynamicForm.vue_vue_type_script_setup_true_lang-BuG7vh8q.js",
       "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-DdAe6bwF.js",
       "_invoice-workspace-DU10ieZO.js",
@@ -183,13 +183,13 @@
     ]
   },
   "resources/js/pages/management/finance/Records.vue": {
-    "file": "assets/Records-DXOAWZDL.js",
+    "file": "assets/Records-CVMracM2.js",
     "name": "Records",
     "src": "resources/js/pages/management/finance/Records.vue",
     "isDynamicEntry": true,
     "imports": [
       "_management-inertia-pLNNlcIf.js",
-      "_UiRecordCard.vue_vue_type_script_setup_true_lang-h9n7ghaL.js",
+      "_UiRecordCard.vue_vue_type_script_setup_true_lang-5UoSBXj_.js",
       "_DynamicForm.vue_vue_type_script_setup_true_lang-BuG7vh8q.js",
       "_UiConfirmDialog.vue_vue_type_script_setup_true_lang-DdAe6bwF.js",
       "_building-structure-Bn42cvp9.js",
@@ -202,7 +202,7 @@
     ]
   },
   "resources/js/pages/management/operations/Resource.vue": {
-    "file": "assets/Resource-B9VMD15L.js",
+    "file": "assets/Resource-m6Vcwe7k.js",
     "name": "Resource",
     "src": "resources/js/pages/management/operations/Resource.vue",
     "isDynamicEntry": true,
@@ -216,7 +216,7 @@
     ]
   },
   "resources/js/pages/management/services/Requests.vue": {
-    "file": "assets/Requests-K-TUxCT4.js",
+    "file": "assets/Requests-BzU22_rt.js",
     "name": "Requests",
     "src": "resources/js/pages/management/services/Requests.vue",
     "isDynamicEntry": true,
@@ -235,7 +235,7 @@
     ]
   },
   "resources/js/pages/management/support/Tickets.vue": {
-    "file": "assets/Tickets-XqiKkFT5.js",
+    "file": "assets/Tickets-BmKrzH2_.js",
     "name": "Tickets",
     "src": "resources/js/pages/management/support/Tickets.vue",
     "isDynamicEntry": true,

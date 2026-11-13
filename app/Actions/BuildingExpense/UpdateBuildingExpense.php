@@ -40,7 +40,7 @@ class UpdateBuildingExpense
 
             $model->update($data);
 
-            $this->rules->synchronize($model->refresh(), isset($data['payment_status']));
+            $this->rules->synchronize($model->refresh(), $model->financial_category_id !== null || isset($data['payment_status']));
 
             return $model->refresh();
         });

@@ -55,7 +55,7 @@ final class FinanceWorkspacePageController extends Controller
         $scopeIds = $buildings->pluck('id');
         $lookups = [];
         $blocks = collect();
-        if (in_array($resource, ['expenses', 'incomes'], true)) {
+        if ($resource === 'incomes') {
             $lookups['fund_id'] = Fund::query()->whereIn('building_id', $scopeIds)->orderBy('title')->get()
                 ->map(fn ($fund): array => ['value' => $fund->id, 'label' => $fund->title, 'building_id' => $fund->building_id])->values();
             $lookups['financial_category_id'] = FinancialCategory::query()->where(fn ($query) => $query->whereIn('building_id', $scopeIds)->orWhereNull('building_id'))

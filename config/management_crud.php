@@ -2499,7 +2499,7 @@ return [
         'permission_scope' => 'any',
             'group' => 'finance',
             'title' => 'هزینه‌های ساختمان',
-            'description' => 'ثبت هزینه ساختمان بر اساس فرمول شارژ و مشخص‌کردن وضعیت پرداخت',
+            'description' => 'ثبت هزینه ساختمان بر اساس فرمول شارژ و مسئول پرداخت',
             'list' => [
                 'method' => 'GET',
                 'url' => '/api/v1/expenses?per_page=100'
@@ -2567,13 +2567,6 @@ return [
                     'help' => 'اگر خالی بماند، هزینه بین تمام واحدهای ساختمان تقسیم می‌شود.'
                 ],
                 [
-                    'name' => 'fund_id',
-                    'label' => 'صندوق',
-                    'type' => 'select',
-                    'lookup' => 'funds',
-                    'depends_on' => 'building_id'
-                ],
-                [
                     'name' => 'financial_category_id',
                     'label' => 'زیر دسته هزینه',
                     'type' => 'select',
@@ -2608,10 +2601,6 @@ return [
                         [
                             'value' => 'owner',
                             'label' => 'مالک'
-                        ],
-                        [
-                            'value' => 'unit',
-                            'label' => 'کیف پول واحد (مالک یا ساکن)'
                         ]
                     ],
                     'help' => 'برای واحد بدون ساکن فعال، هزینه ساکن به مالک اصلی همان واحد تخصیص داده می‌شود.'
@@ -2626,17 +2615,6 @@ return [
                     'name' => 'invoice_number',
                     'label' => 'شماره فاکتور',
                     'type' => 'text'
-                ],
-                [
-                    'name' => 'payment_status',
-                    'label' => 'وضعیت پرداخت',
-                    'type' => 'select',
-                    'required' => true,
-                    'options' => [
-                        ['value' => 'paid', 'label' => 'پرداخت‌شده'],
-                        ['value' => 'unpaid', 'label' => 'پرداخت‌نشده'],
-                    ],
-                    'help' => 'وضعیت پرداخت هزینه به تأمین‌کننده؛ هر دو وضعیت در محاسبه شارژ لحاظ می‌شوند.',
                 ],
                 [
                     'name' => 'description',

@@ -23,7 +23,7 @@ class CreateBuildingExpense
         return DB::transaction(function () use ($data, $actor): BuildingExpense {
             Building::query()->whereKey($data['building_id'])->lockForUpdate()->firstOrFail();
 
-            $status = $data['status'] ?? (isset($data['payment_status']) ? 'posted' : 'draft');
+            $status = $data['status'] ?? (isset($data['financial_category_id']) || isset($data['payment_status']) ? 'posted' : 'draft');
             $data['status'] = $status;
 
             $expense = BuildingExpense::query()->create([
@@ -38,7 +38,7 @@ class CreateBuildingExpense
                 'posted_at' => $status === 'posted' ? now() : null,
             ]);
 
-            $this->rules->synchronize($expense, isset($data['payment_status']));
+            $this->rules->synchronize($expense, $expense->financial_category_id !== null || isset($data['payment_status']));
 
             return $expense->refresh();
         });
