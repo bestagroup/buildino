@@ -689,7 +689,7 @@ Route::prefix('v1')
             [FinancialTransactionController::class, 'store']
         );
 
-        Route::apiResource('expense-categories', \App\Http\Controllers\Api\V1\ExpenseCategoryController::class)->only(['index', 'store']);
+        Route::apiResource('expense-categories', \App\Http\Controllers\Api\V1\ExpenseCategoryController::class)->only(['index', 'store', 'update']);
 
         Route::apiResources([
             'expenses' => BuildingExpenseController::class,

@@ -69,12 +69,17 @@ final class FinanceWorkspacePageController extends Controller
                 ->where('is_active', true)
                 ->where('calculation_type', '!=', 'fixed')
                 ->has('chargeItems', '=', 1)
-                ->with('chargeItems')
+                ->with('chargeItems.financialCategory.parent')
                 ->orderBy('title')->get()
-                ->filter(fn (ChargeFormula $formula) => $formula->chargeItems->first()?->financial_category_id)
+                ->filter(function (ChargeFormula $formula): bool {
+                    $category = $formula->chargeItems->first()?->financialCategory;
+                    return $category && $category->building_id === $formula->building_id && $category->is_active && $category->parent?->is_active;
+                })
                 ->map(fn (ChargeFormula $formula): array => [
                     'value' => $formula->chargeItems->first()->financial_category_id,
-                    'label' => $formula->title,
+                    'label' => $formula->chargeItems->first()->financialCategory->title,
+                    'parent_id' => $formula->chargeItems->first()->financialCategory->parent_id,
+                    'parent_title' => $formula->chargeItems->first()->financialCategory->parent->title,
                     'building_id' => $formula->building_id,
                 ])->values();
             $blocks = Block::query()->whereIn('building_id', $scopeIds)->orderBy('sort_order')->get()->map(function (Block $block) use ($user, $permissions): array {
@@ -83,6 +88,12 @@ final class FinanceWorkspacePageController extends Controller
                 return ['value' => $block->id, 'label' => $block->title, 'building_id' => $block->building_id, 'abilities' => $abilities];
             })->values();
             $lookups['block_id'] = $blocks;
+        }
+        if ($resource === 'expense-categories') {
+            $lookups['parent_id'] = FinancialCategory::whereIn('building_id', $scopeIds)->where('type', 'expense')
+                ->whereNull('parent_id')->orderBy('title')->get()->map(fn ($category) => [
+                    'value' => $category->id, 'label' => $category->title, 'building_id' => $category->building_id,
+                ])->values();
         }
         if ($resource === 'wallet-payouts') {
             $lookups['building_bank_account_id'] = BuildingBankAccount::query()->whereIn('building_id', $scopeIds)->where('is_verified', true)->where('is_active', true)->get()

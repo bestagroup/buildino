@@ -117,6 +117,7 @@ class ChargeFormulaController extends Controller
                     ? collect($data['items'])->pluck('financial_category_id')
                     : $chargeFormula->chargeItems()->pluck('financial_category_id');
                 foreach ($categoryIds->filter()->unique() as $categoryId) {
+                    app(\App\Services\Finance\ExpenseCategoryService::class)->requireUsable($building->id, (int) $categoryId);
                     $this->validateUniqueCategory($building, (int) $categoryId, $chargeFormula);
                 }
             }
@@ -190,20 +191,8 @@ class ChargeFormulaController extends Controller
             return;
         }
 
-        $count = FinancialCategory::query()
-            ->whereIn('id',$ids)
-            ->where('type', 'expense')
-            ->where(function ($query) use ($building): void {
-                $query
-                    ->whereNull('building_id')
-                    ->orWhere('building_id',$building->id);
-            })
-            ->count();
-
-        if ($count !== $ids->count()) {
-            throw ValidationException::withMessages([
-                'items'=>'Charge formula categories must be expense categories that are global or belong to the selected building.',
-            ]);
+        foreach ($ids as $id) {
+            app(\App\Services\Finance\ExpenseCategoryService::class)->requireUsable($building->id, $id);
         }
     }
 }

@@ -18,7 +18,7 @@ export interface InvoiceWorkspace {
     chargeTabs?: string[];
     groups: { title: string; resources: string[] }[];
     prefix: string; actionPermissions: Record<string, string>;
-    lookups: Record<string, { value: number; label: string; building_id: number | null; abilities?: Record<string, boolean> }[]>;
+    lookups: Record<string, { value: number; label: string; building_id: number | null; parent_id?: number; parent_title?: string; abilities?: Record<string, boolean> }[]>;
     blocks: { value: number; label: string; building_id: number; abilities: Record<string, boolean> }[];
     initial: { building_id?: string; unit_id?: string; unit_invoice_id?: string; charge_period_id?: string };
 }

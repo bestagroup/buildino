@@ -71,6 +71,9 @@ final class BuildingExpenseRuleService
 
     public function synchronize(BuildingExpense $expense, bool $requireFormula = false): BuildingExpenseAllocationRule
     {
+        if ($expense->financial_category_id) {
+            app(\App\Services\Finance\ExpenseCategoryService::class)->requireUsable($expense->building_id, $expense->financial_category_id);
+        }
         if ($requireFormula || $expense->payment_status !== null) {
             if (! $expense->financial_category_id) {
                 throw ValidationException::withMessages([
@@ -110,16 +113,8 @@ final class BuildingExpenseRuleService
         }
 
         if (! $expense->financial_category_id) {
-            $category = FinancialCategory::query()->firstOrCreate(
-                [
-                    'building_id' => $expense->building_id,
-                    'title' => 'هزینه‌های عمومی',
-                    'type' => FinancialCategoryType::Expense->value,
-                ],
-                [
-                    'is_active' => true,
-                ]
-            );
+            $category = FinancialCategory::where('building_id', $expense->building_id)->where('default_key', 'general.2')->firstOrFail();
+            app(\App\Services\Finance\ExpenseCategoryService::class)->requireUsable($expense->building_id, $category->id);
 
             $expense->update([
                 'financial_category_id' => $category->getKey(),

@@ -131,7 +131,7 @@ class ManagementLookupController extends Controller
                     ->map(
                         fn (Block $item): array => [
                             'id' => $item->id,
-                            'label' => $item->title,
+                            'label' => $item->parent?->title.' / '.$item->title,
                             'building_id' =>
                                 $item->building_id,
                         ]
@@ -172,7 +172,7 @@ class ManagementLookupController extends Controller
                     ->map(
                         fn (Block $item): array => [
                             'id' => $item->id,
-                            'label' => $item->title,
+                            'label' => $item->parent?->title.' / '.$item->title,
                             'building_id' => $item->building_id,
                         ]
                     )
@@ -417,10 +417,13 @@ class ManagementLookupController extends Controller
                     ->where('is_active', true)
                     ->where('calculation_type', '!=', 'fixed')
                     ->has('chargeItems', '=', 1)
-                    ->with('chargeItems')
+                    ->with('chargeItems.financialCategory.parent')
                     ->orderBy('title')
                     ->get()
-                    ->filter(fn (ChargeFormula $formula) => $formula->chargeItems->first()?->financial_category_id)
+                    ->filter(function (ChargeFormula $formula): bool {
+                        $category = $formula->chargeItems->first()?->financialCategory;
+                        return $category && $category->building_id === $formula->building_id && $category->is_active && $category->parent?->is_active;
+                    })
                     ->map(fn (ChargeFormula $formula): array => [
                         'id' => $formula->chargeItems->first()->financial_category_id,
                         'label' => $formula->title,
@@ -429,18 +432,19 @@ class ManagementLookupController extends Controller
 
             'expense_categories' =>
                 $this->financialCategoryQuery($request, $buildingIds->all())
-                    ->where('type', 'expense')
-                    ->where('is_active', true)
+                    ->usableExpense()
+                    ->with('parent:id,title')
                     ->orderBy('title')
                     ->get([
                         'id',
                         'building_id',
                         'title',
+                        'parent_id',
                     ])
                     ->map(
                         fn (FinancialCategory $item): array => [
                             'id' => $item->id,
-                            'label' => $item->title,
+                            'label' => $item->parent?->title.' / '.$item->title,
                             'building_id' => $item->building_id,
                         ]
                     ),
@@ -470,7 +474,7 @@ class ManagementLookupController extends Controller
                     ->map(
                         fn (Fund $item): array => [
                             'id' => $item->id,
-                            'label' => $item->title,
+                            'label' => $item->parent?->title.' / '.$item->title,
                             'building_id' =>
                                 $item->building_id,
                         ]
@@ -622,7 +626,7 @@ class ManagementLookupController extends Controller
 
         return FinancialCategory::query()->where(function (Builder $query) use ($buildingIds): void {
             $query->whereIn('building_id', $buildingIds);
-            if ($buildingIds !== []) $query->orWhereNull('building_id');
+            if ($buildingIds !== []) $query->orWhere(fn ($q) => $q->whereNull('building_id')->where('type', '!=', 'expense'));
         });
     }
 

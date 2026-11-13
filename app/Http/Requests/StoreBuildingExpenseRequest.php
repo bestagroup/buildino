@@ -24,7 +24,7 @@ class StoreBuildingExpenseRequest extends FormRequest
             'building_id' => 'required|integer|exists:buildings,id',
             'block_id' => 'nullable|integer|exists:blocks,id',
             'fund_id' => 'nullable|integer|exists:funds,id',
-            'financial_category_id' => 'nullable|integer|exists:financial_categories,id',
+            'financial_category_id' => 'required|integer|exists:financial_categories,id',
             'allocation_method' => ['sometimes', Rule::enum(ExpenseAllocationMethod::class)],
             'allocation_configuration' => 'nullable|array',
             'payer_responsibility' => ['sometimes', Rule::enum(ExpensePayerResponsibility::class)],

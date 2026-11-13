@@ -38,6 +38,7 @@ class AppServiceProvider extends ServiceProvider
         Unit::observe(ProvisionWalletObserver::class);
         Building::observe(ProvisionWalletObserver::class);
         Building::observe(ProvisionSubscriptionObserver::class);
+        Building::observe(\App\Observers\ProvisionExpenseCategoriesObserver::class);
 
         ResetPasswordNotification::createUrlUsing(
             function (User $user, string $token): string {

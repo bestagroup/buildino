@@ -30,7 +30,7 @@ class UpdateBuildingExpenseRequest extends FormRequest
             ],
             'block_id' => 'sometimes|nullable|integer|exists:blocks,id',
             'fund_id' => 'sometimes|nullable|integer|exists:funds,id',
-            'financial_category_id' => 'sometimes|nullable|integer|exists:financial_categories,id',
+            'financial_category_id' => 'sometimes|required|integer|exists:financial_categories,id',
             'allocation_method' => ['sometimes', Rule::enum(ExpenseAllocationMethod::class)],
             'allocation_configuration' => 'sometimes|nullable|array',
             'payer_responsibility' => ['sometimes', Rule::enum(ExpensePayerResponsibility::class)],

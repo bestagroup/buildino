@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleMatrixSeeder::class,
             SubscriptionCatalogSeeder::class,
+            ExpenseCategorySeeder::class,
         ]);
     }
 }

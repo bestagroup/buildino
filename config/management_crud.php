@@ -2476,18 +2476,22 @@ return [
         'expense-categories' => [
             'permission' => 'charge-formulas.view',
             'permission_scope' => 'any',
-            'operation_permissions' => ['create' => 'charge-formulas.create'],
+            'operation_permissions' => ['create' => 'charge-formulas.create', 'update' => 'charge-formulas.update'],
             'group' => 'finance',
             'title' => 'دسته‌های هزینه',
-            'description' => 'ایجاد دسته هزینه عمومی و مشترک برای استفاده در فرمول شارژ تمام ساختمان‌ها',
+            'description' => 'مدیریت دسته اصلی و زیر دسته هزینه مخصوص ساختمان انتخاب‌شده',
             'list' => ['method' => 'GET', 'url' => '/api/v1/expense-categories?per_page=100'],
             'create' => ['method' => 'POST', 'url' => '/api/v1/expense-categories'],
+            'update' => ['method' => 'PATCH', 'url' => '/api/v1/expense-categories/{id}'],
             'columns' => [
                 ['key' => 'title', 'label' => 'عنوان دسته هزینه'],
+                ['key' => 'parent.title', 'label' => 'دسته اصلی'],
                 ['key' => 'is_active', 'label' => 'وضعیت'],
             ],
             'fields' => [
-                ['name' => 'title', 'label' => 'عنوان دسته هزینه', 'type' => 'text', 'required' => true, 'placeholder' => 'مانند آب، گاز یا نگهداری آسانسور'],
+                ['name' => 'parent_id', 'label' => 'دسته اصلی', 'type' => 'select', 'readonly_on_edit' => true, 'help' => 'برای ایجاد دسته اصلی خالی بگذارید؛ برای زیر دسته، یک دسته اصلی انتخاب کنید.'],
+                ['name' => 'title', 'label' => 'عنوان دسته هزینه', 'type' => 'text', 'required' => true],
+                ['name' => 'is_active', 'label' => 'فعال', 'type' => 'checkbox', 'default' => true],
             ],
         ],
         'expenses' => [
@@ -2571,7 +2575,7 @@ return [
                 ],
                 [
                     'name' => 'financial_category_id',
-                    'label' => 'فرمول شارژ',
+                    'label' => 'زیر دسته هزینه',
                     'type' => 'select',
                     'lookup' => 'expense_formulas',
                     'required' => true,
