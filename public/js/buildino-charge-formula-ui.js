@@ -34,7 +34,30 @@
             const retry = make('button', 'crud-button crud-button--soft', 'دریافت دوباره دسته‌ها'); retry.type = 'button';
             const changeBuilding = make('button', 'crud-button crud-button--soft', 'تغییر ساختمان'); changeBuilding.type = 'button';
             const categoryActions = make('div', 'charge-wizard__empty-actions'); categoryActions.append(retry, changeBuilding);
-            panels[0].append(categoryField, categoryState, categoryActions);
+            const parentField = make('label', 'crud-field'), parentSelect = make('select');
+            parentSelect.dataset.formulaParent = ''; parentSelect.dataset.select2 = 'off';
+            parentSelect.setAttribute('aria-label', 'دسته اصلی');
+            parentField.append(make('span', '', 'دسته اصلی'), parentSelect);
+            category.setAttribute('aria-label', 'زیر دسته');
+            const categoryLabel = categoryField.querySelector('span'); if (categoryLabel) categoryLabel.textContent = 'زیر دسته';
+            let allCategories = [];
+            const filterChildren = (selected = '') => {
+                category.replaceChildren(new Option('انتخاب زیر دسته', ''));
+                allCategories.filter(option => option.dataset.parentId === parentSelect.value).forEach(option => category.append(option.cloneNode(true)));
+                category.value = selected; category.disabled = !parentSelect.value;
+            };
+            const refreshParents = () => {
+                const selected = category.value;
+                allCategories = [...category.options].filter(option => option.value).map(option => option.cloneNode(true));
+                parentSelect.replaceChildren(new Option('انتخاب دسته اصلی', ''));
+                const parents = new Map(allCategories.filter(option => option.dataset.parentId).map(option => [option.dataset.parentId, option.dataset.parentTitle]));
+                parents.forEach((title, id) => parentSelect.append(new Option(title, id)));
+                parentSelect.value = allCategories.find(option => option.value === selected)?.dataset.parentId || '';
+                filterChildren(selected);
+            };
+            refreshParents();
+            parentSelect.addEventListener('change', () => { filterChildren(); dirty = true; categoryStatus(); }, { signal: abort.signal });
+            panels[0].append(parentField, categoryField, categoryState, categoryActions);
             const methods = $('.crud-formula-methods');
             methods.setAttribute('role', 'radiogroup'); methods.setAttribute('aria-label', 'روش تقسیم هزینه بین واحدها');
             if (!row) methods.querySelectorAll('input').forEach(input => input.checked = false);
@@ -51,7 +74,7 @@
             const method = () => $('[data-formula-method]:checked');
             const isActive = () => activeInput?.checked ?? row?.is_active ?? true;
             const clearError = () => { error.hidden = true; error.textContent = ''; component.querySelectorAll('[aria-invalid="true"]').forEach(el => { el.removeAttribute('aria-invalid'); const ids = (el.getAttribute('aria-describedby') || '').split(/\s+/).filter(id => id && id !== error.id); if (ids.length) el.setAttribute('aria-describedby', ids.join(' ')); else el.removeAttribute('aria-describedby'); }); };
-            const categoryAvailable = () => [...category.options].some(option => option.value);
+            const categoryAvailable = () => allCategories.length > 0;
             const categoryStatus = () => {
                 const available = categoryAvailable(), failed = [...category.options].some(option => option.textContent.includes('خطا در دریافت'));
                 categoryField.hidden = !available;
@@ -158,7 +181,7 @@
             add.addEventListener('click', () => { if (!busy) { dirty = true; addFloor().querySelector('input').focus(); } });
             retry.addEventListener('click', async () => {
                 if (busy || loadingCategories) return; loadingCategories = true; sync(); retry.textContent = 'در حال دریافت…';
-                try { await reloadCategories(); } finally { loadingCategories = false; if (!disposed) { retry.textContent = 'دریافت دوباره دسته‌ها'; categoryStatus(); } }
+                try { await reloadCategories(); refreshParents(); } finally { loadingCategories = false; if (!disposed) { retry.textContent = 'دریافت دوباره دسته‌ها'; categoryStatus(); } }
             });
             changeBuilding.addEventListener('click', () => {
                 if (busy) return;

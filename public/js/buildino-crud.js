@@ -956,6 +956,7 @@
 
                 option.value =
                     item.id;
+                if (item.parent_id != null) { option.dataset.parentId = String(item.parent_id); option.dataset.parentTitle = item.parent_title || ''; }
                 option.textContent =
                     item.label
                     ?? item.title

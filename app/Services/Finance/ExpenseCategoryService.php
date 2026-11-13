@@ -26,7 +26,7 @@ final class ExpenseCategoryService
             foreach (config('expense_categories') as $key => [$title, $children]) {
                 $parent = $this->default($building->id, null, $key, $title);
                 foreach ($children as $index => $child) {
-                    $this->default($building->id, $parent->id, $key.'.'.($index + 1), $child);
+                    $this->default($building->id, $parent->id, is_int($index) ? $key.'.'.($index + 1) : $index, $child);
                 }
             }
         }, 3);

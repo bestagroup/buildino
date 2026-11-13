@@ -131,7 +131,9 @@ class ManagementLookupController extends Controller
                     ->map(
                         fn (Block $item): array => [
                             'id' => $item->id,
-                            'label' => $item->parent?->title.' / '.$item->title,
+                            'label' => $item->title,
+                            'parent_id' => $item->parent_id,
+                            'parent_title' => $item->parent?->title,
                             'building_id' =>
                                 $item->building_id,
                         ]
@@ -172,7 +174,9 @@ class ManagementLookupController extends Controller
                     ->map(
                         fn (Block $item): array => [
                             'id' => $item->id,
-                            'label' => $item->parent?->title.' / '.$item->title,
+                            'label' => $item->title,
+                            'parent_id' => $item->parent_id,
+                            'parent_title' => $item->parent?->title,
                             'building_id' => $item->building_id,
                         ]
                     )
@@ -444,7 +448,9 @@ class ManagementLookupController extends Controller
                     ->map(
                         fn (FinancialCategory $item): array => [
                             'id' => $item->id,
-                            'label' => $item->parent?->title.' / '.$item->title,
+                            'label' => $item->title,
+                            'parent_id' => $item->parent_id,
+                            'parent_title' => $item->parent?->title,
                             'building_id' => $item->building_id,
                         ]
                     ),
@@ -474,7 +480,9 @@ class ManagementLookupController extends Controller
                     ->map(
                         fn (Fund $item): array => [
                             'id' => $item->id,
-                            'label' => $item->parent?->title.' / '.$item->title,
+                            'label' => $item->title,
+                            'parent_id' => $item->parent_id,
+                            'parent_title' => $item->parent?->title,
                             'building_id' =>
                                 $item->building_id,
                         ]

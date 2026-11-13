@@ -17,8 +17,8 @@ final class ExpenseCategoryHierarchyTest extends TestCase
         $a = $this->createBuildingGraph()['building'];
         $b = $this->createBuildingGraph()['building'];
         $service = app(ExpenseCategoryService::class);
-        $this->assertSame(11, $a->financialCategories()->whereNull('parent_id')->count());
-        $expected = 11 + collect(config('expense_categories'))->sum(fn ($group) => count($group[1]));
+        $this->assertSame(7, $a->financialCategories()->whereNull('parent_id')->count());
+        $expected = 7 + collect(config('expense_categories'))->sum(fn ($group) => count($group[1]));
         $this->assertSame($expected, $a->financialCategories()->count());
         $root = $a->financialCategories()->where('default_key', 'general')->firstOrFail();
         $service->save($a, ['title' => 'عنوان ویرایش شده', 'parent_id' => null, 'is_active' => false], $root);
@@ -26,7 +26,7 @@ final class ExpenseCategoryHierarchyTest extends TestCase
         $this->assertSame($expected, $a->financialCategories()->count());
         $this->assertFalse($root->fresh()->is_active);
         $this->assertSame('عنوان ویرایش شده', $root->fresh()->title);
-        $this->assertSame('عمومی و شارژ', $b->financialCategories()->where('default_key', 'general')->value('title'));
+        $this->assertSame('مدیریت، مالی و امور عمومی', $b->financialCategories()->where('default_key', 'general')->value('title'));
         $this->assertSame(0, FinancialCategory::usableExpense($a->id)->where('parent_id', $root->id)->count());
     }
 
