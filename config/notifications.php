@@ -60,7 +60,7 @@ return [
             'parameters' => ['param1'],
         ]],
         'unit' => ['invitation' => [
-            'template' => env('SMS_TEMPLATE_UNIT_INVITATION', 'BuildinoInvitation'),
+            'template' => env('SMS_TEMPLATE_UNIT_INVITATION', 'buildinoinvitation'),
             'parameters' => ['param1', 'param2', 'param3'],
         ]],
     ],
