@@ -16,6 +16,11 @@
     const visibleField = key => { const el = field(key); return el.type === 'hidden' ? el.previousElementSibling : el; };
     const value = key => field(key).value.trim();
     const refresh = select => window.BuildinoSelect2?.refresh(select);
+    const monthNames = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+    const selectedMonths = new Set();
+    let templateKey = '', batchTicket = 0, batchTimer = null, batchPreviewKey = '';
+    const months = () => [...selectedMonths].sort((a, b) => a - b);
+    const batchData = () => ({ year: Number(value('year')), months: months(), ...Object.fromEntries(['period_start', 'period_end', 'due_date'].map(key => [key, value(key)])) });
     let review = null;
     let records = [], selected = null, detailId = null, editingId = null, returnView = 'directory', action = null;
     let page = 1, lastPage = 1, total = 0, listTicket = 0, detailTicket = 0, busy = false, loadingList = false, loadingDetail = false, dirty = false;
@@ -65,7 +70,7 @@
         $('issue').hidden = !canIssue();
         $('invoice-link').hidden = !building()?.canViewInvoices || !['issued', 'closed'].includes(selected?.status);
         $('detail').setAttribute('aria-busy', String(loadingDetail || busy));
-        $('save').textContent = busy ? 'در حال ذخیره…' : editingId ? 'ذخیره تغییرات دوره' : 'ذخیره دوره و ادامه';
+        $('save').textContent = busy ? 'در حال ذخیره…' : editingId ? 'ذخیره تغییرات دوره' : `ذخیره ${number(selectedMonths.size)} دوره انتخاب‌شده`;
         $('action-submit').textContent = busy ? 'در حال اجرا…' : action === 'issue' ? 'تأیید و صدور صورتحساب‌ها' : 'تأیید و محاسبه';
         $('action-submit').disabled = busy || (action === 'calculate' && (!review || review.errors.length > 0));
     };
@@ -151,19 +156,71 @@
         el.value = field(key).type === 'hidden' ? window.BuildinoJalaliDatepicker.serverToJalali(dateValue, 'date') : dateValue || '';
         el.dispatchEvent(new Event('input', { bubbles: true }));
     };
+    const previewBatch = async () => {
+        const data = batchData(), key = JSON.stringify(data), ticket = ++batchTicket;
+        batchPreviewKey = '';
+        const target = $('batch-preview'); target.replaceChildren();
+        if (editingId || !data.months.length || !data.period_start || !data.period_end || !data.due_date) return false;
+        target.append(node('p', '', 'در حال بررسی تاریخ‌های دوره‌ها…'));
+        try {
+            const result = await request(`/api/v1/buildings/${buildingSelect.value}/charge-periods/batch-preview`, { method: 'POST', body: key });
+            if (ticket !== batchTicket || editingId || key !== JSON.stringify(batchData())) return false;
+            target.replaceChildren(node('h4', '', 'دوره‌هایی که ذخیره خواهند شد'));
+            const wrapper = node('div', 'period-preview-table'), table = node('table'), head = node('thead'), body = node('tbody'), header = node('tr');
+            ['دوره', 'شروع', 'پایان', 'سررسید پرداخت'].forEach(text => { const cell = node('th', '', text); cell.scope = 'col'; header.append(cell); });
+            head.append(header);
+            for (const row of result.data) { const tr = node('tr'); [row.title, date(row.period_start), date(row.period_end), date(row.due_date)].forEach(text => tr.append(node('td', '', text))); body.append(tr); }
+            table.append(head, body); wrapper.append(table); target.append(wrapper); batchPreviewKey = key;
+            return true;
+        } catch (error) {
+            if (ticket === batchTicket) target.replaceChildren(node('p', 'ownership-alert ownership-alert--error', Object.values(error.errors || {}).flat().join('؛ ') || error.message || 'بررسی دوره‌ها انجام نشد.'));
+            return false;
+        }
+    };
+    const scheduleBatchPreview = () => {
+        clearTimeout(batchTimer); batchTicket++; batchPreviewKey = '';
+        if (!editingId && !$('editor').hidden) batchTimer = setTimeout(previewBatch, 300);
+    };
+    const syncMonths = () => {
+        const chosen = months(), year = Number(value('year')), first = chosen[0], key = first ? `${year}/${first}` : '';
+        $('months').querySelectorAll('button').forEach(button => {
+            const month = Number(button.dataset.month), checked = selectedMonths.has(month);
+            button.setAttribute('aria-pressed', String(checked));
+            button.textContent = (checked ? '✓ ' : '') + monthNames[month - 1];
+        });
+        $('template-hint').textContent = first ? `تاریخ شروع و پایان را برای ${monthNames[first - 1]} ${number(year)} وارد کنید؛ الگو به سایر ماه‌های انتخاب‌شده منتقل می‌شود. پایان ماه و اسفند کبیسه خودکار تنظیم می‌شوند.` : 'حداقل یک ماه را انتخاب کنید.';
+        if (key && key !== templateKey) {
+            const calendar = window.BuildinoJalaliDatepicker;
+            const convert = (y, m, d) => calendar.jalaliToServer(`${y}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`, 'date');
+            setDate('period_start', convert(year, first, 1));
+            setDate('period_end', convert(year, first, 31) || convert(year, first, 30) || convert(year, first, 29));
+            setDate('due_date', convert(first === 12 ? year + 1 : year, first === 12 ? 1 : first + 1, 5));
+        }
+        templateKey = key; scheduleBatchPreview(); sync();
+    };
+    monthNames.forEach((name, index) => {
+        const button = node('button', 'period-month', name); button.type = 'button'; button.dataset.month = String(index + 1); button.setAttribute('aria-pressed', 'false');
+        button.addEventListener('click', () => { if (busy) return; const month = index + 1; selectedMonths.has(month) ? selectedMonths.delete(month) : selectedMonths.add(month); dirty = true; syncMonths(); });
+        $('months').append(button);
+    });
+    field('year').addEventListener('change', syncMonths);
     const openEditor = record => {
         if (busy || (record ? !building()?.canUpdate || record.status !== 'draft' : !building()?.canCreate)) return;
         ++detailTicket; loadingDetail = false; editingId = record?.id || null; returnView = record ? 'detail' : 'directory';
+        clearTimeout(batchTimer); batchTicket++; batchPreviewKey = ''; templateKey = ''; selectedMonths.clear();
+        $('batch-preview').replaceChildren(); $('batch').hidden = Boolean(record); $('batch-preview').hidden = Boolean(record); $('title-wrap').hidden = !record;
         form.reset(); window.BuildinoJalaliDatepicker?.enhance(form); clearFieldErrors(); message('', '');
         field('title').value = record?.title || '';
         for (const key of ['period_start', 'period_end', 'due_date']) setDate(key, record?.[key] || '');
+        if (!record) field('year').value = String(Math.min(1410, Math.max(1404, Number(new Intl.DateTimeFormat('en-u-ca-persian', { year: 'numeric' }).format(new Date()).match(/\d+/)?.[0]) || 1404)));
         dirty = false; $('editor-title').textContent = record ? 'ویرایش دوره پیش‌نویس' : 'تعریف دوره جدید';
-        $('editor-context').textContent = building()?.title || ''; showView('editor'); sync(); field('title').focus();
+        $('editor-context').textContent = building()?.title || ''; showView('editor'); if (!record) syncMonths(); sync(); (record ? field('title') : field('year')).focus();
     };
     const validForm = () => {
         clearFieldErrors();
         let first;
-        for (const key of ['title', 'period_start', 'period_end', 'due_date']) {
+        if (!editingId && !selectedMonths.size) { message('error', 'حداقل یک ماه را برای ایجاد دوره انتخاب کنید.'); $('months').querySelector('button').focus(); return false; }
+        for (const key of [...(editingId ? ['title'] : ['year']), 'period_start', 'period_end', 'due_date']) {
             const el = visibleField(key);
             if (!value(key) || !el.checkValidity()) { showFieldError(key, key === 'title' ? 'عنوان دوره را وارد کنید (حداکثر ۲۵۵ حرف).' : 'تاریخ معتبر را از تقویم انتخاب کنید.'); first ||= el; }
         }
@@ -171,19 +228,23 @@
         if (!first && value('due_date') < value('period_end')) { showFieldError('due_date', 'سررسید پرداخت باید هم‌زمان با پایان دوره یا پس از آن باشد.'); first = visibleField('due_date'); }
         first?.focus(); return !first;
     };
-    form.addEventListener('input', () => { dirty = true; });
-    form.addEventListener('change', () => { dirty = true; });
+    form.addEventListener('input', () => { dirty = true; scheduleBatchPreview(); });
+    form.addEventListener('change', () => { dirty = true; scheduleBatchPreview(); });
     form.addEventListener('submit', async event => {
         event.preventDefault();
         if (busy || !(editingId ? building()?.canUpdate && selected?.status === 'draft' : building()?.canCreate) || !validForm()) return;
         window.jalaliDatepicker?.hide();
         busy = true; sync(); message('', '');
         try {
-            const payload = await request(editingId ? `/api/v1/charge-periods/${editingId}` : `/api/v1/buildings/${buildingSelect.value}/charge-periods`, {
-                method: editingId ? 'PATCH' : 'POST', body: JSON.stringify(Object.fromEntries(['title', 'period_start', 'period_end', 'due_date'].map(key => [key, value(key)]))),
+            clearTimeout(batchTimer);
+            const data = editingId ? Object.fromEntries(['title', 'period_start', 'period_end', 'due_date'].map(key => [key, value(key)])) : batchData();
+            if (!editingId && batchPreviewKey !== JSON.stringify(data) && !await previewBatch()) return;
+            const payload = await request(editingId ? `/api/v1/charge-periods/${editingId}` : `/api/v1/buildings/${buildingSelect.value}/charge-periods/batch`, {
+                method: editingId ? 'PATCH' : 'POST', body: JSON.stringify(data),
             });
-            dirty = false; message('success', editingId ? 'تغییرات دوره ذخیره شد.' : 'دوره به‌صورت پیش‌نویس ثبت شد؛ اکنون می‌توانید محاسبه شارژ را انجام دهید.');
-            await openDetail(payload.data.id, true);
+            dirty = false;
+            if (editingId) { message('success', 'تغییرات دوره ذخیره شد.'); await openDetail(payload.data.id, true); }
+            else { message('success', `${number(payload.data.length)} دوره به‌صورت یکجا ثبت شد؛ محاسبه و صدور هر دوره جداگانه انجام می‌شود.`); showView('directory'); await loadList(1); }
         } catch (error) { report(error, true); }
         finally { busy = false; sync(); }
     });
@@ -263,6 +324,7 @@
     $('resume').addEventListener('click', () => { if (!busy && building()) { showView('directory'); loadList(); } });
     buildingSelect.addEventListener('change', () => {
         if (busy) return;
+        clearTimeout(batchTimer); batchTicket++; batchPreviewKey = '';
         ++listTicket; ++detailTicket; selected = null; records = []; loadingDetail = false; loadingList = false; page = 1; dirty = false;
         $('search').value = ''; $('filter').value = ''; refresh($('filter')); message('', '');
         $('building-label').textContent = building()?.title || ''; showView(building() ? 'directory' : 'location'); sync();

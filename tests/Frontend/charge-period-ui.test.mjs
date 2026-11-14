@@ -9,15 +9,16 @@ import { buildSync } from 'esbuild';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const chrome = process.env.CHROME_BIN || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
-test('charge periods: Jalali dates, validation, permission/state actions, confirmation, recovery and stale reads', { skip: !existsSync(chrome) }, () => {
+test('charge periods: Jalali dates, validation, permission/state actions, confirmation, recovery and stale reads', { skip: !existsSync(chrome) && !process.env.JSDOM_MODULE }, async () => {
     const directory = mkdtempSync(join(tmpdir(), 'buildino-periods-'));
     try {
         buildSync({ entryPoints: [join(project, 'resources/js/buildino-jalali-datepicker.js')], bundle: true, outfile: join(directory, 'picker.js'), loader: { '.css': 'empty' } });
         const view = readFileSync(join(project, 'resources/views/management/charge-periods.blade.php'), 'utf8');
         const markup = view.slice(view.indexOf('<div class="ownership-page'), view.indexOf('@endsection'))
             .replace(/@foreach[^]*?@endforeach/, '<option value="4">ساختمان آزمایشی</option><option value="5">ساختمان مشاهده</option>')
+            .replace(/@for\([^]*?@endfor/g, Array.from({length:7}, (_,i) => '<option value="'+(1404+i)+'">'+(1404+i)+'</option>').join(''))
             .replace(/@if[^]*?@endif/g, '').replace(/@include\([^]*?\)/g, '◇').replace(/\{\{[^]*?\}\}/g, '#');
-        assert.doesNotMatch(markup, /@foreach|@if|\{\{/);
+        assert.doesNotMatch(markup, /@for|@if|\{\{/);
         const source = readFileSync(join(project, 'public/js/buildino-charge-periods.js'), 'utf8');
         const asset = name => pathToFileURL(join(project, 'public', name)).href;
         const screenshot = process.env.PERIOD_SCREENSHOT;
@@ -40,6 +41,7 @@ test('charge periods: Jalali dates, validation, permission/state actions, confir
         ] };
         window.BuildinoCoreFlows = { request: async (raw, options = {}) => {
             const path = new URL(raw, 'http://localhost').pathname, method = options.method || 'GET';
+            if (path.endsWith('/batch-preview')) return { data: [{...row, title:'شارژ مهر 1405'}, {...row, title:'شارژ آبان 1405'}] };
             if (method !== 'GET') {
                 writes++;
                 if (path.endsWith('/calculate') || path.endsWith('/issue')) {
@@ -50,6 +52,7 @@ test('charge periods: Jalali dates, validation, permission/state actions, confir
                     if (failSave) throw Object.assign(new Error('Overlap'), { status: 422, errors: { period_start: ['This charge period overlaps an existing period.'] } });
                     Object.assign(row, JSON.parse(options.body));
                 }
+                if (path.endsWith('/batch')) { expect(JSON.parse(options.body).months.join() === '7,8', 'Selected months must be submitted together'); return {data:[{...row},{...row,id:32}]}; }
                 return { data: { ...row } };
             }
             if (path.endsWith('/preview')) return { data: { currency: 'IRR', unit_count: 4, expenses: [{ title: 'قبض آب', amount: 120000, date: '2026-10-01', payment_status: 'unpaid', formula: 'آب' }], fixed_formulas: [{ title: 'شارژ ثابت', per_unit: 50000, total: 200000 }], expense_total: 120000, fixed_total: 200000, excluded_expenses: [], existing_invoices: [], errors: [], review_token: 'a'.repeat(64) } };
@@ -58,7 +61,7 @@ test('charge periods: Jalali dates, validation, permission/state actions, confir
             if (failRead) throw Object.assign(new Error('دریافت نشد'), { status: 500 });
             return { data: { ...row } };
         } };
-        </script><script src="picker.js"></script><script>${source}</script><script>
+        </script><script>${readFileSync(join(directory, 'picker.js'), 'utf8')}</script><script>${source}</script><script>
         const expect = (condition, text) => { if (!condition) throw Error(text); };
         const until = async predicate => { for (let i = 0; i < 150; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 5)); } throw Error('Timed out'); };
         const only = name => expect(['location', 'directory', 'editor', 'detail'].filter(key => !$(key).hidden).join() === name, 'Only ' + name + ' should be visible. ' + browserErrors.join('; '));
@@ -72,13 +75,17 @@ test('charge periods: Jalali dates, validation, permission/state actions, confir
             expect($('building-label').textContent.includes('آزمایشی'), 'Building context missing');
             $('search').value = 'ناموجود'; $('search').dispatchEvent(new Event('input')); expect(!$('list').querySelector('button'), 'Local search must filter visible page');
             $('search').value = ''; $('search').dispatchEvent(new Event('input'));
-            $('new').click(); only('editor'); submit(); expect(writes === 0 && !$('form').querySelector('[data-period-field-error="title"]').hidden, 'Required title must be validated');
+            $('new').click(); only('editor'); submit(); expect(writes === 0 && !$('error').hidden, 'A month must be selected');
+            expect($('form').elements.year.options.length===7 && $('months').children.length===12, 'Year/month choices missing');
+            $('form').elements.year.value='1405'; $('form').elements.year.dispatchEvent(new Event('change',{bubbles:true}));
+            $('months').querySelector('[data-month="7"]').click(); $('months').querySelector('[data-month="8"]').click();
+            expect($('months').querySelector('[data-month="7"]').getAttribute('aria-pressed')==='true', 'Month selection must be accessible');
             $('form').elements.title.value = 'شارژ مهر'; setDate('period_start', '2026-10-01'); setDate('period_end', '2026-09-30'); setDate('due_date', '2026-11-01'); submit();
             expect(writes === 0 && document.activeElement === $('form').elements.period_end.previousElementSibling, 'Invalid range must focus visible date input');
             setDate('period_end', '2026-10-30'); setDate('due_date', '2026-10-29'); submit(); expect(writes === 0, 'Due date before period end must be rejected');
             setDate('due_date', '2026-11-01'); submit(); await until(() => !$('save').disabled); only('editor');
             expect($('form').elements.period_start.value === '2026-10-01' && !$('form').querySelector('[data-period-field-error="period_start"]').hidden, 'Server error must retain dates and reveal inline feedback');
-            failSave = false; const beforeSave = writes; submit(); submit(); await until(detailReady); only('detail'); expect(writes === beforeSave + 1, 'Double submit must save once');
+            failSave = false; const beforeSave = writes; submit(); submit(); await until(() => !$('directory').hidden && !$('save').disabled && $('list').querySelector('button')); $('list').querySelector('button').click(); await until(detailReady); only('detail'); expect(writes === beforeSave + 1, 'Double submit must save once');
             expect(!$('calculate').hidden && $('issue').hidden && !$('edit').hidden, 'Draft actions must match status');
             expect($('form').elements.period_start.value === row.period_start, 'Submitted date must remain Gregorian');
             $('edit').click(); only('editor'); expect($('form').elements.period_end.previousElementSibling.value.includes('/'), 'Editing must restore visible Jalali dates');
@@ -94,7 +101,7 @@ test('charge periods: Jalali dates, validation, permission/state actions, confir
             $('issue').click(); expect($('confirm-copy').textContent.includes('شارژ مهر'), 'Issuance confirmation must identify period'); $('action-submit').click();
             await until(() => row.status === 'issued' && !$('close').disabled); expect($('issue').hidden && $('calculate').hidden && $('edit').hidden && !$('invoice-link').hidden, 'Issued period must be read-only');
             await new Promise(resolve => setTimeout(resolve, 350));
-            expect(getComputedStyle(document.querySelector('jdp-container')).display === 'none', 'Delayed calendar animation must not leak outside editor');
+            if (!${Boolean(process.env.JSDOM_MODULE)}) expect(getComputedStyle(document.querySelector('jdp-container')).display === 'none', 'Delayed calendar animation must not leak outside editor');
             expect($('invoices').textContent === '۴', 'Invoice count must reflect backend');
             $('close').click(); await until(() => $('list').querySelector('button')); only('directory');
             holdRead = true; $('list').querySelector('button').click(); await until(() => releaseRead); $('close').click(); only('directory'); holdRead = false; releaseRead();
@@ -111,7 +118,15 @@ test('charge periods: Jalali dates, validation, permission/state actions, confir
             document.getElementById('result').dataset.ok = 'true';
         })().catch(error => document.getElementById('result').textContent = error.stack);
         </script></html>`);
-        const output = execFileSync(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--no-first-run', '--allow-file-access-from-files', '--window-size=' + (process.env.PERIOD_VIEWPORT || '500,1000'), '--user-data-dir=' + join(directory, 'profile'), '--virtual-time-budget=5000', ...(screenshot ? ['--screenshot=' + resolve(screenshot)] : []), '--dump-dom', pathToFileURL(fixture).href], { encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+        let output;
+        if (process.env.JSDOM_MODULE) {
+            const { JSDOM } = await import(process.env.JSDOM_MODULE);
+            const dom = new JSDOM(readFileSync(fixture, 'utf8'), { url:'http://localhost', runScripts:'dangerously', pretendToBeVisual:true, beforeParse(window) { window.HTMLElement.prototype.scrollIntoView=()=>{}; window.scrollTo=()=>{}; } });
+            try {
+                for (let i=0;i<600;i++) { const result=dom.window.document.getElementById('result'); if(result?.dataset.ok || result?.textContent) break; await new Promise(resolve=>setTimeout(resolve,10)); }
+                output=dom.serialize();
+            } finally {dom.window.close();}
+        } else output = execFileSync(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--no-first-run', '--allow-file-access-from-files', '--window-size=' + (process.env.PERIOD_VIEWPORT || '500,1000'), '--user-data-dir=' + join(directory, 'profile'), '--virtual-time-budget=5000', ...(screenshot ? ['--screenshot=' + resolve(screenshot)] : []), '--dump-dom', pathToFileURL(fixture).href], { encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
         const result = output.match(/<pre id="result"[^>]*>[\s\S]*?<\/pre>/)?.[0] || output.slice(-1000);
         assert.match(result, /data-ok="true"/, result);
     } finally {

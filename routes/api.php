@@ -496,6 +496,9 @@ Route::prefix('v1')
             [ChargePeriodController::class, 'store']
         );
 
+        Route::post('buildings/{building}/charge-periods/batch-preview', [ChargePeriodController::class, 'previewBatch']);
+        Route::post('buildings/{building}/charge-periods/batch', [ChargePeriodController::class, 'storeBatch']);
+
         Route::get(
             'charge-periods/{chargePeriod}',
             [ChargePeriodController::class, 'show']

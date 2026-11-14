@@ -34,14 +34,24 @@
 
     <section class="ownership-card" data-period-editor hidden aria-labelledby="period-editor-title">
         <div class="ownership-card__heading"><div><h3 id="period-editor-title" data-period-editor-title tabindex="-1">تعریف دوره جدید</h3><p data-period-editor-context></p></div></div>
-        <p class="period-description">نام و بازه دوره را وارد کنید. تاریخ سررسید، آخرین مهلت پرداخت صورتحساب‌های این دوره است.</p>
+        <p class="period-description">سال و ماه‌های دوره را انتخاب کنید. تاریخ‌های اولین ماه، الگوی ساخت دوره‌های بعدی هستند. سررسید، آخرین مهلت پرداخت صورتحساب هر دوره است.</p>
         <form data-period-form novalidate>
-            <fieldset class="period-fields" data-period-fields><div class="ownership-form-grid">
-                <label class="ownership-field ownership-field--wide"><span>عنوان دوره *</span><input name="title" required maxlength="255" placeholder="مثلاً شارژ مهر ۱۴۰۵" aria-describedby="period-title-error"><small class="period-field-error" id="period-title-error" data-period-field-error="title" hidden></small></label>
+            <fieldset class="period-fields" data-period-fields>
+                <div data-period-batch>
+                    <label class="ownership-field"><span>سال دوره *</span><select name="year" data-select2="off" aria-describedby="period-year-error">
+                        @for($year = 1404; $year <= 1410; $year++)
+                            <option value="{{ $year }}">{{ $year }}</option>
+                        @endfor
+                    </select><small id="period-year-error" data-period-field-error="year" hidden></small></label>
+                    <fieldset class="period-months"><legend>ماه‌های دوره؛ یک یا چند ماه را انتخاب کنید</legend><div class="period-month-grid" data-period-months></div></fieldset>
+                    <p class="ownership-form-hint" data-period-template-hint aria-live="polite"></p>
+                </div>
+                <div class="ownership-form-grid">
+                <label class="ownership-field ownership-field--wide" data-period-title-wrap><span>عنوان دوره *</span><input name="title" required maxlength="255" placeholder="مثلاً شارژ مهر ۱۴۰۵" aria-describedby="period-title-error"><small class="period-field-error" id="period-title-error" data-period-field-error="title" hidden></small></label>
                 <label class="ownership-field"><span>شروع دوره *</span><input name="period_start" type="date" required aria-describedby="period-period_start-error"><small class="period-field-error" id="period-period_start-error" data-period-field-error="period_start" hidden></small></label>
                 <label class="ownership-field"><span>پایان دوره *</span><input name="period_end" type="date" required aria-describedby="period-period_end-error"><small class="period-field-error" id="period-period_end-error" data-period-field-error="period_end" hidden></small></label>
                 <label class="ownership-field"><span>سررسید پرداخت *</span><input name="due_date" type="date" required aria-describedby="period-due_date-error"><small>هم‌زمان با پایان دوره یا پس از آن</small><small class="period-field-error" id="period-due_date-error" data-period-field-error="due_date" hidden></small></label>
-            </div></fieldset>
+            </div><div data-period-batch-preview class="period-batch-preview" aria-live="polite"></div></fieldset>
             <div class="ownership-editor__actions"><button type="button" class="ownership-button" data-period-cancel>انصراف و بازگشت</button><button type="submit" class="ownership-button ownership-button--primary" data-period-save>ذخیره دوره و ادامه</button></div>
         </form>
     </section>

@@ -67,6 +67,27 @@ class ChargePeriodController extends Controller
             ->setStatusCode(201);
     }
 
+    public function previewBatch(
+        \App\Http\Requests\StoreChargePeriodBatchRequest $request,
+        Building $building,
+        PermissionChecker $permissions,
+        \App\Services\ChargePeriodBatchService $service
+    ): \Illuminate\Http\JsonResponse {
+        abort_unless($permissions->allows($request->user(), 'charge-periods.create', $building), 403);
+        return response()->json(['data' => $service->preview($building, $request->validated())]);
+    }
+
+    public function storeBatch(
+        \App\Http\Requests\StoreChargePeriodBatchRequest $request,
+        Building $building,
+        PermissionChecker $permissions,
+        \App\Services\ChargePeriodBatchService $service
+    ) {
+        abort_unless($permissions->allows($request->user(), 'charge-periods.create', $building), 403);
+        return ChargePeriodResource::collection($service->create($building, $request->validated(), $request->user()))
+            ->response()->setStatusCode(201);
+    }
+
     public function show(
         ChargePeriod $chargePeriod
     ): ChargePeriodResource {

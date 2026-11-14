@@ -52,3 +52,13 @@ body:has([data-period-editor][hidden]) jdp-container { display: none !important;
 .period-preview-table table { width: 100%; border-collapse: collapse; text-align: start; }
 .period-preview-table th, .period-preview-table td { padding: 10px; border-bottom: 1px solid var(--border); text-align: start; vertical-align: top; }
 .period-preview-table th { background: var(--surface-soft); white-space: nowrap; }
+
+.period-months { border: 0; margin: 20px 0; padding: 0; min-width: 0; }
+.period-months legend { font-size: 14px; margin-block-end: 12px; }
+.period-month-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.period-month { min-height: 48px; padding: 10px 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-soft); color: var(--text); font: inherit; font-weight: 400; cursor: pointer; }
+.period-month[aria-pressed="true"] { border: 2px solid var(--primary-500); background: var(--primary-50); color: var(--primary-700); }
+.period-month:focus-visible { outline: 3px solid var(--primary-500); outline-offset: 3px; }
+.period-month:disabled { cursor: wait; opacity: .7; }
+.period-batch-preview { margin-block-start: 20px; }
+@media (max-width: 600px) { .period-month-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
