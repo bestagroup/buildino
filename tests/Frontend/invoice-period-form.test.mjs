@@ -8,7 +8,7 @@ import { compileScript, parse } from '@vue/compiler-sfc';
 test('invoice form selects charge period and 1–5 installments without dates or financial summaries', { skip: !process.env.JSDOM_MODULE }, async () => {
     const { JSDOM } = await import(process.env.JSDOM_MODULE);
     const bundle = await build({ bundle: true, write: false, format: 'iife', define: { 'process.env.NODE_ENV': '"production"' },
-        stdin: { contents: `import {createApp} from 'vue'; import './resources/js/buildino-jalali-datepicker.js'; import Invoices from './resources/js/pages/management/finance/Invoices.vue'; let app; window.mountInvoice=props=>{app?.unmount();app=createApp(Invoices,props);app.mount('#app')};`, resolveDir: process.cwd() },
+        stdin: { contents: `import './resources/js/buildino-select2.js'; import {createApp} from 'vue'; import './resources/js/buildino-jalali-datepicker.js'; import Invoices from './resources/js/pages/management/finance/Invoices.vue'; let app; window.mountInvoice=props=>{app?.unmount();app=createApp(Invoices,props);app.mount('#app')};`, resolveDir: process.cwd() },
         plugins: [{ name: 'vue-test', setup(builder) {
             builder.onResolve({ filter: /\.css$/ }, args => ({ path: args.path, namespace: 'style' }));
             builder.onLoad({ filter: /.*/, namespace: 'style' }, () => ({ contents: '', loader: 'js' }));
@@ -30,7 +30,7 @@ test('invoice form selects charge period and 1–5 installments without dates or
         return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ data: detail ? row : [row], meta: { total: 1 } }) };
     };
     w.eval(bundle.outputFiles[0].text);
-    const tick = () => new Promise(resolve => setTimeout(resolve, 20));
+    const tick = () => new Promise(resolve => setTimeout(resolve, 100));
     const $ = selector => w.document.querySelector(selector);
     const input = async (name, value) => { const el = $(`[name="${name}"]`); assert.ok(el, name); el.value = value; el.dispatchEvent(new w.Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); await tick(); };
     const props = { resourceKey: 'invoices', title: 'صورتحساب واحد', csrfToken: 'test', workspace: {
@@ -44,8 +44,13 @@ test('invoice form selects charge period and 1–5 installments without dates or
         for (const name of ['issue_date', 'due_date', 'period_start', 'period_end', 'discount_amount', 'penalty_amount']) assert.equal($(`[name="${name}"]`), null);
         assert.equal($('[name="start_charge_period_id"] option[value="8"]'), null);
         assert.equal($('[name="period_installment_count"] option[value="6"]'), null);
+        assert.equal($('[name="description"]'), null);
+        assert.equal($('.finance-line textarea').closest('details'), null);
+        assert.equal($('[data-finance-save]').style.marginInlineStart, 'auto');
+        assert.ok(w.jQuery($('[name="unit_id"]')).data('select2'), typeof w.jQuery.fn.select2 + ' ' + $('[name="unit_id"]').outerHTML);
+        assert.ok(w.jQuery($('[name="start_charge_period_id"]')).data('select2'));
         assert.equal($('.finance-metrics'), null); assert.equal($('.finance-line-total'), null);
-        await input('unit_id', '1'); await input('start_charge_period_id', '4'); await input('period_installment_count', '5');
+        await input('unit_id', '1'); w.jQuery($('[name="start_charge_period_id"]')).val('4').trigger('select2:select'); await tick(); await input('period_installment_count', '5');
         await input('items.0.title', 'بدهی قبلی'); await input('items.0.unit_amount', '۱۰۰۱');
         $('#finance-form').dispatchEvent(new w.Event('submit', { cancelable: true })); await tick();
         assert.equal(writes.length, 0);

@@ -43,6 +43,7 @@ const props = defineProps({
         default: () => ({}),
     },
     groupOptional: { type: Boolean, default: true },
+    select2: { type: Boolean, default: false },
 });
 
 const emit = defineEmits<{
@@ -351,7 +352,7 @@ watch(
 
             <select
                 v-else-if="field.type === 'select' || field.type === 'multiselect'"
-                data-select2="off"
+                :data-select2="select2 ? undefined : 'off'"
                 :id="fieldDomId(field)"
                 :name="field.name"
                 :aria-invalid="hasFieldError(field)"
