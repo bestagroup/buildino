@@ -1,0 +1,24 @@
+.import-preview { margin-block: 24px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); overflow: hidden; }
+.import-preview__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; }
+.import-preview__header h3 { margin: 0; font-size: 16px; font-weight: 700; }
+.import-preview__count { display: inline-block; white-space: nowrap; padding: 5px 10px; border-radius: 8px; background: var(--surface-strong); color: var(--text); font-size: 12px; font-weight: 600; }
+.import-preview__scroll { overflow: auto; max-height: 65vh; border-block-start: 1px solid var(--border); }
+.import-preview__scroll:focus-visible { outline: 2px solid var(--primary-500); outline-offset: -2px; }
+.import-preview__table { width: 100%; min-width: 920px; border-collapse: separate; border-spacing: 0; text-align: start; color: var(--text); font-size: 13px; line-height: 1.8; }
+.import-preview__table thead th { position: sticky; top: 0; z-index: 1; background: var(--surface-strong); color: var(--text-soft); font-size: 12px; white-space: nowrap; }
+.import-preview__table th, .import-preview__table td { padding: 14px 16px; text-align: start; vertical-align: middle; border-block-end: 1px solid var(--border); }
+.import-preview__table tbody tr:last-child > * { border-block-end: 0; }
+.import-preview__table tbody tr:nth-child(even) { background: var(--surface-soft); }
+.import-preview__table tbody tr:hover { background: var(--surface-strong); }
+.import-preview__table strong { display: block; max-width: 220px; overflow-wrap: anywhere; font-size: 13px; font-weight: 600; }
+.import-preview__secondary { display: block; margin-block-start: 4px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.import-preview__phone { text-align: start; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.import-preview__specs { display: flex; flex-wrap: wrap; gap: 4px 12px; min-width: 190px; max-width: 260px; }
+.import-preview__specs span { white-space: nowrap; }
+.import-preview__empty { text-align: center !important; padding: 32px !important; color: var(--muted); }
+.import-preview__actions { display: flex; justify-content: flex-end; padding-block: 8px; }
+@media (max-width: 640px) {
+    .import-preview__header { padding: 12px; }
+    .import-preview__table th, .import-preview__table td { padding: 12px; }
+    .import-preview__actions .btn { width: 100%; }
+}
