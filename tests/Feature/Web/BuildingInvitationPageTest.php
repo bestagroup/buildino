@@ -44,7 +44,7 @@ class BuildingInvitationPageTest extends TestCase
     {
         [$manager, $owner, $unit, $building] = $this->scenario();
         $this->app->instance(SmsSender::class, new \App\Services\Notifications\GhasedakSmsSender);
-        config(['notifications.ghasedak.api_key' => 'test-key']);
+        config(['notifications.ghasedak.api_key' => 'test-key', 'notifications.sms_templates.unit.invitation.template' => 'BuildinoInvitation']);
         \Illuminate\Support\Facades\Http::preventStrayRequests();
         \Illuminate\Support\Facades\Http::fake(['*' => \Illuminate\Support\Facades\Http::response(['result' => ['code' => 200], 'items' => [123]])]);
         $url = route('management.building-invitations.send', $building);

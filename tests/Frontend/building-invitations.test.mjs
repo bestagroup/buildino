@@ -19,7 +19,7 @@ test('group sends preserve each unit/user pair, report partial failure and refre
     const send = window.document.querySelector('[data-send-selected]'); send.click(); send.click();
     for (let i = 0; i < 30 && window.document.querySelector('[aria-busy]'); i++) await new Promise(resolve => setTimeout(resolve, 5));
     assert.deepEqual(writes.map(x => [x.unit_id, x.user_id]), [[1,7],[2,7]]);
-    assert.match(window.document.querySelector('[data-send-result]').textContent, /1 ارسال تأیید شد؛ 1 ارسال تأیید نشد/);
+    assert.match(window.document.querySelector('[data-send-result]').textContent, /۱ ارسال تأیید شد؛ ۱ ارسال تأیید نشد/);
     assert.equal(window.document.querySelector('#invitation-history').textContent, 'Updated');
     assert.equal(send.disabled, false);
     assert.equal(window.document.querySelector('[data-recipient]').checked, false);
