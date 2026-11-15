@@ -21,10 +21,19 @@ final class RegistrationController extends Controller
 {
     public function create(Request $request, IranLocations $locations): View
     {
-        $personas = config(
-            'self_registration.personas',
-            []
-        );
+        $configuredPersonas = config('self_registration.personas', []);
+        $personas = [];
+        foreach ([
+            'complex_manager' => 'مدیر مجتمع',
+            'building_manager' => 'مدیر ساختمان',
+            'owner' => 'مالک',
+            'tenant' => 'مستأجر',
+            'service_provider' => 'ارائه‌دهنده خدمات',
+        ] as $key => $label) {
+            if (isset($configuredPersonas[$key])) {
+                $personas[$key] = array_replace($configuredPersonas[$key], ['label' => $label]);
+            }
+        }
 
         $requestedPersona = (string) $request
             ->query('persona', 'building_manager');

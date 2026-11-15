@@ -75,12 +75,13 @@ final class SelfRegistrationWebTest extends TestCase
             ->assertOk()
             ->assertSee('مدیر ساختمان')
             ->assertSee('مدیر مجتمع')
-            ->assertSee('مدیر مالی')
-            ->assertSee('اپراتور ساختمان')
-            ->assertSee('کارشناس پشتیبانی')
+            ->assertDontSee('مدیر مالی')
+            ->assertDontSee('اپراتور ساختمان')
+            ->assertDontSee('کارشناس پشتیبانی')
             ->assertSee('ارائه‌دهنده خدمات')
-            ->assertSee('مالک واحد')
-            ->assertSee('مستأجر یا ساکن');
+            ->assertSee('مالک')
+            ->assertSee('مستأجر')
+            ->assertViewHas('personas', fn ($personas) => array_keys($personas) === ['complex_manager', 'building_manager', 'owner', 'tenant', 'service_provider']);
     }
 
     #[DataProvider('managementPersonaProvider')]
