@@ -25,11 +25,11 @@
 .glance-floor h4 { margin: 0; color: var(--text); font-size: 16px; }
 .glance-floor > header span, .glance-link { color: var(--muted); font-size: 11px; }
 .glance-link { color: var(--primary-700); }
-.glance-units { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.glance-unit { display: flex; flex-direction: column; gap: 18px; min-width: 0; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
-.glance-unit > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
-.glance-unit h5 { margin: 0; color: var(--text); font-size: 16px; overflow-wrap: anywhere; }
-.glance-unit > header > div:first-child > span { display: block; margin-block-start: 6px; color: var(--muted); font-size: 11px; }
+.glance-units { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.glance-unit-detail { display: flex; flex-direction: column; gap: 18px; min-width: 0; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.glance-unit-detail > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.glance-unit-detail h5 { margin: 0; color: var(--text); font-size: 16px; overflow-wrap: anywhere; }
+.glance-unit-detail > header > div:first-child > span { display: block; margin-block-start: 6px; color: var(--muted); font-size: 11px; }
 .glance-unit-badges { display: flex; align-items: center; flex-wrap: wrap; justify-content: end; gap: 7px; }
 .glance-badge { display: inline-flex; padding: 5px 9px; background: var(--surface-soft); border-radius: 20px; color: var(--text-soft); font-size: 10px; line-height: 1.6; }
 .glance-badge[data-occupied="1"] { color: var(--success); background: var(--success-soft); }
@@ -53,9 +53,51 @@
 .glance-wallet summary { cursor: pointer; }
 .glance-wallet dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 0; }
 .glance-wallet dd { margin: 0; color: var(--text-soft); text-align: end; }
-.glance-unit footer { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: auto; }
-.glance-unit footer .ownership-button { flex: 1; min-height: 36px; padding: 6px 10px; font-size: 11px; white-space: nowrap; }
+.glance-unit-detail footer { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: auto; }
+.glance-unit-detail footer .ownership-button { flex: 1; min-height: 36px; padding: 6px 10px; font-size: 11px; white-space: nowrap; }
 .glance-page [hidden] { display: none !important; }
 .glance-page :is(button, a, input, select, summary):focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
 @media (max-width: 1000px) { .glance-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } .glance-stats .glance-stat { grid-column: auto; } .glance-units { grid-template-columns: minmax(0, 1fr); } .glance-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 700px) { .glance-toolbar, .glance-period { flex-direction: column; align-items: stretch; } .glance-toolbar .ownership-field { max-width: none; width: 100%; } .glance-page .ownership-hero { flex-wrap: wrap; } .glance-updated { margin-inline-start: 0; flex-basis: 100%; } .glance-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .glance-stat { padding: 15px; } .glance-stat strong { font-size: 19px; } .glance-filters { grid-template-columns: minmax(0, 1fr); } .glance-unit { padding: 16px; } .glance-directory { padding-inline: 16px; } }
+@media (max-width: 700px) { .glance-toolbar, .glance-period { flex-direction: column; align-items: stretch; } .glance-toolbar .ownership-field { max-width: none; width: 100%; } .glance-page .ownership-hero { flex-wrap: wrap; } .glance-updated { margin-inline-start: 0; flex-basis: 100%; } .glance-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .glance-stat { padding: 15px; } .glance-stat strong { font-size: 19px; } .glance-filters { grid-template-columns: minmax(0, 1fr); } .glance-unit-detail { padding: 16px; } .glance-directory { padding-inline: 16px; } }
+.glance-unit-row { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.glance-unit-open { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(150px, .5fr) 20px; align-items: center; gap: 20px; width: 100%; min-height: 78px; padding: 14px 18px; border: 0; background: var(--surface); color: var(--text); text-align: start; cursor: pointer; font: inherit; transition: background .15s ease; }
+.glance-unit-open:hover { background: var(--surface-soft); }
+.glance-unit-identity { display: grid; gap: 5px; min-width: 0; }
+.glance-unit-identity strong { font-size: 14px; }
+.glance-unit-identity small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.glance-row-amount { display: grid; gap: 5px; text-align: end; font-variant-numeric: tabular-nums; }
+.glance-row-amount small { font-size: 11px; color: var(--muted); font-weight: 400; }
+.glance-row-amount strong { font-size: 13px; overflow-wrap: anywhere; }
+.glance-row-amount--due strong { color: var(--danger); }
+.glance-row-chevron { display: flex; color: var(--muted); transform: rotate(180deg); }
+.glance-dialog { width: min(1000px, calc(100% - 32px)); height: min(860px, calc(100dvh - 40px)); max-width: none; max-height: none; padding: 0; border: 1px solid var(--border); border-radius: 20px; color: var(--text); background: var(--surface); box-shadow: var(--shadow-lg); }
+.glance-dialog::backdrop { background: rgb(15 23 42 / .45); }
+.glance-dialog[open] { animation: glance-dialog-enter .18s ease-out; }
+.glance-dialog-shell { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+.glance-dialog-heading { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; gap: 12px; }
+.glance-dialog-heading h3 { margin: 4px 0 0; font-size: 18px; }
+.glance-dialog-heading small { color: var(--muted); font-size: 12px; }
+.glance-dialog-heading button { min-width: 44px; min-height: 44px; }
+.glance-dialog-tabs { display: flex; gap: 8px; flex-shrink: 0; overflow-x: auto; padding: 0 20px 14px; border-block-end: 1px solid var(--border); }
+.glance-dialog-tabs button { flex-shrink: 0; min-height: 44px; }
+.glance-dialog-tabs [aria-current] { color: var(--primary-700); background: var(--primary-50); border-color: var(--primary-500); }
+.glance-dialog-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.glance-dialog-body .glance-unit-detail { border: 0; border-radius: 0; padding: 22px; }
+.glance-workspace, [data-glance-frames] { height: 100%; min-height: 380px; position: relative; }
+.glance-workspace iframe { display: block; width: 100%; height: 100%; border: 0; background: var(--surface); }
+[data-glance-loading], [data-glance-frame-error] { position: absolute; inset-inline: 20px; top: 20px; z-index: 1; padding: 18px; background: var(--surface); }
+.glance-discard { padding: 16px 20px; border-block-start: 1px solid var(--border); background: var(--surface-soft); }
+.glance-discard p { margin: 0 0 12px; font-size: 13px; }
+.glance-discard > div { display: flex; justify-content: space-between; gap: 12px; }
+@keyframes glance-dialog-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 700px) {
+    .glance-unit-open { grid-template-columns: minmax(0, 1fr) auto 16px; gap: 10px; padding: 12px; }
+    .glance-unit-open > .glance-badge { grid-column: 1; grid-row: 2; justify-self: start; }
+    .glance-row-amount { grid-column: 2; grid-row: 1 / span 2; max-width: 130px; }
+    .glance-row-chevron { grid-column: 3; grid-row: 1 / span 2; }
+    .glance-dialog { width: calc(100% - 12px); height: calc(100dvh - 12px); border-radius: 14px; }
+    .glance-dialog-heading { padding: 12px 14px; }
+    .glance-dialog-tabs { padding-inline: 12px; }
+    .glance-unit-detail .glance-unit-metrics { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .glance-dialog[open] { animation: none; } .glance-unit-open { transition: none; } }

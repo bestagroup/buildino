@@ -48,6 +48,8 @@ final class UnitOwnershipPageController extends Controller
             }
         }
 
+        abort_if($request->boolean('glance_embed') && ! $initialUnit, 403);
+
         return view('management.unit-ownerships', [
             'ownershipConfig' => [
                 'apiBase' => '/api/v1',

@@ -8,6 +8,7 @@ require __DIR__.'/../../../vendor/autoload.php';
 $app = require __DIR__.'/../../../bootstrap/app.php';
 $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:', 'session.driver' => 'array']);
+\Illuminate\Support\Facades\URL::forceRootUrl('http://localhost');
 
 $building = (new \App\Models\Building())->forceFill(['id' => 1, 'title' => 'ساختمان شمیم', 'currency' => 'IRR']);
 $rows = collect();

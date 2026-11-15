@@ -46,6 +46,8 @@ final class UnitOccupancyPageController extends Controller
             }
         }
 
+        abort_if($request->boolean('glance_embed') && ! $initialUnit, 403);
+
         return view('management.unit-occupancies', [
             'occupancyConfig' => [
                 'apiBase' => '/api/v1',

@@ -1,0 +1,8 @@
+html, body { background: var(--surface); min-height: 100%; }
+body { margin: 0; padding: 16px; }
+body [hidden] { display: none !important; }
+body .ownership-page { max-width: none; margin: 0; }
+body :is(.ownership-hero, .ownership-flow, .finance-breadcrumb, .finance-navigation, [data-ownership-back-unit], [data-occupancy-back-unit]) { display: none !important; }
+body :is([data-ownership-location], [data-occupancy-location], [aria-labelledby="finance-scope-title"]) { display: none !important; }
+body .ownership-card { box-shadow: none; }
+@media (max-width: 600px) { body { padding: 10px; } }

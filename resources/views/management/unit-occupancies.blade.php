@@ -1,4 +1,4 @@
-@extends('management.layouts.app')
+@extends(request()->boolean('glance_embed') && request()->integer('unit_id') > 0 ? 'management.layouts.unit-workspace' : 'management.layouts.app')
 
 @section('title', 'مدیریت سکونت واحد | Buildino')
 @section('page-title', 'مدیریت سکونت واحد')

@@ -17,6 +17,20 @@ final class FinanceWorkspaceWebTest extends TestCase
 {
     use RefreshDatabase, CreatesBuildingDomainData;
 
+    public function test_embedded_invoice_workspace_keeps_the_selected_unit_and_building(): void
+    {
+        $inside = $this->createBuildingGraph(); $outside = $this->createBuildingGraph(); $user = $this->createUser();
+        $this->grant($user, ['invoices.view', 'reports.dashboard.view'], $inside['building']);
+        $url = '/management/operations/invoices?glance_embed=1&building_id='.$inside['building']->id.'&unit_id=';
+        $this->actingAs($user)->get($url.$inside['unit']->id)->assertOk()
+            ->assertSee('data-glance-embedded', false)
+            ->assertInertia(fn (Assert $page) => $page->has('workspace.units', 1)->has('workspace.buildings', 1)
+                ->where('workspace.units.0.id', $inside['unit']->id));
+        $this->get($url.$outside['unit']->id)->assertForbidden();
+        $this->get($url.'0')->assertForbidden();
+        $this->get('/management/operations/invoices')->assertOk()->assertDontSee('data-glance-embedded', false);
+    }
+
     public function test_financial_pages_share_navigation_and_only_expose_authorized_buildings(): void
     {
         $inside = $this->createBuildingGraph(); $outside = $this->createBuildingGraph(); $user = $this->createUser();

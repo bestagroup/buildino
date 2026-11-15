@@ -76,6 +76,11 @@ final class BuildingAtGlanceTest extends TestCase
         $this->get('/management/at-a-glance')->assertRedirect();
         $this->actingAs($manager)->get('/management/at-a-glance?building_id='.$own['building']->id)
             ->assertOk()->assertSee('در یک نگاه')->assertViewHas('building', fn ($building) => $building->id === $own['building']->id);
+        foreach (['ownerships', 'occupancies'] as $resource) {
+            $this->get('/management/operations/'.$resource.'?glance_embed=1&unit_id='.$own['unit']->id)
+                ->assertOk()->assertSee('data-glance-embedded', false)->assertDontSee('id="managementSidebar"', false);
+            $this->get('/management/operations/'.$resource.'?glance_embed=1&unit_id='.$other['unit']->id)->assertForbidden();
+        }
         $this->get('/management/at-a-glance?building_id='.$other['building']->id)->assertForbidden();
     }
 

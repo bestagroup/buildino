@@ -49,6 +49,12 @@ final class FinanceWorkspacePageController extends Controller
                 'id' => $unit->id, 'building_id' => $unit->floor->block->building_id,
                 'label' => $unit->floor->block->title.' / '.($unit->floor->title ?: 'طبقه '.$unit->floor->floor_number).' / واحد '.$unit->unit_number,
             ])->values();
+        if ($request->boolean('glance_embed') && in_array($resource, ['invoices', 'invoice-installments', 'payments'], true)) {
+            $unit = $units->firstWhere('id', $request->integer('unit_id'));
+            abort_unless($unit && $unit['building_id'] === $request->integer('building_id'), 403);
+            $units = collect([$unit]);
+            $buildings = $buildings->where('id', $unit['building_id'])->values();
+        }
         $visible = $ui->visibleResourceKeys($user);
         $navigation = collect(config('management_crud.resources'))->filter(fn (array $item, string $key): bool => $item['group'] === 'finance' && in_array($key, $visible, true))
             ->map(fn (array $item, string $key): array => ['key' => $key, 'title' => $item['title'], 'url' => route('management.operations.show', $key)])->values();
