@@ -1,3 +1,4 @@
+import { select2Fixture } from './helpers/select2-fixture.mjs';
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { execFileSync } from 'node:child_process';
@@ -56,7 +57,7 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
             else { if (holdList) await new Promise(resolve => releaseList = resolve); if (failList) throw Error('Network failed'); data = {data:[row],meta:{current_page:Number(url.searchParams.get('page')||1),last_page:2}}; }
             return {ok,status:ok?200:422,headers:{get:()=> 'application/json'},json:async()=>data};
         };
-        </script><script>${source('public/js/buildino-charge-formula-ui.js')}</script><script>${source('public/js/buildino-crud.js')}</script><script>
+        </script>${select2Fixture()}<script>${source('public/js/buildino-charge-formula-ui.js')}</script><script>${source('public/js/buildino-crud.js')}</script><script>
         const expect = (condition, text) => { if (!condition) throw Error(text + '; ' + errors.join('; ')); };
         const until = async predicate => { for (let i=0;i<200;i++) { if(predicate()) return; await new Promise(resolve=>setTimeout(resolve,10)); } throw Error('Timed out; '+errors.join('; ')+'; form error: '+$('#crudFormError').textContent+'; drawer: '+$('#crudDrawer').outerHTML.slice(0,500)); };
         const building = $('[data-context-name="building_id"]');
@@ -73,12 +74,12 @@ test('formula page reuses CRUD with inline stages, scoped actions, keyboard focu
             expect($('[data-charge-location]').hidden && !$('[data-charge-directory]').hidden, 'List must replace selection');
             expect($('[data-row-action="edit"]').getAttribute('aria-label').includes(row.title), 'Edit buttons need unique accessible names');
             const toggle = () => $('[data-row-action="toggle-formula"]');
-            expect(toggle().textContent.includes('غیرفعال کردن'), 'Active formula must offer deactivation');
+            expect(toggle().getAttribute('aria-label').includes('غیرفعال کردن'), 'Active formula must offer deactivation');
             const failedWrites = writes; toggle().click(); toggle().click();
             await until(() => !toggle().disabled);
             expect(writes === failedWrites + 1 && row.is_active, 'Failed request must preserve state and block duplicate click');
             failSave = false; toggle().click(); await until(() => !toggle().disabled && !row.is_active);
-            expect(toggle().textContent.includes('فعال کردن'), 'Inactive formula must offer activation');
+            expect(toggle().getAttribute('aria-label').includes('فعال کردن'), 'Inactive formula must offer activation');
             toggle().click(); await until(() => !toggle().disabled && row.is_active);
             failSave = true;
             expect($('#coreRemotePagination').querySelectorAll('button').length===2, 'All server pages must be reachable');

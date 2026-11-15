@@ -1,0 +1,63 @@
+/* RTL form actions: back/cancel at the right, commit/continue at the left.
+   Only action bars are targeted; table tools and record actions are excluded. */
+html[dir="rtl"] :is(
+    .crud-form-actions,
+    .ownership-editor__actions,
+    .ownership-dialog__actions,
+    .ui-dialog__actions,
+    .ui-drawer__footer,
+    .user-create-dialog__actions,
+    .structure-form-actions,
+    .users-form-actions,
+    .ownership-actions:has(> button[type="submit"]),
+    .modal-footer,
+    .registration-wizard-actions,
+    .setup-actions,
+    .import-preview__actions
+):not([hidden]) {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    justify-content: flex-start !important;
+    align-items: center;
+    gap: 10px;
+}
+
+html[dir="rtl"] :is(
+    .crud-form-actions,
+    .ownership-editor__actions,
+    .ownership-dialog__actions,
+    .ui-dialog__actions,
+    .ui-drawer__footer,
+    .user-create-dialog__actions,
+    .structure-form-actions,
+    .users-form-actions,
+    .ownership-actions:has(> button[type="submit"]),
+    .modal-footer,
+    .registration-wizard-actions,
+    .setup-actions,
+    .import-preview__actions
+) > :is(
+    button[type="submit"],
+    .crud-button--primary,
+    .ownership-button--primary,
+    .registration-submit,
+    [data-setup-next],
+    [data-period-action-submit],
+    .ui-button--danger
+) {
+    margin-inline-start: auto;
+    margin-inline-end: 0;
+}
+
+/* SweetAlert renders confirm first and may set row-reverse itself. */
+html[dir="rtl"] .swal2-actions {
+    direction: rtl;
+    flex-direction: row !important;
+    justify-content: flex-start;
+    width: calc(100% - 2.5em);
+    gap: 10px;
+}
+html[dir="rtl"] .swal2-actions > .swal2-cancel { order: 0; }
+html[dir="rtl"] .swal2-actions > .swal2-deny { order: 1; }
+html[dir="rtl"] .swal2-actions > .swal2-confirm { order: 2; margin-inline-start: auto; }

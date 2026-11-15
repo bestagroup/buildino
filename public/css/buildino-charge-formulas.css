@@ -104,3 +104,7 @@
     .charge-formula-page .charge-formula-dialog .crud-close-button { margin-inline-start: auto; }
     .charge-guide { padding: 16px; }
 }
+.formula-status-toggle { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+.formula-status-toggle__track { display: flex; align-items: center; width: 34px; height: 20px; padding: 3px; border-radius: 20px; background: var(--muted); }
+.formula-status-toggle__track > span { width: 14px; height: 14px; border-radius: 50%; background: var(--surface); }
+.formula-status-toggle[aria-checked="true"] .formula-status-toggle__track { justify-content: flex-end; background: var(--success); }

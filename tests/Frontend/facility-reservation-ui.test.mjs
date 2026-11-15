@@ -1,3 +1,4 @@
+import { select2Fixture } from './helpers/select2-fixture.mjs';
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { execFileSync } from 'node:child_process';
@@ -142,7 +143,7 @@ test('P11 browser: availability, recovery, payment/cancellation and stale respon
     `;
     const html = `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="${asset('css/buildino-management.css')}"><link rel="stylesheet" href="${asset('css/buildino-unit-ownerships.css')}"><link rel="stylesheet" href="${asset('css/buildino-facilities.css')}"><link rel="stylesheet" href="${asset('css/buildino-reservations.css')}">
-    <style>body{padding:24px} @media(max-width:600px){body{padding:12px}}</style>${markup}<pre id="result" hidden></pre><script>${script}</script><script src="${asset('js/buildino-reservations.js')}"></script><script>runP11().catch(error => document.getElementById('result').textContent = error.stack);</script></html>`;
+    <style>body{padding:24px} @media(max-width:600px){body{padding:12px}}</style>${markup}<pre id="result" hidden></pre>${select2Fixture()}<script>${script}</script><script src="${asset('js/buildino-reservations.js')}"></script><script>runP11().catch(error => document.getElementById('result').textContent = error.stack);</script></html>`;
     const fixture = join(directory, 'fixture.html'); writeFileSync(fixture, html);
     try {
         const args = ['--headless', '--disable-gpu', '--no-sandbox', '--allow-file-access-from-files', '--no-first-run', '--force-device-scale-factor=1', '--hide-scrollbars', '--user-data-dir=' + join(directory, 'profile'), '--window-size=' + (process.env.P11_MOBILE ? '500,900' : '1280,1000'), '--virtual-time-budget=5000', '--dump-dom'];

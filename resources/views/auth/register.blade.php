@@ -16,6 +16,9 @@
 
     @vite('resources/js/app.js')
     <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-action-layout.css') }}?v={{ filemtime(public_path('css/buildino-action-layout.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-field-focus.css') }}?v={{ filemtime(public_path('css/buildino-field-focus.css')) }}">
+
     <link rel="stylesheet" href="{{ asset('css/buildino-login.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-registration.css') }}?v={{ filemtime(public_path('css/buildino-registration.css')) }}">
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
@@ -419,6 +422,7 @@
         </div>
     </main>
 </div>
+<script src="{{ asset('js/buildino-numeric.js') }}?v={{ filemtime(public_path('js/buildino-numeric.js')) }}" defer></script>
 <script src="{{ asset('js/buildino-foundation.js') }}"></script>
 <script src="{{ asset('js/buildino-registration.js') }}?v={{ filemtime(public_path('js/buildino-registration.js')) }}" defer></script>
 @include('shared.core-auth')

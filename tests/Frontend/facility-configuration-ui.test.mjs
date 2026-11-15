@@ -1,3 +1,4 @@
+import { select2Fixture } from './helpers/select2-fixture.mjs';
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { execFileSync } from 'node:child_process';
@@ -43,7 +44,7 @@ test('facility configuration: separate views, saved context, dirty forms, time s
         if (failDetail) throw Object.assign(new Error('خطا'), { status: 500 });
         return { data: facility };
     } };
-    </script><script>${source}</script><script>
+    </script>${select2Fixture()}<script>${source}</script><script>
     const until = async predicate => { for (let i = 0; i < 100; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 5)); } throw Error('Timed out'); };
     const expect = (condition, text) => { if (!condition) throw Error(text); };
     const layoutFits = () => {

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { vSelect2 } from '../../directives/select2';
+import UiNumberInput from './UiNumberInput.vue';
 import {
     computed,
     reactive,
@@ -352,7 +354,7 @@ watch(
 
             <select
                 v-else-if="field.type === 'select' || field.type === 'multiselect'"
-                :data-select2="select2 ? undefined : 'off'"
+                v-select2
                 :id="fieldDomId(field)"
                 :name="field.name"
                 :aria-invalid="hasFieldError(field)"
@@ -361,7 +363,7 @@ watch(
                 :multiple="field.type === 'multiselect'"
                 :required="field.required || (mode === 'create' && field.required_on_create)"
                 :disabled="loadingFields.has(field.name) || (mode === 'edit' && field.readonly_on_edit)"
-                :value="fieldValue(field) as string"
+                v-bind="field.type === 'multiselect' ? {} : { value: fieldValue(field) }"
                 @change="setFieldValue(field, field.type === 'multiselect'
                     ? [...($event.target as HTMLSelectElement).selectedOptions].map((option) => option.value)
                     : ($event.target as HTMLSelectElement).value)"
@@ -399,6 +401,18 @@ watch(
                 :model-value="fieldValue(field) as string | number | null" :required="field.required"
                 :disabled="mode === 'edit' && field.readonly_on_edit"
                 :aria-invalid="hasFieldError(field)" :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
+                @update:model-value="setFieldValue(field, $event)"
+            />
+            <UiNumberInput
+                v-else-if="field.type === 'number' || field.type === 'money'"
+                :id="fieldDomId(field)" :name="field.name"
+                :model-value="fieldValue(field) as string | number | null"
+                :min="field.min" :max="field.max" :step="field.step"
+                :required="field.required || (mode === 'create' && field.required_on_create)"
+                :disabled="mode === 'edit' && field.readonly_on_edit"
+                :placeholder="field.placeholder"
+                :aria-invalid="hasFieldError(field)"
+                :aria-describedby="(hasFieldError(field) || field.help) ? fieldMessageId(field) : undefined"
                 @update:model-value="setFieldValue(field, $event)"
             />
             <input

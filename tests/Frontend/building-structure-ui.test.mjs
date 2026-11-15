@@ -32,7 +32,7 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
         } }],
     });
     const html = `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    ${['/public/css/buildino-fonts.css','/public/css/buildino-management.css','/public/css/buildino-crud.css','/public/css/buildino-design-system.css','/public/css/buildino-unit-ownerships.css','/resources/css/management-inertia.css','/public/css/buildino-building-structure.css','/node_modules/leaflet/dist/leaflet.css','/resources/css/location-picker.css'].map(path => '<link rel="stylesheet" href="' + path + '">').join('')}
+    ${['/node_modules/select2/dist/css/select2.css','/resources/css/buildino-select2.css','/public/css/buildino-fonts.css','/public/css/buildino-management.css','/public/css/buildino-crud.css','/public/css/buildino-design-system.css','/public/css/buildino-unit-ownerships.css','/resources/css/management-inertia.css','/public/css/buildino-building-structure.css','/node_modules/leaflet/dist/leaflet.css','/resources/css/location-picker.css'].map(path => '<link rel="stylesheet" href="' + path + '">').join('')}
     <script type="application/json" id="buildino-map-config">{"tileUrl":"/test-tiles/{z}/{x}/{y}.svg","attribution":"Local test tiles","center":[32.4,53.7],"zoom":5,"maxZoom":19}</script>
     <div id="app" style="padding:16px"></div><pre id="result" hidden></pre>
     <script>/* Keep animation-frame scheduling deterministic under Chrome's virtual clock. */ window.requestAnimationFrame = callback => setTimeout(() => callback(performance.now()), 16); window.cancelAnimationFrame = clearTimeout;</script>
@@ -132,7 +132,7 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
             if (key === 'floors') await input('floor_number','-1');
             if (key === 'units') {
                 expect(!$('[name="bedrooms"]').closest('details')&&$('[name="bedrooms"]').getBoundingClientRect().height>0,'Unit bedrooms hidden away from main fields');
-                if(innerWidth>700){const tops=['area','bedrooms','usage_type'].map(name=>$('[name="'+name+'"]').getBoundingClientRect().top);expect(tops.every(top=>Math.abs(top-tops[0])<1),'Unit size, bedrooms and usage are not aligned');}
+                if(innerWidth>700){const tops=['area','bedrooms','usage_type'].map(name=>{const field=$('[name="'+name+'"]');return (field.classList.contains('select2-hidden-accessible')?field.nextElementSibling.querySelector('.select2-selection'):field).getBoundingClientRect().top;});expect(tops.every(top=>Math.abs(top-tops[0])<1),'Unit size, bedrooms and usage are not aligned');}
                 await input('unit_number','۱۰۲'); await input('area','75.5'); await input('usage_type','residential');
             }
             const beforeSave = posts.length; submit(); await until(() => $('[data-structure-edit]')); expect(posts.length === beforeSave + 1 && posts.at(-1).path.includes('/1/'), 'Child form must save once under its parent');
@@ -186,7 +186,7 @@ test('building structure: real Vue forms, hierarchy, permissions, validation, er
         if (path === '/test.js') { response.setHeader('Content-Type','application/javascript'); response.end(bundle.outputFiles[0].text); return; }
         if (path.startsWith('/test-tiles-fail/')) { response.writeHead(503).end(); return; }
         if (path.startsWith('/test-tiles/')) { response.setHeader('Content-Type','image/svg+xml'); response.end('<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#e5ece4"/><path d="M0 100H256M140 0V256" stroke="#fff" stroke-width="12"/></svg>'); return; }
-        if (path.startsWith('/public/') || path.startsWith('/resources/css/') || path.startsWith('/node_modules/leaflet/dist/')) {
+        if (path.startsWith('/public/') || path.startsWith('/resources/css/') || path.startsWith('/node_modules/')) {
             try { const file = join(project, path.slice(1)); response.setHeader('Content-Type', path.endsWith('.css') ? 'text/css' : 'font/woff2'); response.end(readFileSync(file)); } catch { response.writeHead(404).end(); } return;
         }
         response.setHeader('Content-Type','text/html; charset=utf-8'); response.end(html);

@@ -1,3 +1,4 @@
+import { select2Fixture } from './helpers/select2-fixture.mjs';
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { execFileSync } from 'node:child_process';
@@ -61,7 +62,7 @@ test('charge periods: Jalali dates, validation, permission/state actions, confir
             if (failRead) throw Object.assign(new Error('دریافت نشد'), { status: 500 });
             return { data: { ...row } };
         } };
-        </script><script>${readFileSync(join(directory, 'picker.js'), 'utf8')}</script><script>${source}</script><script>
+        </script><script>${readFileSync(join(directory, 'picker.js'), 'utf8')}</script>${select2Fixture()}<script>${source}</script><script>
         const expect = (condition, text) => { if (!condition) throw Error(text); };
         const until = async predicate => { for (let i = 0; i < 150; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 5)); } throw Error('Timed out'); };
         const only = name => expect(['location', 'directory', 'editor', 'detail'].filter(key => !$(key).hidden).join() === name, 'Only ' + name + ' should be visible. ' + browserErrors.join('; '));

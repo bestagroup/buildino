@@ -518,17 +518,11 @@
                 ?.buildingId
             || null;
 
-    const value =
-        (
-            form,
-            name
-        ) =>
-            normalizeValue(
-                form.elements[
-                    name
-                ]?.value
-                ?? ""
-            );
+    const value = (form, name) => {
+        const field = form.elements[name];
+        const raw = field?.value ?? "";
+        return normalizeValue(field?.hasAttribute('data-number-input') ? window.BuildinoNumeric.normalize(raw) : raw);
+    };
 
     $(
         '[data-portal-form="guest"]'
@@ -1609,9 +1603,7 @@
                         inputValidator:
                             (value) => {
                                 const amount =
-                                    Number(
-                                        value
-                                    );
+                                    Number(window.BuildinoNumeric?.normalize(value) ?? value);
 
                                 if (
                                     ! Number.isInteger(
@@ -1629,9 +1621,7 @@
                     });
 
                 return result.isConfirmed
-                    ? Number(
-                        result.value
-                    )
+                    ? Number(window.BuildinoNumeric?.normalize(result.value) ?? result.value)
                     : null;
             }
 

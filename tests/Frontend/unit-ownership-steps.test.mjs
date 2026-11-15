@@ -1,3 +1,4 @@
+import { select2Fixture } from './helpers/select2-fixture.mjs';
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { execFileSync } from 'node:child_process';
@@ -40,7 +41,7 @@ for (const kind of ['ownership', 'occupancy']) test(kind + ' steps replace one a
         } else payload = { data: [] };
         return { ok, status: ok ? 200 : 422, headers: { get: () => 'application/json' }, json: async () => payload };
     };
-    </script><script>${source}</script><script>
+    </script>${select2Fixture()}<script>${source}</script><script>
     const until = async (predicate, text) => { for (let i = 0; i < 100; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 5)); } throw new Error(text); };
     let checks = 0;
     const expect = (condition, text) => { if (!condition) throw new Error(text); checks++; };

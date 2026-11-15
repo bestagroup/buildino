@@ -14,9 +14,6 @@ const disabledSelector = [
     '[data-select2="off"]',
     '[data-native-select]',
     'jdp-container select',
-    '.swal2-container select',
-    '.swal2-popup select',
-    '[role="alertdialog"] select',
 ].join(', ');
 const pendingSelects = new Set();
 let flushScheduled = false;
@@ -35,6 +32,7 @@ const normalizeSearchText = (value) => String(value ?? '')
     .replace(/[\u064B-\u065F\u0670]/g, '');
 
 const matcher = (params, data) => {
+    if (data.element?.hidden || data.element?.closest('optgroup[hidden]')) return null;
     const term = normalizeSearchText(params.term);
 
     if (! term) {
@@ -82,8 +80,19 @@ const selectElements = (root = document) => {
 };
 
 const dropdownParent = (select) => {
+    const dialog = select.closest('dialog');
+    if (dialog) {
+        let host = dialog.querySelector(':scope > [data-select2-dialog-host]');
+        if (!host) {
+            host = document.createElement('div');
+            host.dataset.select2DialogHost = '1';
+            host.style.cssText = 'position:relative;height:0;overflow:visible';
+            dialog.append(host);
+        }
+        return $(host);
+    }
     const parent = select.closest(
-        '.modal, .crud-drawer, .crud-modal, [role="dialog"]'
+        '.modal, .crud-drawer, .crud-modal, .swal2-popup, [role="dialog"], [role="alertdialog"]'
     );
 
     return parent ? $(parent) : $(document.body);
@@ -110,6 +119,7 @@ const enhance = (root = document) => {
         }
 
         if (element.hasClass('select2-hidden-accessible')) {
+            synchronize(select);
             element.trigger('change.select2');
             return;
         }
@@ -141,18 +151,20 @@ const enhance = (root = document) => {
                     const fields = document.querySelectorAll(
                         '.select2-container--open .select2-search__field'
                     );
+                    fields[fields.length - 1]?.setAttribute('aria-label', 'جست‌وجوی گزینه‌ها');
                     fields[fields.length - 1]?.focus();
                 });
             });
 
         select.dataset.buildinoSelect2 = '1';
-        // Select2 emits jQuery events; the process forms listen to native change.
-        // Keep this bridge scoped to the new process UI rather than all resources.
-        element.off('.coreflow').on('select2:select.coreflow select2:unselect.coreflow select2:clear.coreflow', () => {
-            if (select.closest('[data-core-process-ui], [data-core-flow-host], [data-registration-form], [data-building-setup], [data-unit-ownership-page], [data-unit-occupancy-page], [data-invoice-select2]')) {
-                window.queueMicrotask(() => select.dispatchEvent(new Event('change', { bubbles: true })));
-            }
+        // Native change is the shared contract for Vue v-model and Blade forms.
+        // Namespaced refreshes and real native events must never be bridged twice.
+        element.off('.coreflow').off('.buildinoChange').on('change.buildinoChange', event => {
+            if (event.namespace) return;
+            if (!event.originalEvent && !select.closest('.dt-container')) select.dispatchEvent(new Event('change', { bubbles: true }));
+            synchronize(select);
         });
+        synchronize(select);
     });
 };
 
@@ -161,7 +173,7 @@ const refresh = (select) => {
         return;
     }
 
-    if (select.matches(disabledSelector)) {
+    if (!select.isConnected || select.matches(disabledSelector)) {
         destroy(select);
         return;
     }
@@ -171,7 +183,34 @@ const refresh = (select) => {
         return;
     }
 
+    synchronize(select);
     $(select).trigger('change.select2');
+};
+
+const synchronize = select => {
+    const instance = $(select).data('select2');
+    if (!instance) return;
+    const disabled = select.matches(':disabled');
+    if (instance.options.get('disabled') !== disabled) {
+        instance.options.set('disabled', disabled);
+        instance.trigger(disabled ? 'disable' : 'enable', {});
+        if (disabled) instance.close();
+    }
+    // Vue may replace option text without replacing the option element.
+    for (const option of select.options) {
+        const data = instance.dataAdapter.item($(option));
+        data.text = option.textContent; data.disabled = option.disabled;
+    }
+    const label = select.getAttribute('aria-label') || [...(select.labels || [])].map(label => {
+        const copy = label.cloneNode(true);
+        copy.querySelectorAll('select, .select2, small, button').forEach(node => node.remove());
+        return copy.textContent.trim();
+    }).join(' ');
+    if (label) instance.$selection.attr('aria-label', label);
+    for (const name of ['aria-describedby', 'aria-invalid', 'aria-required', 'aria-busy']) {
+        const value = name === 'aria-required' ? String(select.required || select.dataset.required === '1') : select.getAttribute(name);
+        if (value === null) instance.$selection.removeAttr(name); else instance.$selection.attr(name, value);
+    }
 };
 
 const destroy = (root = document) => {
@@ -182,7 +221,7 @@ const destroy = (root = document) => {
             return;
         }
 
-        element.off('.buildino').off('.coreflow').select2('destroy');
+        element.off('.buildino').off('.coreflow').off('.buildinoChange').select2('destroy');
         delete select.dataset.buildinoSelect2;
     });
 };
@@ -214,6 +253,14 @@ const observer = new MutationObserver((records) => {
 
         queueSelect(target);
 
+        if (record.type === 'attributes' && record.target instanceof HTMLFieldSetElement) {
+            selectElements(record.target).forEach(queueSelect);
+        }
+
+        record.removedNodes.forEach(node => {
+            if (node instanceof Element && !node.isConnected) destroy(node);
+        });
+
         record.addedNodes.forEach((node) => {
             if (! (node instanceof Element)) {
                 return;
@@ -233,6 +280,9 @@ const boot = () => {
     observer.observe(document.body, {
         childList: true,
         subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ['disabled', 'required', 'multiple', 'aria-invalid', 'aria-describedby', 'aria-busy'],
     });
 };
 
@@ -249,6 +299,19 @@ document.addEventListener('shown.bs.modal', (event) => {
 document.addEventListener('buildino:selects-changed', (event) => {
     enhance(event.detail?.root || document);
 });
+
+document.addEventListener('reset', event => window.setTimeout(() => selectElements(event.target).forEach(refresh), 0), true);
+
+document.addEventListener('invalid', event => {
+    const select = event.target;
+    if (!(select instanceof HTMLSelectElement) || !$(select).hasClass('select2-hidden-accessible')) return;
+    event.preventDefault();
+    const instance = $(select).data('select2');
+    instance?.$selection.attr('aria-invalid', 'true');
+    if (select.form && select.form.querySelector(':invalid') !== select) return;
+    instance?.$selection.trigger('focus');
+    if (!select.matches(':disabled')) $(select).select2('open');
+}, true);
 
 window.BuildinoSelect2 = {
     destroy,

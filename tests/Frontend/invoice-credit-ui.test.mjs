@@ -30,7 +30,7 @@ test('credit notes: signed input, review, issue action, ordered finance tabs and
         } }],
     });
     const html = `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    ${['/public/css/buildino-fonts.css','/public/css/buildino-management.css','/public/css/buildino-crud.css','/public/css/buildino-design-system.css','/public/css/buildino-unit-ownerships.css','/resources/css/management-inertia.css','/resources/css/finance-workspace.css','/resources/css/operation-records.css','/node_modules/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css'].map(path=>'<link rel="stylesheet" href="'+path+'">').join('')}
+    ${['/node_modules/select2/dist/css/select2.css','/resources/css/buildino-select2.css','/public/css/buildino-fonts.css','/public/css/buildino-management.css','/public/css/buildino-crud.css','/public/css/buildino-design-system.css','/public/css/buildino-unit-ownerships.css','/resources/css/management-inertia.css','/resources/css/finance-workspace.css','/resources/css/operation-records.css','/node_modules/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css'].map(path=>'<link rel="stylesheet" href="'+path+'">').join('')}
     <div id="app" style="padding:16px;max-width:1200px;margin:auto"></div><pre id="result" hidden></pre>
     <script>window.requestAnimationFrame=callback=>setTimeout(()=>callback(performance.now()),16); window.cancelAnimationFrame=clearTimeout; window.addEventListener('error',event=>document.querySelector('#result').textContent=event.message+' '+event.lineno);</script>
     <script src="/test.js"></script><script>
@@ -66,14 +66,14 @@ test('credit notes: signed input, review, issue action, ordered finance tabs and
     const submit=async()=>{const el=$('#finance-form')||$('#finance-record-form');el.dispatchEvent(new Event('submit',{cancelable:true}));await tick();};
     const click=async selector=>{$(selector).click();await tick();};
     const mount=async(key,override)=>{active=key;history.replaceState({},'','/management/operations/'+key);window.mountFinance(override||props(key));await until(()=>$('[data-finance-open]'));};
-    const fillRequired=async()=>{for(const el of $$('.finance-editor [required]')){if(el.type==='checkbox'||el.disabled)continue;const value=el.tagName==='SELECT'?[...el.options].find(o=>o.value)?.value:el.dataset.buildinoDateType?'۱۴۰۵/۰۸/۰۷':el.type==='number'?'100':el.name==='iban'?'IR123456789012345678901234':'نمونه آزمایشی';await input(el.name||el.nextElementSibling?.name,value);}};
+    const fillRequired=async()=>{for(const el of $$('.finance-editor [required]')){if(el.type==='checkbox'||el.disabled)continue;const value=el.tagName==='SELECT'?[...el.options].find(o=>o.value)?.value:el.dataset.buildinoDateType?'۱۴۰۵/۰۸/۰۷':(el.type==='number'||el.hasAttribute('data-number-managed'))?'100':el.name==='iban'?'IR123456789012345678901234':'نمونه آزمایشی';await input(el.name||el.nextElementSibling?.name,value);}};
     (async()=>{
         await mount('invoices');
         expect($$('.finance-tabs a').map(a=>a.getAttribute('href').split('?')[0].split('/').pop()).join(',')===chargeTabs.join(','),'Financial tab order incorrect');
         expect($$('.finance-tabs a').every(a=>a.href.includes('building_id=1')),'Building context lost');
         await click('[data-finance-create]');await input('unit_id','101');await input('start_charge_period_id','4');await submit();
         await input('items.0.title','طلب قبلی واحد');await input('items.0.unit_amount','−۲۰۰٬۰۰۰');
-        expect($('[name="items.0.unit_amount"]').value==='-200000','Signed Persian input not normalized');
+        expect($('[name="items.0.unit_amount"]').value==='-200,000','Signed Persian input not grouped');
         await submit();expect($('.finance-review').textContent.includes('مهر'),'Selected charge period absent from review');
         await submit();await until(()=>$('[data-finance-edit]'));
         expect(posts.at(-1).body.items[0].unit_amount===-200000,'Credit sign lost from request');

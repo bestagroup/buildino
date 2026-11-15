@@ -1,0 +1,21 @@
+/* Neutral field focus; keyboard focus on buttons and links stays unchanged. */
+html[dir="rtl"] :is(input, select, textarea):not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"]):focus {
+    box-shadow: none !important;
+}
+html[dir="rtl"] :is(input, select, textarea):not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"]):focus:not([aria-invalid="true"], .is-invalid):not(.has-error *) {
+    border-color: var(--border-strong, var(--portal-border, #cbd5e1)) !important;
+}
+html[dir="rtl"] :is(input, select, textarea):not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"]):focus-visible {
+    outline: 1px dashed var(--muted, var(--portal-muted, #64748b)) !important;
+    outline-offset: 2px !important;
+}
+html[dir="rtl"] :is(.auth-input, .portal-input, .setup-counter, .setup-unit-card):focus-within:not(.has-error, .is-invalid):not(:has([aria-invalid="true"], .is-invalid)) {
+    border-color: var(--border-strong, var(--portal-border, #cbd5e1)) !important;
+    box-shadow: none !important;
+}
+html[dir="rtl"] .select2-container--default:is(.select2-container--focus, .select2-container--open) :is(.select2-selection--single, .select2-selection--multiple) {
+    border-color: var(--border-strong, var(--portal-border, #cbd5e1)) !important;
+    box-shadow: none !important;
+    outline: 1px dashed var(--muted, var(--portal-muted, #64748b));
+    outline-offset: 2px;
+}

@@ -28,6 +28,9 @@
     @stack('styles')
 
     <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-action-layout.css') }}?v={{ filemtime(public_path('css/buildino-action-layout.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-field-focus.css') }}?v={{ filemtime(public_path('css/buildino-field-focus.css')) }}">
+
     <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/buildino-mark.svg') }}">
     <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}">
@@ -1400,6 +1403,7 @@
     defer
 ></script>
 
+<script src="{{ asset('js/buildino-numeric.js') }}?v={{ filemtime(public_path('js/buildino-numeric.js')) }}" defer></script>
 <script
     src="{{ asset('js/buildino-foundation.js') }}"
     defer

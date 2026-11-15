@@ -1,3 +1,4 @@
+import { select2Fixture } from './helpers/select2-fixture.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile, execFileSync } from 'node:child_process';
@@ -119,7 +120,7 @@ test('actual registration/setup UI keeps standalone, block, complex and legacy j
         const mode = path.slice(1), content = pages[mode];
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         if (mode === 'register') res.end(content.replace('</body>', bootstrap + '<pre id="result" hidden></pre><script src="/js/buildino-registration.js"></script>' + registrationChecks + '</body>'));
-        else res.end('<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/buildino-fonts.css"><link rel="stylesheet" href="/css/buildino-management.css"><link rel="stylesheet" href="/css/buildino-design-system.css"><link rel="stylesheet" href="/css/buildino-building-setup.css">' + content + bootstrap + '<pre id="result" hidden></pre><script src="/js/buildino-building-setup-engine.js"></script><script src="/js/buildino-building-setup.js"></script>' + setupChecks + '</html>');
+        else res.end('<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/buildino-fonts.css"><link rel="stylesheet" href="/css/buildino-management.css"><link rel="stylesheet" href="/css/buildino-design-system.css"><link rel="stylesheet" href="/css/buildino-building-setup.css">' + content + select2Fixture() + bootstrap + '<pre id="result" hidden></pre><script src="/js/buildino-building-setup-engine.js"></script><script src="/js/buildino-building-setup.js"></script>' + setupChecks + '</html>');
     });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     try {

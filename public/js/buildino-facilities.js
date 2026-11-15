@@ -14,7 +14,10 @@
     const currency = () => ({ IRR: 'ریال', IRT: 'تومان' }[building()?.currency] || building()?.currency || 'واحد پول ساختمان');
     const money = value => `${number(value)} ${currency()}`;
     const input = (form, key) => form.elements.namedItem(key);
-    const get = (form, key) => input(form, key).value.trim();
+    const get = (form, key) => {
+        const field = input(form, key);
+        return field.hasAttribute('data-number-input') ? window.BuildinoNumeric.normalize(field.value) : field.value.trim();
+    };
     const checked = (form, key) => input(form, key).checked;
     const numeric = (form, key) => get(form, key) === '' ? null : Number(get(form, key));
     const time = value => String(value || '').slice(0, 5);

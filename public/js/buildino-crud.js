@@ -1317,10 +1317,10 @@
 
             if (scopedFormula && resource.update && formulaPermission('update')) {
                 const label = row.is_active ? 'غیرفعال کردن' : 'فعال کردن';
-                actions.push(`<button type="button" class="crud-row-action crud-row-action--edit"
+                actions.push(`<button type="button" class="crud-row-action formula-status-toggle" role="switch" aria-checked="${Boolean(row.is_active)}" title="${label}"
                     data-row-action="toggle-formula" data-id="${escapeHtml(row.id)}"
                     aria-label="${label} ${escapeHtml(row.title || resource.title)}"
-                    ${pendingFormulaUpdates.has(String(row.id)) ? 'disabled aria-busy="true"' : ''}>${label}</button>`);
+                    ${pendingFormulaUpdates.has(String(row.id)) ? 'disabled aria-busy="true"' : ''}><span class="formula-status-toggle__track" aria-hidden="true"><span></span></span></button>`);
             }
 
             (resource.actions || []).filter((action) => bootstrap.resourceKey !== "invitations" || (
@@ -2524,7 +2524,7 @@
                     value = null;
                 } else {
                     value =
-                        Number(value);
+                        Number(window.BuildinoNumeric?.normalize(value) ?? value);
 
                     if (
                         Number.isNaN(

@@ -28,7 +28,7 @@ test('finance: real Vue workflows, Jalali dates, financial safeguards, permissio
         } }],
     });
     const html = `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    ${['/public/css/buildino-fonts.css','/public/css/buildino-management.css','/public/css/buildino-crud.css','/public/css/buildino-design-system.css','/public/css/buildino-unit-ownerships.css','/resources/css/management-inertia.css','/resources/css/finance-workspace.css','/resources/css/operation-records.css','/node_modules/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css'].map(path=>'<link rel="stylesheet" href="'+path+'">').join('')}
+    ${['/public/css/buildino-fonts.css','/public/css/buildino-management.css','/public/css/buildino-crud.css','/public/css/buildino-design-system.css','/public/css/buildino-unit-ownerships.css','/resources/css/management-inertia.css','/resources/css/finance-workspace.css','/resources/css/operation-records.css','/node_modules/select2/dist/css/select2.css','/resources/css/buildino-select2.css','/node_modules/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css'].map(path=>'<link rel="stylesheet" href="'+path+'">').join('')}
     <div id="app" style="padding:16px;max-width:1200px;margin:auto"></div><pre id="result" hidden></pre>
     <script>window.requestAnimationFrame=callback=>setTimeout(()=>callback(performance.now()),16); window.cancelAnimationFrame=clearTimeout; window.addEventListener('error',event=>document.querySelector('#result').textContent=event.message+' '+event.lineno);</script>
     <script src="/test.js"></script><script>
@@ -54,7 +54,7 @@ test('finance: real Vue workflows, Jalali dates, financial safeguards, permissio
     const props=key=>{
         const prefix=configs[key].permission.split('.')[0], abilities={};
         for(const p of ['invoices','payments',prefix]) for(const a of ['view','create','update','delete','issue','adjust','verify','approve','reject','pay','complete','fail']) abilities[p+'.'+a]=true;
-        return {resourceKey:key,title:configs[key].title,resource:configs[key],csrfToken:'test',workspace:{periods:[{id:4,building_id:1,title:'مهر',status:'draft'}],buildings:[1,2].map(id=>({id,title:'ساختمان '+id,currency:'IRR',abilities:{...abilities}})),units:[{id:101,building_id:1,label:'بلوک اصلی / همکف / واحد ۱۰۱'}],groups,navigation:Object.keys(configs).map(key=>({key,title:configs[key].title,url:'/management/operations/'+key})),prefix,actionPermissions:Object.fromEntries((configs[key].actions||[]).map(a=>[a.key,prefix+'.'+(key==='loyalty-claims'?'update':a.key==='paid'?'pay':a.key)])),blocks:[],lookups:Object.fromEntries(['fund_id','financial_category_id','building_bank_account_id','block_id'].map(key=>[key,[{value:1,label:'گزینه مجاز',building_id:1}]])),initial:{...initial}}};
+        return {resourceKey:key,title:configs[key].title,resource:configs[key],csrfToken:'test',workspace:{periods:[{id:4,building_id:1,title:'مهر',status:'draft'}],buildings:[1,2].map(id=>({id,title:'ساختمان '+id,currency:'IRR',abilities:{...abilities}})),units:[{id:101,building_id:1,label:'بلوک اصلی / همکف / واحد ۱۰۱'}],groups,navigation:Object.keys(configs).map(key=>({key,title:configs[key].title,url:'/management/operations/'+key})),prefix,actionPermissions:Object.fromEntries((configs[key].actions||[]).map(a=>[a.key,prefix+'.'+(key==='loyalty-claims'?'update':a.key==='paid'?'pay':a.key)])),blocks:[],lookups:Object.fromEntries(['fund_id','financial_category_id','building_bank_account_id','block_id'].map(key=>[key,[{value:1,parent_id:3,parent_title:'Parent',has_active_formula:true,label:'گزینه مجاز',building_id:1}]])),initial:{...initial}}};
     };
     const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], tick=()=>new Promise(r=>setTimeout(r,10));
     const expect=(value,message)=>{if(!value) throw Error(message);};
@@ -63,7 +63,7 @@ test('finance: real Vue workflows, Jalali dates, financial safeguards, permissio
     const submit=async()=>{const el=$('#finance-form')||$('#finance-record-form');el.dispatchEvent(new Event('submit',{cancelable:true}));await tick();};
     const click=async selector=>{$(selector).click();await tick();};
     const mount=async(key,override)=>{active=key;history.replaceState({},'','/management/operations/'+key);window.mountFinance(override||props(key));await until(()=>$('[data-finance-open]'));};
-    const fillRequired=async()=>{for(const el of $$('.finance-editor [required]')){if(el.type==='checkbox'||el.disabled)continue;const value=el.tagName==='SELECT'?[...el.options].find(o=>o.value)?.value:el.dataset.buildinoDateType?'۱۴۰۵/۰۸/۰۷':el.type==='number'?'100':el.name==='iban'?'IR123456789012345678901234':'نمونه آزمایشی';await input(el.name||el.nextElementSibling?.name,value);}};
+    const fillRequired=async()=>{for(const el of $$('.finance-editor [required]')){if(el.type==='checkbox'||el.disabled)continue;const value=el.tagName==='SELECT'?[...el.options].find(o=>o.value)?.value:el.dataset.buildinoDateType?'۱۴۰۵/۰۸/۰۷':(el.type==='number'||el.hasAttribute('data-number-managed'))?'100':el.name==='iban'?'IR123456789012345678901234':'نمونه آزمایشی';await input(el.name||el.nextElementSibling?.name,value);}};
     (async()=>{
         for(const key of ['invoices','expenses']){const cached=props(key);cached.workspace.groups=null;await mount(key,cached);expect($('[data-finance-create]'),'Missing groups blanked workspace '+key);}
         await mount('invoices'); expect($$('.finance-tabs a').length===3,'Related navigation must be grouped');
@@ -104,7 +104,7 @@ test('finance: real Vue workflows, Jalali dates, financial safeguards, permissio
         }
         await mount('expenses');await click('[data-finance-create]');await fillRequired();await submit();failSave=true;await submit();await until(()=>$('[data-finance-error]'));expect($('[name="title"]').value==='نمونه آزمایشی','Server validation discarded input');failSave=false;
         const p=props('invoices');for(const b of p.workspace.buildings)for(const key of Object.keys(b.abilities))b.abilities[key]=key.endsWith('.view');await mount('invoices',p);expect(!$('[data-finance-create]'),'Read-only create exposed');await click('[data-finance-open]');expect(!$('[data-finance-pay]')&&!$('[data-finance-plan]')&&!$('[data-finance-edit]'),'Read-only mutation exposed');
-        await mount('invoices');await click('[data-finance-create]');await input('description','تغییر ذخیره نشده');await click('.finance-editor .ownership-card__heading button');expect($('.finance-editor [role="alert"]'),'Unsaved edit discarded');
+        await mount('invoices');await click('[data-finance-create]');await input('unit_id','101');await click('.finance-editor .ownership-card__heading button');expect($('.finance-editor [role="alert"]'),'Unsaved edit discarded');
         expect(document.documentElement.scrollWidth<=innerWidth,'Page overflows viewport');
         stress=true;
         for(const key of ['invoices','expenses','expense-categories']) {

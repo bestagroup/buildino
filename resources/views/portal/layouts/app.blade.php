@@ -29,6 +29,9 @@
     @stack('styles')
 
     <link rel="stylesheet" href="{{ asset('css/buildino-design-system.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-action-layout.css') }}?v={{ filemtime(public_path('css/buildino-action-layout.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-field-focus.css') }}?v={{ filemtime(public_path('css/buildino-field-focus.css')) }}">
+
     <link rel="stylesheet" href="{{ asset('css/buildino-brand.css') }}?v={{ filemtime(public_path('css/buildino-brand.css')) }}">
 
     <link rel="stylesheet" href="{{ asset('css/buildino-core-flows.css') }}">
@@ -511,6 +514,7 @@
 
 <script src="{{ \App\Support\UiAssets::url('sweetalert2.js') }}"></script>
 
+<script src="{{ asset('js/buildino-numeric.js') }}?v={{ filemtime(public_path('js/buildino-numeric.js')) }}" defer></script>
 <script src="{{ asset('js/buildino-foundation.js') }}"></script>
 
 <script src="{{ \App\Support\UiAssets::url('jdate.js') }}"></script>

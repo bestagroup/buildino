@@ -1,3 +1,4 @@
+import { select2Fixture } from './helpers/select2-fixture.mjs';
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { execFileSync } from 'node:child_process';
@@ -30,7 +31,7 @@ test('guest panels replace each other while preserving registration steps and pe
         if (path.includes('/units/')) { if (hold) await new Promise(resolve => release = resolve); return { data: [row], meta: {} }; }
         return { data: row };
     } };
-    </script><script>${source}</script><script>
+    </script>${select2Fixture()}<script>${source}</script><script>
     const until = async predicate => { for (let i = 0; i < 100; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 5)); } throw Error('Timed out'); };
     const expect = (condition, label) => { if (!condition) throw Error(label); };
     const only = panel => {
