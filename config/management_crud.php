@@ -2253,6 +2253,7 @@ return [
             ]
         ],
         'invoices' => [
+        'hidden' => true,
         'permission' => 'invoices.view',
         'permission_scope' => 'any',
             'group' => 'finance',
@@ -2498,8 +2499,8 @@ return [
         'permission' => 'expenses.view',
         'permission_scope' => 'any',
             'group' => 'finance',
-            'title' => 'هزینه‌های ساختمان',
-            'description' => 'ثبت هزینه ساختمان بر اساس فرمول شارژ و مسئول پرداخت',
+            'title' => 'صورتحساب ساختمان',
+            'description' => 'ثبت هزینه و بدهی واحدها، انتخاب دوره پرداخت و تقسیم اقساط',
             'list' => [
                 'method' => 'GET',
                 'url' => '/api/v1/expenses?per_page=100'

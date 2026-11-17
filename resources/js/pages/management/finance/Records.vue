@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { vSelect2 } from '../../../directives/select2';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import BuildingBillLines from '../../../components/management/BuildingBillLines.vue';
+import { itemTotal, type InvoiceItem } from '../../../lib/invoice-workspace';
 import FinanceFrame from '../../../components/management/FinanceFrame.vue';
 import DynamicForm from '../../../components/management/DynamicForm.vue';
 import UiConfirmDialog from '../../../components/management/UiConfirmDialog.vue';
@@ -18,6 +20,10 @@ const view = ref<'list' | 'detail' | 'editor'>('list'), selected = ref<CrudRecor
 const form = ref<CrudRecord>({}), errors = ref<Record<string, string[]>>({}), discard = ref(false), deleting = ref(false);
 const page = ref(1), lastPage = ref(1), total = ref(0), operation = ref<NonNullable<CrudResource['actions']>[number] | null>(null);
 let ticket = 0, disposed = false, snapshot = '', initializingForm = false;
+const expenseMode = computed(() => props.resourceKey === 'expenses' && !operation.value);
+const billItems = computed<InvoiceItem[]>({ get: () => (form.value.items || []) as InvoiceItem[], set: value => { form.value.items = value; } });
+const billUnits = computed(() => props.workspace.units.filter(unit => String(unit.building_id) === buildingId.value && (!form.value.block_id || String(unit.block_id) === String(form.value.block_id))));
+const availablePeriods = computed(() => (props.workspace.periods || []).filter(period => String(period.building_id) === buildingId.value && ['draft', 'calculated'].includes(period.status)));
 const categoryMode = computed(() => props.resourceKey === 'expense-categories');
 const cardList = computed(() => categoryMode.value || props.resourceKey === 'expenses');
 const cardColumns = computed(() => (props.resource.columns || []).filter(column => !['id', 'building_id', 'created_at', 'title', 'status', 'payment_status', 'is_active'].includes(column.key)));
@@ -35,10 +41,11 @@ const expenseScopeLabel = computed(() => expenseBlocks.value.find(block => Strin
 const currency = computed(() => ({ IRR: 'ریال', IRT: 'تومان' }[building.value?.currency || ''] || building.value?.currency || 'واحد پول ساختمان'));
 const canCreate = computed(() => Boolean(props.resource.create && allowed('create')));
 const filtered = computed(() => rows.value.filter(row => (row.building_id === undefined || String(row.building_id) === buildingId.value) && JSON.stringify(row).toLocaleLowerCase('fa').includes(search.value.trim().toLocaleLowerCase('fa'))));
+const billLocked = (row: CrudRecord) => props.resourceKey === 'expenses' && ((row.period_allocations || []) as {charge_period?: {status: string}}[]).some(allocation => !['draft', 'calculated'].includes(allocation.charge_period?.status || ''));
 const rowTitle = (row: CrudRecord) => String(row.title || row.account_holder_name || (props.resourceKey === 'loyalty-rules' ? 'قاعده نسخه ' + row.version : props.resourceKey === 'loyalty-claims' ? row.user_name || 'درخواست جایزه' : props.title + ' · ' + row.id));
-const labels: Record<string, string> = { ...invoiceLabels, paid: 'پرداخت‌شده', unpaid: 'پرداخت‌نشده', approved: 'تأییدشده', rejected: 'ردشده', posted: 'ثبت‌شده', payment_verified: 'تأیید پرداخت', equal: 'مساوی بین واحدها', area: 'بر اساس متراژ', persons: 'بر اساس تعداد ساکنین', owner: 'مالک', resident: 'ساکن / مستأجر', unit: 'کیف پول واحد', electricity: 'برق', gas: 'گاز', water: 'آب', phone: 'تلفن', internet: 'اینترنت', municipality: 'شهرداری', other: 'سایر' };
+const labels: Record<string, string> = { ...invoiceLabels, calculated: 'محاسبه‌شده', closed: 'بسته‌شده', calculating: 'در حال محاسبه', paid: 'پرداخت‌شده', unpaid: 'پرداخت‌نشده', approved: 'تأییدشده', rejected: 'ردشده', posted: 'ثبت‌شده', payment_verified: 'تأیید پرداخت', equal: 'مساوی بین واحدها', area: 'بر اساس متراژ', persons: 'بر اساس تعداد ساکنین', owner: 'مالک', resident: 'ساکن / مستأجر', unit: 'کیف پول واحد', electricity: 'برق', gas: 'گاز', water: 'آب', phone: 'تلفن', internet: 'اینترنت', municipality: 'شهرداری', other: 'سایر' };
 const fields = computed<CrudField[]>(() => {
-    const base = (operation.value ? operation.value.fields || [] : props.resource.fields || []).filter(field => field.name !== 'building_id' && field.type !== 'json').map(field => {
+    const base = (operation.value ? operation.value.fields || [] : props.resource.fields || []).filter(field => field.name !== 'building_id' && field.type !== 'json' && !(expenseMode.value && (field.name === 'amount' || form.value.distribution_mode === 'equal' && field.name === 'financial_category_id'))).map(field => {
         const result = { ...field };
         if (result.type === 'number') { result.min = result.name === 'amount' || result.name === 'points' || result.name === 'required_points' ? 1 : 0; result.step = 1; if (result.name === 'amount') result.label += ' (' + currency.value + ')'; }
         if (result.type === 'text') result.maxlength = ['reference_number', 'invoice_number', 'bill_identifier', 'payment_identifier', 'provider'].includes(result.name) ? 100 : result.name === 'bank_name' ? 120 : result.name === 'iban' ? 34 : result.name === 'account_number' ? 50 : result.name === 'card_number' ? 19 : 255;
@@ -64,11 +71,16 @@ const fields = computed<CrudField[]>(() => {
         { name: 'maximum_points', label: 'سقف امتیاز هر پرداخت', min: 1 },
         { name: 'expires_days', label: 'اعتبار امتیاز (روز)', min: 1, max: 3650 },
     ].map(field => ({ ...field, type: 'number', step: 1, help: 'اختیاری؛ در صورت خالی‌بودن، مقدار پیش‌فرض سامانه اعمال می‌شود.' })));
-    if (props.resourceKey === 'expenses') {
+    if (expenseMode.value && form.value.distribution_mode !== 'equal') {
         const categories = (props.workspace.lookups.financial_category_id || []).filter(row => String(row.building_id) === buildingId.value);
         const parents = new Map(categories.map(row => [row.parent_id, { value: row.parent_id!, label: row.parent_title! }]));
         base.splice(Math.max(0, base.findIndex(field => field.name === 'financial_category_id')), 0,
             { name: 'category_parent_id', label: 'دسته اصلی هزینه', type: 'select', required: true, options: [...parents.values()] });
+    }
+    if (expenseMode.value) {
+        base.unshift({ name: 'distribution_mode', label: 'روش تقسیم', type: 'select', required: true, default: 'formula', options: [{value: 'formula', label: 'طبق فرمول دسته هزینه'}, {value: 'equal', label: 'بدهی / طلب با تقسیم مساوی'}] });
+        base.push({ name: 'start_charge_period_id', label: 'دوره پرداخت', type: 'select', required: true, options: availablePeriods.value.map(period => ({value: period.id, label: period.title})) },
+            { name: 'period_installment_count', label: 'تعداد اقساط', type: 'select', required: true, default: 1, options: [1,2,3,4,5].map(value => ({value, label: String(value)})) });
     }
     return base;
 });
@@ -78,6 +90,7 @@ const review = computed(() => fields.value.filter(field => form.value[field.name
 const format = (value: unknown, key: string): string => {
     if (props.resourceKey === 'expenses' && key === 'block_id' && !value) return 'کل ساختمان';
     if (value === null || value === undefined || value === '') return '—';
+    if (key === 'start_charge_period_id') return props.workspace.periods?.find(period => String(period.id) === String(value))?.title || String(value);
     if (key === 'building_id') return building.value?.title || '—';
     const option = props.workspace.lookups[key]?.find(row => String(row.value) === String(value));
     if (option) return option.label;
@@ -131,6 +144,11 @@ const openEditor = async (row: CrudRecord | null = null, action: typeof operatio
         if (!row && automaticExpenseScope.value) form.value.block_id = expenseBlocks.value[0]?.value ?? '';
         if (row?.payer_responsibility === 'unit') form.value.payer_responsibility = '';
     }
+    if (expenseMode.value) {
+        form.value.distribution_mode = row?.distribution_mode || 'formula';
+        form.value.target_unit_ids = row?.target_unit_ids ? [...row.target_unit_ids as number[]] : null;
+        form.value.items = row?.items ? JSON.parse(JSON.stringify(row.items)) : [{ title: String(row?.title || ''), quantity: 1, unit_amount: row?.amount || '' }];
+    }
     initializingForm = false;
     if (form.value.status === '' && props.resourceKey === 'incomes') form.value.status = 'posted';
     view.value = 'editor'; snapshot = JSON.stringify(form.value); discard.value = false;
@@ -139,7 +157,7 @@ const openEditor = async (row: CrudRecord | null = null, action: typeof operatio
 watch(() => form.value.financial_category_id, value => {
     if (initializingForm || props.resourceKey !== 'expenses' || view.value !== 'editor' || operation.value) return;
     const category = props.workspace.lookups.financial_category_id?.find(option => String(option.value) === String(value));
-    if (category) form.value.title = category.label;
+    if (category) { form.value.title = category.label; if (billItems.value.length === 1 && !billItems.value[0].unit_amount) billItems.value[0].title = category.label; }
 }, { flush: 'sync' });
 watch(() => form.value.category_parent_id, (value, previous) => {
     if (props.resourceKey === 'expenses' && view.value === 'editor' && previous !== undefined && value !== previous) {
@@ -147,6 +165,7 @@ watch(() => form.value.category_parent_id, (value, previous) => {
         if (String(choice?.parent_id) !== String(value)) form.value.financial_category_id = '';
     }
 });
+watch(() => form.value.block_id, (value, previous) => { if (expenseMode.value && view.value === 'editor' && value !== previous && !initializingForm) form.value.target_unit_ids = null; }, { flush: 'sync' });
 const closeEditor = (force = false) => {
     if (busy.value) return;
     if (!force && JSON.stringify(form.value) !== snapshot) { discard.value = true; return; }
@@ -169,6 +188,12 @@ const validate = (checkFields = fields.value) => {
     }
     if (form.value.starts_at && form.value.ends_at && String(form.value.ends_at) <= String(form.value.starts_at)) next.ends_at = ['پایان باید بعد از شروع باشد.'];
     if (props.resourceKey === 'bank-accounts' && !operation.value && (String(form.value.iban || '').trim().length < 24 || String(form.value.iban).trim().length > 34)) next.iban = ['شماره شبا باید بین ۲۴ تا ۳۴ نویسه باشد.'];
+    if (expenseMode.value) {
+        if (!availablePeriods.value.some(period => String(period.id) === String(form.value.start_charge_period_id))) next.start_charge_period_id = ['دوره باز از همین ساختمان انتخاب کنید.'];
+        if (Array.isArray(form.value.target_unit_ids) && (!form.value.target_unit_ids.length || form.value.target_unit_ids.some(id => !billUnits.value.some(unit => String(unit.id) === String(id))))) next.target_unit_ids = ['حداقل یک واحد معتبر انتخاب کنید.'];
+        if (!billItems.value.length || billItems.value.some(row => !row.title.trim() || !Number.isInteger(Number(row.quantity)) || Number(row.quantity) < 1 || !Number.isSafeInteger(Number(row.unit_amount)) || row.unit_amount === '')) next.items = ['عنوان، تعداد و مبلغ ردیف‌ها را تکمیل کنید.'];
+        if (!Number.isSafeInteger(itemTotal(billItems.value)) || Math.abs(itemTotal(billItems.value)) < Number(form.value.period_installment_count)) next.items = ['جمع مبلغ باید غیرصفر و برای تعداد اقساط کافی باشد.'];
+    }
     errors.value = next;
     if (Object.keys(next).length) {
         step.value = 0;
@@ -187,6 +212,12 @@ const submit = async () => {
         if (props.resourceKey === 'expenses' && editing.value && String(body.block_id ?? '') === String(selected.value?.block_id ?? '')) delete body.block_id;
         if (!operation.value && ['expenses', 'incomes', 'expense-categories'].includes(props.resourceKey)) body.building_id = Number(buildingId.value);
         if (categoryMode.value) body.parent_id = form.value.parent_id ? Number(form.value.parent_id) : null;
+        if (expenseMode.value) {
+            body.items = billItems.value.map(row => ({title: row.title.trim(), quantity: Number(row.quantity), unit_amount: Number(row.unit_amount), description: row.description || null}));
+            body.target_unit_ids = form.value.target_unit_ids;
+            body.amount = itemTotal(billItems.value);
+            if (form.value.distribution_mode === 'equal') body.financial_category_id = null;
+        }
         delete body.category_parent_id;
         if (props.resourceKey === 'loyalty-rules' && !operation.value) { const configuration: CrudRecord = {}; for (const key of ['amount_step', 'minimum_amount', 'maximum_points', 'expires_days']) { if (body[key] !== null) configuration[key] = body[key]; delete body[key]; } body.configuration = Object.keys(configuration).length ? configuration : null; }
         await apiRequest(endpoint(action.url), { csrfToken: props.csrfToken, method: action.method || (editing.value ? 'PATCH' : 'POST'), body: JSON.stringify(body) });
@@ -208,6 +239,7 @@ onBeforeUnmount(() => { disposed = true; ticket++; window.removeEventListener('b
 
 <template>
     <FinanceFrame :title="title" :resource-key="resourceKey" :workspace="workspace" :building-id="buildingId"><div ref="root">
+        <p v-if="expenseMode && building?.abilities['invoices.view']"><a class="ownership-button" :href="'/management/operations/expenses?history=1&building_id=' + buildingId">سوابق صورتحساب‌ها و بدهی‌های قبلی واحدها</a></p>
         <div v-if="error" role="alert" tabindex="-1" class="ownership-alert ownership-alert--error" data-finance-error>{{ error }}</div><div v-if="success" role="status" class="ownership-alert ownership-alert--success">{{ success }}</div>
         <template v-if="view === 'list'">
             <section v-if="resourceKey !== 'expenses' || workspace.buildings.length !== 1" class="ownership-card"><div class="ownership-card__heading"><div><h3>انتخاب ساختمان</h3><p>{{ resource.description }}</p></div></div><label class="ownership-field"><span>ساختمان</span><select v-select2 v-model="buildingId" data-finance-building @change="changeBuilding"><option value="">انتخاب ساختمان</option><option v-for="item in workspace.buildings" :key="item.id" :value="String(item.id)">{{ item.title }}</option></select></label><p v-if="!workspace.buildings.length" class="finance-empty">ساختمان قابل دسترسی وجود ندارد.</p></section>
@@ -227,11 +259,20 @@ onBeforeUnmount(() => { disposed = true; ticket++; window.removeEventListener('b
                 <nav v-if="lastPage > 1" class="ownership-actions finance-pagination" aria-label="صفحه‌بندی"><button type="button" class="ownership-button" :disabled="loading || page <= 1" @click="load(page - 1)">صفحه قبل</button><span>صفحه {{ money(page) }} از {{ money(lastPage) }}</span><button type="button" class="ownership-button" :disabled="loading || page >= lastPage" @click="load(page + 1)">صفحه بعد</button></nav>
             </section>
         </template>
-        <section v-else-if="view === 'detail' && selected" class="ownership-card"><div class="ownership-card__heading ownership-card__heading--split finance-heading"><div><h3 id="finance-record-detail-title" tabindex="-1">{{ rowTitle(selected) }}</h3><p>{{ scopeLabel }}</p></div><button type="button" class="ownership-button" @click="view = 'list'; focus('#finance-record-list-title')">بازگشت به فهرست</button></div><dl class="finance-review"><template v-for="column in resource.columns" :key="column.key"><dt>{{ column.label }}</dt><dd>{{ format(readValue(selected, column.key), column.key) }}</dd></template><template v-if="selected.description"><dt>توضیحات</dt><dd>{{ selected.description }}</dd></template></dl><div class="ownership-actions"><button v-if="resource.update && allowed('update', selected)" type="button" class="ownership-button" data-finance-edit @click="openEditor(selected)">ویرایش اطلاعات</button><button v-for="action in visibleActions(selected)" :key="action.key" type="button" class="ownership-button" :class="{ 'ownership-button--primary': !['reject','fail'].includes(action.key), 'finance-danger': ['reject','fail'].includes(action.key) }" :data-finance-action="action.key" @click="openEditor(selected, action)">{{ action.title }}</button><button v-if="resource.delete && allowed('delete', selected)" type="button" class="ownership-button finance-danger" @click="deleting = true">حذف سند</button></div></section>
+        <section v-else-if="view === 'detail' && selected" class="ownership-card"><div class="ownership-card__heading ownership-card__heading--split finance-heading"><div><h3 id="finance-record-detail-title" tabindex="-1">{{ rowTitle(selected) }}</h3><p>{{ scopeLabel }}</p></div><button type="button" class="ownership-button" @click="view = 'list'; focus('#finance-record-list-title')">بازگشت به فهرست</button></div><dl class="finance-review"><template v-for="column in resource.columns" :key="column.key"><dt>{{ column.label }}</dt><dd>{{ format(readValue(selected, column.key), column.key) }}</dd></template><template v-if="selected.description"><dt>توضیحات</dt><dd>{{ selected.description }}</dd></template></dl><template v-if="resourceKey === 'expenses'"><p>واحدها: {{ selected.target_unit_ids ? workspace.units.filter(unit => (selected!.target_unit_ids as number[]).map(String).includes(String(unit.id))).map(unit => unit.label).join('، ') : 'تمام واحدهای دامنه' }}</p><dl class="finance-review"><template v-for="allocation in (selected.period_allocations || []) as any[]" :key="allocation.id"><dt>{{ allocation.charge_period?.title }} · قسط {{ allocation.sequence }}</dt><dd>{{ money(allocation.amount) }} {{ currency }} · {{ labels[allocation.charge_period?.status] || allocation.charge_period?.status }}</dd></template></dl><div v-for="(line, index) in (selected.items || []) as InvoiceItem[]" :key="index" class="finance-line">{{ line.title }} · {{ money(line.quantity) }} × {{ money(line.unit_amount) }} {{ currency }}<p>{{ line.description }}</p></div></template><p v-if="billLocked(selected)" class="finance-hint">یکی از دوره‌های این سند صادر یا بسته شده است؛ تغییر و حذف سند مجاز نیست.</p><div class="ownership-actions"><button v-if="resource.update && allowed('update', selected) && !billLocked(selected)" type="button" class="ownership-button" data-finance-edit @click="openEditor(selected)">ویرایش اطلاعات</button><button v-for="action in visibleActions(selected)" :key="action.key" type="button" class="ownership-button" :class="{ 'ownership-button--primary': !['reject','fail'].includes(action.key), 'finance-danger': ['reject','fail'].includes(action.key) }" :data-finance-action="action.key" @click="openEditor(selected, action)">{{ action.title }}</button><button v-if="resource.delete && allowed('delete', selected) && !billLocked(selected)" type="button" class="ownership-button finance-danger" @click="deleting = true">حذف سند</button></div></section>
         <section v-else-if="view === 'editor'" class="ownership-card finance-editor" aria-labelledby="finance-record-editor-title" :aria-busy="busy"><div class="ownership-card__heading ownership-card__heading--split finance-heading"><div><h3 id="finance-record-editor-title" tabindex="-1">{{ operation?.title || (editing ? 'ویرایش · ' : 'ثبت · ') + title }}</h3><p>{{ scopeLabel }}</p></div><button type="button" class="ownership-button" :disabled="busy" @click="closeEditor()">بازگشت</button></div>
             <nav class="ownership-flow" :style="{ '--finance-steps': steps.length }" aria-label="مراحل ثبت"><span v-for="(label, index) in steps" :key="label" :class="{ 'is-current': step === index, 'is-complete': step > index }" :aria-current="step === index ? 'step' : undefined"><b>{{ index + 1 }}</b>{{ label }}</span></nav><h4 id="finance-record-step-title" tabindex="-1">{{ steps[step] }}</h4>
             <p v-if="automaticExpenseScope" class="finance-hint" data-expense-scope>دامنه هزینه: {{ scopeLabel }} · {{ expenseScopeLabel }}</p>
-            <form id="finance-record-form" novalidate @submit.prevent="submit"><fieldset :disabled="busy || uncertain"><DynamicForm v-if="categoryMode || step < steps.length - 1" v-model="form" :fields="activeFields" :mode="editing ? 'edit' : 'create'" lookup-base="/management/lookups" :csrf-token="csrfToken" :errors="errors" :group-optional="false" @loading="lookupLoading = $event" /><template v-else><dl class="finance-review"><dt>{{ categoryMode ? 'دامنه استفاده' : 'ساختمان' }}</dt><dd>{{ scopeLabel }}</dd><template v-for="item in review" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></template><template v-if="operation && !fields.length"><dt>سند</dt><dd>{{ selected ? rowTitle(selected) : '' }}</dd></template></dl><p v-if="categoryMode" class="finance-hint">این دسته پس از ثبت، فقط در همین ساختمان قابل استفاده است. غیرفعال‌کردن دسته اصلی، انتخاب زیر دسته‌های آن را نیز متوقف می‌کند.</p><p v-else-if="operation?.confirm" class="finance-hint">{{ operation.confirm }}</p><p v-else-if="resourceKey === 'wallet-payouts' || resourceKey === 'bill-payments'" class="finance-hint">ثبت این درخواست، مبلغ را در کیف پول ساختمان مسدود می‌کند. پیش از تأیید، مبلغ و اطلاعات مقصد را بررسی کنید.</p><p v-else-if="resourceKey === 'loyalty-rules'" class="finance-hint">نسخه جدیدی از قاعده ساخته می‌شود؛ سوابق نسخه‌های قبلی حفظ می‌شوند.</p></template></fieldset>
+            <form id="finance-record-form" novalidate @submit.prevent="submit"><fieldset :disabled="busy || uncertain"><DynamicForm v-if="categoryMode || step < steps.length - 1" v-model="form" :fields="activeFields" :mode="editing ? 'edit' : 'create'" lookup-base="/management/lookups" :csrf-token="csrfToken" :errors="errors" :group-optional="false" @loading="lookupLoading = $event" /><template v-else><dl class="finance-review"><dt>{{ categoryMode ? 'دامنه استفاده' : 'ساختمان' }}</dt><dd>{{ scopeLabel }}</dd><template v-for="item in review" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></template><template v-if="operation && !fields.length"><dt>سند</dt><dd>{{ selected ? rowTitle(selected) : '' }}</dd></template></dl><p v-if="categoryMode" class="finance-hint">این دسته پس از ثبت، فقط در همین ساختمان قابل استفاده است. غیرفعال‌کردن دسته اصلی، انتخاب زیر دسته‌های آن را نیز متوقف می‌کند.</p><p v-else-if="operation?.confirm" class="finance-hint">{{ operation.confirm }}</p><p v-else-if="resourceKey === 'wallet-payouts' || resourceKey === 'bill-payments'" class="finance-hint">ثبت این درخواست، مبلغ را در کیف پول ساختمان مسدود می‌کند. پیش از تأیید، مبلغ و اطلاعات مقصد را بررسی کنید.</p><p v-else-if="resourceKey === 'loyalty-rules'" class="finance-hint">نسخه جدیدی از قاعده ساخته می‌شود؛ سوابق نسخه‌های قبلی حفظ می‌شوند.</p></template>
+                <template v-if="expenseMode">
+                    <div v-if="step === 0" class="finance-line">
+                        <label class="ownership-field"><span>واحدهای مسئول پرداخت</span><select v-select2 name="unit_scope" :value="form.target_unit_ids === null ? 'all' : 'selected'" @change="form.target_unit_ids = ($event.target as HTMLSelectElement).value === 'all' ? null : []"><option value="all">تمام واحدهای دامنه انتخاب‌شده</option><option value="selected">انتخاب یک یا چند واحد</option></select></label>
+                        <label v-if="form.target_unit_ids !== null" class="ownership-field"><span>انتخاب واحدها</span><select v-select2 v-model="form.target_unit_ids" multiple name="target_unit_ids"><option v-for="unit in billUnits" :key="unit.id" :value="unit.id">{{ unit.label }}</option></select></label>
+                    </div>
+                    <p v-else>واحدها: {{ form.target_unit_ids === null ? 'تمام واحدهای دامنه' : billUnits.filter(unit => (form.target_unit_ids as number[]).map(String).includes(String(unit.id))).map(unit => unit.label).join('، ') }}</p>
+                    <BuildingBillLines v-model="billItems" :currency="currency" :readonly="step !== 0" />
+                    <p>جمع سند: {{ money(itemTotal(billItems)) }} {{ currency }} · مبلغ کل بین واحدهای انتخاب‌شده تقسیم می‌شود.</p>
+                </template></fieldset>
                 <div v-if="discard" class="finance-line" role="alert"><p>تغییرات ذخیره نشده‌اند. خارج می‌شوید؟</p><div class="finance-actions"><button type="button" class="ownership-button" @click="discard = false">ادامه ویرایش</button><button type="button" class="ownership-button finance-danger" @click="closeEditor(true)">خروج بدون ذخیره</button></div></div><div class="ownership-actions finance-pagination"><button v-if="step > 0" type="button" class="ownership-button" :disabled="busy" @click="step--; error = ''; focus('#finance-record-step-title')">مرحله قبل</button><button v-if="uncertain" type="button" class="ownership-button" @click="closeEditor(true); view = 'list'; load()">بررسی وضعیت در فهرست</button><button type="submit" class="ownership-button ownership-button--primary" :disabled="busy || lookupLoading || uncertain" data-finance-save>{{ busy ? 'در حال ثبت…' : step === steps.length - 1 ? 'تأیید و ثبت' : 'ادامه' }}</button></div>
             </form>
         </section>

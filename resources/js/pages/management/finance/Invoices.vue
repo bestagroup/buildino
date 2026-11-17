@@ -11,7 +11,7 @@ import { ApiError, apiRequest } from '../../../lib/management-api';
 import { canPlan, normalizeSignedAmount, day, invoiceLabels, invoiceTotal, itemTotal, money, payable, paymentMethods, splitInstallments, today, type Installment, type Invoice, type InvoiceItem, type InvoiceResource, type InvoiceWorkspace, type Payment } from '../../../lib/invoice-workspace';
 import type { CrudField, CrudRecord } from '../../../types/management';
 
-const props = defineProps<{ resourceKey: InvoiceResource; title: string; workspace: InvoiceWorkspace; csrfToken: string }>();
+const props = defineProps<{ archiveOnly?: boolean; resourceKey: InvoiceResource; title: string; workspace: InvoiceWorkspace; csrfToken: string }>();
 const root = ref<HTMLElement | null>(null), buildingId = ref(''), unitId = ref(''), search = ref(''), status = ref('');
 const view = ref<'list' | 'detail' | 'editor'>('list'), loading = ref(false), detailLoading = ref(false), busy = ref(false);
 const listLoaded = ref(false);
@@ -263,7 +263,8 @@ onBeforeUnmount(() => { closed = true; listTicket++; detailTicket++; choiceTicke
 <template>
     <FinanceFrame :title="title" :resource-key="resourceKey" :workspace="workspace" :building-id="buildingId">
         <div ref="root" data-invoice-select2>
-            <div v-if="error" class="ownership-alert ownership-alert--error" role="alert" tabindex="-1" data-finance-error>{{ error }}</div>
+            <p v-if="archiveOnly"><a class="ownership-button" :href="'/management/operations/expenses?building_id=' + buildingId">بازگشت به صورتحساب ساختمان</a></p>
+        <div v-if="error" class="ownership-alert ownership-alert--error" role="alert" tabindex="-1" data-finance-error>{{ error }}</div>
             <div v-if="success" class="ownership-alert ownership-alert--success" role="status">{{ success }}</div>
             <section v-if="view === 'list'" class="ownership-card" aria-labelledby="finance-scope-title">
                 <div class="ownership-card__heading"><div><h3 id="finance-scope-title">انتخاب ساختمان<template v-if="!isPayments"> و واحد</template></h3><p>اطلاعات فقط برای محدوده انتخاب‌شده نمایش داده می‌شود.</p></div></div>
@@ -271,7 +272,7 @@ onBeforeUnmount(() => { closed = true; listTicket++; detailTicket++; choiceTicke
                 <p v-if="!workspace.buildings.length" class="finance-empty">ساختمان قابل دسترسی برای این بخش وجود ندارد.</p>
             </section>
             <section v-if="view === 'list' && building" class="ownership-card" aria-labelledby="finance-list-title" :aria-busy="loading">
-                <div class="ownership-card__heading ownership-card__heading--split finance-heading"><div><h3 id="finance-list-title" tabindex="-1">{{ isPlans ? 'انتخاب صورتحساب برای اقساط' : isPayments ? 'فهرست پرداخت‌ها' : 'فهرست صورتحساب‌ها' }}</h3><p v-if="listLoaded">{{ total.toLocaleString('fa-IR') }} مورد ثبت‌شده · {{ currency }}</p></div><div class="finance-actions"><button type="button" class="ownership-button" :disabled="loading" @click="load(page)">به‌روزرسانی</button><button v-if="!isPayments && !isPlans && allowed('invoices.create')" type="button" class="ownership-button ownership-button--primary" data-finance-create @click="openEditor('invoice')">+ صورتحساب جدید</button><button v-if="isPayments && allowed('payments.create') && allowed('invoices.view')" type="button" class="ownership-button ownership-button--primary" data-finance-create @click="selected = null; openEditor('payment')">+ ثبت پرداخت</button></div></div>
+                <div class="ownership-card__heading ownership-card__heading--split finance-heading"><div><h3 id="finance-list-title" tabindex="-1">{{ isPlans ? 'انتخاب صورتحساب برای اقساط' : isPayments ? 'فهرست پرداخت‌ها' : 'فهرست صورتحساب‌ها' }}</h3><p v-if="listLoaded">{{ total.toLocaleString('fa-IR') }} مورد ثبت‌شده · {{ currency }}</p></div><div class="finance-actions"><button type="button" class="ownership-button" :disabled="loading" @click="load(page)">به‌روزرسانی</button><button v-if="!archiveOnly && !isPayments && !isPlans && allowed('invoices.create')" type="button" class="ownership-button ownership-button--primary" data-finance-create @click="openEditor('invoice')">+ صورتحساب جدید</button><button v-if="isPayments && allowed('payments.create') && allowed('invoices.view')" type="button" class="ownership-button ownership-button--primary" data-finance-create @click="selected = null; openEditor('payment')">+ ثبت پرداخت</button></div></div>
                 <p v-if="isPlans" class="finance-hint">صورتحساب را باز کنید تا برنامه اقساط آن را ببینید یا تنظیم کنید. تقسیط پیش از اعمال پرداخت و برای صورتحساب صادرشده انجام می‌شود.</p>
                 <div class="finance-filters"><label class="ownership-field"><span>جست‌وجو در همین صفحه</span><input v-model="search" type="search" placeholder="شماره سند یا نام پرداخت‌کننده"></label><label class="ownership-field"><span>وضعیت در همین صفحه</span><select v-select2 v-model="status" ><option value="">همه وضعیت‌ها</option><option v-for="key in (isPayments ? ['pending','processing','paid','failed','cancelled','refunded','partial_refund'] : ['draft','issued','partial','paid','overdue','void','cancelled'])" :key="key" :value="key">{{ invoiceLabels[key] }}</option></select></label></div>
                 <div v-if="loading" class="finance-empty" role="status">در حال دریافت اطلاعات…</div>

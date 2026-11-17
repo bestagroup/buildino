@@ -7,6 +7,7 @@ use App\Models\Building;
 use App\Models\User;
 use App\Services\Charge\BuildingExpenseRuleService;
 use Illuminate\Support\Facades\DB;
+use App\Services\Charge\BuildingBillScheduleService;
 
 class CreateBuildingExpense
 {
@@ -23,7 +24,10 @@ class CreateBuildingExpense
         return DB::transaction(function () use ($data, $actor): BuildingExpense {
             Building::query()->whereKey($data['building_id'])->lockForUpdate()->firstOrFail();
 
-            $status = $data['status'] ?? (isset($data['financial_category_id']) || isset($data['payment_status']) ? 'posted' : 'draft');
+            $schedules = app(BuildingBillScheduleService::class);
+            $data = $schedules->prepare($data);
+
+            $status = $data['status'] ?? (isset($data['start_charge_period_id']) || isset($data['financial_category_id']) || isset($data['payment_status']) ? 'posted' : 'draft');
             $data['status'] = $status;
 
             $expense = BuildingExpense::query()->create([
@@ -39,6 +43,8 @@ class CreateBuildingExpense
             ]);
 
             $this->rules->synchronize($expense, $expense->financial_category_id !== null || isset($data['payment_status']));
+
+            $schedules->replace($expense);
 
             return $expense->refresh();
         });

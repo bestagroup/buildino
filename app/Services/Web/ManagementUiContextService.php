@@ -210,6 +210,7 @@ final class ManagementUiContextService
                                 $globalPermissions
                             )
                     )
+                    ->reject(fn (array $resource): bool => (bool) ($resource['hidden'] ?? false))
                     ->keys()
                     ->values()
                     ->all(),

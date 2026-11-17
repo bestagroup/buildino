@@ -28,7 +28,7 @@ test('expense form scopes, automatic title, legacy editing and minimal payload',
     const $ = selector => w.document.querySelector(selector);
     const input = async (name, value) => { let el = $(`[name="${name}"]`); assert.ok(el, name); if (el.type === 'hidden') el = el.previousElementSibling; el.value = value; el.dispatchEvent(new w.Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); await tick(); };
     const props = (blockCount = 1, buildingCount = 1, wholeBuilding = true) => ({ resourceKey: 'expenses', title: config.title, resource: config, csrfToken: 'test', workspace: {
-        prefix: 'expenses', actionPermissions: {}, initial: {}, units: [], navigation: [], groups: [],
+        prefix: 'expenses', actionPermissions: {}, initial: {}, units: [{id: 1, building_id: 1, block_id: 1, label: 'واحد یک'}], periods: [{id: 4, building_id: 1, title: 'آبان', status: 'draft'}, {id: 5, building_id: 1, title: 'بسته', status: 'closed'}], navigation: [], groups: [],
         buildings: Array.from({ length: buildingCount }, (_, i) => ({ id: i + 1, title: 'ساختمان ' + (i + 1), currency: 'IRR', abilities: { 'expenses.create': wholeBuilding, 'expenses.update': wholeBuilding } })),
         blocks: Array.from({ length: blockCount }, (_, i) => ({ value: i + 1, label: 'بلوک ' + (i + 1), building_id: 1, abilities: { create: true, update: true } })),
         lookups: { financial_category_id: [{ value: 7, label: 'قبض آب', building_id: 1, parent_id: 3, parent_title: 'انرژی' }], block_id: Array.from({ length: blockCount }, (_, i) => ({ value: i + 1, label: 'بلوک ' + (i + 1), building_id: 1, abilities: { create: true } })) },
@@ -42,11 +42,17 @@ test('expense form scopes, automatic title, legacy editing and minimal payload',
         assert.equal($('[name="payer_responsibility"] option[value="unit"]'), null);
         await input('category_parent_id', '3'); await input('financial_category_id', '7');
         assert.equal($('[name="title"]').value, 'قبض آب');
-        await input('title', 'قبض آب آبان'); await input('amount', '500');
+        await input('title', 'قبض آب آبان');
+        const amount = $('[data-bill-amount="0"]'); amount.value = '۵۰۰'; amount.dispatchEvent(new w.Event('input', {bubbles: true})); await tick();
+        await input('start_charge_period_id', '4');
+        assert.equal($('[name="start_charge_period_id"] option[value="5"]'), null);
+        await input('unit_scope', 'selected');
+        const target = $('[name="target_unit_ids"]'); target.options[0].selected = true; target.dispatchEvent(new w.Event('change', {bubbles: true})); await tick();
         await input('expense_date', '۱۴۰۵/۰۸/۲۲');
         $('#finance-record-form').dispatchEvent(new w.Event('submit', { cancelable: true })); await tick();
         $('#finance-record-form').dispatchEvent(new w.Event('submit', { cancelable: true })); await tick();
         assert.equal(writes.length, 1, $('#app').textContent);
+        assert.deepEqual(Array.from(writes[0].target_unit_ids), [1]); assert.equal(writes[0].items[0].unit_amount, 500); assert.equal(writes[0].start_charge_period_id, '4');
         assert.equal(String(writes[0].block_id), '1'); assert.equal(writes[0].title, 'قبض آب آبان');
         for (const field of ['fund_id', 'payment_status', 'category_parent_id']) assert.equal(field in writes[0], false);
         $('[data-finance-open]').click(); await tick(); $('[data-finance-edit]').click(); await tick();

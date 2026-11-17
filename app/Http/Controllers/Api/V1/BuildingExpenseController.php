@@ -28,7 +28,7 @@ class BuildingExpenseController extends Controller
         $user = $request->user();
 
         $items = $scope->apply(
-            BuildingExpense::query(),
+            BuildingExpense::query()->with('periodAllocations.chargePeriod:id,title,status'),
             $user,
             'expenses.view'
         )->when($request->filled('building_id'), fn ($query) => $query->where('building_id', $request->integer('building_id')))
@@ -99,7 +99,14 @@ class BuildingExpenseController extends Controller
     public function destroy(BuildingExpense $expense): JsonResponse
     {
         $this->authorize('delete', $expense);
-        $expense->delete();
+        \Illuminate\Support\Facades\DB::transaction(function () use ($expense): void {
+            Building::whereKey($expense->building_id)->lockForUpdate()->firstOrFail();
+            $expense = BuildingExpense::whereKey($expense->id)->lockForUpdate()->firstOrFail();
+            $schedules = app(\App\Services\Charge\BuildingBillScheduleService::class);
+            $schedules->assertEditable($expense);
+            $schedules->invalidate($expense->periodAllocations()->pluck('charge_period_id'));
+            $expense->delete();
+        });
         return response()->json(status: 204);
     }
 }

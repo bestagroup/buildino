@@ -23,8 +23,10 @@ final class FinanceWorkspacePageController extends Controller
     public function __invoke(Request $request, string $resource, PermissionChecker $permissions, ManagementUiContextService $ui): Response
     {
         $user = $request->user();
-        $configuration = $ui->resourceForUser($user, config("management_crud.resources.$resource"));
-        $required = config("management_crud.resources.$resource.permission");
+        $invoiceHistory = $resource === 'expenses' && $request->boolean('history');
+        $permissionResource = $invoiceHistory ? 'invoices' : $resource;
+        $configuration = $ui->resourceForUser($user, config("management_crud.resources.$permissionResource"));
+        $required = config("management_crud.resources.$permissionResource.permission");
         $prefix = explode('.', $required)[0];
         $actionPermissions = [];
         foreach ($configuration['actions'] ?? [] as $action) {
@@ -43,13 +45,16 @@ final class FinanceWorkspacePageController extends Controller
             })->values();
         $readableIds = in_array($resource, ['invoices', 'invoice-installments', 'payments'], true)
             ? $buildings->filter(fn (array $building): bool => $building['abilities']['invoices.view'])->pluck('id') : collect();
+        if ($resource === 'expenses' && ! $invoiceHistory) $readableIds = $buildings->pluck('id');
+        if ($invoiceHistory) $readableIds = $buildings->filter(fn ($building) => $building['abilities']['invoices.view'])->pluck('id');
         $units = Unit::query()->whereHas('floor.block', fn ($query) => $query->whereIn('building_id', $readableIds))
-            ->with('floor.block')->orderBy('unit_number')->get()
+            ->with('floor.block.building')->orderBy('unit_number')->get()
+            ->filter(fn ($unit) => $resource !== 'expenses' || $invoiceHistory || ($unit->is_active && ($permissions->allows($user, 'expenses.view', $unit->floor->block->building) || $permissions->allows($user, 'expenses.view', $unit->floor->block))))
             ->map(fn (Unit $unit): array => [
-                'id' => $unit->id, 'building_id' => $unit->floor->block->building_id,
+                'id' => $unit->id, 'building_id' => $unit->floor->block->building_id, 'block_id' => $unit->floor->block_id,
                 'label' => $unit->floor->block->title.' / '.($unit->floor->title ?: 'طبقه '.$unit->floor->floor_number).' / واحد '.$unit->unit_number,
             ])->values();
-        if ($request->boolean('glance_embed') && in_array($resource, ['invoices', 'invoice-installments', 'payments'], true)) {
+        if ($request->boolean('glance_embed') && (in_array($resource, ['invoices', 'invoice-installments', 'payments'], true) || $invoiceHistory)) {
             $unit = $units->firstWhere('id', $request->integer('unit_id'));
             abort_unless($unit && $unit['building_id'] === $request->integer('building_id'), 403);
             $units = collect([$unit]);
@@ -106,12 +111,13 @@ final class FinanceWorkspacePageController extends Controller
                 ->map(fn ($account): array => ['value' => $account->id, 'label' => $account->bank_name.' · '.$account->account_holder_name.' · '.$account->iban, 'building_id' => $account->building_id])->values();
         }
 
-        return Inertia::render(in_array($resource, ['invoices', 'invoice-installments', 'payments'], true) ? 'management/finance/Invoices' : 'management/finance/Records', [
-            'resourceKey' => $resource,
-            'title' => config("management_crud.resources.$resource.title"),
+        return Inertia::render($invoiceHistory || in_array($resource, ['invoices', 'invoice-installments', 'payments'], true) ? 'management/finance/Invoices' : 'management/finance/Records', [
+            'resourceKey' => $invoiceHistory ? 'invoices' : $resource,
+            'archiveOnly' => $invoiceHistory,
+            'title' => $invoiceHistory ? 'صورتحساب ساختمان · سوابق واحدها' : config("management_crud.resources.$resource.title"),
             'resource' => $configuration,
             'workspace' => [
-                'periods' => in_array($resource, ['invoices', 'invoice-installments'], true) ? \App\Models\ChargePeriod::whereIn('building_id', $readableIds)->whereIn('status', ['draft', 'calculated'])->orderBy('period_start')->orderBy('id')->get(['id', 'building_id', 'title', 'period_start', 'period_end', 'due_date', 'status']) : [],
+                'periods' => in_array($resource, ['expenses', 'invoices', 'invoice-installments'], true) ? \App\Models\ChargePeriod::whereIn('building_id', $readableIds)->whereIn('status', ['draft', 'calculated'])->orderBy('period_start')->orderBy('id')->get(['id', 'building_id', 'title', 'period_start', 'period_end', 'due_date', 'status']) : [],
                 'buildings' => $buildings, 'units' => $units, 'navigation' => $navigation,
                 'chargeTabs' => ManagementPageCatalog::CHARGE_TABS, 'groups' => ManagementPageCatalog::FINANCE_GROUPS, 'prefix' => $prefix, 'actionPermissions' => $actionPermissions,
                 'lookups' => $lookups, 'blocks' => $blocks,

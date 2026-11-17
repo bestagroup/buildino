@@ -27,7 +27,7 @@ class ManagementOperationsController extends Controller
         $resources = collect(
             config('management_crud.resources', [])
         )->filter(
-            fn (array $resource): bool => $ui->canSeeResource(
+            fn (array $resource): bool => ! ($resource['hidden'] ?? false) && $ui->canSeeResource(
                 $user,
                 $resource
             )
@@ -79,11 +79,19 @@ class ManagementOperationsController extends Controller
         string $resource,
         ManagementUiContextService $ui,
         PermissionChecker $permissions
-    ): View|InertiaResponse {
+    ): View|InertiaResponse|\Illuminate\Http\RedirectResponse {
+        if ($resource === 'invoices') {
+            return redirect()->route('management.operations.show', ['resource' => 'expenses', ...request()->only(['building_id', 'unit_id', 'charge_period_id', 'unit_invoice_id', 'glance_embed']), 'history' => 1]);
+        }
+
         $configuration =
             config(
                 "management_crud.resources.{$resource}"
             );
+
+        if ($resource === 'expenses' && request()->boolean('history')) {
+            $configuration = config('management_crud.resources.invoices');
+        }
 
         abort_unless(
             is_array($configuration),

@@ -21,14 +21,14 @@ final class FinanceWorkspaceWebTest extends TestCase
     {
         $inside = $this->createBuildingGraph(); $outside = $this->createBuildingGraph(); $user = $this->createUser();
         $this->grant($user, ['invoices.view', 'reports.dashboard.view'], $inside['building']);
-        $url = '/management/operations/invoices?glance_embed=1&building_id='.$inside['building']->id.'&unit_id=';
+        $url = '/management/operations/expenses?history=1&glance_embed=1&building_id='.$inside['building']->id.'&unit_id=';
         $this->actingAs($user)->get($url.$inside['unit']->id)->assertOk()
             ->assertSee('data-glance-embedded', false)
             ->assertInertia(fn (Assert $page) => $page->has('workspace.units', 1)->has('workspace.buildings', 1)
                 ->where('workspace.units.0.id', $inside['unit']->id));
         $this->get($url.$outside['unit']->id)->assertForbidden();
         $this->get($url.'0')->assertForbidden();
-        $this->get('/management/operations/invoices')->assertOk()->assertDontSee('data-glance-embedded', false);
+        $this->get('/management/operations/expenses?history=1')->assertOk()->assertDontSee('data-glance-embedded', false);
     }
 
     public function test_financial_pages_share_navigation_and_only_expose_authorized_buildings(): void
@@ -38,7 +38,7 @@ final class FinanceWorkspaceWebTest extends TestCase
         $this->grant($user, [...$resources->pluck('permission')->unique()->all(), 'reports.dashboard.view'], $inside['building']);
         $this->actingAs($user);
         foreach ($resources as $key => $resource) {
-            $response = $this->get('/management/operations/'.$key)->assertOk();
+            $response = $this->get($key === 'invoices' ? '/management/operations/expenses?history=1' : '/management/operations/'.$key)->assertOk();
             if (in_array($key, ['charge-formulas', 'charge-periods'], true)) {
                 $response->assertSee('data-finance-navigation', false)->assertDontSee('crud-sibling-nav', false);
                 continue;
@@ -49,7 +49,7 @@ final class FinanceWorkspaceWebTest extends TestCase
                 ->where('workspace.buildings.0.id', $inside['building']->id)
                 ->where('workspace.buildings.0.abilities', fn ($abilities) => $abilities['invoices.create'] === false)
                 ->where('workspace.buildings.0.abilities', fn ($abilities) => $abilities['payments.verify'] === false)
-                ->has('workspace.navigation', $resources->count()));
+                ->has('workspace.navigation', $resources->count() - 1));
         }
         $this->get('/management/operations/users')->assertForbidden();
     }
@@ -98,15 +98,15 @@ final class FinanceWorkspaceWebTest extends TestCase
     public function test_finance_navigation_survives_configuration_cached_before_the_finance_release(): void
     {
         $graph = $this->createBuildingGraph(); $user = $this->createUser();
-        $this->grant($user, ['reports.dashboard.view', 'invoices.view', 'charge-formulas.view', 'charge-periods.view'], $graph['building']);
+        $this->grant($user, ['reports.dashboard.view', 'invoices.view', 'expenses.view', 'charge-formulas.view', 'charge-periods.view'], $graph['building']);
         config(['management_finance' => null]);
 
-        $this->actingAs($user)->get('/management/operations/invoices')->assertOk()->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($user)->get('/management/operations/expenses?history=1')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('management/finance/Invoices')
             ->has('workspace.groups', 4)
-            ->where('workspace.groups.0.resources.0', 'invoices'));
+            ->where('workspace.groups.0.resources.0', 'invoice-installments'));
         foreach (['charge-formulas', 'charge-periods'] as $resource) {
-            $this->get('/management/operations/'.$resource)->assertOk()->assertSee('صورتحساب واحد');
+            $this->get('/management/operations/'.$resource)->assertOk()->assertSee('صورتحساب ساختمان');
         }
     }
 

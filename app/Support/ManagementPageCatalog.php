@@ -7,10 +7,10 @@ final class ManagementPageCatalog
 {
     public const STRUCTURE_RESOURCES = ['complexes', 'buildings', 'blocks', 'floors', 'units'];
 
-    public const CHARGE_TABS = ['expense-categories', 'charge-formulas', 'expenses', 'charge-periods', 'invoices'];
+    public const CHARGE_TABS = ['expense-categories', 'charge-formulas', 'expenses', 'charge-periods'];
 
     public const FINANCE_GROUPS = [
-        ['title' => 'صورتحساب و دریافت', 'resources' => ['invoices', 'invoice-installments', 'payments']],
+        ['title' => 'صورتحساب و دریافت', 'resources' => ['invoice-installments', 'payments']],
         ['title' => 'شارژ ساختمان', 'resources' => ['expense-categories', 'charge-formulas', 'charge-periods']],
         ['title' => 'عملیات ساختمان', 'resources' => ['expenses', 'incomes', 'bank-accounts', 'wallet-payouts', 'bill-payments']],
         ['title' => 'وفاداری', 'resources' => ['loyalty-rules', 'loyalty-rewards', 'loyalty-claims']],

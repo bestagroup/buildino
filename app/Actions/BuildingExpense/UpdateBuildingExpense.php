@@ -7,6 +7,7 @@ use App\Models\Building;
 use App\Models\User;
 use App\Services\Charge\BuildingExpenseRuleService;
 use Illuminate\Support\Facades\DB;
+use App\Services\Charge\BuildingBillScheduleService;
 
 class UpdateBuildingExpense
 {
@@ -23,6 +24,10 @@ class UpdateBuildingExpense
     {
         return DB::transaction(function () use ($model, $data, $actor): BuildingExpense {
             Building::query()->whereKey($model->building_id)->lockForUpdate()->firstOrFail();
+
+            $schedules = app(BuildingBillScheduleService::class);
+            $model = BuildingExpense::whereKey($model->id)->lockForUpdate()->firstOrFail();
+            $data = $schedules->prepare($data, $model);
 
             $status = $data['status'] ?? $model->status;
 
@@ -41,6 +46,8 @@ class UpdateBuildingExpense
             $model->update($data);
 
             $this->rules->synchronize($model->refresh(), $model->financial_category_id !== null || isset($data['payment_status']));
+
+            $schedules->replace($model);
 
             return $model->refresh();
         });

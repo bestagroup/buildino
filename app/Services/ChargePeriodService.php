@@ -40,8 +40,19 @@ final class ChargePeriodService
     private function periodExpenses(ChargePeriod $period): Builder
     {
         return BuildingExpense::query()->where('building_id', $period->building_id)
-            ->whereDate('expense_date', '>=', $period->period_start->toDateString())
-            ->whereDate('expense_date', '<=', $period->period_end->toDateString())->orderBy('id');
+            ->where(fn ($query) => $query
+                ->where(fn ($legacy) => $legacy->whereNull('start_charge_period_id')
+                    ->whereDate('expense_date', '>=', $period->period_start->toDateString())
+                    ->whereDate('expense_date', '<=', $period->period_end->toDateString()))
+                ->orWhereHas('periodAllocations', fn ($allocation) => $allocation->where('charge_period_id', $period->id)))
+            ->with(['periodAllocations' => fn ($query) => $query->where('charge_period_id', $period->id)])
+            ->orderBy('id');
+    }
+
+    private function expenseAmount(BuildingExpense $expense): int
+    {
+        return $expense->start_charge_period_id
+            ? (int) $expense->periodAllocations->first()?->amount : (int) $expense->amount;
     }
 
     private function periodUnits(ChargePeriod $period): Builder
@@ -133,21 +144,23 @@ final class ChargePeriodService
         $fixed = $formulas->filter(fn ($formula) => $formula->calculation_type === ChargeCalculationType::Fixed);
         $posted = $expenses->where('status', 'posted');
         foreach ($posted as $expense) {
+            if ($expense->distribution_mode === 'equal') continue;
             $formula = $byCategory->get($expense->financial_category_id);
             if (! $formula || $formula->calculation_type === ChargeCalculationType::Fixed) {
                 $errors[] = "برای هزینه «{$expense->title}» فرمول فعال غیرثابت و معتبر لازم است.";
             }
         }
         if ($units->isEmpty()) $errors[] = 'هیچ واحد فعالی در ساختمان وجود ندارد.';
-        if ($formulas->isEmpty() && $debts->isEmpty()) $errors[] = 'هیچ فرمول فعالی برای ساختمان تعریف نشده است.';
+        if ($formulas->isEmpty() && $debts->isEmpty() && $posted->isEmpty()) $errors[] = 'هیچ فرمول فعالی برای ساختمان تعریف نشده است.';
         if ($posted->isEmpty() && $fixed->isEmpty() && $debts->isEmpty()) $errors[] = 'هیچ هزینه قطعی یا فرمول ثابت برای این دوره وجود ندارد.';
         $expenseRow = fn ($expense) => [
             'id' => $expense->id, 'title' => $expense->title,
             'category' => $expense->category?->title,
             'invoice_number' => $expense->invoice_number,
-            'date' => $expense->expense_date->toDateString(), 'amount' => (int) $expense->amount,
+            'date' => $expense->expense_date->toDateString(), 'amount' => $this->expenseAmount($expense), 'total_amount' => (int) $expense->amount,
+            'target_unit_ids' => $expense->target_unit_ids, 'items' => $expense->items,
             'status' => $expense->status, 'payment_status' => $expense->payment_status,
-            'formula' => $byCategory->get($expense->financial_category_id)?->title,
+            'formula' => $expense->distribution_mode === 'equal' ? 'تقسیم مساوی' : $byCategory->get($expense->financial_category_id)?->title,
         ];
         $accountInvoices = UnitInvoice::query()->where('building_id', $period->building_id)
             ->whereIn('unit_id', $units->modelKeys())
@@ -177,7 +190,7 @@ final class ChargePeriodService
                 $formula->calculation_type !== ChargeCalculationType::Fixed
                 && ! $posted->contains('financial_category_id', $formula->chargeItems->first()?->financial_category_id)
             )->pluck('title')->values()->all(),
-            'expense_total' => (int) $posted->sum('amount'),
+            'expense_total' => (int) $posted->sum(fn ($expense) => $this->expenseAmount($expense)),
             'fixed_total' => (int) $fixed->sum(fn ($formula) => $formula->chargeItems->sum('base_amount')) * $units->count(),
             'existing_invoices' => $period->unitInvoices()->orderBy('id')->get()->map(fn ($invoice) => [
                 'number' => $invoice->invoice_number, 'unit_id' => $invoice->unit_id,
@@ -205,7 +218,7 @@ final class ChargePeriodService
             $period->update(['status' => ChargePeriodStatus::Calculating]);
             $formulas = $this->periodFormulas($period)->get();
 
-            if ($formulas->isEmpty() && $this->scheduledDebts($period)->isEmpty()) {
+            if ($formulas->isEmpty() && $this->scheduledDebts($period)->isEmpty() && ! $this->periodExpenses($period)->where('status', 'posted')->exists()) {
                 throw ValidationException::withMessages([
                     'formulas' =>
                         'برای این ساختمان هیچ فرمول شارژ فعالی تعریف نشده است.',
@@ -341,51 +354,14 @@ final class ChargePeriodService
              * according to the formula configured once for the category.
              */
             foreach ($expenses as $expense) {
-                if (! $expense->financial_category_id) {
-                    throw ValidationException::withMessages([
-                        'financial_category_id' => sprintf(
-                            'برای هزینه %d دسته هزینه مشخص نشده است.',
-                            $expense->getKey()
-                        ),
-                    ]);
+                $equal = $expense->distribution_mode === 'equal';
+                $formula = $formulaByCategory->get((int) $expense->financial_category_id);
+                if (! $equal && (! $formula || $formula->calculation_type === ChargeCalculationType::Fixed)) {
+                    throw ValidationException::withMessages(['formulas' => 'فرمول فعال غیرثابت برای این هزینه لازم است.']);
                 }
-
-                $formula = $formulaByCategory->get(
-                    (int) $expense
-                        ->financial_category_id
-                );
-
-                if (! $formula) {
-                    throw ValidationException::withMessages([
-                        'formulas' => sprintf(
-                            'برای دسته هزینه مربوط به «%s» فرمول شارژ فعال تعریف نشده است.',
-                            $expense->title
-                        ),
-                    ]);
-                }
-
-                $type = $formula->calculation_type
-                    instanceof ChargeCalculationType
-                        ? $formula->calculation_type
-                        : ChargeCalculationType::from(
-                            (string) $formula
-                                ->calculation_type
-                        );
-
-                if ($type === ChargeCalculationType::Fixed) {
-                    throw ValidationException::withMessages([
-                        'formulas' => sprintf(
-                            'فرمول ثابت «%s» نباید برای تقسیم مبلغ یک هزینه دوره استفاده شود.',
-                            $formula->title
-                        ),
-                    ]);
-                }
-
-                $rule = $this->expenseRules
-                    ->synchronizeFromFormula(
-                        $expense,
-                        $formula
-                    );
+                $type = $equal ? ChargeCalculationType::Equal : $formula->calculation_type;
+                $rule = $equal ? $this->expenseRules->synchronize($expense)
+                    : $this->expenseRules->synchronizeFromFormula($expense, $formula);
 
                 $expenseUnits = $expense->block_id
                     ? $units
@@ -400,6 +376,12 @@ final class ChargePeriodService
                         ->values()
                     : $units;
 
+                if ($expense->target_unit_ids !== null) {
+                    $expenseUnits = $expenseUnits->whereIn('id', $expense->target_unit_ids)->values();
+                    if ($expenseUnits->count() !== count($expense->target_unit_ids)) {
+                        throw ValidationException::withMessages(['target_unit_ids' => 'یکی از واحدهای انتخاب‌شده غیرفعال شده یا از دامنه سند خارج شده است.']);
+                    }
+                }
                 if ($expenseUnits->isEmpty()) {
                     throw ValidationException::withMessages([
                         'block_id' => sprintf(
@@ -419,16 +401,15 @@ final class ChargePeriodService
                                     ->payer_responsibility
                             );
 
-                $rows = $this->expenseAllocator
-                    ->allocateByFormula(
-                        $expense,
-                        $formula,
-                        $period,
-                        $expenseUnits
-                    );
+                // Calculate with this period's installment without changing the source document.
+                $portion = clone $expense;
+                $portion->amount = $this->expenseAmount($expense);
+                $rows = $equal
+                    ? $this->expenseAllocator->allocate($portion, $rule, $period, $expenseUnits)
+                    : $this->expenseAllocator->allocateByFormula($portion, $formula, $period, $expenseUnits);
 
                 foreach ($rows as $row) {
-                    $payer = $row['amount'] > 0
+                    $payer = $row['amount'] !== 0
                         ? $this->expensePayers
                             ->resolve(
                                 $row['unit'],
@@ -468,7 +449,9 @@ final class ChargePeriodService
                                 'block_id' =>
                                     $expense->block_id,
                                 'charge_formula_id' =>
-                                    $formula->getKey(),
+                                    ($equal ? null : $formula->getKey()),
+                                'expense_items' => $expense->items,
+                                'installment_amount' => $portion->amount,
                                 'calculation_type' =>
                                     $type->value,
                                 'payer_responsibility' =>
@@ -573,7 +556,7 @@ final class ChargePeriodService
             }
 
             foreach ($expenseAllocations as $allocation) {
-                if ((int) $allocation->allocated_amount <= 0) {
+                if ((int) $allocation->allocated_amount === 0) {
                     continue;
                 }
 
@@ -603,7 +586,7 @@ final class ChargePeriodService
                     'charge_item_id' => null,
                     'title' => $allocation->buildingExpense?->title
                         ?? 'هزینه عمومی ساختمان',
-                    'description' => null,
+                    'description' => collect($allocation->calculation_snapshot['expense_items'] ?? [])->map(fn ($item) => $item['title'].' × '.$item['quantity'].(!empty($item['description']) ? ' · '.$item['description'] : ''))->implode('؛ ') ?: null,
                     'quantity' => 1,
                     'unit_amount' => (int) $allocation->allocated_amount,
                     'metadata' => [

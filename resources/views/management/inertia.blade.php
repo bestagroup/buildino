@@ -1,4 +1,4 @@
-@extends(request()->boolean('glance_embed') && request()->integer('unit_id') > 0 && in_array(request()->route('resource'), ['invoices', 'invoice-installments', 'payments'], true) ? 'management.layouts.unit-workspace' : 'management.layouts.app')
+@extends(request()->boolean('glance_embed') && request()->integer('unit_id') > 0 && (in_array(request()->route('resource'), ['invoices', 'invoice-installments', 'payments'], true) || (request()->route('resource') === 'expenses' && request()->boolean('history'))) ? 'management.layouts.unit-workspace' : 'management.layouts.app')
 
 @section(
     'title',

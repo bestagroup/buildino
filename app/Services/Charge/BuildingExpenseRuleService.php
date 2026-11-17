@@ -74,7 +74,8 @@ final class BuildingExpenseRuleService
         if ($expense->financial_category_id) {
             app(\App\Services\Finance\ExpenseCategoryService::class)->requireUsable($expense->building_id, $expense->financial_category_id);
         }
-        if ($requireFormula || $expense->payment_status !== null) {
+        $equal = $expense->start_charge_period_id && $expense->distribution_mode === 'equal';
+        if (! $equal && ($requireFormula || $expense->payment_status !== null)) {
             if (! $expense->financial_category_id) {
                 throw ValidationException::withMessages([
                     'financial_category_id' => 'انتخاب فرمول شارژ الزامی است.',
@@ -127,8 +128,7 @@ final class BuildingExpenseRuleService
                 'financial_category_id' => $expense->financial_category_id,
             ],
             [
-                'allocation_method' => $expense->allocation_method
-                    ?? ExpenseAllocationMethod::Equal,
+                'allocation_method' => $equal ? ExpenseAllocationMethod::Equal : ($expense->allocation_method ?? ExpenseAllocationMethod::Equal),
                 'payer_responsibility' => $expense->payer_responsibility
                     ?? ExpensePayerResponsibility::Unit,
                 'configuration' => $expense->allocation_configuration,

@@ -14,6 +14,7 @@ class BuildingExpense extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'start_charge_period_id', 'period_installment_count', 'distribution_mode', 'target_unit_ids', 'items',
         'building_id',
         'block_id',
         'fund_id',
@@ -38,6 +39,8 @@ class BuildingExpense extends Model
     {
         return [
             'amount' => 'integer',
+            'start_charge_period_id' => 'integer', 'period_installment_count' => 'integer',
+            'target_unit_ids' => 'array', 'items' => 'array',
             'expense_date' => 'date',
             'allocation_method' => ExpenseAllocationMethod::class,
             'allocation_configuration' => 'array',
@@ -45,6 +48,11 @@ class BuildingExpense extends Model
             'approved_at' => 'datetime',
             'posted_at' => 'datetime',
         ];
+    }
+
+    public function periodAllocations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ExpensePeriodAllocation::class);
     }
 
     public function building(): BelongsTo

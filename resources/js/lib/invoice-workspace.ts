@@ -16,7 +16,7 @@ export interface Payment { id: number; building_id: number; payment_number: stri
 export interface InvoiceWorkspace {
     periods?: { id: number; building_id: number; title: string; period_start: string; period_end: string; due_date: string; status: string }[];
     buildings: { id: number; title: string; currency: string; abilities: Record<string, boolean> }[];
-    units: { id: number; building_id: number; label: string }[];
+    units: { id: number; building_id: number; block_id?: number; label: string }[];
     navigation: { key: string; title: string; url: string }[];
     chargeTabs?: string[];
     groups: { title: string; resources: string[] }[];

@@ -116,7 +116,8 @@ final class InvoicePeriodScheduleTest extends TestCase
             ->assertJsonPath('data.period_allocations.0.amount', 1001);
         $this->patchJson('/api/v1/invoices/'.$created->json('data.id'), $this->data($period, 1, 3001))
             ->assertOk()->assertJsonPath('data.period_allocations.0.amount', 3001);
-        $this->get('/management/operations/invoices')->assertOk()->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+        $this->get('/management/operations/invoices')->assertRedirect('/management/operations/expenses?history=1');
+        $this->get('/management/operations/expenses?history=1')->assertOk()->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
             ->has('workspace.periods', 1)->where('workspace.periods.0.id', $period->id));
     }
 
