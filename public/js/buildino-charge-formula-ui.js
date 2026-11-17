@@ -145,7 +145,7 @@
                 panels.forEach((panel, index) => panel.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = busy || index !== step));
                 const type = method()?.value;
                 fixed.hidden = type !== 'fixed'; floor.hidden = type !== 'floor_coefficient';
-                parameterHint.textContent = type === 'fixed' ? 'مبلغ ثابت هر واحد در هر دوره را وارد کنید.' : type === 'floor_coefficient' ? 'ضریب ۱ سهم مبناست؛ همکف را صفر و زیرزمین را با شماره منفی وارد کنید.' : type ? 'این روش تنظیمات دستی اضافه ندارد.' : 'روش تقسیم را انتخاب کنید تا تنظیمات آن نمایش داده شود.';
+                parameterHint.textContent = type === 'unit_expense' ? 'مبلغ را در صورتحساب ساختمان ثبت کنید؛ مبلغ یا قسط دوره، بدون تقسیم بین واحدها برای هر واحد انتخاب‌شده اعمال می‌شود.' : type === 'fixed' ? 'مبلغ ثابت هر واحد در هر دوره را وارد کنید.' : type === 'floor_coefficient' ? 'ضریب ۱ سهم مبناست؛ همکف را صفر و زیرزمین را با شماره منفی وارد کنید.' : type ? 'این روش تنظیمات دستی اضافه ندارد.' : 'روش تقسیم را انتخاب کنید تا تنظیمات آن نمایش داده شود.';
                 fixed.querySelectorAll('input').forEach(el => el.disabled = busy || step !== 1 || type !== 'fixed');
                 floor.querySelectorAll('input, textarea, button').forEach(el => el.disabled = busy || step !== 1 || type !== 'floor_coefficient');
                 nav.querySelectorAll('button').forEach(el => el.disabled = busy);
@@ -162,7 +162,7 @@
                 [...nav.children].forEach((button, index) => { button.classList.toggle('is-complete', index < step); if (index === step) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current'); });
                 panelHeading.textContent = headings[step]; progress.style.setProperty('--charge-progress', ((step + 1) / labels.length * 100) + '%');
                 announcement.textContent = `مرحله ${number(step + 1)} از ${number(labels.length)}: ${labels[step]}`;
-                parameterHint.textContent = method()?.value === 'fixed' ? 'مبلغی که هر واحد در هر دوره باید بپردازد را وارد کنید. این عدد مبلغ کل ساختمان نیست.' : method()?.value === 'floor_coefficient' ? 'ضریب ۱ سهم مبناست؛ عدد بزرگ‌تر سهم بیشتری می‌دهد. همکف را صفر و زیرزمین را با شماره منفی وارد کنید.' : 'این روش پارامتر دستی ندارد. سامانه هزینه ثبت‌شدهٔ دوره را بر اساس روش انتخابی بین واحدها تقسیم می‌کند.';
+                parameterHint.textContent = method()?.value === 'unit_expense' ? 'مبلغ صورتحساب یا قسط همین دوره، بدون ضریب و بدون تقسیم برای هر واحد انتخاب‌شده اعمال می‌شود.' : method()?.value === 'fixed' ? 'مبلغی که هر واحد در هر دوره باید بپردازد را وارد کنید. این عدد مبلغ کل ساختمان نیست.' : method()?.value === 'floor_coefficient' ? 'ضریب ۱ سهم مبناست؛ عدد بزرگ‌تر سهم بیشتری می‌دهد. همکف را صفر و زیرزمین را با شماره منفی وارد کنید.' : 'این روش پارامتر دستی ندارد. سامانه هزینه ثبت‌شدهٔ دوره را بر اساس روش انتخابی بین واحدها تقسیم می‌کند.';
                 if (step === 2) renderSummary(); sync(); if (focus) panelHeading.focus();
             }
             const showFailure = failure => {

@@ -153,11 +153,18 @@ final class ChargePeriodService
         if ($units->isEmpty()) $errors[] = 'هیچ واحد فعالی در ساختمان وجود ندارد.';
         if ($formulas->isEmpty() && $debts->isEmpty() && $posted->isEmpty()) $errors[] = 'هیچ فرمول فعالی برای ساختمان تعریف نشده است.';
         if ($posted->isEmpty() && $fixed->isEmpty() && $debts->isEmpty()) $errors[] = 'هیچ هزینه قطعی یا فرمول ثابت برای این دوره وجود ندارد.';
+        $expenseTotal = function (BuildingExpense $expense) use ($units, $byCategory): int {
+            $amount = $this->expenseAmount($expense);
+            if ($expense->distribution_mode === 'equal' || $byCategory->get($expense->financial_category_id)?->calculation_type !== ChargeCalculationType::UnitExpense) return $amount;
+            $targets = $units->filter(fn (Unit $unit) => (! $expense->block_id || (int) $unit->floor?->block_id === (int) $expense->block_id)
+                && ($expense->target_unit_ids === null || in_array($unit->id, $expense->target_unit_ids, true)));
+            return $amount * $targets->count();
+        };
         $expenseRow = fn ($expense) => [
             'id' => $expense->id, 'title' => $expense->title,
             'category' => $expense->category?->title,
             'invoice_number' => $expense->invoice_number,
-            'date' => $expense->expense_date->toDateString(), 'amount' => $this->expenseAmount($expense), 'total_amount' => (int) $expense->amount,
+            'date' => $expense->expense_date->toDateString(), 'amount' => $expenseTotal($expense), 'per_unit_amount' => $expense->distribution_mode !== 'equal' && $byCategory->get($expense->financial_category_id)?->calculation_type === ChargeCalculationType::UnitExpense ? $this->expenseAmount($expense) : null, 'total_amount' => (int) $expense->amount,
             'target_unit_ids' => $expense->target_unit_ids, 'items' => $expense->items,
             'status' => $expense->status, 'payment_status' => $expense->payment_status,
             'formula' => $expense->distribution_mode === 'equal' ? 'تقسیم مساوی' : $byCategory->get($expense->financial_category_id)?->title,
@@ -190,7 +197,7 @@ final class ChargePeriodService
                 $formula->calculation_type !== ChargeCalculationType::Fixed
                 && ! $posted->contains('financial_category_id', $formula->chargeItems->first()?->financial_category_id)
             )->pluck('title')->values()->all(),
-            'expense_total' => (int) $posted->sum(fn ($expense) => $this->expenseAmount($expense)),
+            'expense_total' => (int) $posted->sum($expenseTotal),
             'fixed_total' => (int) $fixed->sum(fn ($formula) => $formula->chargeItems->sum('base_amount')) * $units->count(),
             'existing_invoices' => $period->unitInvoices()->orderBy('id')->get()->map(fn ($invoice) => [
                 'number' => $invoice->invoice_number, 'unit_id' => $invoice->unit_id,

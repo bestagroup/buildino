@@ -33,6 +33,10 @@ final class ExpenseAllocationService
             ]);
         }
 
+        if ($rule->allocation_method === ExpenseAllocationMethod::UnitExpense) {
+            return $units->map(fn (Unit $unit): array => ['unit' => $unit, 'base_value' => 1.0, 'amount' => (int) $expense->amount])->all();
+        }
+
         $weights = [];
 
         foreach ($units as $unit) {
@@ -146,6 +150,12 @@ final class ExpenseAllocationService
                     (string) $formula->calculation_type
                 );
 
+        if ($type === ChargeCalculationType::UnitExpense) {
+            return $units->map(fn (Unit $unit): array => [
+                'unit' => $unit, 'base_value' => 1.0, 'amount' => (int) $expense->amount,
+            ])->all();
+        }
+
         if ($type === ChargeCalculationType::Fixed) {
             throw ValidationException::withMessages([
                 'formula' =>
@@ -249,6 +259,7 @@ final class ExpenseAllocationService
         ChargePeriod $period
     ): float {
         return match ($type) {
+            ChargeCalculationType::UnitExpense,
             ChargeCalculationType::Equal => 1,
 
             ChargeCalculationType::Area =>
@@ -320,6 +331,7 @@ final class ExpenseAllocationService
         ChargePeriod $period
     ): float {
         return match ($rule->allocation_method) {
+            ExpenseAllocationMethod::UnitExpense,
             ExpenseAllocationMethod::Equal => 1,
 
             ExpenseAllocationMethod::Area =>

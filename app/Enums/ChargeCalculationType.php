@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum ChargeCalculationType: string
 {
+    case UnitExpense = 'unit_expense';
     case Fixed = 'fixed';
     case Area = 'area';
     case Persons = 'persons';
@@ -13,6 +14,7 @@ enum ChargeCalculationType: string
     public function label(): string
     {
         return match ($this) {
+            self::UnitExpense => 'بر اساس هزینه ثبت شده برای واحد',
             self::Fixed => 'Fixed',
             self::Area => 'Area',
             self::Persons => 'Persons',

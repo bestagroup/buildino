@@ -29,6 +29,7 @@ class ChargeService
             : $formula->calculation_type;
 
         return match ($type) {
+            'unit_expense' => array_key_exists('base_amount', $context) ? $base : throw ValidationException::withMessages(['amount' => 'مبلغ ثبت‌شده صورتحساب واحد الزامی است.']),
             'fixed', 'equal' => $base,
             'area' => (int) round($base * (float) ($unit->area ?? 0)),
             'persons' => (int) round($base * (int) ($context['persons'] ?? 0)),
@@ -118,6 +119,7 @@ class ChargeService
         $baseAmount = (int) $item->base_amount;
 
         return match ($type) {
+            ChargeCalculationType::UnitExpense => throw ValidationException::withMessages(['amount' => 'این روش فقط از مبلغ صورتحساب ثبت‌شده استفاده می‌کند.']),
             ChargeCalculationType::Fixed,
             ChargeCalculationType::Equal => $baseAmount,
 

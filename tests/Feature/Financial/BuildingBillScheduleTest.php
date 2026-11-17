@@ -176,6 +176,36 @@ final class BuildingBillScheduleTest extends TestCase
         $this->assertSame([-100, -100], UnitInvoice::where('payer_user_id', $resident->id)->orderBy('unit_id')->pluck('total_amount')->all());
     }
 
+    public function test_direct_unit_expense_is_added_unchanged_to_other_items_in_each_installment(): void
+    {
+        $graph = $this->createBuildingGraph(); $actor = $this->createUser();
+        $second = Unit::factory()->create(['floor_id' => $graph['floor']->id, 'unit_number' => '902', 'area' => 900, 'resident_count' => 0, 'is_active' => true]);
+        $outside = Unit::factory()->create(['floor_id' => $graph['floor']->id, 'unit_number' => '903', 'is_active' => true]);
+        $periods = $this->periods($graph['building']->id, 3);
+        $category = $graph['building']->financialCategories()->where('default_key', 'energy.3')->firstOrFail();
+        $normalized = app(\App\Services\ChargeFormulaBuilder::class)->normalize(['title' => 'مبلغ واحد', 'builder' => ['calculation_type' => 'unit_expense', 'financial_category_id' => $category->id]]);
+        $formula = ChargeFormula::create(['building_id' => $graph['building']->id, 'title' => $normalized['title'], 'calculation_type' => $normalized['calculation_type'], 'configuration' => $normalized['configuration'], 'is_active' => true]);
+        $formula->chargeItems()->create($normalized['items'][0]);
+        app(CreateBuildingExpense::class)->execute([...$this->data($graph, $periods[0], 2, 1501), 'distribution_mode' => 'formula', 'financial_category_id' => $category->id, 'target_unit_ids' => [$graph['unit']->id, $second->id]], $actor);
+        app(CreateBuildingExpense::class)->execute([...$this->data($graph, $periods[0], 1, 200), 'target_unit_ids' => [$graph['unit']->id]], $actor);
+        $service = app(ChargePeriodService::class);
+        foreach (array_slice($periods, 0, 2) as $index => $period) {
+            $preview = $service->preview($period);
+            $this->assertSame($index === 0 ? 1700 : 1502, $preview['expense_total']);
+            $service->calculate($period, $preview['review_token']);
+            $service->calculate($period, $service->preview($period)['review_token']);
+            $service->issue($period, $actor);
+            $this->assertSame($index === 0 ? 950 : 751, (int) $period->unitInvoices()->where('unit_id', $graph['unit']->id)->first()->subtotal);
+            $this->assertSame($index === 0 ? 750 : 751, (int) $period->unitInvoices()->where('unit_id', $second->id)->first()->subtotal);
+        }
+        $this->assertDatabaseMissing('unit_invoices', ['unit_id' => $outside->id]);
+        $this->assertSame(3202, (int) UnitInvoice::sum('subtotal'));
+        $this->assertNotEmpty($service->preview($periods[2])['errors']);
+        $credit = new BuildingExpense(['amount' => -501]);
+        $rows = app(\App\Services\Charge\ExpenseAllocationService::class)->allocateByFormula($credit, $formula, $periods[2], collect([$graph['unit'], $second]));
+        $this->assertSame([-501, -501], array_column($rows, 'amount'));
+    }
+
     public function test_edit_invalidates_calculated_period_and_old_preview(): void
     {
         $graph = $this->createBuildingGraph();

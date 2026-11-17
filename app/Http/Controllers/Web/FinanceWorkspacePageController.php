@@ -73,6 +73,9 @@ final class FinanceWorkspacePageController extends Controller
                 ->map(fn ($category): array => ['value' => $category->id, 'label' => $category->title, 'building_id' => $category->building_id])->values();
         }
         if ($resource === 'expenses') {
+            $directCategoryIds = \App\Models\ChargeFormula::whereIn('building_id', $scopeIds)->where('is_active', true)
+                ->where('calculation_type', 'unit_expense')->with('chargeItems')->get()
+                ->flatMap(fn ($formula) => $formula->chargeItems->pluck('financial_category_id'))->all();
             $lookups['category_parent_id'] = FinancialCategory::query()
                 ->where(fn ($q) => $q->whereIn('building_id', $scopeIds)->orWhereNull('building_id'))
                 ->where('type', 'expense')->whereNull('parent_id')->where('is_active', true)->orderBy('title')->get()
@@ -82,7 +85,7 @@ final class FinanceWorkspacePageController extends Controller
                 ->where('type', 'expense')->whereNotNull('parent_id')->where('is_active', true)
                 ->whereHas('parent', fn ($q) => $q->where('is_active', true))->with('parent')->orderBy('title')->get()
                 ->map(fn ($category) => ['value' => $category->id, 'label' => $category->title,
-                    'parent_id' => $category->parent_id, 'parent_title' => $category->parent->title, 'building_id' => $category->building_id])->values();
+                    'parent_id' => $category->parent_id, 'parent_title' => $category->parent->title, 'building_id' => $category->building_id, 'direct_per_unit' => in_array($category->id, $directCategoryIds, true)])->values();
             $blocks = Block::query()->whereIn('building_id', $scopeIds)->orderBy('sort_order')->get()->map(function (Block $block) use ($user, $permissions): array {
                 $abilities = [];
                 foreach (['view', 'create', 'update', 'delete'] as $action) $abilities[$action] = $permissions->allows($user, "expenses.$action", $block);

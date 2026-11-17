@@ -30,6 +30,7 @@ final class BuildingExpenseRuleService
                 );
 
         $method = match ($type) {
+            ChargeCalculationType::UnitExpense => ExpenseAllocationMethod::UnitExpense,
             ChargeCalculationType::Equal =>
                 ExpenseAllocationMethod::Equal,
             ChargeCalculationType::Area =>

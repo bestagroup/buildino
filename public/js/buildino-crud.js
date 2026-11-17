@@ -301,7 +301,7 @@
         } : bootstrap.resourceKey === 'expenses' ? {
             payment_status: { paid: 'پرداخت‌شده', unpaid: 'پرداخت‌نشده' },
         } : bootstrap.resourceKey === 'charge-formulas' ? {
-            calculation_type: { fixed: 'مبلغ ثابت هر واحد', area: 'متناسب با متراژ', persons: 'متناسب با نفرات', equal: 'تقسیم مساوی', floor_coefficient: 'ضریب طبقه' },
+            calculation_type: { unit_expense: 'بر اساس هزینه ثبت شده برای واحد', fixed: 'مبلغ ثابت هر واحد', area: 'متناسب با متراژ', persons: 'متناسب با نفرات', equal: 'تقسیم مساوی', floor_coefficient: 'ضریب طبقه' },
         } : {};
         const displayValue = processLabels[column.key]?.[value] ?? value;
 
@@ -1390,6 +1390,11 @@
     let formulaBuilderSequence = 0;
 
     const formulaMethods = [
+        {
+            value: "unit_expense",
+            title: "بر اساس هزینه ثبت شده برای واحد",
+            description: "مبلغ صورتحساب بدون تقسیم یا ضریب، برای هر واحد انتخاب‌شده منظور می‌شود؛ در حالت اقساطی فقط قسط همین دوره اعمال می‌شود.",
+        },
         {
             value: "area",
             title: "بر اساس متراژ",

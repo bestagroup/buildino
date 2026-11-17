@@ -95,6 +95,7 @@ const steps = computed(() => categoryMode.value ? ['عنوان دسته هزین
 const activeFields = computed(() => fields.value.filter(field => !(automaticExpenseScope.value && field.name === 'block_id')));
 const billHeadFields = computed(() => fields.value.filter(field => ['category_parent_id', 'financial_category_id', 'title', 'payer_responsibility', 'invoice_number'].includes(field.name)));
 const billPeriodFields = computed(() => fields.value.filter(field => ['start_charge_period_id', 'period_installment_count'].includes(field.name)));
+const directPerUnit = computed(() => form.value.distribution_mode !== 'equal' && props.workspace.lookups.financial_category_id?.some(category => String(category.value) === String(form.value.financial_category_id) && category.direct_per_unit));
 const installmentAmount = computed(() => Math.trunc(Number(form.value.bill_total || 0) / Math.max(1, Number(form.value.period_installment_count || 1))));
 const installmentRemainder = computed(() => Number(form.value.bill_total || 0) - installmentAmount.value * Number(form.value.period_installment_count || 1));
 const review = computed(() => fields.value.filter(field => form.value[field.name] !== '' && form.value[field.name] !== undefined && form.value[field.name] !== null).map(field => ({ label: field.label, value: field.options?.find(option => String(option.value) === String(form.value[field.name]))?.label ?? format(form.value[field.name], field.name) })));
@@ -292,6 +293,7 @@ onBeforeUnmount(() => { disposed = true; ticket++; window.removeEventListener('b
                     </div>
                     <p v-else>واحدها: {{ form.target_unit_ids === null ? 'تمام واحدهای دامنه' : billUnits.filter(unit => (form.target_unit_ids as number[]).map(String).includes(String(unit.id))).map(unit => unit.label).join('، ') }}</p>
                     <DynamicForm v-if="step === 0" :csrf-token="csrfToken" :mode="editing ? 'edit' : 'create'" lookup-base="/management/lookups" v-model="form" :fields="billPeriodFields" :errors="errors" :group-optional="false" />
+                    <p v-if="directPerUnit" class="finance-hint" role="status">در این روش مبلغ واردشده برای هر واحد انتخاب‌شده است و بین واحدها تقسیم نمی‌شود. در حالت اقساطی، فقط قسط همان دوره برای هر واحد منظور می‌شود.</p>
                     <label class="ownership-field"><span>کل مبلغ قابل پرداخت ({{ currency }})</span><UiNumberInput v-model="form.bill_total as string" name="bill_total" :readonly="step !== 0" step="1" /></label>
                     <label class="ownership-field"><span>مبلغ قابل پرداخت هر قسط ({{ currency }})</span><input name="installment_amount" :value="money(installmentAmount)" readonly dir="ltr"></label>
                     <p v-if="installmentRemainder" class="finance-hint">مبلغ قسط آخر: {{ money(installmentAmount + installmentRemainder) }} {{ currency }}</p>
