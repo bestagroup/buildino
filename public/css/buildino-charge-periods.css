@@ -30,7 +30,7 @@
 .period-pagination { justify-content: space-between; }
 .period-confirm { margin-block-start: 20px; padding: 20px; border: 1px solid var(--primary-500); border-radius: 14px; background: var(--primary-50); }
 .period-confirm h4 { margin: 0; color: var(--text); font-size: 16px; }
-.period-page :is(h3, h4)[tabindex="-1"] { scroll-margin-block-start: 100px; outline: none; }
+.period-page :is(h3, h4)[tabindex="-1"] { scroll-margin-block-start: 100px; }
 /* The picker has a delayed opening animation; keep it out of views without date fields. */
 body:has([data-period-editor][hidden]) jdp-container { display: none !important; }
 @media (max-width: 600px) {
@@ -58,7 +58,7 @@ body:has([data-period-editor][hidden]) jdp-container { display: none !important;
 .period-month-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
 .period-month { min-height: 48px; padding: 10px 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-soft); color: var(--text); font: inherit; font-weight: 400; cursor: pointer; }
 .period-month[aria-pressed="true"] { border: 2px solid var(--primary-500); background: var(--primary-50); color: var(--primary-700); }
-.period-month:focus-visible { outline: 3px solid var(--primary-500); outline-offset: 3px; }
+.period-month:focus-visible { }
 .period-month:disabled { cursor: wait; opacity: .7; }
 .period-batch-preview { margin-block-start: 20px; }
 @media (max-width: 600px) { .period-month-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

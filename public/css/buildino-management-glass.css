@@ -94,8 +94,6 @@ html[data-theme="dark"] body.management-body {
     unicode-bidi: isolate;
 }
 .management-body :is(a,button,input,select,textarea,[tabindex]):focus-visible {
-    outline: 3px solid var(--primary-600) !important;
-    outline-offset: 3px;
 }
 .management-body .table-responsive { overflow-x: auto; max-inline-size: 100%; }
 .management-body :is(.main-area,.panel,.topbar__start,.topbar__center) { min-inline-size: 0; }

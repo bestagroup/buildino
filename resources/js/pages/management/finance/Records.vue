@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { vSelect2 } from '../../../directives/select2';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import BuildingBillLines from '../../../components/management/BuildingBillLines.vue';
-import { itemTotal, type InvoiceItem } from '../../../lib/invoice-workspace';
+import UiNumberInput from '../../../components/management/UiNumberInput.vue';
+import { itemTotal, today, type InvoiceItem } from '../../../lib/invoice-workspace';
 import FinanceFrame from '../../../components/management/FinanceFrame.vue';
 import DynamicForm from '../../../components/management/DynamicForm.vue';
 import UiConfirmDialog from '../../../components/management/UiConfirmDialog.vue';
@@ -45,7 +45,7 @@ const billLocked = (row: CrudRecord) => props.resourceKey === 'expenses' && ((ro
 const rowTitle = (row: CrudRecord) => String(row.title || row.account_holder_name || (props.resourceKey === 'loyalty-rules' ? 'قاعده نسخه ' + row.version : props.resourceKey === 'loyalty-claims' ? row.user_name || 'درخواست جایزه' : props.title + ' · ' + row.id));
 const labels: Record<string, string> = { ...invoiceLabels, calculated: 'محاسبه‌شده', closed: 'بسته‌شده', calculating: 'در حال محاسبه', paid: 'پرداخت‌شده', unpaid: 'پرداخت‌نشده', approved: 'تأییدشده', rejected: 'ردشده', posted: 'ثبت‌شده', payment_verified: 'تأیید پرداخت', equal: 'مساوی بین واحدها', area: 'بر اساس متراژ', persons: 'بر اساس تعداد ساکنین', owner: 'مالک', resident: 'ساکن / مستأجر', unit: 'کیف پول واحد', electricity: 'برق', gas: 'گاز', water: 'آب', phone: 'تلفن', internet: 'اینترنت', municipality: 'شهرداری', other: 'سایر' };
 const fields = computed<CrudField[]>(() => {
-    const base = (operation.value ? operation.value.fields || [] : props.resource.fields || []).filter(field => field.name !== 'building_id' && field.type !== 'json' && !(expenseMode.value && (field.name === 'amount' || form.value.distribution_mode === 'equal' && field.name === 'financial_category_id'))).map(field => {
+    const base = (operation.value ? operation.value.fields || [] : props.resource.fields || []).filter(field => field.name !== 'building_id' && field.type !== 'json' && !(expenseMode.value && ['amount', 'expense_date', 'block_id'].includes(field.name))).map(field => {
         const result = { ...field };
         if (result.type === 'number') { result.min = result.name === 'amount' || result.name === 'points' || result.name === 'required_points' ? 1 : 0; result.step = 1; if (result.name === 'amount') result.label += ' (' + currency.value + ')'; }
         if (result.type === 'text') result.maxlength = ['reference_number', 'invoice_number', 'bill_identifier', 'payment_identifier', 'provider'].includes(result.name) ? 100 : result.name === 'bank_name' ? 120 : result.name === 'iban' ? 34 : result.name === 'account_number' ? 50 : result.name === 'card_number' ? 19 : 255;
@@ -57,7 +57,7 @@ const fields = computed<CrudField[]>(() => {
             result.lookup = undefined; result.depends_on = undefined;
             result.options = lookup.filter(row => (!row.building_id || String(row.building_id) === buildingId.value) && (result.name !== 'block_id' || building.value?.abilities['expenses.create'] || row.abilities?.create || editing.value && String(row.value) === String(selected.value?.block_id)));
             if (props.resourceKey === 'expenses' && result.name === 'financial_category_id') result.options = result.options.filter(option => String((option as { parent_id?: number }).parent_id) === String(form.value.category_parent_id));
-            if (props.resourceKey === 'expenses' && result.name === 'financial_category_id' && !result.options.length) result.help = 'برای این ساختمان فرمول شارژ فعال غیرثابت وجود ندارد. ابتدا در بخش فرمول شارژ، فرمول هزینه را تعریف یا فعال کنید.';
+            if (props.resourceKey === 'expenses' && result.name === 'financial_category_id' && !result.options.length) result.help = 'زیر دسته فعالی برای این دسته وجود ندارد.';
             if (result.name === 'block_id' && !building.value?.abilities['expenses.create'] && (!editing.value || selected.value?.block_id)) { result.required = true; result.help = 'بلوک مجاز برای ثبت هزینه را انتخاب کنید.'; }
             if (result.name === 'building_bank_account_id' && !result.options.length) result.help = 'حساب بانکی فعال و تأییدشده‌ای وجود ندارد. ابتدا در بخش حساب‌های بانکی، حساب را ثبت و تأیید کنید.';
         }
@@ -71,21 +71,32 @@ const fields = computed<CrudField[]>(() => {
         { name: 'maximum_points', label: 'سقف امتیاز هر پرداخت', min: 1 },
         { name: 'expires_days', label: 'اعتبار امتیاز (روز)', min: 1, max: 3650 },
     ].map(field => ({ ...field, type: 'number', step: 1, help: 'اختیاری؛ در صورت خالی‌بودن، مقدار پیش‌فرض سامانه اعمال می‌شود.' })));
-    if (expenseMode.value && form.value.distribution_mode !== 'equal') {
+    if (expenseMode.value) {
         const categories = (props.workspace.lookups.financial_category_id || []).filter(row => String(row.building_id) === buildingId.value);
         const parents = new Map(categories.map(row => [row.parent_id, { value: row.parent_id!, label: row.parent_title! }]));
         base.splice(Math.max(0, base.findIndex(field => field.name === 'financial_category_id')), 0,
-            { name: 'category_parent_id', label: 'دسته اصلی هزینه', type: 'select', required: true, options: [...parents.values()] });
+            { name: 'category_parent_id', label: 'دسته اصلی هزینه', type: 'select', required: true, options: (props.workspace.lookups.category_parent_id || [...parents.values()]).filter(row => !('building_id' in row) || !row.building_id || String(row.building_id) === buildingId.value) });
     }
     if (expenseMode.value) {
-        base.unshift({ name: 'distribution_mode', label: 'روش تقسیم', type: 'select', required: true, default: 'formula', options: [{value: 'formula', label: 'طبق فرمول دسته هزینه'}, {value: 'equal', label: 'بدهی / طلب با تقسیم مساوی'}] });
-        base.push({ name: 'start_charge_period_id', label: 'دوره پرداخت', type: 'select', required: true, options: availablePeriods.value.map(period => ({value: period.id, label: period.title})) },
-            { name: 'period_installment_count', label: 'تعداد اقساط', type: 'select', required: true, default: 1, options: [1,2,3,4,5].map(value => ({value, label: String(value)})) });
+        base.push({ name: 'start_charge_period_id', label: 'دوره قابل پرداخت', type: 'select', required: true, options: availablePeriods.value.map(period => ({value: period.id, label: period.title})) },
+            { name: 'period_installment_count', label: 'تعداد اقساط قابل پرداخت', type: 'select', required: true, default: 1, options: [1,2,3,4,5].map(value => ({value, label: String(value)})) });
+    }
+    if (expenseMode.value) {
+        const order = ['category_parent_id', 'financial_category_id', 'title', 'payer_responsibility', 'invoice_number', 'start_charge_period_id', 'period_installment_count', 'description'];
+        for (const field of base) {
+            if (field.name === 'invoice_number') field.label = 'شماره رسید / فاکتور';
+            if (field.name === 'description') field.label = 'توضیحات هزینه / بدهی';
+        }
+        return base.filter(field => order.includes(field.name)).sort((a,b) => order.indexOf(a.name) - order.indexOf(b.name));
     }
     return base;
 });
 const steps = computed(() => categoryMode.value ? ['عنوان دسته هزینه'] : operation.value ? fields.value.length ? ['اطلاعات عملیات', 'بررسی و اجرا'] : ['بررسی و اجرا'] : ['اطلاعات', 'بررسی نهایی']);
 const activeFields = computed(() => fields.value.filter(field => !(automaticExpenseScope.value && field.name === 'block_id')));
+const billHeadFields = computed(() => fields.value.filter(field => ['category_parent_id', 'financial_category_id', 'title', 'payer_responsibility', 'invoice_number'].includes(field.name)));
+const billPeriodFields = computed(() => fields.value.filter(field => ['start_charge_period_id', 'period_installment_count'].includes(field.name)));
+const installmentAmount = computed(() => Math.trunc(Number(form.value.bill_total || 0) / Math.max(1, Number(form.value.period_installment_count || 1))));
+const installmentRemainder = computed(() => Number(form.value.bill_total || 0) - installmentAmount.value * Number(form.value.period_installment_count || 1));
 const review = computed(() => fields.value.filter(field => form.value[field.name] !== '' && form.value[field.name] !== undefined && form.value[field.name] !== null).map(field => ({ label: field.label, value: field.options?.find(option => String(option.value) === String(form.value[field.name]))?.label ?? format(form.value[field.name], field.name) })));
 const format = (value: unknown, key: string): string => {
     if (props.resourceKey === 'expenses' && key === 'block_id' && !value) return 'کل ساختمان';
@@ -146,6 +157,9 @@ const openEditor = async (row: CrudRecord | null = null, action: typeof operatio
     }
     if (expenseMode.value) {
         form.value.distribution_mode = row?.distribution_mode || 'formula';
+        form.value.block_id = row ? row.block_id ?? null : (automaticExpenseScope.value ? expenseBlocks.value[0]?.value ?? null : null);
+        form.value.expense_date = row?.expense_date ? String(row.expense_date).slice(0,10) : today();
+        form.value.bill_total = row?.amount ?? '';
         form.value.target_unit_ids = row?.target_unit_ids ? [...row.target_unit_ids as number[]] : null;
         form.value.items = row?.items ? JSON.parse(JSON.stringify(row.items)) : [{ title: String(row?.title || ''), quantity: 1, unit_amount: row?.amount || '' }];
     }
@@ -203,6 +217,9 @@ const validate = (checkFields = fields.value) => {
 };
 const submit = async () => {
     if (busy.value || lookupLoading.value || uncertain.value) return;
+    if (expenseMode.value && (!editing.value || Number(form.value.bill_total) !== Number(selected.value?.amount))) {
+        form.value.items = [{ title: String(form.value.title || ''), quantity: 1, unit_amount: form.value.bill_total, description: form.value.description || null }];
+    }
     if (!validate()) return;
     if (step.value < steps.value.length - 1) { step.value++; await focus('#finance-record-step-title'); return; }
     const action = operation.value || (editing.value ? props.resource.update : props.resource.create); if (!action) return;
@@ -213,11 +230,14 @@ const submit = async () => {
         if (!operation.value && ['expenses', 'incomes', 'expense-categories'].includes(props.resourceKey)) body.building_id = Number(buildingId.value);
         if (categoryMode.value) body.parent_id = form.value.parent_id ? Number(form.value.parent_id) : null;
         if (expenseMode.value) {
+            body.expense_date = form.value.expense_date;
+            body.block_id = form.value.block_id;
+            body.distribution_mode = form.value.distribution_mode;
             body.items = billItems.value.map(row => ({title: row.title.trim(), quantity: Number(row.quantity), unit_amount: Number(row.unit_amount), description: row.description || null}));
             body.target_unit_ids = form.value.target_unit_ids;
             body.amount = itemTotal(billItems.value);
-            if (form.value.distribution_mode === 'equal') body.financial_category_id = null;
         }
+        if (expenseMode.value && editing.value && String(body.block_id ?? '') === String(selected.value?.block_id ?? '')) delete body.block_id;
         delete body.category_parent_id;
         if (props.resourceKey === 'loyalty-rules' && !operation.value) { const configuration: CrudRecord = {}; for (const key of ['amount_step', 'minimum_amount', 'maximum_points', 'expires_days']) { if (body[key] !== null) configuration[key] = body[key]; delete body[key]; } body.configuration = Object.keys(configuration).length ? configuration : null; }
         await apiRequest(endpoint(action.url), { csrfToken: props.csrfToken, method: action.method || (editing.value ? 'PATCH' : 'POST'), body: JSON.stringify(body) });
@@ -263,15 +283,19 @@ onBeforeUnmount(() => { disposed = true; ticket++; window.removeEventListener('b
         <section v-else-if="view === 'editor'" class="ownership-card finance-editor" aria-labelledby="finance-record-editor-title" :aria-busy="busy"><div class="ownership-card__heading ownership-card__heading--split finance-heading"><div><h3 id="finance-record-editor-title" tabindex="-1">{{ operation?.title || (editing ? 'ویرایش · ' : 'ثبت · ') + title }}</h3><p>{{ scopeLabel }}</p></div><button type="button" class="ownership-button" :disabled="busy" @click="closeEditor()">بازگشت</button></div>
             <nav class="ownership-flow" :style="{ '--finance-steps': steps.length }" aria-label="مراحل ثبت"><span v-for="(label, index) in steps" :key="label" :class="{ 'is-current': step === index, 'is-complete': step > index }" :aria-current="step === index ? 'step' : undefined"><b>{{ index + 1 }}</b>{{ label }}</span></nav><h4 id="finance-record-step-title" tabindex="-1">{{ steps[step] }}</h4>
             <p v-if="automaticExpenseScope" class="finance-hint" data-expense-scope>دامنه هزینه: {{ scopeLabel }} · {{ expenseScopeLabel }}</p>
-            <form id="finance-record-form" novalidate @submit.prevent="submit"><fieldset :disabled="busy || uncertain"><DynamicForm v-if="categoryMode || step < steps.length - 1" v-model="form" :fields="activeFields" :mode="editing ? 'edit' : 'create'" lookup-base="/management/lookups" :csrf-token="csrfToken" :errors="errors" :group-optional="false" @loading="lookupLoading = $event" /><template v-else><dl class="finance-review"><dt>{{ categoryMode ? 'دامنه استفاده' : 'ساختمان' }}</dt><dd>{{ scopeLabel }}</dd><template v-for="item in review" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></template><template v-if="operation && !fields.length"><dt>سند</dt><dd>{{ selected ? rowTitle(selected) : '' }}</dd></template></dl><p v-if="categoryMode" class="finance-hint">این دسته پس از ثبت، فقط در همین ساختمان قابل استفاده است. غیرفعال‌کردن دسته اصلی، انتخاب زیر دسته‌های آن را نیز متوقف می‌کند.</p><p v-else-if="operation?.confirm" class="finance-hint">{{ operation.confirm }}</p><p v-else-if="resourceKey === 'wallet-payouts' || resourceKey === 'bill-payments'" class="finance-hint">ثبت این درخواست، مبلغ را در کیف پول ساختمان مسدود می‌کند. پیش از تأیید، مبلغ و اطلاعات مقصد را بررسی کنید.</p><p v-else-if="resourceKey === 'loyalty-rules'" class="finance-hint">نسخه جدیدی از قاعده ساخته می‌شود؛ سوابق نسخه‌های قبلی حفظ می‌شوند.</p></template>
+            <form id="finance-record-form" novalidate @submit.prevent="submit"><fieldset :disabled="busy || uncertain"><DynamicForm v-if="!expenseMode && (categoryMode || step < steps.length - 1)" v-model="form" :fields="activeFields" :mode="editing ? 'edit' : 'create'" lookup-base="/management/lookups" :csrf-token="csrfToken" :errors="errors" :group-optional="false" @loading="lookupLoading = $event" /><template v-else-if="step === steps.length - 1"><dl class="finance-review"><dt>{{ categoryMode ? 'دامنه استفاده' : 'ساختمان' }}</dt><dd>{{ scopeLabel }}</dd><template v-for="item in review" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></template><template v-if="operation && !fields.length"><dt>سند</dt><dd>{{ selected ? rowTitle(selected) : '' }}</dd></template></dl><p v-if="categoryMode" class="finance-hint">این دسته پس از ثبت، فقط در همین ساختمان قابل استفاده است. غیرفعال‌کردن دسته اصلی، انتخاب زیر دسته‌های آن را نیز متوقف می‌کند.</p><p v-else-if="operation?.confirm" class="finance-hint">{{ operation.confirm }}</p><p v-else-if="resourceKey === 'wallet-payouts' || resourceKey === 'bill-payments'" class="finance-hint">ثبت این درخواست، مبلغ را در کیف پول ساختمان مسدود می‌کند. پیش از تأیید، مبلغ و اطلاعات مقصد را بررسی کنید.</p><p v-else-if="resourceKey === 'loyalty-rules'" class="finance-hint">نسخه جدیدی از قاعده ساخته می‌شود؛ سوابق نسخه‌های قبلی حفظ می‌شوند.</p></template>
                 <template v-if="expenseMode">
+                    <DynamicForm v-if="step === 0" :csrf-token="csrfToken" :mode="editing ? 'edit' : 'create'" lookup-base="/management/lookups" v-model="form" :fields="billHeadFields" :errors="errors" :group-optional="false" />
                     <div v-if="step === 0" class="finance-line">
                         <label class="ownership-field"><span>واحدهای مسئول پرداخت</span><select v-select2 name="unit_scope" :value="form.target_unit_ids === null ? 'all' : 'selected'" @change="form.target_unit_ids = ($event.target as HTMLSelectElement).value === 'all' ? null : []"><option value="all">تمام واحدهای دامنه انتخاب‌شده</option><option value="selected">انتخاب یک یا چند واحد</option></select></label>
                         <label v-if="form.target_unit_ids !== null" class="ownership-field"><span>انتخاب واحدها</span><select v-select2 v-model="form.target_unit_ids" multiple name="target_unit_ids"><option v-for="unit in billUnits" :key="unit.id" :value="unit.id">{{ unit.label }}</option></select></label>
                     </div>
                     <p v-else>واحدها: {{ form.target_unit_ids === null ? 'تمام واحدهای دامنه' : billUnits.filter(unit => (form.target_unit_ids as number[]).map(String).includes(String(unit.id))).map(unit => unit.label).join('، ') }}</p>
-                    <BuildingBillLines v-model="billItems" :currency="currency" :readonly="step !== 0" />
-                    <p>جمع سند: {{ money(itemTotal(billItems)) }} {{ currency }} · مبلغ کل بین واحدهای انتخاب‌شده تقسیم می‌شود.</p>
+                    <DynamicForm v-if="step === 0" :csrf-token="csrfToken" :mode="editing ? 'edit' : 'create'" lookup-base="/management/lookups" v-model="form" :fields="billPeriodFields" :errors="errors" :group-optional="false" />
+                    <label class="ownership-field"><span>کل مبلغ قابل پرداخت ({{ currency }})</span><UiNumberInput v-model="form.bill_total as string" name="bill_total" :readonly="step !== 0" step="1" /></label>
+                    <label class="ownership-field"><span>مبلغ قابل پرداخت هر قسط ({{ currency }})</span><input name="installment_amount" :value="money(installmentAmount)" readonly dir="ltr"></label>
+                    <p v-if="installmentRemainder" class="finance-hint">مبلغ قسط آخر: {{ money(installmentAmount + installmentRemainder) }} {{ currency }}</p>
+                    <DynamicForm v-if="step === 0" :csrf-token="csrfToken" :mode="editing ? 'edit' : 'create'" lookup-base="/management/lookups" v-model="form" :fields="fields.filter(field => field.name === 'description')" :errors="errors" :group-optional="false" />
                 </template></fieldset>
                 <div v-if="discard" class="finance-line" role="alert"><p>تغییرات ذخیره نشده‌اند. خارج می‌شوید؟</p><div class="finance-actions"><button type="button" class="ownership-button" @click="discard = false">ادامه ویرایش</button><button type="button" class="ownership-button finance-danger" @click="closeEditor(true)">خروج بدون ذخیره</button></div></div><div class="ownership-actions finance-pagination"><button v-if="step > 0" type="button" class="ownership-button" :disabled="busy" @click="step--; error = ''; focus('#finance-record-step-title')">مرحله قبل</button><button v-if="uncertain" type="button" class="ownership-button" @click="closeEditor(true); view = 'list'; load()">بررسی وضعیت در فهرست</button><button type="submit" class="ownership-button ownership-button--primary" :disabled="busy || lookupLoading || uncertain" data-finance-save>{{ busy ? 'در حال ثبت…' : step === steps.length - 1 ? 'تأیید و ثبت' : 'ادامه' }}</button></div>
             </form>

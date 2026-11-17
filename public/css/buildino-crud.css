@@ -477,7 +477,6 @@ a.crud-resource-card:hover {
     padding: 0 10px;
     border: 1px solid var(--border);
     border-radius: 10px;
-    outline: none;
     background: var(--surface-soft);
     color: var(--text);
     font-family: var(--font-ui);
@@ -963,7 +962,6 @@ body.crud-overlay-open {
     min-width: 0;
     border: 1px solid var(--border);
     border-radius: 10px;
-    outline: none;
     background: var(--surface-soft);
     color: var(--text);
     font-family: var(--font-ui);
@@ -1168,8 +1166,6 @@ body.crud-overlay-open {
 }
 
 .crud-formula-method input:focus-visible + span {
-    outline: 2px solid var(--primary-500);
-    outline-offset: 2px;
 }
 
 .crud-formula-items-heading {
@@ -1220,7 +1216,6 @@ body.crud-overlay-open {
     min-width: 0;
     border: 1px solid var(--border);
     border-radius: 9px;
-    outline: none;
     background: var(--surface-soft);
     color: var(--text);
     font-family: var(--font-ui);

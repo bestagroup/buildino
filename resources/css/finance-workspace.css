@@ -48,8 +48,8 @@
 .finance-editor .core-form-details { grid-column: 1 / -1; }
 .finance-editor .ui-form-grid { align-items: start; }
 .finance-danger { color: var(--danger); }
-.finance-page :is(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
-.finance-page :is(h3, h4)[tabindex="-1"] { outline: none; scroll-margin-block-start: 110px; }
+.finance-page :is(button, a, input, select, textarea, summary):focus-visible { }
+.finance-page :is(h3, h4)[tabindex="-1"] { scroll-margin-block-start: 110px; }
 .finance-field-error { display: block; color: var(--danger); font-size: 12px; margin-block-start: 5px; }
 .finance-empty { padding: 24px; border-radius: 13px; color: var(--muted); background: var(--surface-soft); font-size: 13px; line-height: 1.9; }
 .finance-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }

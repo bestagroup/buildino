@@ -31,7 +31,7 @@ test('expense form scopes, automatic title, legacy editing and minimal payload',
         prefix: 'expenses', actionPermissions: {}, initial: {}, units: [{id: 1, building_id: 1, block_id: 1, label: 'واحد یک'}], periods: [{id: 4, building_id: 1, title: 'آبان', status: 'draft'}, {id: 5, building_id: 1, title: 'بسته', status: 'closed'}], navigation: [], groups: [],
         buildings: Array.from({ length: buildingCount }, (_, i) => ({ id: i + 1, title: 'ساختمان ' + (i + 1), currency: 'IRR', abilities: { 'expenses.create': wholeBuilding, 'expenses.update': wholeBuilding } })),
         blocks: Array.from({ length: blockCount }, (_, i) => ({ value: i + 1, label: 'بلوک ' + (i + 1), building_id: 1, abilities: { create: true, update: true } })),
-        lookups: { financial_category_id: [{ value: 7, label: 'قبض آب', building_id: 1, parent_id: 3, parent_title: 'انرژی' }], block_id: Array.from({ length: blockCount }, (_, i) => ({ value: i + 1, label: 'بلوک ' + (i + 1), building_id: 1, abilities: { create: true } })) },
+        lookups: { category_parent_id: [{value: 3, label: 'انرژی', building_id: 1}, {value: 99, label: 'بدون فرمول', building_id: 1}], financial_category_id: [{ value: 7, label: 'قبض آب', building_id: 1, parent_id: 3, parent_title: 'انرژی' }], block_id: Array.from({ length: blockCount }, (_, i) => ({ value: i + 1, label: 'بلوک ' + (i + 1), building_id: 1, abilities: { create: true } })) },
     } });
     try {
         w.mountExpense(props()); await tick();
@@ -43,12 +43,24 @@ test('expense form scopes, automatic title, legacy editing and minimal payload',
         await input('category_parent_id', '3'); await input('financial_category_id', '7');
         assert.equal($('[name="title"]').value, 'قبض آب');
         await input('title', 'قبض آب آبان');
-        const amount = $('[data-bill-amount="0"]'); amount.value = '۵۰۰'; amount.dispatchEvent(new w.Event('input', {bubbles: true})); await tick();
+        await input('bill_total', '۵۰۰');
+        assert.equal($('[name="category_parent_id"] option[value="99"]').textContent, 'بدون فرمول');
+        for (const field of ['distribution_mode', 'expense_date']) assert.equal($(`[name="${field}"]`), null);
+        assert.equal($('[data-bill-add-line]'), null);
         await input('start_charge_period_id', '4');
         assert.equal($('[name="start_charge_period_id"] option[value="5"]'), null);
         await input('unit_scope', 'selected');
         const target = $('[name="target_unit_ids"]'); target.options[0].selected = true; target.dispatchEvent(new w.Event('change', {bubbles: true})); await tick();
-        await input('expense_date', '۱۴۰۵/۰۸/۲۲');
+        assert.ok($('[name="installment_amount"]').readOnly);
+        assert.equal($('[name="installment_amount"]').value, '۵۰۰');
+        await input('period_installment_count', '3');
+        assert.equal($('[name="installment_amount"]').value, '۱۶۶');
+        assert.ok($('#finance-record-form').textContent.includes('۱۶۸'));
+        await input('period_installment_count', '1');
+        const names = [...w.document.querySelectorAll('#finance-record-form [name]')].map(el => el.name);
+        const ordered = ['category_parent_id','financial_category_id','title','payer_responsibility','invoice_number','unit_scope','start_charge_period_id','period_installment_count','bill_total','installment_amount','description'];
+        assert.deepEqual(names.filter(name => ordered.includes(name)), ordered);
+
         $('#finance-record-form').dispatchEvent(new w.Event('submit', { cancelable: true })); await tick();
         $('#finance-record-form').dispatchEvent(new w.Event('submit', { cancelable: true })); await tick();
         assert.equal(writes.length, 1, $('#app').textContent);
@@ -59,7 +71,7 @@ test('expense form scopes, automatic title, legacy editing and minimal payload',
         assert.equal($('[name="title"]').value, 'عنوان قبلی');
         assert.equal($('[name="payer_responsibility"]').value, '');
         assert.ok($('[data-expense-scope]').textContent.includes('کل ساختمان'));
-        w.mountExpense(props(2)); await tick(); $('[data-finance-create]').click(); await tick(); assert.ok($('[name="block_id"]'));
+        w.mountExpense(props(2)); await tick(); $('[data-finance-create]').click(); await tick(); assert.equal($('[name="block_id"]'), null);
         w.mountExpense(props(1, 1, false)); await tick(); $('[data-finance-create]').click(); await tick(); assert.equal($('[name="block_id"]'), null); assert.ok($('[data-expense-scope]').textContent.includes('بلوک 1'));
         w.mountExpense(props(1, 2)); await tick(); assert.ok($('[data-finance-building]')); assert.equal($('[data-finance-create]'), null);
     } finally { dom.window.close(); }

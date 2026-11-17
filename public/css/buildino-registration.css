@@ -88,8 +88,8 @@
     color: #7788a0; font-size: 12px; line-height: 1.8;
 }
 .registration-completion[data-ready="true"] { color: #286f59; }
-.registration-page .registration-wizard-heading h3:focus { outline: none; }
-.registration-page .registration-wizard-heading h3:focus-visible { outline: 2px solid #70a5e2; outline-offset: 4px; border-radius: 4px; }
+.registration-page .registration-wizard-heading h3:focus { }
+.registration-page .registration-wizard-heading h3:focus-visible { border-radius: 4px; }
 @media (max-width: 575px) {
     .registration-page .login-backdrop { background-position: 72% center; }
     .registration-progress .is-complete .registration-progress__number::after { top: 9px; left: 9px; }

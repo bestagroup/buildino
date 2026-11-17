@@ -8,7 +8,6 @@ use App\Models\Building;
 use App\Models\Block;
 use App\Models\BuildingBankAccount;
 use App\Models\FinancialCategory;
-use App\Models\ChargeFormula;
 use App\Models\Fund;
 use App\Services\Security\BuildingPermissionScopeService;
 use App\Services\Web\ManagementUiContextService;
@@ -74,25 +73,16 @@ final class FinanceWorkspacePageController extends Controller
                 ->map(fn ($category): array => ['value' => $category->id, 'label' => $category->title, 'building_id' => $category->building_id])->values();
         }
         if ($resource === 'expenses') {
-            // Expense forms select a building's active formula, not an arbitrary global category.
-            $lookups['financial_category_id'] = ChargeFormula::query()
-                ->whereIn('building_id', $scopeIds)
-                ->where('is_active', true)
-                ->where('calculation_type', '!=', 'fixed')
-                ->has('chargeItems', '=', 1)
-                ->with('chargeItems.financialCategory.parent')
-                ->orderBy('title')->get()
-                ->filter(function (ChargeFormula $formula): bool {
-                    $category = $formula->chargeItems->first()?->financialCategory;
-                    return $category && $category->building_id === $formula->building_id && $category->is_active && $category->parent?->is_active;
-                })
-                ->map(fn (ChargeFormula $formula): array => [
-                    'value' => $formula->chargeItems->first()->financial_category_id,
-                    'label' => $formula->chargeItems->first()->financialCategory->title,
-                    'parent_id' => $formula->chargeItems->first()->financialCategory->parent_id,
-                    'parent_title' => $formula->chargeItems->first()->financialCategory->parent->title,
-                    'building_id' => $formula->building_id,
-                ])->values();
+            $lookups['category_parent_id'] = FinancialCategory::query()
+                ->where(fn ($q) => $q->whereIn('building_id', $scopeIds)->orWhereNull('building_id'))
+                ->where('type', 'expense')->whereNull('parent_id')->where('is_active', true)->orderBy('title')->get()
+                ->map(fn ($category) => ['value' => $category->id, 'label' => $category->title, 'building_id' => $category->building_id])->values();
+            $lookups['financial_category_id'] = FinancialCategory::query()
+                ->where(fn ($q) => $q->whereIn('building_id', $scopeIds)->orWhereNull('building_id'))
+                ->where('type', 'expense')->whereNotNull('parent_id')->where('is_active', true)
+                ->whereHas('parent', fn ($q) => $q->where('is_active', true))->with('parent')->orderBy('title')->get()
+                ->map(fn ($category) => ['value' => $category->id, 'label' => $category->title,
+                    'parent_id' => $category->parent_id, 'parent_title' => $category->parent->title, 'building_id' => $category->building_id])->values();
             $blocks = Block::query()->whereIn('building_id', $scopeIds)->orderBy('sort_order')->get()->map(function (Block $block) use ($user, $permissions): array {
                 $abilities = [];
                 foreach (['view', 'create', 'update', 'delete'] as $action) $abilities[$action] = $permissions->allows($user, "expenses.$action", $block);

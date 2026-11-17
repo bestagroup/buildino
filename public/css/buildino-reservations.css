@@ -5,7 +5,7 @@
 .reservation-page .ownership-record__main small { line-height: 1.9; }
 .reservation-page .ownership-button { min-height: 44px; }
 .reservation-page .ownership-card:focus-within { scroll-margin-block: 24px; }
-.reservation-page [tabindex="-1"]:focus { outline: none; }
+.reservation-page [tabindex="-1"]:focus { }
 .reservation-page [aria-invalid="true"] { border-color: var(--danger); }
 .reservation-page .ownership-alert { scroll-margin-block: 25px; line-height: 1.9; }
 .reservation-facilities { margin-block-start: 16px; }

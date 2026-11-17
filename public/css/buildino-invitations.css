@@ -23,8 +23,8 @@
 .invitation-page #coreRemotePagination { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-block-start: 18px; font-size: 12px; }
 .invitation-page #coreRemotePagination button { min-height: 40px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
 .invitation-page #coreRemotePagination button:disabled { opacity: .5; cursor: default; }
-.invitation-page :is(button, a, input, select, [tabindex]):focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
-.invitation-page :is(h3, h4)[tabindex="-1"] { outline: none; scroll-margin-block-start: 100px; }
+.invitation-page :is(button, a, input, select, [tabindex]):focus-visible { }
+.invitation-page :is(h3, h4)[tabindex="-1"] { scroll-margin-block-start: 100px; }
 .invitation-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (max-width: 600px) {
     .invitation-page .invitation-editor[data-inline-editor] { padding: 18px; }

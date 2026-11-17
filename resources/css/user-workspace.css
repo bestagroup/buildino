@@ -19,7 +19,7 @@
 .users-success { margin-block: 18px; border-color: var(--success); }
 .users-success p { font-size: 13px; line-height: 1.9; }
 .users-page legend { margin-block: 20px; padding: 0; font-size: 17px; font-weight: 700; }
-.users-page legend[tabindex="-1"] { outline: none; }
+.users-page legend[tabindex="-1"] { }
 .users-page .ownership-flow { list-style: none; padding: 0; }
 .users-page .ownership-flow li { min-width: 0; border: 1px solid var(--border); border-radius: 12px; color: var(--muted); text-align: center; font-size: 12px; }
 .users-page .ownership-flow li[aria-current="step"] { border-color: var(--primary-500); color: var(--primary-700); background: var(--primary-50); }

@@ -23,7 +23,7 @@
 .ownership-field--wide { grid-column: 1 / -1; }
 .ownership-field input, .ownership-field select, .ownership-field textarea { width: 100%; min-width: 0; min-height: 45px; padding: 9px 12px; border: 1px solid var(--border-strong); border-radius: 11px; background: var(--surface-soft); color: var(--text); font: inherit; font-size: 14px; }
 .ownership-field textarea { resize: vertical; }
-.ownership-field input:focus, .ownership-field select:focus, .ownership-field textarea:focus { outline: none; border-color: var(--primary-500); box-shadow: var(--ui-focus-ring); }
+.ownership-field input:focus, .ownership-field select:focus, .ownership-field textarea:focus { border-color: var(--primary-500); box-shadow: var(--ui-focus-ring); }
 .ownership-field :disabled { opacity: .65; cursor: not-allowed; }
 .ownership-field small, .ownership-location-hint, .ownership-form-hint { color: var(--muted); font-size: 12px; line-height: 1.8; }
 .ownership-location-hint { margin: 15px 0 0; }
@@ -52,7 +52,7 @@
 .ownership-actions a { color: var(--primary-700); font-weight: 700; }
 .ownership-button { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 8px 15px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: var(--text-soft); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .ownership-button:hover { border-color: var(--primary-500); color: var(--primary-700); }
-.ownership-button:focus-visible, .ownership-history summary:focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
+.ownership-button:focus-visible, .ownership-history summary:focus-visible { }
 .ownership-button--primary { border-color: var(--primary-700); background: var(--primary-700); color: white; }
 .ownership-button--primary:hover { border-color: var(--primary-600); background: var(--primary-600); color: white; }
 .ownership-button--soft { background: var(--surface-soft); }

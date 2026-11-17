@@ -116,9 +116,8 @@ body.resident-glass :is(button,input,select,textarea,.select2-container,.tooltip
 .resident-glass :is(input,textarea)::placeholder { color: var(--portal-muted); opacity: 1; }
 .resident-glass :is(input[type="email"],input[type="url"],code,[dir="ltr"],.ltr) { direction: ltr; unicode-bidi: isolate; }
 .resident-glass :is(a,button,input,textarea,select,[tabindex]):focus-visible {
-    outline: 3px solid #3478ad !important; outline-offset: 3px;
 }
-.resident-glass .portal-sidebar :focus-visible { outline-color: #d4e9ff !important; }
+.resident-glass .portal-sidebar :focus-visible { }
 .resident-glass :is(:disabled,[aria-disabled="true"]) { cursor: not-allowed; }
 .resident-glass :is(.invalid-feedback,.text-danger,.core-flow__error) { color: var(--portal-danger); }
 .resident-glass :is(.portal-empty-mini,.portal-empty-state,.portal-table-empty) {

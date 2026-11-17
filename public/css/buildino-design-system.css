@@ -185,7 +185,6 @@ select[dir="rtl"] {
     border-color: var(--primary-500, var(--portal-blue, #3b7dae));
     background: var(--surface, var(--portal-surface, #fff));
     box-shadow: var(--ui-focus-ring);
-    outline: 0;
 }
 
 .has-error input:not([type="checkbox"]),
@@ -245,7 +244,7 @@ input[type="radio"] {
 .buildino-switch__on { display: none; }
 .buildino-switch__input:checked ~ .buildino-switch__state .buildino-switch__on { display: inline; color: var(--primary-700); }
 .buildino-switch__input:checked ~ .buildino-switch__state .buildino-switch__off { display: none; }
-.buildino-switch__input:focus-visible + .buildino-switch__track { outline: 2px solid var(--primary-500); outline-offset: 3px; }
+.buildino-switch__input:focus-visible + .buildino-switch__track { }
 .buildino-switch:has(.buildino-switch__input:disabled) { cursor: not-allowed; opacity: .55; }
 .buildino-switch:has(.buildino-switch__input[aria-invalid="true"]) { border-color: var(--danger); }
 @media (prefers-reduced-motion: reduce) { .buildino-switch__track, .buildino-switch__track::after { transition: none; } }
@@ -392,8 +391,6 @@ table.buildino-datatable tbody td {
 /* ---------- Accessibility / states ---------- */
 
 :focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--primary-500, #3b7dae) 26%, transparent);
-    outline-offset: 2px;
 }
 
 [aria-busy="true"] {
@@ -586,7 +583,6 @@ kbd {
 
 .buildino-skip-link:focus {
     transform: translateY(0);
-    outline: 3px solid color-mix(in srgb, var(--primary-500, #3b7dae) 30%, transparent);
 }
 
 html[data-theme="dark"] {
@@ -657,7 +653,6 @@ html[data-theme="light"] {
     border-color: var(--primary-500, var(--portal-blue, #3b7dae));
     background: var(--surface, var(--portal-surface, #fff));
     box-shadow: var(--ui-focus-ring);
-    outline: 0;
 }
 
 .registration-field > span,

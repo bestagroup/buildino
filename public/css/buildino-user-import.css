@@ -3,7 +3,7 @@
 .import-preview__header h3 { margin: 0; font-size: 16px; font-weight: 700; }
 .import-preview__count { display: inline-block; white-space: nowrap; padding: 5px 10px; border-radius: 8px; background: var(--surface-strong); color: var(--text); font-size: 12px; font-weight: 600; }
 .import-preview__scroll { overflow: auto; max-height: 65vh; border-block-start: 1px solid var(--border); }
-.import-preview__scroll:focus-visible { outline: 2px solid var(--primary-500); outline-offset: -2px; }
+.import-preview__scroll:focus-visible { }
 .import-preview__table { width: 100%; min-width: 920px; border-collapse: separate; border-spacing: 0; text-align: start; color: var(--text); font-size: 13px; line-height: 1.8; }
 .import-preview__table thead th { position: sticky; top: 0; z-index: 1; background: var(--surface-strong); color: var(--text-soft); font-size: 12px; white-space: nowrap; }
 .import-preview__table th, .import-preview__table td { padding: 14px 16px; text-align: start; vertical-align: middle; border-block-end: 1px solid var(--border); }

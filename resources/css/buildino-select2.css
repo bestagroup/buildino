@@ -153,7 +153,6 @@
     padding: 0 10px;
     border: 1px solid var(--buildino-select-border, #d7e0ea);
     border-radius: 8px;
-    outline: none;
     background: var(--buildino-select-bg, #fff);
     color: var(--buildino-select-text, #172033);
     direction: rtl;

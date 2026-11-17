@@ -110,7 +110,6 @@ div.dt-container .dt-length select {
     margin-inline: 5px;
     border: 1px solid var(--portal-border, var(--border, #e2e8f0)) !important;
     border-radius: 8px !important;
-    outline: none;
     background: var(--portal-soft, var(--surface-soft, #f7f9fc)) !important;
     color: var(--portal-text, var(--text, #172033)) !important;
     font-family: inherit;
@@ -292,7 +291,6 @@ div.dt-container .dt-paging .dt-paging-button.current {
     padding: 0 8px;
     border: 1px solid var(--portal-border, #e2e8f0);
     border-radius: 8px;
-    outline: none;
     background: var(--portal-soft, #f7f9fc);
     color: var(--portal-text, #172033);
     font-family: inherit;

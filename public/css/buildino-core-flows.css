@@ -31,7 +31,7 @@
 .core-invitation-entry label { display: grid; gap: 5px; min-width: min(100%, 220px); font-size: 13px; }
 .core-invitation-entry input, .core-invitation-entry button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--border, var(--portal-border, #dfe6ef)); border-radius: 10px; background: var(--surface-soft, var(--portal-soft, #f8fafc)); color: inherit; font: inherit; }
 .core-invitation-entry button { cursor: pointer; }
-.core-invitation-entry input:focus-visible, .core-invitation-entry button:focus-visible { outline: 2px solid var(--primary-500, var(--portal-blue, #3b7dae)); outline-offset: 2px; }
+.core-invitation-entry input:focus-visible, .core-invitation-entry button:focus-visible { }
 .core-flow button:disabled { opacity: .58; cursor: wait; }
 .core-form-details { grid-column: 1 / -1; border: 1px solid var(--border, #dfe6ef); border-radius: 12px; padding: 12px; }
 .core-form-details summary { cursor: pointer; font-size: 14px; font-weight: 700; }
@@ -40,11 +40,11 @@
 .core-auth-password:not(.auth-input) > input { width: 100%; min-height: var(--ui-control-height, 46px); padding: 0 12px; border: 1px solid var(--border, var(--portal-border, #dfe6ef)); border-radius: var(--ui-control-radius, 12px); background: var(--surface-soft, var(--portal-soft, #f8fafc)); color: var(--text, var(--portal-text, #172033)); font: inherit; font-size: 14px; }
 .core-auth-password > input { min-width: 0; padding-inline-start: 48px; }
 .core-auth-password:not(.auth-input) > input { padding-inline-start: 48px; }
-.core-auth-password:not(.auth-input) > input:focus { border-color: var(--primary-500, var(--portal-blue, #3b7dae)); background: var(--surface, var(--portal-surface, #fff)); box-shadow: var(--ui-focus-ring); outline: 0; }
+.core-auth-password:not(.auth-input) > input:focus { border-color: var(--primary-500, var(--portal-blue, #3b7dae)); background: var(--surface, var(--portal-surface, #fff)); box-shadow: var(--ui-focus-ring); }
 .core-auth-toggle { position: absolute; inset-inline-end: 3px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--muted, var(--portal-muted, #718096)); cursor: pointer; }
 .core-auth-toggle svg { width: 20px; height: 20px; }
 .core-auth-toggle:hover { color: var(--primary-700, var(--portal-blue, #29658f)); background: var(--primary-50, var(--portal-soft, #f2f8fd)); }
-.core-auth-toggle:focus-visible { outline: 2px solid var(--primary-500, var(--portal-blue, #3b7dae)); outline-offset: -2px; }
+.core-auth-toggle:focus-visible { }
 .core-auth-helper { font-size: 13px; line-height: 1.8; color: var(--muted, var(--portal-muted, #718096)); }
 .core-otp-timer { display: block; margin-block-start: 6px; font-size: 13px; }
 .registration-progress { margin-block-end: 26px; scroll-margin-block-start: 20px; }
@@ -71,7 +71,7 @@
 .registration-wizard-actions .registration-submit { flex: 1; width: auto; }
 .registration-wizard-panel[hidden], .registration-wizard-actions [hidden] { display: none !important; }
 .registration-field > .core-field-error { color: var(--danger); background: var(--danger-soft); }
-.registration-progress button:focus-visible, .registration-wizard-back:focus-visible { outline: 3px solid var(--primary-500); outline-offset: 4px; }
+.registration-progress button:focus-visible, .registration-wizard-back:focus-visible { }
 @media (prefers-reduced-motion: reduce) { .registration-progress__track > span { transition: none; } }
 @media (max-width: 991.98px) {
     .registration-page .registration-showcase { min-height: 0; padding: 20px; }

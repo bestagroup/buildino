@@ -56,7 +56,7 @@
 .glance-unit-detail footer { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: auto; }
 .glance-unit-detail footer .ownership-button { flex: 1; min-height: 36px; padding: 6px 10px; font-size: 11px; white-space: nowrap; }
 .glance-page [hidden] { display: none !important; }
-.glance-page :is(button, a, input, select, summary):focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
+.glance-page :is(button, a, input, select, summary):focus-visible { }
 @media (max-width: 1000px) { .glance-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } .glance-stats .glance-stat { grid-column: auto; } .glance-units { grid-template-columns: minmax(0, 1fr); } .glance-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .glance-toolbar, .glance-period { flex-direction: column; align-items: stretch; } .glance-toolbar .ownership-field { max-width: none; width: 100%; } .glance-page .ownership-hero { flex-wrap: wrap; } .glance-updated { margin-inline-start: 0; flex-basis: 100%; } .glance-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .glance-stat { padding: 15px; } .glance-stat strong { font-size: 19px; } .glance-filters { grid-template-columns: minmax(0, 1fr); } .glance-unit-detail { padding: 16px; } .glance-directory { padding-inline: 16px; } }
 .glance-unit-row { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }

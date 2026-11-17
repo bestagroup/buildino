@@ -1140,7 +1140,6 @@ html[data-theme="dark"] .portal-modal .btn-close {
     width: 100%;
     border: 1px solid var(--portal-border);
     border-radius: 9px;
-    outline: none;
     background: var(--portal-soft);
     color: var(--portal-text);
     font-size: 11px;
@@ -1385,7 +1384,6 @@ html[data-theme="dark"] .portal-modal .btn-close {
     padding: 0 10px;
     border: 1px solid #dfe7ef;
     border-radius: 10px;
-    outline: none;
     background: #f9fbfd;
     color: #172033;
     font-size: 11px;
@@ -2023,7 +2021,6 @@ html[data-theme="dark"] .portal-modal .btn-close {
     padding: 8px;
     border: 1px solid var(--portal-border);
     border-radius: 9px;
-    outline: none;
     resize: vertical;
     background: var(--portal-soft);
     color: var(--portal-text);

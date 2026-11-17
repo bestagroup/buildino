@@ -23,5 +23,5 @@
 .location-marker { background: none; border: 0; }
 .location-marker > span { position: relative; box-sizing: border-box; display: block; width: 28px; height: 28px; border: 3px solid #fff; border-radius: 50% 50% 50% 0; background: var(--primary-700, #1f527f); box-shadow: 0 3px 9px #0f172a40; transform: rotate(-45deg); }
 .location-marker > span::after { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: #fff; }
-.location-picker :is(button):focus-visible, .location-dialog :is(button):focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
+.location-picker :is(button):focus-visible, .location-dialog :is(button):focus-visible { }
 @media (max-width: 600px) { .location-dialog__map { height: 38dvh; } .location-picker__control { padding: 12px; } }
