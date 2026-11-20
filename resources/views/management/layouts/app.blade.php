@@ -170,6 +170,7 @@
         aria-label="منوی اصلی مدیریت"
     >
         <div class="sidebar__top">
+            <button type="button" class="sidebar-mobile-close" id="sidebarMobileClose" aria-label="بستن منو"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button>
             <a
                 class="sidebar__brand"
                 href="{{ route('management.dashboard') }}"
@@ -716,7 +717,7 @@
     <main class="main-area" id="mainContent" tabindex="-1">
         <header class="topbar">
             <div class="topbar__start">
-                <button type="button" class="icon-button mobile-menu" id="sidebarToggle" aria-label="نمایش منو">
+                <button type="button" class="icon-button mobile-menu" id="sidebarToggle" aria-label="نمایش منو" aria-controls="managementSidebar" aria-expanded="false">
                     @include(
                         'management.partials.icon',
                         ['name' => 'menu']

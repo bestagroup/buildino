@@ -5,4 +5,30 @@ body .ownership-page { max-width: none; margin: 0; }
 body :is(.ownership-hero, .ownership-flow, .finance-breadcrumb, .finance-navigation, [data-ownership-back-unit], [data-occupancy-back-unit]) { display: none !important; }
 body :is([data-ownership-location], [data-occupancy-location], [aria-labelledby="finance-scope-title"]) { display: none !important; }
 body .ownership-card { box-shadow: none; }
+body .ownership-card__heading { flex-wrap: wrap; gap: 10px; }
+body[data-glance-embedded] .ownership-card__heading--split { display: flex; }
+body[data-glance-embedded] .ownership-card__heading--split > .ownership-button { width: auto; margin-inline-start: 0; }
+body .ownership-card__heading > .ownership-card__index { display: none; }
+body .ownership-card__heading h3 { font-size: 17px; }
+body .ownership-overview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+body .ownership-overview > * { margin: 0; padding: 14px; font-size: 12px; line-height: 1.8; }
+body .ownership-record { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 14px 18px; padding: 18px; background: var(--surface); }
+body .ownership-record__main { grid-column: 1; }
+body .ownership-record__meta { grid-column: 1; gap: 7px; }
+body .ownership-record__meta span { background: var(--surface-soft); font-size: 11px; line-height: 1.8; }
+body .ownership-record__meta .is-primary { background: var(--success-soft); }
+body .ownership-record__actions { grid-column: 2; grid-row: 1 / span 2; justify-content: end; align-content: start; max-width: 260px; }
+body .ownership-record__main small { direction: ltr; text-align: right; unicode-bidi: plaintext; }
+body .ownership-actions { justify-content: space-between; }
+body .ownership-actions > span { display: none; }
+body .ownership-field--wide > [data-ownership-manage-users], body .ownership-field--wide > [data-occupancy-manage-users] { justify-self: start; }
+@media (max-width: 600px) {
+    body .ownership-card { padding: 16px; }
+    body .ownership-card__heading > div { flex-basis: 100%; }
+    body .ownership-card__heading > .ownership-button { margin: 0; }
+    body .ownership-record { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+    body .ownership-record__actions { grid-column: 1; grid-row: auto; max-width: none; justify-content: start; padding-top: 12px; border-top: 1px solid var(--border); }
+    body .ownership-record__actions .ownership-button { flex: 1; }
+    body .ownership-overview { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 600px) { body { padding: 10px; } }

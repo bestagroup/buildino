@@ -289,12 +289,23 @@
             "sidebarCollapse"
         );
 
-    const closeMobileSidebar =
-        () => {
-            body.classList.remove(
-                "sidebar-open"
-            );
-        };
+    const sidebar = document.getElementById('managementSidebar');
+    const mobileSidebar = window.matchMedia('(max-width: 1040px)');
+    const sidebarClose = document.getElementById('sidebarMobileClose');
+    const mainArea = document.querySelector('.main-area');
+    const syncSidebar = () => {
+        const open = mobileSidebar.matches && body.classList.contains('sidebar-open');
+        sidebarToggle?.setAttribute('aria-expanded', String(open));
+        if (sidebar) sidebar.inert = mobileSidebar.matches && !open;
+        if (mainArea) mainArea.inert = open;
+    };
+    const closeMobileSidebar = () => {
+        const wasOpen = body.classList.contains('sidebar-open');
+        body.classList.remove('sidebar-open');
+        syncSidebar();
+        if (wasOpen && mobileSidebar.matches) sidebarToggle?.focus({ preventScroll: true });
+    };
+    sidebarClose?.addEventListener('click', closeMobileSidebar);
 
     sidebarToggle
         ?.addEventListener(
@@ -303,6 +314,8 @@
                 body.classList.toggle(
                     "sidebar-open"
                 );
+                syncSidebar();
+                if (body.classList.contains('sidebar-open')) sidebarClose?.focus({ preventScroll: true });
             }
         );
 
@@ -342,6 +355,21 @@
                 );
             }
         );
+
+    const applySidebarViewport = () => {
+        body.classList.toggle('sidebar-collapsed', !mobileSidebar.matches && storage.get('buildino-sidebar-collapsed') === '1');
+        if (!mobileSidebar.matches) body.classList.remove('sidebar-open');
+        syncSidebar();
+    };
+    mobileSidebar.addEventListener('change', applySidebarViewport);
+    applySidebarViewport();
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Tab' || !mobileSidebar.matches || !body.classList.contains('sidebar-open')) return;
+        const items = [...(sidebar?.querySelectorAll('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]') || [])].filter(item => item.getClientRects().length && getComputedStyle(item).visibility !== 'hidden');
+        const first = items[0], last = items.at(-1);
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    });
 
     const navGroups = [
         ...document.querySelectorAll(

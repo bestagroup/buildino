@@ -76,6 +76,13 @@ test('users: actual Vue wizard, scoped actions, validation, P05, retries and res
         $('[data-users-error] button').click();await until(()=>!$('#users-form'));const count=posts.length;await tick();expect(posts.length===count,'Mutation automatically retried');
         history.replaceState({},'', '/management/operations/users?create=1');mountUsers(props());await until(()=>$('#users-form'));
         expect([...$$('#users-form input')].filter(el=>el.type!=='checkbox').map(el=>el.name).join(',')==='first_name,last_name,mobile,email,national_code','Direct creation link or identity field order is wrong');
+        const mobileToggle=$('[name="verify_mobile"]').closest('.ui-field').getBoundingClientRect(),emailToggle=$('[name="verify_email"]').closest('.ui-field').getBoundingClientRect();
+        if(innerWidth>720)expect(Math.abs(mobileToggle.top-emailToggle.top)<1,'Email verification is not beside mobile verification');
+        else {
+            const fields=$$('#users-form .ui-field').map(el=>el.getBoundingClientRect());
+            expect(fields.every(box=>Math.abs(box.left-fields[0].left)<1&&Math.abs(box.width-fields[0].width)<1),'Mobile creation fields must share one column');
+            expect($$('.ownership-flow li button').every(el=>el.scrollWidth<=el.clientWidth),'Mobile step labels overflow');
+        }
         if(${JSON.stringify(process.env.USERS_FORM_PREVIEW || '')}){
             if(${JSON.stringify(process.env.USERS_FORM_PREVIEW || '')}==='status'){await input('first_name','کاربر');await input('last_name','آزمایشی');await input('mobile','09121112233');await submit();}
             $('#result').dataset.ok='true';return;

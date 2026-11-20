@@ -40,6 +40,10 @@ test('at a glance: real Blade list and unit modal, Persian search, combined filt
         const until=async predicate=>{for(let i=0;i<150;i++){if(predicate())return;await new Promise(r=>setTimeout(r,10));}throw Error('Timed out '+JSON.stringify({open:dialog.open,discard:$('[data-glance-discard]').hidden,disabled:$('[data-glance-close]').disabled,focus:document.activeElement.outerHTML.slice(0,100)}));};
         const open=$('[data-glance-open]');open.focus();open.click();expect(dialog.open&&$('[data-glance-overview] .glance-wallet'),'Unit summary modal missing');
         expect(document.activeElement.id==='glance-unit-title','Dialog heading focus');expect(!window.glanceXss&&!$('[data-glance-overview] img'),'Modal must escape report data');
+        expect($('[data-glance-overview] .glance-payable').textContent.includes('۶٬۰۰۰'),'Payable summary changed the amount');
+        expect($('[data-glance-overview] .glance-financial').textContent.includes('مانده بستانکاری'),'Financial summary omitted credit');
+        for(const el of $$('[data-glance-overview] .glance-person-grid > div, [data-glance-overview] .glance-unit-metrics > div'))expect(el.scrollWidth<=el.clientWidth+1,'Summary sections overlap');
+        expect(dialog.scrollWidth<=dialog.clientWidth,'Unit modal overflows');
         $('.glance-wallet summary').click();expect($('.glance-wallet').open,'Wallet breakdown unavailable');
         $('[data-glance-section="ownerships"]').click();await until(()=>!$('[data-glance-loading]').hidden===false);
         await until(()=>document.querySelector('iframe')?.contentDocument?.querySelector('[data-glance-embedded]'));

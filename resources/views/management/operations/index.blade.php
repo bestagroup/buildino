@@ -48,7 +48,7 @@
 </section>
 
 <div class="crud-groups">
-    @foreach ($groups as $group)
+    @foreach ($groups as $groupKey => $group)
         <section class="crud-group">
             <div class="crud-group__heading">
                 <div class="crud-group__icon">
@@ -67,7 +67,7 @@
                 </div>
             </div>
 
-            <div class="crud-resource-grid">
+            <div class="crud-resource-grid {{ $groupKey === 'access' ? 'crud-resource-grid--access' : '' }}">
                 @foreach ($group['resources'] as $resource)
                     <x-management.operation-card
                         :title="$resource['title']"

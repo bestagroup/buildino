@@ -186,6 +186,10 @@
     gap: 9px;
 }
 
+.crud-resource-grid--access { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 900px) { .crud-group .crud-resource-grid--access { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 580px) { .crud-group .crud-resource-grid--access { grid-template-columns: minmax(0, 1fr); } }
+
 .crud-resource-card {
     position: relative;
     min-height: 112px;

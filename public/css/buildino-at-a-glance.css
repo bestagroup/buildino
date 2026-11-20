@@ -1,4 +1,12 @@
 .glance-page { min-width: 0; }
+.glance-page .glance-hero { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.glance-hero__copy { min-width: 0; }
+.glance-hero__art { flex: 0 0 100px; display: grid; place-items: center; width: 100px; height: 100px; border-radius: 28px; background: var(--primary-50); color: var(--primary-700); transform: rotate(-6deg); }
+.glance-hero__art svg { transform: rotate(6deg); }
+.glance-hero .glance-updated { display: block; margin-block-start: 12px; }
+.glance-building { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 28px; }
+.glance-building .ownership-card__heading { margin: 0; }
+.glance-building .glance-toolbar { justify-content: end; }
 .glance-breadcrumb { display: flex; flex-wrap: wrap; gap: 8px; margin-block-end: 20px; color: var(--muted); font-size: 12px; }
 .glance-breadcrumb a, .glance-link { color: var(--primary-700); text-decoration: none; }
 .glance-updated { margin-inline-start: auto; font-size: 11px; color: var(--muted); }
@@ -38,6 +46,20 @@
 .glance-person-grid dt { color: var(--muted); font-size: 11px; margin-block-end: 8px; }
 .glance-person-grid dd { margin: 0; color: var(--text); font-size: 12px; line-height: 1.9; }
 .glance-person-grid dd span { display: block; overflow-wrap: anywhere; }
+.glance-person-grid > div { min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 14px; }
+.glance-person-grid dt { display: flex; align-items: center; gap: 8px; }
+.glance-person-grid dd { font-size: 13px; }
+.glance-payable { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px; border-radius: 14px; background: var(--success-soft); color: var(--success); }
+.glance-payable--due { background: var(--primary-50); color: var(--primary-700); }
+.glance-payable span { font-size: 13px; font-weight: 700; }
+.glance-payable small { display: block; margin-top: 5px; font-size: 11px; font-weight: 400; }
+.glance-payable strong { font-size: 24px; text-align: end; overflow-wrap: anywhere; }
+.glance-payable strong small { display: inline; font-size: 12px; }
+.glance-financial { padding: 16px; border-radius: 14px; background: var(--surface-soft); }
+.glance-financial h4 { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; font-size: 13px; }
+.glance-financial h4 small { color: var(--muted); font-size: 11px; font-weight: 400; }
+.glance-financial .glance-unit-metrics { padding: 0; gap: 16px; }
+.glance-surplus { margin: 16px 0 0; font-size: 12px; color: var(--success); }
 .glance-muted { color: var(--muted); }
 .glance-unit-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 14px 10px; border-radius: 12px; background: var(--surface-soft); }
 .glance-unit-metrics > div { min-width: 0; }
@@ -91,6 +113,11 @@
 .glance-discard > div { display: flex; justify-content: space-between; gap: 12px; }
 @keyframes glance-dialog-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 700px) {
+    .glance-building { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .glance-hero__art { flex-basis: 64px; width: 64px; height: 64px; border-radius: 20px; }
+    .glance-hero__art svg { width: 42px; height: 42px; }
+    .glance-person-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .glance-payable { flex-wrap: wrap; }
     .glance-unit-open { grid-template-columns: minmax(0, 1fr) auto 16px; gap: 10px; padding: 12px; }
     .glance-unit-open > .glance-badge { grid-column: 1; grid-row: 2; justify-self: start; }
     .glance-row-amount { grid-column: 2; grid-row: 1 / span 2; max-width: 130px; }
@@ -99,5 +126,7 @@
     .glance-dialog-heading { padding: 12px 14px; }
     .glance-dialog-tabs { padding-inline: 12px; }
     .glance-unit-detail .glance-unit-metrics { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .glance-unit-detail .glance-unit-metrics > div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+    .glance-unit-detail .glance-unit-metrics dd { margin: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .glance-dialog[open] { animation: none; } .glance-unit-open { transition: none; } }

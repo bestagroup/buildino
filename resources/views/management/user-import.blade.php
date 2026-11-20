@@ -2,25 +2,26 @@
 @section('title', 'ورود کاربران از اکسل | Buildino')
 @section('page-title', 'ورود کاربران از اکسل')
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/buildino-unit-ownerships.css') }}?v={{ filemtime(public_path('css/buildino-unit-ownerships.css')) }}">
 <link rel="stylesheet" href="{{ asset('css/buildino-user-import.css') }}?v={{ filemtime(public_path('css/buildino-user-import.css')) }}">
 @endpush
 @section('content')
-<div class="card p-4">
-    <h2>ورود کاربران و ارتباط با واحد</h2>
-    @if(session('status')) <div class="alert alert-success" role="status">{{ session('status') }}</div> @endif
-    @if($errors->any()) <div class="alert alert-danger" role="alert">{{ $errors->first() }}</div> @endif
+<div class="ownership-page import-page">
+    <nav class="import-breadcrumb" aria-label="مسیر صفحه"><a href="{{ route('management.dashboard') }}">داشبورد</a><span>/</span><a href="{{ route('management.operations.index') }}">مرکز عملیات</a><span>/</span><strong>ورود کاربران از اکسل</strong></nav>
+    <header class="ownership-hero"><div class="ownership-hero__icon" aria-hidden="true">@include('management.partials.icon', ['name'=>'users','size'=>28])</div><div><h2>ورود کاربران از اکسل</h2>@if($building)<p>{{ $building->title }}</p>@endif</div></header>
+    @if(session('status')) <div class="ownership-alert ownership-alert--success" role="status">{{ session('status') }}</div> @endif
+    @if($errors->any()) <div class="ownership-alert ownership-alert--error" role="alert"><ul>@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div> @endif
     @if($buildings->count() > 1)
-    <form method="get" action="{{ route('management.user-import.index') }}">
-        <label for="import-building">ساختمان</label>
-        <select id="import-building" class="form-select" name="building_id" required>
+    <form class="ownership-card import-building" method="get" action="{{ route('management.user-import.index') }}">
+        <label class="ownership-field" for="import-building"><span>ساختمان <b aria-hidden="true">*</b></span>
+        <select id="import-building" name="building_id" required>
             <option value="">انتخاب ساختمان</option>
             @foreach($buildings as $item)<option value="{{ $item->id }}" @selected($building?->id === $item->id)>{{ $item->title }}</option>@endforeach
-        </select><div class="import-preview__actions"><button class="btn btn-primary mt-2">انتخاب</button></div>
+        </select></label><button type="submit" class="ownership-button ownership-button--primary">انتخاب ساختمان</button>
     </form>
     @endif
     @if($building)
-    <h3>{{ $building->title }}</h3>
-    <a class="btn btn-outline-primary" href="{{ route('management.user-import.template', $building) }}">دانلود فایل نمونه و اطلاعات فعلی ساختمان</a>
+    <ol class="import-steps" aria-label="مراحل ورود اکسل"><li @if(!isset($rows)) aria-current="step" @endif><span>۱</span>انتخاب فایل</li><li @if(isset($rows)) aria-current="step" @endif><span>۲</span>بررسی و ثبت</li></ol>
     @isset($rows)
         @php
             $digits = static fn ($value) => strtr((string) $value, array_combine(range(0, 9), ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹']));
@@ -50,15 +51,19 @@
             </div>
         </section>
         @if(count($rows))
-        <form class="import-preview__actions" method="post" action="{{ route('management.user-import.commit', $building) }}">@csrf<input type="hidden" name="token" value="{{ $token }}"><button class="btn btn-primary">تأیید و ثبت {{ $digits(count($rows)) }} ردیف</button></form>
+        <form class="import-preview__actions" method="post" action="{{ route('management.user-import.commit', $building) }}">@csrf<input type="hidden" name="token" value="{{ $token }}"><a class="ownership-button" href="{{ route('management.user-import.index', ['building_id'=>$building->id]) }}">انتخاب فایل دیگر</a><button type="submit" class="ownership-button ownership-button--primary">تأیید و ثبت {{ $digits(count($rows)) }} ردیف</button></form>
         @else
-        <p class="alert alert-info">تغییری برای ثبت وجود ندارد.</p>
+        <div class="ownership-card import-empty"><p>تغییری برای ثبت وجود ندارد.</p><a class="ownership-button" href="{{ route('management.user-import.index', ['building_id'=>$building->id]) }}">انتخاب فایل دیگر</a></div>
         @endif
     @else
-        <form class="mt-3" method="post" enctype="multipart/form-data" action="{{ route('management.user-import.preview', $building) }}">@csrf
-            <label for="users-file">فایل اکسل کاربران</label><input class="form-control" id="users-file" type="file" name="file" accept=".xlsx" required>
-            <button class="btn btn-primary mt-2">بررسی و پیش‌نمایش</button>
-        </form>
+        <div class="import-workspace">
+            <section class="ownership-card import-template"><span class="import-card-icon" aria-hidden="true">@include('management.partials.icon', ['name'=>'download','size'=>30])</span><h3>فایل نمونه ساختمان</h3><p>اطلاعات فعلی را دریافت و در اکسل ویرایش کنید.</p><a class="ownership-button" href="{{ route('management.user-import.template', $building) }}">دانلود فایل نمونه</a></section>
+            <form class="ownership-card import-upload" method="post" enctype="multipart/form-data" action="{{ route('management.user-import.preview', $building) }}">@csrf
+                <h3>ویرایش اکسل و بارگذاری فایل</h3>
+                <label class="import-file" for="users-file"><span class="import-card-icon" aria-hidden="true">@include('management.partials.icon', ['name'=>'invoice','size'=>30])</span><strong>فایل اکسل کاربران</strong><small id="users-file-hint">فرمت XLSX · حداکثر ۲ مگابایت</small><input id="users-file" type="file" name="file" accept=".xlsx" aria-describedby="users-file-hint" @if($errors->has('file')) aria-invalid="true" @endif required></label>
+                <div class="import-preview__actions"><button type="submit" class="ownership-button ownership-button--primary">بررسی و پیش‌نمایش</button></div>
+            </form>
+        </div>
     @endisset
     @endif
 </div>

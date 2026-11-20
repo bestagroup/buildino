@@ -12,6 +12,7 @@ import { canPlan, normalizeSignedAmount, day, invoiceLabels, invoiceTotal, itemT
 import type { CrudField, CrudRecord } from '../../../types/management';
 
 const props = defineProps<{ archiveOnly?: boolean; resourceKey: InvoiceResource; title: string; workspace: InvoiceWorkspace; csrfToken: string }>();
+const embedded = Boolean(document.querySelector('[data-glance-embedded]'));
 const root = ref<HTMLElement | null>(null), buildingId = ref(''), unitId = ref(''), search = ref(''), status = ref('');
 const view = ref<'list' | 'detail' | 'editor'>('list'), loading = ref(false), detailLoading = ref(false), busy = ref(false);
 const listLoaded = ref(false);
@@ -263,7 +264,7 @@ onBeforeUnmount(() => { closed = true; listTicket++; detailTicket++; choiceTicke
 <template>
     <FinanceFrame :title="title" :resource-key="resourceKey" :workspace="workspace" :building-id="buildingId">
         <div ref="root" data-invoice-select2>
-            <p v-if="archiveOnly"><a class="ownership-button" :href="'/management/operations/expenses?building_id=' + buildingId">بازگشت به صورتحساب ساختمان</a></p>
+            <p v-if="archiveOnly && !embedded"><a class="ownership-button" data-finance-archive-back :href="'/management/operations/expenses?building_id=' + buildingId">بازگشت به صورتحساب ساختمان</a></p>
         <div v-if="error" class="ownership-alert ownership-alert--error" role="alert" tabindex="-1" data-finance-error>{{ error }}</div>
             <div v-if="success" class="ownership-alert ownership-alert--success" role="status">{{ success }}</div>
             <section v-if="view === 'list'" class="ownership-card" aria-labelledby="finance-scope-title">

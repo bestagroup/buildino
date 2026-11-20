@@ -34,10 +34,20 @@
 .users-page #users-form .ui-field__label { min-height: 20px; }
 .users-page [data-users-step="0"] .ui-field:has([name="mobile"]) { grid-column: 1/-1; }
 .users-page [data-users-step="0"] .ui-field--checkbox { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 48px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); }
-.users-page [data-users-step="0"] .ui-field--checkbox:last-child:nth-child(odd) { grid-column: 1/-1; }
+.users-page [data-users-step="0"] .ui-field:has([name="national_code"]) { grid-column: 1/-1; }
+@media (min-width: 721px) {
+    .users-page [data-users-step="0"] .ui-field:has([name="verify_mobile"]) { grid-column: 1; }
+    .users-page [data-users-step="0"] .ui-field:has([name="verify_email"]) { grid-column: 2; }
+}
 .users-page #users-form .ui-field--checkbox .ui-field__label { min-height: 0; margin: 0; }
 .users-page [data-users-step="0"] .buildino-switch { width: auto; flex-shrink: 0; }
 .users-page .users-form-actions { padding-block-start: 18px; border-top: 1px solid var(--border); }
 @media(max-width: 700px) { .users-form-actions .ownership-button { flex: 1; } }
 @media (max-width: 850px) { .users-list { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 500px) { .users-item { padding: 14px; } .users-item__heading { gap: 8px; flex-wrap: wrap; } .users-page .ownership-flow { gap: 6px; } .users-page .ownership-flow li { font-size: 11px; padding: 5px; } .users-filters > button { flex: 1; } .users-page .finance-review { grid-template-columns: 1fr; gap: 6px; } .users-page .finance-review dd { margin-block-end: 12px; } }
+@media (max-width: 720px) {
+    .users-page #users-form .ui-form-grid { grid-template-columns: minmax(0, 1fr); }
+    .users-page .ownership-flow { grid-template-columns: minmax(0, 1fr); }
+    .users-page .ownership-flow li { text-align: start; }
+    .users-page .ownership-flow li button { text-align: start; padding: 10px 12px; }
+}

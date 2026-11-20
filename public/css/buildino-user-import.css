@@ -1,3 +1,32 @@
+.import-page { min-width: 0; }
+.import-breadcrumb { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; color: var(--muted); font-size: 12px; }
+.import-breadcrumb a { color: var(--primary-700); text-decoration: none; }
+.import-building { display: flex; align-items: end; gap: 12px; }
+.import-building .ownership-field { flex: 1; max-width: 520px; }
+.import-building b { color: var(--danger); }
+.import-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0 0 20px; }
+.import-steps li { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--muted); font-size: 13px; }
+.import-steps li[aria-current] { border-color: var(--primary-500); color: var(--primary-700); background: var(--primary-50); }
+.import-steps li > span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--surface-soft); font-weight: 700; }
+.import-workspace { display: grid; grid-template-columns: minmax(240px, .8fr) minmax(0, 1.4fr); gap: 20px; }
+.import-workspace .ownership-card { margin: 0; min-width: 0; }
+.import-workspace h3 { font-size: 15px; margin: 0 0 16px; }
+.import-template { display: flex; flex-direction: column; align-items: start; gap: 16px; }
+.import-template h3, .import-template p { margin: 0; }
+.import-template p { color: var(--muted); font-size: 13px; line-height: 1.9; }
+.import-template > a { margin-top: auto; }
+.import-card-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; color: var(--primary-700); background: var(--primary-50); }
+.import-file { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px 16px; border: 1px dashed var(--border); border-radius: 16px; background: var(--surface-soft); cursor: pointer; text-align: center; }
+.import-file strong { font-size: 14px; }
+.import-file small { color: var(--muted); font-size: 12px; }
+.import-file input { width: 100%; max-width: 360px; min-width: 0; font: inherit; font-size: 12px; color: var(--text-soft); cursor: pointer; }
+.import-file input::file-selector-button { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; padding: 10px 12px; margin-inline-end: 10px; cursor: pointer; }
+.import-upload .import-preview__actions { padding-top: 18px; }
+.import-empty { text-align: center; color: var(--muted); }
+.import-page :is(a, button):focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
+.import-file:focus-within { border-color: var(--primary-500); }
+.import-page .ownership-alert ul { padding-inline-start: 20px; margin: 0; }
+@media (max-width: 720px) { .import-workspace { grid-template-columns: minmax(0, 1fr); gap: 16px; } .import-building { flex-wrap: wrap; } .import-building .ownership-field { flex-basis: 100%; max-width: none; } .import-steps li { padding: 10px; font-size: 12px; } }
 .import-preview { margin-block: 24px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); overflow: hidden; }
 .import-preview__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; }
 .import-preview__header h3 { margin: 0; font-size: 16px; font-weight: 700; }
@@ -20,5 +49,5 @@
 @media (max-width: 640px) {
     .import-preview__header { padding: 12px; }
     .import-preview__table th, .import-preview__table td { padding: 12px; }
-    .import-preview__actions .btn { width: 100%; }
+    .import-preview__actions .ownership-button { flex: 1; }
 }
