@@ -1,17 +1,59 @@
-/* Neutral field focus; keyboard focus on buttons and links stays unchanged. */
+/* Indicate focus with the existing border; keep the field surface unchanged. */
+html[dir="rtl"] :is(input, select, textarea):not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"]),
+html[dir="rtl"] :is(.auth-input, .portal-input, .setup-counter),
+html[dir="rtl"] .select2-container--default :is(.select2-selection--single, .select2-selection--multiple) {
+    transition: border-color 180ms ease, opacity 180ms ease;
+}
 html[dir="rtl"] :is(input, select, textarea):not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"]):focus {
+    outline: none !important;
     box-shadow: none !important;
 }
 html[dir="rtl"] :is(input, select, textarea):not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"]):focus:not([aria-invalid="true"], .is-invalid):not(.has-error *) {
-    border-color: var(--border-strong, var(--portal-border, #cbd5e1)) !important;
+    border-color: color-mix(in srgb, var(--border-strong, var(--portal-border, #cbd5e1)) 65%, var(--muted, var(--portal-muted, #718096))) !important;
 }
-html[dir="rtl"] :is(input, select, textarea):not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"]):focus-visible {
+
+/* These existing components otherwise change their surface on focus. */
+html[dir="rtl"] :is(.crud-field, .ui-field, .crud-search, .crud-toolbar, .registration-field, .portal-login-form, .portal-ticket-reply, .dashboard-filter, .field, .command-palette__search, .subscription-form, .core-auth-password:not(.auth-input)) :is(input, select, textarea):focus {
+    background-color: var(--surface-soft, var(--portal-soft, #f8fafc)) !important;
 }
-html[dir="rtl"] :is(.auth-input, .portal-input, .setup-counter, .setup-unit-card):focus-within:not(.has-error, .is-invalid):not(:has([aria-invalid="true"], .is-invalid)) {
-    border-color: var(--border-strong, var(--portal-border, #cbd5e1)) !important;
+/* Inputs inside a visible wrapper remain transparent. */
+html[dir="rtl"] :is(.auth-input, .portal-input, .setup-counter) :is(input, textarea):focus {
+    background-color: transparent !important;
+}
+html[dir="rtl"] :is(.auth-input, .portal-input, .setup-counter):focus-within {
+    outline: none !important;
     box-shadow: none !important;
 }
+html[dir="rtl"] :is(.auth-input, .portal-input):focus-within {
+    background-color: var(--surface-soft, var(--portal-soft, #f8fafc)) !important;
+}
+html[dir="rtl"] :is(.auth-input, .portal-input, .setup-counter):focus-within:not(.has-error, .is-invalid):not(:has([aria-invalid="true"], .is-invalid)) {
+    border-color: color-mix(in srgb, var(--border-strong, var(--portal-border, #cbd5e1)) 65%, var(--muted, var(--portal-muted, #718096))) !important;
+}
+/* Login controls use a white surface in both themes. */
+html[dir="rtl"] :is(.login-card, .portal-login-card) :is(.auth-input, .portal-input):focus-within {
+    background-color: #fff !important;
+}
+/* The white inset masks the browser's autofill tint; retain it while focused. */
+html[dir="rtl"] :is(.login-card, .portal-login-card) .auth-input > input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+    box-shadow: 0 0 0 1000px #fff inset !important;
+}
+html[dir="rtl"] :is(.login-card, .portal-login-card) .auth-input > input:autofill:focus {
+    box-shadow: 0 0 0 1000px #fff inset !important;
+}
+
 html[dir="rtl"] .select2-container--default:is(.select2-container--focus, .select2-container--open) :is(.select2-selection--single, .select2-selection--multiple) {
-    border-color: var(--border-strong, var(--portal-border, #cbd5e1)) !important;
+    outline: none !important;
     box-shadow: none !important;
+    background-color: var(--buildino-select-bg, #fff) !important;
+}
+html[dir="rtl"] .select2-container--default:is(.select2-container--focus, .select2-container--open) :is(.select2-selection--single, .select2-selection--multiple):not([aria-invalid="true"], .is-invalid):not(.has-error *) {
+    border-color: color-mix(in srgb, var(--border-strong, var(--portal-border, #cbd5e1)) 65%, var(--muted, var(--portal-muted, #718096))) !important;
+}
+html[dir="rtl"] .select2-container--default :is(.select2-selection--single, .select2-selection--multiple):focus { outline: none !important; }
+@media (prefers-reduced-motion: reduce) {
+    html[dir="rtl"] :is(input, select, textarea):not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"]),
+    html[dir="rtl"] :is(.auth-input, .portal-input, .setup-counter),
+    html[dir="rtl"] .select2-container--default :is(.select2-selection--single, .select2-selection--multiple) { transition: none !important; }
 }
