@@ -57,6 +57,8 @@
 @endsection
 
 @section('content')
+@if($area === 'resident')<div data-resident-workspace data-resident-resource="{{ $resource }}">@endif
+@if($area === 'resident' && request()->boolean('created'))<div class="resident-notice" role="status">اطلاعات ثبت شد.</div>@endif
 <nav class="portal-breadcrumb">
     <a
         href="{{
@@ -75,8 +77,9 @@
             route(
                 "portal.{$area}.operations.index",
                 [
-                    'resource' =>
-                        $resource,
+                        'resource' =>
+                            $resource,
+                        ...($area === 'resident' ? request()->only(['unit_id','status','from','to','search','page']) : []),
                 ]
             )
         }}"
@@ -137,6 +140,7 @@
         </article>
     @endforeach
 </section>
+@if($area === 'resident')@include('portal.resident.actions')@endif
 
 @foreach (
     $detail['sections']
@@ -264,4 +268,5 @@
         @endif
     </section>
 @endforeach
+@if($area === 'resident')</div>@include('portal.resident.forms')@endif
 @endsection

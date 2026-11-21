@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Services\Web\ManagementHeaderContextService;
 use App\Services\Web\PortalAccessService;
+use App\Services\Web\PortalDashboardService;
 use App\Services\Web\PortalOperationDetailService;
+use App\Services\Web\ResidentPortalWorkspace;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
@@ -30,39 +32,40 @@ final class PortalOperationsController extends Controller
             Response::HTTP_NOT_FOUND
         );
 
+        $workspace = app(ResidentPortalWorkspace::class);
+        $data = in_array($resource, ['units', 'loyalty'], true)
+            ? app(PortalDashboardService::class)->resident($request->user())
+            : $workspace->context($request->user());
+        if ($request->filled('unit_id')) {
+            $request->validate(['unit_id' => ['integer', 'min:1']]);
+            abort_unless(collect($data['units'])->contains('id', $request->integer('unit_id')), 403);
+        }
+
         return view(
-            'portal.operations.index',
+            in_array($resource, ['units', 'loyalty'], true) ? 'portal.resident.'.$resource : 'portal.operations.index',
             [
-                'portalData' => [
-                    'area' =>
-                        'resident',
-                    'header' =>
-                        $header->context(
-                            $request->user()
-                        ),
+                'portalData' => [...$data,
+                    'area' => 'resident',
+                    'header' => $header->context(
+                        $request->user()
+                    ),
                 ],
                 'portalAreas' => [
-                    'resident' =>
-                        true,
-                    'provider' =>
-                        $access->hasProviderAccess(
-                            $request->user()
-                        ),
-                ],
-                'area' =>
-                    'resident',
-                'resource' =>
-                    $resource,
-                'operationConfig' =>
-                    $config,
-                'dataUrl' =>
-                    route(
-                        'portal.resident.datatables',
-                        [
-                            'table' =>
-                                $resource,
-                        ]
+                    'resident' => true,
+                    'provider' => $access->hasProviderAccess(
+                        $request->user()
                     ),
+                ],
+                'area' => 'resident',
+                'resource' => $resource,
+                'residentStatuses' => $workspace->statuses($resource),
+                'operationConfig' => $config,
+                'dataUrl' => route(
+                    'portal.resident.datatables',
+                    [
+                        'table' => $resource,
+                    ]
+                ),
             ]
         );
     }
@@ -87,37 +90,29 @@ final class PortalOperationsController extends Controller
             Response::HTTP_NOT_FOUND
         );
 
+        $detail = $details->resident($request->user(), $resource, $id);
+        $workspace = app(ResidentPortalWorkspace::class);
+
         return view(
             'portal.operations.show',
             [
-                'portalData' => [
-                    'area' =>
-                        'resident',
-                    'header' =>
-                        $header->context(
-                            $request->user()
-                        ),
+                'portalData' => [...$workspace->context($request->user()),
+                    'area' => 'resident',
+                    'header' => $header->context(
+                        $request->user()
+                    ),
                 ],
                 'portalAreas' => [
-                    'resident' =>
-                        true,
-                    'provider' =>
-                        $access->hasProviderAccess(
-                            $request->user()
-                        ),
-                ],
-                'area' =>
-                    'resident',
-                'resource' =>
-                    $resource,
-                'operationConfig' =>
-                    $config,
-                'detail' =>
-                    $details->resident(
-                        $request->user(),
-                        $resource,
-                        $id
+                    'resident' => true,
+                    'provider' => $access->hasProviderAccess(
+                        $request->user()
                     ),
+                ],
+                'area' => 'resident',
+                'resource' => $resource,
+                'operationConfig' => $config,
+                'detail' => $detail,
+                'residentActions' => $workspace->actions($request->user(), $resource, $id),
             ]
         );
     }

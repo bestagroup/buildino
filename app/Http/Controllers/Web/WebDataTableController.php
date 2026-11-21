@@ -112,6 +112,12 @@ final class WebDataTableController extends Controller
             Response::HTTP_NOT_FOUND
         );
 
+        if ($request->filled('unit_id')) {
+            $request->validate(['unit_id' => ['integer', 'min:1']]);
+            abort_unless($unitIds->contains($request->integer('unit_id')), 403);
+            $unitIds = collect([$request->integer('unit_id')]);
+        }
+
         return match ($table) {
             'invoices' =>
                 $this->residentInvoices(
@@ -1124,6 +1130,12 @@ final class WebDataTableController extends Controller
                 )
                 ->unique()
                 ->values();
+
+        if ($request->filled('unit_id')) {
+            $walletIds = Wallet::whereKey($walletIds)
+                ->whereIn('owner_type', [(new Unit())->getMorphClass(), Unit::class])
+                ->pluck('id');
+        }
 
         $query =
             WalletEntry::query()

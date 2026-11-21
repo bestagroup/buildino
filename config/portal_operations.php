@@ -3,6 +3,8 @@
 return [
 
     'resident' => [
+        'units' => ['title' => 'واحدهای من', 'description' => '', 'icon' => 'building', 'columns' => [], 'filters' => []],
+        'loyalty' => ['title' => 'باشگاه وفاداری', 'description' => '', 'icon' => 'star', 'columns' => [], 'filters' => []],
 
         'invoices' => [
             'title' => 'صورتحساب‌های من',

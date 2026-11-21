@@ -1,7 +1,7 @@
 /* Complements the shared sidebar click handlers; resident page only. */
 (() => {
     const body = document.body;
-    if (!body.classList.contains('resident-glass')) return;
+    if (!body.classList.contains('portal-resident') && !body.classList.contains('resident-glass')) return;
     const menu = document.getElementById('portalSidebar');
     const toggle = document.getElementById('portalSidebarToggle');
     const mobile = window.matchMedia('(max-width: 980px)');
@@ -10,16 +10,22 @@
     const sync = () => {
         toggle.setAttribute('aria-expanded', String(open()));
         menu.inert = mobile.matches && !open();
+        const main = document.querySelector('.portal-main');
+        if (main) main.inert = open();
     };
+    const close = () => { body.classList.remove('portal-sidebar-open'); sync(); toggle.focus({ preventScroll: true }); };
+    document.querySelector('[data-resident-sidebar-close]')?.addEventListener('click', close);
+    document.getElementById('portalSidebarBackdrop')?.addEventListener('click', close);
+    toggle.addEventListener('click', () => { sync(); if (open()) menu.querySelector('[data-resident-sidebar-close], a[href]')?.focus(); });
     new MutationObserver(sync).observe(body, { attributes: true, attributeFilter: ['class'] });
-    mobile.addEventListener('change', sync);
+    mobile.addEventListener('change', () => { body.classList.remove('portal-sidebar-open'); sync(); });
     menu.addEventListener('click', (event) => {
-        if (mobile.matches && event.target.closest('a[href]')) body.classList.remove('portal-sidebar-open');
+        if (mobile.matches && event.target.closest('a[href], [data-invitation-open]')) close();
     });
     document.addEventListener('keydown', (event) => {
         if (!open()) return;
         if (event.key === 'Escape') {
-            event.preventDefault(); body.classList.remove('portal-sidebar-open'); toggle.focus();
+            event.preventDefault(); close();
         }
         if (event.key !== 'Tab') return;
         const items = [...menu.querySelectorAll('a[href],button:not(:disabled)')]

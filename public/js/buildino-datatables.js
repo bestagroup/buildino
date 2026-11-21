@@ -278,6 +278,10 @@
                 new window.DataTable(
                     table,
                     {
+                        ...(document.body.classList.contains('portal-resident') ? {
+                            search: { search: new URLSearchParams(location.search).get('search') || '' },
+                            displayStart: Math.max(0, (Number(new URLSearchParams(location.search).get('page')) || 1) - 1) * Number(table.dataset.dtPageLength || 15),
+                        } : {}),
                         processing:
                             true,
                         serverSide:

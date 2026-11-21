@@ -47,6 +47,9 @@
 @endsection
 
 @section('content')
+@if($area === 'resident')
+    @include('portal.resident.work-index')
+@else
 <section class="portal-operation-hero">
     <div>
         <span class="portal-eyebrow">
@@ -176,4 +179,5 @@
         )
     </div>
 </section>
+@endif
 @endsection

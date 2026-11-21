@@ -45,13 +45,16 @@
     // animated portal content cannot trap them below the backdrop.
     $$('.portal-content .modal').forEach(modal => document.body.append(modal));
 
+    let lastApiError = null;
+    let lastMutation = null;
+    const resident = document.body.classList.contains('portal-resident');
     const api =
         async (
             url,
             options = {}
         ) => {
-            const response =
-                await fetch(
+            let response;
+            try { response = await fetch(
                     url,
                     {
                         credentials:
@@ -73,14 +76,20 @@
                         },
                     }
                 );
-
+            } catch (caught) {
+                const error = new Error('ارتباط برقرار نشد؛ وضعیت اطلاعات را پیش از ارسال دوباره بررسی کنید.');
+                error.uncertain = !['GET','HEAD'].includes(String(options.method || 'GET').toUpperCase());
+                lastApiError = error;
+                throw error;
+            }
             const contentType =
                 response.headers.get(
                     "content-type"
                 )
                 || "";
 
-            const payload =
+            let payload;
+            try { payload =
                 response.status === 204
                     ? null
                     : (
@@ -90,6 +99,12 @@
                             ? await response.json()
                             : await response.text()
                     );
+            } catch (caught) {
+                const error = new Error('پاسخ کامل سرور دریافت نشد؛ وضعیت اطلاعات را پیش از ارسال دوباره بررسی کنید.');
+                error.uncertain = !['GET','HEAD'].includes(String(options.method || 'GET').toUpperCase());
+                lastApiError = error;
+                throw error;
+            }
 
             if (! response.ok) {
                 let message =
@@ -124,27 +139,43 @@
                         payload;
                 }
 
-                const error =
-                    new Error(
-                        message
-                    );
+                if (resident) {
+                    if (response.status >= 500) message = 'نتیجه درخواست مشخص نیست؛ اطلاعات را پیش از ارسال دوباره بررسی کنید.';
+                    else if ([401,419].includes(response.status)) message = 'نشست شما منقضی شده است؛ صفحه را دوباره باز کنید.';
+                    else if (response.status === 403) message = 'اجازه انجام این کار را ندارید.';
+                    else if (payload?.errors) message = Object.values(payload.errors).flat().join('؛ ');
+                    else if (typeof payload === 'string') message = 'درخواست انجام نشد؛ دوباره تلاش کنید.';
+                }
+                const error = new Error(message);
 
                 error.status =
                     response.status;
                 error.payload =
                     payload;
 
+                error.uncertain = response.status >= 500 && !['GET','HEAD'].includes(String(options.method || 'GET').toUpperCase());
+                lastApiError = error;
                 throw error;
             }
-
+            lastApiError = null;
+            if (!['GET','HEAD'].includes(String(options.method || 'GET').toUpperCase())) lastMutation = payload;
             return payload;
         };
+
+    window.BuildinoPortalApi = api;
 
     const toast =
         (
             message,
             tone = "success"
         ) => {
+            if (resident && tone === 'error') {
+                const form = document.querySelector('.modal.show form, form[data-ticket-reply-form][aria-busy="true"]');
+                if (form) {
+                    document.dispatchEvent(new CustomEvent('buildino:portal-form-error', { detail: { form, error: lastApiError || new Error(message) } }));
+                    return;
+                }
+            }
             if (
                 window.Swal
             ) {
@@ -213,6 +244,11 @@
                 return;
             }
 
+            const form = button.closest('form');
+            if (resident && form) {
+                form.dataset.portalBusy = state ? '1' : '0';
+                form.setAttribute('aria-busy', String(state));
+            }
             if (state) {
                 button.dataset
                     .originalText =
@@ -224,8 +260,7 @@
                 button.textContent =
                     "در حال انجام...";
             } else {
-                button.disabled =
-                    false;
+                button.disabled = Boolean(resident && form?.dataset.residentUncertain === '1');
 
                 if (
                     button.dataset
@@ -263,10 +298,18 @@
             form,
             message
         ) => {
-            closeModal(
-                form
-            );
-
+            if (resident && form) form.dataset.residentSaved = '1';
+            closeModal(form);
+            if (resident && form && ['guest','reservation','service','support'].includes(form.dataset.portalForm)) {
+                const resource = {guest:'guests',reservation:'reservations',service:'services',support:'support'}[form.dataset.portalForm];
+                const result = lastMutation?.data;
+                const url = new URL('/portal/resident/operations/' + resource + (result?.id ? '/' + result.id : ''), location.origin);
+                const unit = form.elements.unit_id?.value;
+                if (unit) url.searchParams.set('unit_id', unit);
+                url.searchParams.set('created', '1');
+                location.assign(url.href);
+                return;
+            }
             toast(
                 message
             );
@@ -937,16 +980,9 @@
                                             form,
                                             "reservation_date"
                                         ),
-                                    start_time:
-                                        value(
-                                            form,
-                                            "start_time"
-                                        ),
-                                    end_time:
-                                        value(
-                                            form,
-                                            "end_time"
-                                        ),
+                                    ...(resident && value(form, 'facility_time_slot_id')
+                                        ? { facility_time_slot_id: Number(value(form, 'facility_time_slot_id')) }
+                                        : { start_time: value(form, 'start_time'), end_time: value(form, 'end_time') }),
                                     description:
                                         value(
                                             form,
@@ -1547,7 +1583,7 @@
                                 gateway:
                                     portal.defaultGateway,
                                 idempotency_key:
-                                    `${keyPrefix}:${stamp}`,
+                                    resident ? `${keyPrefix}:${paymentId}` : `${keyPrefix}:${stamp}`,
                             }),
                     }
                 );
@@ -1579,10 +1615,11 @@
                         text:
                             "مبلغ پرداخت را وارد کنید.",
                         input:
-                            "number",
+                            resident ? "text" : "number",
                         inputValue:
                             outstanding,
                         inputAttributes: {
+                            ...(resident ? { inputmode: "numeric", "data-number-input": "" } : {}),
                             min:
                                 "1",
                             max:
@@ -1679,12 +1716,15 @@
                                 || 0
                             );
 
-                        const amount =
+                        if (button.disabled) return;
+                        button.disabled = true;
+                        const amount = button.dataset.paymentId ? Number(button.dataset.paymentAmount) :
                             await askPaymentAmount(
                                 outstanding
                             );
 
                         if (! amount) {
+                            button.disabled = false;
                             return;
                         }
 
@@ -1692,7 +1732,7 @@
                             true;
 
                         try {
-                            const payment =
+                            const payment = button.dataset.paymentId ? { data: { id: button.dataset.paymentId } } :
                                 await api(
                                     `/api/v1/invoices/${encodeURIComponent(invoiceId)}/payments`,
                                     {
@@ -1720,6 +1760,9 @@
                                 );
                             }
 
+                            button.dataset.paymentId = String(paymentId);
+                            button.dataset.paymentAmount = String(amount);
+
                             const redirected =
                                 await initiateGatewayPayment(
                                     paymentId,
@@ -1727,6 +1770,7 @@
                                 );
 
                             if (! redirected) {
+                                button.textContent = 'ادامه پرداخت ثبت‌شده';
                                 toast(
                                     "پرداخت ایجاد شد اما آدرس انتقال درگاه دریافت نشد.",
                                     "warning"
@@ -1737,6 +1781,12 @@
                         } catch (
                             error
                         ) {
+                            if (resident && error.uncertain && !button.dataset.paymentId) {
+                                const notice = document.createElement('p'); notice.className = 'resident-form-error'; notice.setAttribute('role', 'alert');
+                                notice.textContent = 'نتیجه ثبت پرداخت مشخص نیست. پیش از پرداخت دوباره، وضعیت صورتحساب را بررسی کنید.';
+                                const check = document.createElement('a'); check.href = location.pathname + location.search; check.textContent = 'بررسی وضعیت';
+                                notice.append(' ', check); button.after(notice); return;
+                            }
                             toast(
                                 error.message,
                                 "error"
