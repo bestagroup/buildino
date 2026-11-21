@@ -165,6 +165,10 @@ final class BuildingUserImportService
                 if ($row['relation'] !== 'owner') {
                     if (! $unit->unitOccupancies()->where('user_id', $user->id)->where('is_active', true)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', today()))->exists()) {
                         app(OccupancyService::class)->assign($data + ['occupancy_type' => $row['relation'] === 'owner_resident' ? 'owner' : $row['relation'], 'resident_count' => (int) $row['resident_count']], $actor);
+                    } else {
+                        app(\App\Services\Charge\ResidentCountHistory::class)->record(
+                            $unit, (int) $row['resident_count'], $row['starts_at']
+                        );
                     }
                 }
             }

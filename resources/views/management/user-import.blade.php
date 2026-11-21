@@ -51,6 +51,9 @@
             </div>
         </section>
         @if(count($rows))
+        @if(collect($rows)->contains(fn ($row) => !empty($row['_explicit_effective_from'])))
+        <p role="status">تاریخ اثر تعداد نفرات: {{ $rows[array_key_first($rows)]['starts_at'] }} — فقط پس از تأیید ثبت می‌شود.</p>
+        @endif
         <form class="import-preview__actions" method="post" action="{{ route('management.user-import.commit', $building) }}">@csrf<input type="hidden" name="token" value="{{ $token }}"><a class="ownership-button" href="{{ route('management.user-import.index', ['building_id'=>$building->id]) }}">انتخاب فایل دیگر</a><button type="submit" class="ownership-button ownership-button--primary">تأیید و ثبت {{ $digits(count($rows)) }} ردیف</button></form>
         @else
         <div class="ownership-card import-empty"><p>تغییری برای ثبت وجود ندارد.</p><a class="ownership-button" href="{{ route('management.user-import.index', ['building_id'=>$building->id]) }}">انتخاب فایل دیگر</a></div>
@@ -60,6 +63,7 @@
             <section class="ownership-card import-template"><span class="import-card-icon" aria-hidden="true">@include('management.partials.icon', ['name'=>'download','size'=>30])</span><h3>فایل نمونه ساختمان</h3><p>اطلاعات فعلی را دریافت و در اکسل ویرایش کنید.</p><a class="ownership-button" href="{{ route('management.user-import.template', $building) }}">دانلود فایل نمونه</a></section>
             <form class="ownership-card import-upload" method="post" enctype="multipart/form-data" action="{{ route('management.user-import.preview', $building) }}">@csrf
                 <h3>ویرایش اکسل و بارگذاری فایل</h3>
+                <label class="ownership-field"><span>تاریخ اثر اطلاعات (اختیاری)</span><input type="date" name="effective_from" value="{{ old('effective_from') }}" max="{{ today()->toDateString() }}"><small>پیش‌فرض امروز است. برای تکمیل سابقه تعداد نفرات، تاریخ معتبر همان اطلاعات را انتخاب کنید. این تاریخ برای ارتباط‌های جدید نیز استفاده می‌شود؛ تاریخ مالکیت و سکونت موجود تغییر نمی‌کند.</small></label>
                 <label class="import-file" for="users-file"><span class="import-card-icon" aria-hidden="true">@include('management.partials.icon', ['name'=>'invoice','size'=>30])</span><strong>فایل اکسل کاربران</strong><small id="users-file-hint">فرمت XLSX · حداکثر ۲ مگابایت</small><input id="users-file" type="file" name="file" accept=".xlsx" aria-describedby="users-file-hint" @if($errors->has('file')) aria-invalid="true" @endif required></label>
                 <div class="import-preview__actions"><button type="submit" class="ownership-button ownership-button--primary">بررسی و پیش‌نمایش</button></div>
             </form>

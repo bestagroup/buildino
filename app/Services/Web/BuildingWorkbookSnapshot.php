@@ -49,6 +49,7 @@ final class BuildingWorkbookSnapshot
 
         return ['unit_id' => $unit->id, 'owner_id' => $owner?->id, 'tenant_id' => $tenant?->id, 'occupant_id' => $resident?->id,
             'values' => $values, 'relations' => [$owners->map->getAttributes()->all(), $occupants->map->getAttributes()->all()],
+            'resident_counts' => \Illuminate\Support\Facades\DB::table('unit_resident_counts')->where('unit_id', $unit->id)->orderBy('effective_from')->get(['effective_from', 'resident_count'])->map(fn ($row) => (array) $row)->all(),
             'users' => collect([$owner, $tenant])->filter()->map(fn ($u) => [$u->id, $u->updated_at?->toISOString(), $u->mobile, $u->is_active, $u->is_blocked])->values()->all()];
     }
 
@@ -95,7 +96,7 @@ final class BuildingWorkbookSnapshot
             $legacy[$i]['unit_id'] = $unit->id;
             $legacy[$i]['_bound_users'] = array_filter([$current['owner_id'], $current['tenant_id']]);
             $legacy[$i]['_occupant_id'] = $current['occupant_id'];
-            $legacy[$i]['_create_owner_occupancy'] = ! $current['occupant_id'] && (int) $current['values'][15] === 0 && (int) $row['resident_count'] > 0;
+            $legacy[$i]['_create_owner_occupancy'] = ! $current['occupant_id'] && (int) $row['resident_count'] > 0;
             foreach (['owner', 'tenant'] as $kind) {
                 $row[$kind.'_mobile'] = $this->mobile($row[$kind.'_mobile']);
                 $legacy[$i][$kind.'_mobile'] = $row[$kind.'_mobile'];
@@ -137,7 +138,16 @@ final class BuildingWorkbookSnapshot
         }
         unset($row);
         foreach ($rows as $i => $row) {
-            $original = $this->decode($row['_snapshot'])['state']['values'];
+            $state = $this->decode($row['_snapshot'])['state'];
+            $original = $state['values'];
+            $hasCountHistory = collect($state['resident_counts'])->contains(
+                fn ($entry) => $entry['effective_from'] <= ($row['starts_at'] ?? today()->toDateString())
+            );
+            if (! empty($row['_explicit_effective_from'])
+                || ($state['occupant_id'] && ! $hasCountHistory)
+                || ! empty($legacy[$i]['_create_owner_occupancy'])) {
+                $changed[$i] = $legacy[$i];
+            }
             $values = array_map(fn ($key) => (string) $row[$key], array_slice(BuildingWorkbookService::KEYS, 1));
             foreach ($values as $column => $value) {
                 $same = in_array($column, [2, 4, 5, 6, 7, 15], true)

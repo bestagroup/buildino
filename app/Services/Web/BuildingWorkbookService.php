@@ -79,7 +79,7 @@ final class BuildingWorkbookService
         $people = [];
         foreach ($rows as &$row) {
             $row['usage_type'] = array_search($row['usage_type'], self::USAGE_LABELS, true) ?: $row['usage_type'];
-            $v = Validator::make($row, ['row' => 'required|integer|min:1', 'building' => 'required|string', 'code' => 'required|string', 'floor' => 'required|integer', 'unit' => 'required|string|max:100', 'area' => 'required|numeric|min:0.01|max:99999999', 'bedrooms' => 'required|integer|min:0|max:255', 'parking_count' => 'required|integer|min:0|max:1000', 'storage_count' => 'required|integer|min:0|max:1000', 'usage_type' => ['required', \Illuminate\Validation\Rule::in(array_keys(self::USAGE_LABELS))], 'resident_count' => 'required|integer|min:0|max:1000', 'owner_first' => 'nullable|string|max:100', 'owner_last' => 'nullable|string|max:100', 'owner_mobile' => 'nullable|string', 'tenant_first' => 'nullable|string|max:100', 'tenant_last' => 'nullable|string|max:100', 'tenant_mobile' => 'nullable|string']);
+            $v = Validator::make($row, ['starts_at' => 'sometimes|required|date_format:Y-m-d|before_or_equal:today', 'row' => 'required|integer|min:1', 'building' => 'required|string', 'code' => 'required|string', 'floor' => 'required|integer', 'unit' => 'required|string|max:100', 'area' => 'required|numeric|min:0.01|max:99999999', 'bedrooms' => 'required|integer|min:0|max:255', 'parking_count' => 'required|integer|min:0|max:1000', 'storage_count' => 'required|integer|min:0|max:1000', 'usage_type' => ['required', \Illuminate\Validation\Rule::in(array_keys(self::USAGE_LABELS))], 'resident_count' => 'required|integer|min:0|max:1000', 'owner_first' => 'nullable|string|max:100', 'owner_last' => 'nullable|string|max:100', 'owner_mobile' => 'nullable|string', 'tenant_first' => 'nullable|string|max:100', 'tenant_last' => 'nullable|string|max:100', 'tenant_mobile' => 'nullable|string']);
             if ($v->fails()) {
                 $this->fail('ردیف '.$row['row'].': '.implode(' ', $v->errors()->all()));
             }
@@ -179,7 +179,9 @@ final class BuildingWorkbookService
             foreach ($plan['rows'] as $row) {
                 $unit = Unit::findOrFail($row['unit_id']);
                 $unit->update(['unit_number' => $row['unit'], 'storage_count' => $row['storage_count'], 'usage_type' => $row['usage_type'], 'area' => $row['area'], 'bedrooms' => $row['bedrooms'], 'parking_count' => $row['parking_count']]);
-                if ((int) $unit->resident_count !== (int) $row['resident_count']) {
+                if ((int) $unit->resident_count !== (int) $row['resident_count']
+                    || ! empty($row['_explicit_effective_from'])
+                    || ! DB::table('unit_resident_counts')->where('unit_id', $unit->id)->whereDate('effective_from', '<=', $row['starts_at'])->exists()) {
                     app(ResidentCountHistory::class)->record($unit, (int) $row['resident_count'], $row['starts_at']);
                 }
             }

@@ -47,9 +47,17 @@ final class BuildingUserImportController extends Controller
     {
         $this->authorizeBuilding($request, $building);
         $request->session()->forget('building_user_import');
-        $request->validate(['file' => 'required|file|mimes:xlsx|max:2048']);
+        $request->validate(['file' => 'required|file|mimes:xlsx|max:2048', 'effective_from' => 'nullable|date_format:Y-m-d|before_or_equal:today']);
         try {
-            $rows = $imports->validate($building, $request->user(), $imports->read($request->file('file')->getRealPath()))['rows'];
+            $inputRows = $imports->read($request->file('file')->getRealPath());
+            if ($request->filled('effective_from')) {
+                foreach ($inputRows as &$row) {
+                    $row['starts_at'] = $request->input('effective_from');
+                    $row['_explicit_effective_from'] = true;
+                }
+                unset($row);
+            }
+            $rows = $imports->validate($building, $request->user(), $inputRows)['rows'];
         } catch (ValidationException|HttpExceptionInterface $e) {
             throw $e;
         } catch (\Throwable $e) {
@@ -66,7 +74,7 @@ final class BuildingUserImportController extends Controller
     {
         $this->authorizeBuilding($request, $building);
         $preview = $request->session()->get('building_user_import');
-        abort_unless($preview && ($preview['format'] ?? null) === 4 && $preview['user_id'] === $request->user()->id && $preview['building_id'] === $building->id && $preview['expires_at'] > time() && hash_equals($preview['token'], (string) $request->input('token')), 419);
+        abort_unless($preview && ($preview['format'] ?? null) === 4 && $preview['user_id'] === $request->user()->id && $preview['building_id'] === $building->id && $preview['expires_at'] > now()->timestamp && hash_equals($preview['token'], (string) $request->input('token')), 419);
         $imports->commit($building, $request->user(), $preview['rows']);
         $request->session()->forget('building_user_import');
 

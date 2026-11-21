@@ -80,6 +80,45 @@ class BuildingUserImportTest extends TestCase
         return $file;
     }
 
+    public function test_explicit_workbook_date_repairs_unchanged_historical_counts_without_replacing_relationships(): void
+    {
+        $this->travelTo(\Carbon\CarbonImmutable::parse('2026-09-01'));
+        [$manager, $unit, $building, $user] = $this->populatedWorkbook();
+        $occupancy = $unit->unitOccupancies()->firstOrFail();
+        $ownership = $unit->unitOwnerships()->firstOrFail();
+        $this->travelTo(\Carbon\CarbonImmutable::parse('2026-11-21'));
+        \Illuminate\Support\Facades\DB::table('unit_resident_counts')->where('unit_id', $unit->id)->delete();
+        app(\App\Services\Charge\ResidentCountHistory::class)->record($unit, 3, '2026-11-21');
+        $rows = $this->exportedRows($building);
+        $this->post(route('management.user-import.preview', $building), [
+            'file' => $this->signedFile($rows), 'effective_from' => '2026-09-23',
+        ])->assertOk()->assertSee('2026-09-23');
+        $this->assertDatabaseMissing('unit_resident_counts', ['unit_id' => $unit->id, 'effective_from' => '2026-09-23']);
+        $this->post(route('management.user-import.commit', $building), ['token' => session('building_user_import.token')])->assertRedirect();
+        $count = app(\App\Services\Charge\PeriodResidentCount::class)->count($unit->fresh(),
+            \Carbon\CarbonImmutable::parse('2026-09-23'), \Carbon\CarbonImmutable::parse('2026-10-22'));
+        $this->assertSame(3, $count);
+        $this->assertSame($occupancy->getAttributes(), $occupancy->fresh()->getAttributes());
+        $this->assertSame($ownership->getAttributes(), $ownership->fresh()->getAttributes());
+        $this->assertSame(3, $unit->fresh()->resident_count);
+    }
+
+    public function test_legacy_import_updates_count_for_existing_resident_and_preserves_later_history(): void
+    {
+        $this->travelTo(\Carbon\CarbonImmutable::parse('2026-09-01'));
+        [$manager, $unit, $building, $user] = $this->populatedWorkbook();
+        $this->travelTo(\Carbon\CarbonImmutable::parse('2026-11-21'));
+        app(\App\Services\Charge\ResidentCountHistory::class)->record($unit, 5, '2026-11-01');
+        app(BuildingUserImportService::class)->commit($building, $manager, [[
+            'unit_id' => (string) $unit->id, 'unit_number' => (string) $unit->unit_number,
+            'first_name' => $user->first_name, 'last_name' => $user->last_name, 'mobile' => $user->mobile,
+            'relation' => 'owner_resident', 'resident_count' => '4', 'starts_at' => '2026-09-23',
+        ]]);
+        $this->assertSame(5, $unit->fresh()->resident_count);
+        $this->assertSame(1, $unit->unitOccupancies()->count());
+        $this->assertDatabaseHas('unit_resident_counts', ['unit_id' => $unit->id, 'effective_from' => '2026-09-23', 'resident_count' => 4]);
+    }
+
     public function test_preview_does_not_write_and_commit_creates_user_relationships_and_wallet(): void
     {
         [$manager, $unit, $building] = $this->scenario();
