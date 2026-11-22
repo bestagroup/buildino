@@ -81,7 +81,7 @@ class PortalLifecyclePhase2Test extends TestCase
                 ->block
                 ->building;
 
-        UnitInvoice::query()
+        $invoice = UnitInvoice::query()
             ->create([
                 'building_id' =>
                     $building->getKey(),
@@ -147,7 +147,7 @@ class PortalLifecyclePhase2Test extends TestCase
                         true,
                 ]);
 
-        FacilityReservation::query()
+        $reservation = FacilityReservation::query()
             ->create([
                 'uuid' =>
                     (string) Str::uuid(),
@@ -198,7 +198,7 @@ class PortalLifecyclePhase2Test extends TestCase
                         '09123334455',
                 ]);
 
-        GuestVisit::query()
+        $visit = GuestVisit::query()
             ->create([
                 'guest_id' =>
                     $guest->getKey(),
@@ -282,7 +282,7 @@ class PortalLifecyclePhase2Test extends TestCase
                         ->addDay(),
             ]);
 
-        ServiceRequest::query()
+        $confirmation = ServiceRequest::query()
             ->create([
                 'request_number' =>
                     'PORTAL-LIFE-SRV-002',
@@ -315,7 +315,7 @@ class PortalLifecyclePhase2Test extends TestCase
                     now(),
             ]);
 
-        SupportTicket::query()
+        $ticket = SupportTicket::query()
             ->create([
                 'user_id' =>
                     $owner->getKey(),
@@ -350,37 +350,24 @@ class PortalLifecyclePhase2Test extends TestCase
             'web'
         );
 
-        $this->get(
-            '/portal/resident'
-        )
-            ->assertOk()
-            ->assertSee(
-                'تاریخچه کیف پول'
-            )
-            ->assertSee(
-                'پرداخت آنلاین'
-            )
-            ->assertSee(
-                'پرداخت از کیف پول'
-            )
-            ->assertSee(
-                'لغو رزرو'
-            )
-            ->assertSee(
-                'لغو دعوت'
-            )
-            ->assertSee(
-                'پذیرش پیشنهاد'
-            )
-            ->assertSee(
-                'تأیید پایان خدمت'
-            )
-            ->assertSee(
-                'گفتگو'
-            )
-            ->assertSee(
-                'بازگشایی'
-            );
+        foreach ([
+            ['invoices', $invoice->id, ['data-pay-invoice']],
+            ['reservations', $reservation->id, ['data-reservation-pay', 'data-reservation-cancel']],
+            ['guests', $visit->id, ['data-guest-cancel']],
+            ['services', $quoteRequest->id, ['data-service-quote-accept']],
+            ['services', $confirmation->id, ['data-service-confirm']],
+            ['support', $ticket->id, ['data-ticket-conversation', 'data-ticket-reopen']],
+        ] as [$resource, $id, $actions]) {
+            $response = $this->get('/portal/resident/operations/'.$resource.'/'.$id)->assertOk();
+            foreach ($actions as $action) {
+                $response->assertSee($action, false);
+            }
+        }
+        $reservation->update(['status' => ReservationStatus::Cancelled]);
+        $this->get('/portal/resident/operations/reservations/'.$reservation->id)->assertOk()
+            ->assertDontSee('data-reservation-cancel', false)->assertDontSee('data-reservation-pay ', false);
+        $quoteRequest->quotes()->update(['valid_until' => now()->subDay()]);
+        $this->get('/portal/resident/operations/services/'.$quoteRequest->id)->assertOk()->assertDontSee('data-service-quote-accept', false);
     }
 
     public function test_provider_portal_exposes_wallet_history_and_waits_for_locked_payment_before_start(): void

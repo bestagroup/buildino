@@ -81,7 +81,7 @@ class PortalWebAccessTest extends TestCase
                 'واحد 102'
             )
             ->assertSee(
-                'ثبت مهمان'
+                'مهمان جدید'
             )
             ->assertSee(
                 'درخواست خدمت'

@@ -10,10 +10,16 @@
     const normalizeDigits = value => String(value).replace(/[۰-۹٠-٩]/g, digit => String('۰۱۲۳۴۵۶۷۸۹'.includes(digit) ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit) : '٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
     if (!validCredential(pending?.token)) pending = null;
     if (window.BuildinoPortal?.area !== 'resident' && !pending) return;
-    card.hidden = false;
+    card.hidden = document.body.classList.contains('portal-resident') && !pending;
     const entry = card.querySelector('[data-invitation-entry]');
     const codeForm = card.querySelector('[data-invitation-code-form]');
     const codeInput = card.querySelector('[data-invitation-code]');
+    document.querySelectorAll('[data-invitation-open]').forEach(button => button.addEventListener('click', () => {
+        card.hidden = false;
+        if (entry) entry.open = true;
+        card.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        codeInput?.focus({ preventScroll: true });
+    }));
     if (codeInput) {
         codeInput.maxLength = codeDigits;
         // Normalize Persian/Arabic digits before applying numeric validation.
