@@ -97,7 +97,7 @@ class UnitInvitationFlowTest extends TestCase
         ]);
         $occupancy = UnitOccupancy::query()->where('unit_id', $building['unit']->id)
             ->where('user_id', $resident->id)->firstOrFail();
-        $this->assertSame($payload['occupancy']['starts_at'], $occupancy->starts_at->toDateString());
+        $this->assertSame(app(\App\Services\Charge\OccupancyRegistrationDate::class)->monthStart($occupancy->created_at), $occupancy->starts_at->toDateString());
         $this->assertSame($payload['occupancy']['ends_at'], $occupancy->ends_at->toDateString());
         $this->postJson('/api/v1/unit-invitations/accept', ['token' => $token])->assertOk();
         $this->assertSame(1, UnitOccupancy::query()->where('unit_id', $building['unit']->id)

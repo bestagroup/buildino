@@ -26,6 +26,16 @@ class OccupancyService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            // Initial onboarding uses the registration month in the Persian calendar.
+            // Later moves retain their explicitly supplied occupancy dates.
+            if (! $unit->unitOccupancies()->withTrashed()->exists()) {
+                $data['starts_at'] = app(\App\Services\Charge\OccupancyRegistrationDate::class)->monthStart(now());
+                $data['resident_count'] ??= (int) $unit->resident_count;
+                if (! empty($data['ends_at']) && $data['ends_at'] < $data['starts_at']) {
+                    throw ValidationException::withMessages(['ends_at' => 'پایان سکونت نمی‌تواند قبل از اول ماه ثبت اولیه باشد.']);
+                }
+            }
+
             if (array_key_exists('resident_count', $data)) {
                 if (CarbonImmutable::parse($data['starts_at'])->isPast()) {
                     app(ResidentCountHistory::class)->record(
