@@ -17,13 +17,40 @@ test('resident real Blade pages: navigation, slots, inline validation, payment r
     const $=selector=>document.querySelector(selector), expect=(value,message)=>{if(!value)throw Error(message)}, sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     const wait=async(test,message)=>{for(let i=0;i<80;i++){if(test())return;await sleep(50)}throw Error(message)};
     const errors=[];window.addEventListener('error',event=>errors.push(event.message));
+    const contrast=element=>{
+        const luminance=color=>color.match(/[\\d.]+/g).slice(0,3).map(Number).map(value=>value/255).map(value=>value<=.04045?value/12.92:Math.pow((value+.055)/1.055,2.4)).reduce((sum,value,index)=>sum+value*[.2126,.7152,.0722][index],0);
+        const style=getComputedStyle(element),a=luminance(style.color),b=luminance(style.backgroundColor);
+        return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+    };
     window.addEventListener('load',async()=>{try{
         await document.fonts.ready;
         const mode=new URLSearchParams(location.search).get('mode');
         await wait(()=>window.BuildinoPortalApi,'Portal runtime missing');
+        if(['units','wallet','services','loyalty'].includes(mode)){
+            expect($('[data-resident-workspace]').dataset.residentResource===mode,'Workspace resource was lost');
+            expect(document.querySelectorAll('.portal-nav [aria-current="page"]').length===1,'Sidebar current page is ambiguous');
+            if(mode==='units'){
+                expect($('.portal-unit-card'),'Unit cards missing');
+                $('[data-open-topup]').click();await wait(()=>$('#topUpModal.show'),'Topup modal missing');
+                expect($('#topUpModal [name="unit_id"]').value===$('.portal-unit-card').dataset.unitId,'Topup targets a different unit');
+                expect(!/[0-9]/.test($('#topUpModal [data-topup-title]').textContent),'Dynamically updated unit title uses Latin digits');
+                if(innerWidth<701){
+                    const box=$('#topUpModal .modal-content').getBoundingClientRect();
+                    expect(box.height<500&&box.top>=8&&box.bottom<=innerHeight-8,'Short wallet dialog stretches beyond the mobile viewport');
+                }
+            }
+            if(mode==='services'){
+                $('[data-resident-create]').click();await wait(()=>$('#serviceModal.show'),'Service form missing');
+                const form=$('[data-portal-form="service"]');expect(['unit_id','type','priority','title','description'].every(name=>form.elements.namedItem(name)),'Service payload fields missing');
+                expect(window.jQuery(form.elements.unit_id).hasClass('select2-hidden-accessible'),'Service unit selector was not enhanced');
+            }
+            if(mode==='wallet')await wait(()=>$('.resident-mobile-records'),'Wallet table did not initialize');
+            if(mode==='loyalty')expect($('[data-loyalty-balance]'),'Loyalty balance missing');
+        }
         if(mode==='home'){
             const primary=getComputedStyle($('.resident-account .portal-primary-button'));
             expect(primary.backgroundColor!=='rgba(0, 0, 0, 0)'&&primary.backgroundColor!==primary.color,'Primary action has no visible contrast');
+            expect(contrast($('.resident-account .portal-primary-button'))>=4.5,'Primary action text contrast is insufficient in light mode');
             expect(!$('body.resident-glass')&&!$('#guestModal'),'Home still renders all process forms');
             expect($('.resident-shortcuts').children.length===6,'Missing work shortcuts');
             if(innerWidth<981){
@@ -36,6 +63,7 @@ test('resident real Blade pages: navigation, slots, inline validation, payment r
                 const header=$('.portal-topbar').getBoundingClientRect();expect(header.left>=11&&header.right<=innerWidth-11,'Header touches screen edges');
             }
             $('#portalThemeToggle').click();expect(document.documentElement.dataset.theme==='dark','Dark mode failed');
+            await sleep(400);expect(contrast($('.resident-account .portal-primary-button'))>=4.5,'Primary action text contrast is insufficient in dark mode');
         }
         if(mode==='invoices'){
             await wait(()=>$('.resident-mobile-record'),'Real datatable rows were not converted to mobile records');
@@ -133,10 +161,10 @@ test('resident real Blade pages: navigation, slots, inline validation, payment r
                 if(String(url).includes('/messages')&&options?.method==='POST'){window.__replyPosts++;return new Response(JSON.stringify({errors:{message:['پیام معتبر نیست']}}),{status:window.__replyPosts===1?422:500,headers:{'content-type':'application/json'}})}
                 if(String(url).includes('/guest-visits')&&options?.method==='POST'){window.__guestPosts++;if(location.search.includes('guests-json'))return new Response('{',{status:200,headers:{'content-type':'application/json'}});return new Response(JSON.stringify(window.__guestPosts===1?{errors:{'guest.mobile':['شماره معتبر نیست']}}:{}),{status:window.__guestPosts===1?422:500,headers:{'content-type':'application/json'}})}return originalFetch(url,options)};</script>`;
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.end(pages[mode === 'guests-json' ? 'guests' : mode === 'reservation-manual' ? 'reservations' : mode].replaceAll(/https?:\/\/(localhost|127\.0\.0\.1)(:8000)?/g, 'http://127.0.0.1:' + server.address().port).replace('<head>', '<head>' + before).replace('</body>', '<pre id="result" hidden></pre>' + script + '</body>')); return;
+            res.end(pages[mode === 'guests-json' ? 'guests' : mode === 'reservation-manual' ? 'reservations' : mode].replaceAll(/https?:\/\/(localhost|127\.0\.0\.1)(:8000)?/g, 'http://127.0.0.1:' + server.address().port).replace('<head>', '<head>' + before).replace('</head>', '<style>*,*::before,*::after{transition-duration:0s!important;animation-duration:0s!important;scroll-behavior:auto!important}</style></head>').replace('</body>', '<pre id="result" hidden></pre>' + script + '</body>')); return;
         }
         res.setHeader('Content-Type', 'application/json');
-        if (path.includes('/datatables/')) { res.end(JSON.stringify({ ...pages.rows, draw: Number(url.searchParams.get('draw')) || 1 }).replaceAll('http://localhost', 'http://127.0.0.1:' + server.address().port)); return; }
+        if (path.includes('/datatables/')) { res.end(JSON.stringify({ ...(pages.tables[path.split('/').pop()] || pages.rows), draw: Number(url.searchParams.get('draw')) || 1 }).replaceAll('http://localhost', 'http://127.0.0.1:' + server.address().port)); return; }
         if (path.includes('/availability')) {
             if(url.searchParams.get('date')==='2026-12-02'){res.end(JSON.stringify({data:{facility_is_active:true,slots:[],schedules:[],blackouts:[]}}));return;}
             availability++;
@@ -151,7 +179,7 @@ test('resident real Blade pages: navigation, slots, inline validation, payment r
     });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     try {
-        for (const width of (process.env.RESIDENT_MODES ? [1440] : [1440, 390, 320])) for (const mode of (process.env.RESIDENT_MODES?.split(',') || ['home', 'invoices', 'guests', 'reservations', 'invoice', 'support', 'guests-json'])) {
+        for (const width of (process.env.RESIDENT_WIDTHS?.split(',').map(Number) || (process.env.RESIDENT_MODES ? [1440] : [1440, 390, 320]))) for (const mode of (process.env.RESIDENT_MODES?.split(',') || ['home', 'invoices', 'guests', 'reservations', 'invoice', 'support', 'guests-json', 'units', 'wallet', 'services', 'loyalty'])) {
             const target = (width < 500 ? '/device?width=' + width + '&' : '/page?') + 'mode=' + mode + (mode === 'invoices' ? '&status=issued' : '');
             const capture = process.env.RESIDENT_CAPTURE ? ['--screenshot=' + join(tmpdir(), 'buildino-resident-new-' + mode + '-' + width + '.png')] : [];
             const { stdout } = await promisify(execFile)(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--no-first-run', '--force-device-scale-factor=1', '--window-size=' + Math.max(width, 500) + ',1000', '--virtual-time-budget=7000', '--dump-dom', ...capture, 'http://127.0.0.1:' + server.address().port + target], { timeout: 30000, maxBuffer: 2 * 1024 * 1024, windowsHide: true });

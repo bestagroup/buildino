@@ -44,6 +44,7 @@
 .resident-notice { background: color-mix(in srgb, var(--portal-success) 10%, var(--portal-surface)); color: var(--portal-success); border-radius: 12px; padding: 14px; margin-bottom: 18px; font-size: 13px; }
 .portal-resident :is(.portal-primary-button,.portal-action-button,.portal-inline-action,.portal-row-actions button) { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 14px; border-radius: 11px; font-family: inherit; font-size: 13px; font-weight: 600; line-height: 1.7; cursor: pointer; }
 .portal-resident .portal-primary-button { border: 1px solid var(--portal-blue); background: var(--portal-blue); color: #fff; }
+html[data-theme="dark"] .portal-resident .portal-primary-button { color: var(--portal-bg); }
 .portal-resident .portal-action-button { border: 1px solid var(--portal-border); background: var(--portal-surface); color: var(--portal-text); box-shadow: none; transform: none; }
 .portal-resident .resident-danger { color: var(--portal-danger); }
 .portal-resident :is(button,a):focus-visible { outline: 2px solid var(--portal-blue); outline-offset: 3px; }
@@ -120,7 +121,9 @@
     .resident-filters > label:first-child { grid-column: 1/-1; }
     .resident-filters > button { grid-column: 1/-1; }
     .portal-resident .portal-field :is(input,select,textarea) { font-size: 16px; }
-    .portal-resident .modal-dialog { margin: 8px; max-width: none; }
+    .portal-resident .modal-dialog { margin: 8px; max-width: none; min-height: calc(100dvh - 16px); }
+    .portal-resident .modal-content { min-height: 0; max-height: calc(100dvh - 16px); }
+    .portal-resident .modal-body { flex: 0 1 auto; min-height: 0; align-content: start; overflow-y: auto; }
     .portal-resident .modal-header, .portal-resident .modal-body, .portal-resident .modal-footer { padding: 16px; }
     .resident-detail-actions .portal-row-actions > button { flex: 1 1 160px; }
     .resident-records:has(.resident-mobile-records) table.js-server-datatable { display: none; }

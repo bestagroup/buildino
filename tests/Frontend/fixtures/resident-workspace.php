@@ -56,12 +56,17 @@ final class ResidentWorkspaceFixture extends TestCase
         $pages = [];
         foreach (['home' => '/portal/resident', 'invoices' => '/portal/resident/operations/invoices',
             'guests' => '/portal/resident/operations/guests', 'reservations' => '/portal/resident/operations/reservations',
+            'units' => '/portal/resident/operations/units', 'wallet' => '/portal/resident/operations/wallet',
+            'services' => '/portal/resident/operations/services', 'loyalty' => '/portal/resident/operations/loyalty',
             'invoice' => '/portal/resident/operations/invoices/'.$invoice->id,
             'support' => '/portal/resident/operations/support/'.$ticket->id] as $key => $url) {
             $response = $this->get($url)->assertOk();
             $pages[$key] = $response->getContent();
         }
         $pages['rows'] = $this->getJson('/portal/resident/datatables/invoices?draw=1&start=0&length=15')->assertOk()->json();
+        foreach (['invoices', 'guests', 'reservations', 'services', 'support', 'wallet'] as $resource) {
+            $pages['tables'][$resource] = $this->getJson('/portal/resident/datatables/'.$resource.'?draw=1&start=0&length=15')->assertOk()->json();
+        }
 
         return $pages;
     }

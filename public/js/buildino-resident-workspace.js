@@ -7,6 +7,12 @@
     const money = value => Number(value || 0).toLocaleString('fa-IR');
     const faText = value => digits(value).replace(/\bIRR\b/g, 'ریال').replace(/\bIRT\b/g, 'تومان');
     const normalizeText = node => {
+        if (node?.nodeType === Node.TEXT_NODE) {
+            if (!node.parentElement || node.parentElement.closest('script,style,textarea,input,code,svg')) return;
+            const formatted = faText(node.nodeValue);
+            if (formatted !== node.nodeValue) node.nodeValue = formatted;
+            return;
+        }
         if (!node || node.nodeType !== Node.ELEMENT_NODE || node.closest('script,style,textarea,input,code,svg')) return;
         const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
         while (walker.nextNode()) {
@@ -19,7 +25,7 @@
     normalizeText(document.body);
     new MutationObserver(records => {
         for (const record of records) {
-            if (record.type === 'characterData') normalizeText(record.target.parentElement);
+            if (record.type === 'characterData') normalizeText(record.target);
             else record.addedNodes.forEach(normalizeText);
         }
     }).observe(document.body, { childList: true, characterData: true, subtree: true });
