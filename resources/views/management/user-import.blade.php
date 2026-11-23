@@ -30,7 +30,7 @@
             <header class="import-preview__header"><h3 id="import-preview-heading">پیش‌نمایش اطلاعات</h3><span class="import-preview__count">{{ $digits(count($rows)) }} ردیف</span></header>
             <div class="import-preview__scroll" tabindex="0" role="region" aria-label="پیش‌نمایش فایل اکسل">
                 <table class="import-preview__table">
-                    <thead><tr><th scope="col">ردیف</th><th scope="col">ساختمان</th><th scope="col">طبقه و واحد</th><th scope="col">مشخصات واحد</th><th scope="col">مالک</th><th scope="col">ساکن</th><th scope="col">تعداد ساکنان</th></tr></thead>
+                    <thead><tr><th scope="col">ردیف</th><th scope="col">ساختمان</th><th scope="col">طبقه و واحد</th><th scope="col">مشخصات واحد</th><th scope="col">مالک</th><th scope="col">ساکن</th><th scope="col">تعداد ساکنان</th><th scope="col">درصد مالکیت</th><th scope="col">تاریخ مالکیت</th><th scope="col">تاریخ سکونت</th></tr></thead>
                     <tbody>
                     @forelse($rows as $row)
                         <tr>
@@ -41,10 +41,10 @@
                             @foreach(['owner', 'tenant'] as $person)
                             <td><strong>{{ trim(($row[$person.'_first'] ?? '').' '.($row[$person.'_last'] ?? '')) ?: '—' }}</strong>@if($row[$person.'_mobile'] ?? '')<bdi class="import-preview__secondary import-preview__phone" dir="ltr">{{ $digits($row[$person.'_mobile']) }}</bdi>@endif</td>
                             @endforeach
-                            <td><span class="import-preview__count">{{ $digits($row['resident_count']) }} نفر</span></td>
+                            <td><span class="import-preview__count">{{ $digits($row['resident_count']) }} نفر</span></td><td>{{ $row['ownership_percentage'] ?? '—' }}</td><td dir="ltr">{{ $row['ownership_starts_at'] ?? '—' }}</td><td dir="ltr">{{ $row['occupancy_starts_at'] ?? '—' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="import-preview__empty">تغییری برای نمایش وجود ندارد.</td></tr>
+                        <tr><td colspan="10" class="import-preview__empty">تغییری برای نمایش وجود ندارد.</td></tr>
                     @endforelse
                     </tbody>
                 </table>
@@ -63,7 +63,7 @@
             <section class="ownership-card import-template"><span class="import-card-icon" aria-hidden="true">@include('management.partials.icon', ['name'=>'download','size'=>30])</span><h3>فایل نمونه ساختمان</h3><p>اطلاعات فعلی را دریافت و در اکسل ویرایش کنید.</p><a class="ownership-button" href="{{ route('management.user-import.template', $building) }}">دانلود فایل نمونه</a></section>
             <form class="ownership-card import-upload" method="post" enctype="multipart/form-data" action="{{ route('management.user-import.preview', $building) }}">@csrf
                 <h3>ویرایش اکسل و بارگذاری فایل</h3>
-                <label class="ownership-field"><span>تاریخ اثر اطلاعات (اختیاری)</span><input type="date" name="effective_from" value="{{ old('effective_from') }}" max="{{ today()->toDateString() }}"><small>پیش‌فرض امروز است. برای تکمیل سابقه تعداد نفرات، تاریخ معتبر همان اطلاعات را انتخاب کنید. اولین سکونت واحد از اول ماه شمسیِ ثبت اطلاعات آغاز می‌شود؛ تاریخ مالکیت و سکونت موجود تغییر نمی‌کند.</small></label>
+                <label class="ownership-field"><span>تاریخ اثر اطلاعات (اختیاری)</span><input type="date" name="effective_from" value="{{ old('effective_from') }}" max="{{ today()->toDateString() }}"><small>پیش‌فرض امروز است. برای تکمیل سابقه تعداد نفرات، تاریخ معتبر همان اطلاعات را انتخاب کنید. تاریخ‌های ستون‌های اکسل میلادی و به شکل YYYY-MM-DD هستند. تاریخ سکونت صریح فایل اولویت دارد؛ در صورت خالی بودن، اولین سکونت از اول ماه ثبت آغاز می‌شود؛ تاریخ مالکیت و سکونت موجود تغییر نمی‌کند.</small></label>
                 <label class="import-file" for="users-file"><span class="import-card-icon" aria-hidden="true">@include('management.partials.icon', ['name'=>'invoice','size'=>30])</span><strong>فایل اکسل کاربران</strong><small id="users-file-hint">فرمت XLSX · حداکثر ۲ مگابایت</small><input id="users-file" type="file" name="file" accept=".xlsx" aria-describedby="users-file-hint" @if($errors->has('file')) aria-invalid="true" @endif required></label>
                 <div class="import-preview__actions"><button type="submit" class="ownership-button ownership-button--primary">بررسی و پیش‌نمایش</button></div>
             </form>

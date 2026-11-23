@@ -45,7 +45,8 @@ final class BuildingWorkbookSnapshot
         $values = [$building->title, $building->code, (string) $unit->floor->floor_number, (string) $unit->unit_number,
             (string) $unit->area, (string) ($unit->bedrooms ?? 0), (string) $parking, (string) $storage, BuildingWorkbookService::USAGE_LABELS[$unit->usage_type->value],
             $owner?->first_name ?? '', $owner?->last_name ?? '', $owner ? $this->mobile($owner->mobile ?? '') : '',
-            $tenant?->first_name ?? '', $tenant?->last_name ?? '', $tenant ? $this->mobile($tenant->mobile ?? '') : '', (string) $unit->resident_count];
+            $tenant?->first_name ?? '', $tenant?->last_name ?? '', $tenant ? $this->mobile($tenant->mobile ?? '') : '', (string) $unit->resident_count, (string) ($owners->first()?->ownership_percentage ?? ''),
+            $owners->first()?->starts_at?->toDateString() ?? '', $occupants->first()?->starts_at?->toDateString() ?? ''];
 
         return ['unit_id' => $unit->id, 'owner_id' => $owner?->id, 'tenant_id' => $tenant?->id, 'occupant_id' => $resident?->id,
             'values' => $values, 'relations' => [$owners->map->getAttributes()->all(), $occupants->map->getAttributes()->all()],
@@ -55,14 +56,14 @@ final class BuildingWorkbookSnapshot
 
     public function token(array $state, Building $building, User $actor, string $workbookId, int $rowNumber, int $rowCount): string
     {
-        return Crypt::encryptString(json_encode(['version' => 2, 'workbook_id' => $workbookId, 'row_number' => $rowNumber, 'row_count' => $rowCount, 'building_id' => $building->id, 'actor_id' => $actor->id, 'state' => $state], JSON_THROW_ON_ERROR));
+        return Crypt::encryptString(json_encode(['version' => 3, 'workbook_id' => $workbookId, 'row_number' => $rowNumber, 'row_count' => $rowCount, 'building_id' => $building->id, 'actor_id' => $actor->id, 'state' => $state], JSON_THROW_ON_ERROR));
     }
 
     public function decode(string $token): array
     {
         try {
             $data = json_decode(Crypt::decryptString($token), true, 512, JSON_THROW_ON_ERROR);
-            if (($data['version'] ?? null) !== 2 || ! isset($data['state']['unit_id'], $data['building_id'], $data['actor_id'], $data['workbook_id'], $data['row_number'], $data['row_count'])) {
+            if (($data['version'] ?? null) !== 3 || ! isset($data['state']['unit_id'], $data['building_id'], $data['actor_id'], $data['workbook_id'], $data['row_number'], $data['row_count'])) {
                 $this->fail('شناسه داخلی فایل معتبر نیست.');
             }
 
@@ -150,8 +151,8 @@ final class BuildingWorkbookSnapshot
             }
             $values = array_map(fn ($key) => (string) $row[$key], array_slice(BuildingWorkbookService::KEYS, 1));
             foreach ($values as $column => $value) {
-                $same = in_array($column, [2, 4, 5, 6, 7, 15], true)
-                    ? is_numeric($value) && (float) $value === (float) $original[$column]
+                $same = in_array($column, [2, 4, 5, 6, 7, 15, 16], true) && is_numeric($value) && is_numeric($original[$column])
+                    ? (float) $value === (float) $original[$column]
                     : $value === $original[$column];
                 if (! $same) {
                     $changed[$i] = $legacy[$i];

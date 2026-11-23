@@ -15,11 +15,13 @@ class OccupancyService
 {
     public function assign(
         array $data,
-        ?User $actor = null
+        ?User $actor = null,
+        bool $useRegistrationMonth = true
     ): UnitOccupancy {
         return DB::transaction(function () use (
             $data,
-            $actor
+            $actor,
+            $useRegistrationMonth
         ): UnitOccupancy {
             $unit = Unit::query()
                 ->whereKey((int) $data['unit_id'])
@@ -28,7 +30,7 @@ class OccupancyService
 
             // Initial onboarding uses the registration month in the Persian calendar.
             // Later moves retain their explicitly supplied occupancy dates.
-            if (! $unit->unitOccupancies()->withTrashed()->exists()) {
+            if ($useRegistrationMonth && ! $unit->unitOccupancies()->withTrashed()->exists()) {
                 $data['starts_at'] = app(\App\Services\Charge\OccupancyRegistrationDate::class)->monthStart(now());
                 $data['resident_count'] ??= (int) $unit->resident_count;
                 if (! empty($data['ends_at']) && $data['ends_at'] < $data['starts_at']) {

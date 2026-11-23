@@ -41,7 +41,7 @@ class BuildingUserImportTest extends TestCase
     {
         $building = $unit->floor->block->building;
 
-        return ['1', $building->title, $building->code, (string) $unit->floor->floor_number, (string) $unit->unit_number, '120', '3', '2', '1', 'مسکونی', $name, 'اکسل', $mobile, '', '', '', '3'];
+        return ['1', $building->title, $building->code, (string) $unit->floor->floor_number, (string) $unit->unit_number, '120', '3', '2', '1', 'مسکونی', $name, 'اکسل', $mobile, '', '', '', '3', '', '', ''];
     }
 
     private function file(array $rows): UploadedFile
@@ -117,6 +117,46 @@ class BuildingUserImportTest extends TestCase
         $this->assertSame(5, $unit->fresh()->resident_count);
         $this->assertSame(1, $unit->unitOccupancies()->count());
         $this->assertDatabaseHas('unit_resident_counts', ['unit_id' => $unit->id, 'effective_from' => '2026-09-23', 'resident_count' => 4]);
+    }
+
+    public function test_workbook_relationship_fields_create_export_and_update(): void
+    {
+        [$manager, $unit, $building] = $this->scenario();
+        $row = array_combine(BuildingWorkbookService::KEYS, $this->workbookRow($unit, '09129998877', 'مالک'));
+        $row['ownership_percentage'] = '75.5';
+        $row['ownership_starts_at'] = '2025-01-01';
+        $row['occupancy_starts_at'] = '2025-02-01';
+        app(BuildingWorkbookService::class)->commit($building, $manager, [$row]);
+        $this->assertDatabaseHas('unit_ownerships', ['unit_id' => $unit->id, 'ownership_percentage' => 75.5, 'starts_at' => '2025-01-01 00:00:00']);
+        $this->assertDatabaseHas('unit_occupancies', ['unit_id' => $unit->id, 'starts_at' => '2025-02-01 00:00:00']);
+        $rows = $this->exportedRows($building);
+        $index = array_search((string) $unit->unit_number, array_column($rows, 'unit'), true);
+        $this->assertSame('2025-02-01', $rows[$index]['occupancy_starts_at']);
+        $rows[$index]['ownership_percentage'] = '100';
+        $rows[$index]['ownership_starts_at'] = '2025-01-15';
+        $rows[$index]['occupancy_starts_at'] = '2025-01-20';
+        $rows[$index]['usage_type'] = 'اداری';
+        app(BuildingWorkbookService::class)->commit($building, $manager, $rows);
+        $this->assertDatabaseHas('unit_ownerships', ['unit_id' => $unit->id, 'ownership_percentage' => 100, 'starts_at' => '2025-01-15 00:00:00']);
+        $this->assertDatabaseHas('unit_occupancies', ['unit_id' => $unit->id, 'starts_at' => '2025-01-20 00:00:00']);
+        $this->assertDatabaseHas('unit_resident_counts', ['unit_id' => $unit->id, 'effective_from' => '2025-01-20', 'resident_count' => 3]);
+        $this->assertSame('office', $unit->fresh()->usage_type->value);
+        $this->assertSame(1, $unit->unitOwnerships()->count());
+        $this->assertSame(1, $unit->unitOccupancies()->count());
+    }
+
+    public function test_workbook_rejects_invalid_relationship_values(): void
+    {
+        [$manager, $unit, $building] = $this->scenario();
+        $row = array_combine(BuildingWorkbookService::KEYS, $this->workbookRow($unit, '09129998877', 'مالک'));
+        foreach (['ownership_percentage' => '101', 'ownership_starts_at' => '1405/01/01', 'occupancy_starts_at' => '2025-02-30'] as $key => $value) {
+            try {
+                app(BuildingWorkbookService::class)->commit($building, $manager, [array_replace($row, [$key => $value])]);
+                $this->fail('Invalid relationship field accepted');
+            } catch (ValidationException) {
+                $this->assertSame(0, $unit->unitOwnerships()->count());
+            }
+        }
     }
 
     public function test_preview_does_not_write_and_commit_creates_user_relationships_and_wallet(): void
@@ -198,7 +238,7 @@ class BuildingUserImportTest extends TestCase
         $this->get('/management/operations/user-import')->assertOk()->assertSee('id="import-building"', false)->assertDontSee('دانلود فایل نمونه');
     }
 
-    public function test_template_has_exact_seventeen_headers_and_structure(): void
+    public function test_template_has_exact_twenty_headers_and_structure(): void
     {
         [, $unit, $building] = $this->scenario();
         $response = $this->get(route('management.user-import.template', $building))->assertOk();
@@ -210,7 +250,7 @@ class BuildingUserImportTest extends TestCase
                 if ($index === 1) {
                     $this->assertSame(BuildingWorkbookService::HEADERS, $row->toArray());
                 } else {
-                    $this->assertCount(17, $row->toArray());
+                    $this->assertCount(20, $row->toArray());
                     $this->assertSame($building->code, $row->toArray()[2]);
                 }
             }
@@ -583,6 +623,9 @@ class BuildingUserImportTest extends TestCase
         $sheet = simplexml_load_string($zip->getFromName('xl/worksheets/sheet1.xml'));
         $styles = simplexml_load_string($zip->getFromName('xl/styles.xml'));
         $this->assertSame('true', (string) $sheet->sheetProtection['sheet']);
+        $this->assertSame('list', (string) $sheet->dataValidations->dataValidation['type']);
+        $this->assertSame('stop', (string) $sheet->dataValidations->dataValidation['errorStyle']);
+        $this->assertSame('"مسکونی,اداری,تجاری"', (string) $sheet->dataValidations->dataValidation->formula1);
         foreach (['insertColumns', 'deleteColumns', 'insertRows', 'deleteRows', 'sort'] as $attribute) {
             $this->assertSame('true', (string) $sheet->sheetProtection[$attribute]);
         }
@@ -592,12 +635,12 @@ class BuildingUserImportTest extends TestCase
                 $reference = (string) $cell['r'];
                 $style = $styles->cellXfs->xf[(int) $cell['s']];
                 $unlocked = (string) $style->protection['locked'] === '0';
-                $expected = preg_match('/^[E-Q][0-9]+$/', $reference) && (int) $row['r'] > 1;
+                $expected = preg_match('/^[E-T][0-9]+$/', $reference) && (int) $row['r'] > 1;
                 $this->assertSame((bool) $expected, $unlocked, $reference);
                 $seen[$reference] = true;
             }
         }
-        foreach (range('E', 'Q') as $column) {
+        foreach (range('E', 'T') as $column) {
             $this->assertArrayHasKey($column.'2', $seen, 'Blank input cells must also be editable.');
         }
         $this->assertStringContainsString('lockStructure="true"', $zip->getFromName('xl/workbook.xml'));

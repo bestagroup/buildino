@@ -29,8 +29,8 @@ final class BuildingWorkbookProtection
             $unlocked = [];
             foreach ($xpath->query('//s:sheetData/s:row/s:c') as $cell) {
                 /** @var DOMElement $cell */
-                // Only existing input cells E:Q below the header are editable.
-                if (! preg_match('/^([E-Q])([0-9]+)$/', $cell->getAttribute('r'), $match) || (int) $match[2] < 2) {
+                // Only existing input cells E:T below the header are editable.
+                if (! preg_match('/^([E-T])([0-9]+)$/', $cell->getAttribute('r'), $match) || (int) $match[2] < 2) {
                     continue;
                 }
                 $id = (int) $cell->getAttribute('s');
@@ -44,6 +44,21 @@ final class BuildingWorkbookProtection
                     $formats->appendChild($style);
                 }
                 $cell->setAttribute('s', (string) $unlocked[$id]);
+            }
+            $lastRow = $xpath->query('//s:sheetData/s:row')->length;
+            if ($lastRow > 1) {
+                $validations = $sheet->createElementNS(self::NS, 'dataValidations');
+                $validations->setAttribute('count', '1');
+                $validation = $sheet->createElementNS(self::NS, 'dataValidation');
+                foreach (['type' => 'list', 'allowBlank' => '0', 'showErrorMessage' => '1', 'errorStyle' => 'stop', 'sqref' => 'J2:J'.$lastRow] as $key => $value) {
+                    $validation->setAttribute($key, $value);
+                }
+                $formula = $sheet->createElementNS(self::NS, 'formula1');
+                $formula->appendChild($sheet->createTextNode('"مسکونی,اداری,تجاری"'));
+                $validation->appendChild($formula);
+                $validations->appendChild($validation);
+                $before = $xpath->query('//s:pageMargins | //s:pageSetup | //s:headerFooter')->item(0);
+                $sheet->documentElement->insertBefore($validations, $before);
             }
             $formats->setAttribute('count', (string) $formats->getElementsByTagNameNS(self::NS, 'xf')->length);
             if (! $zip->addFromString('xl/styles.xml', $styles->saveXML())

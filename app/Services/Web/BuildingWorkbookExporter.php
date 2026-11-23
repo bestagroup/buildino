@@ -46,7 +46,8 @@ final class BuildingWorkbookExporter
             $sheet->setColumnWidth(9, 1, 4, 5);
             $sheet->setColumnWidth(25, 2, 3, 10, 11, 12, 14, 15);
             $sheet->setColumnWidth(20, 6, 7, 8, 9, 13, 16, 17);
-            $sheet->setAutoFilter(new AutoFilter(0, 1, 16, max(1, $units->count() + 1)));
+            $sheet->setAutoFilter(new AutoFilter(0, 1, 19, max(1, $units->count() + 1)));
+            $sheet->setColumnWidth(22, 18, 19, 20);
             $sheet->setPrintTitleRows('1:1');
             $header = Row::fromValues(BuildingWorkbookService::HEADERS, (new Style)->setFontName('B Nazanin')->setFontSize(12)->setFontBold()->setFontColor('FFFFFF')->setBackgroundColor('24476B')->setShouldWrapText()->setCellAlignment('center'));
             $header->setHeight(52);
@@ -59,7 +60,13 @@ final class BuildingWorkbookExporter
                 foreach ($values as $column => $value) {
                     $style = (new Style)->setFontName('B Nazanin')->setFontSize(12)->setFontColor('1F2937')->setCellAlignment('center')->setShouldWrapText()
                         ->setBackgroundColor($column < 4 ? 'E2E8F0' : ($index % 2 ? 'EDF6FF' : 'FFFFFF'));
-                    if (in_array($column, [0, 3, 5, 6, 7, 8, 16], true)) {
+                    if (in_array($column, [18, 19], true)) {
+                        $style->setFormat('yyyy-mm-dd');
+                        $cells[] = $value === '' ? new StringCell('', $style)
+                            : new \OpenSpout\Common\Entity\Cell\DateTimeCell(new \DateTimeImmutable($value), $style);
+                    } elseif ($column === 17 && $value !== '') {
+                        $cells[] = new NumericCell((float) $value, $style->setFormat('0.00'));
+                    } elseif (in_array($column, [0, 3, 5, 6, 7, 8, 16], true)) {
                         $cells[] = new NumericCell($column === 5 ? (float) $value : (int) $value, $style->setFormat($column === 5 ? '0.00' : '0'));
                     } else {
                         // Explicit StringCell prevents spreadsheet formula injection and lost leading zeroes.

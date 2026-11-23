@@ -14,9 +14,9 @@ use OpenSpout\Reader\XLSX\Reader;
 
 final class BuildingWorkbookService
 {
-    public const HEADERS = ['ردیف', 'نام ساختمان', 'کد شناسایی ساختمان', 'طبقه', 'واحد', 'متراژ', 'تعداد اتاق', 'تعداد پارکینگ', 'تعداد انباری', 'نوع کاربری واحد', 'نام مالک', 'نام خانوادگی مالک', 'موبایل مالک', 'نام ساکن/مستاجر', 'نام خانوادگی ساکن/مستاجر', 'شماره موبایل ساکن/مستاجر', 'تعداد ساکن در واحد'];
+    public const HEADERS = ['ردیف', 'نام ساختمان', 'کد شناسایی ساختمان', 'طبقه', 'واحد', 'متراژ', 'تعداد اتاق', 'تعداد پارکینگ', 'تعداد انباری', 'نوع کاربری واحد', 'نام مالک', 'نام خانوادگی مالک', 'موبایل مالک', 'نام ساکن/مستاجر', 'نام خانوادگی ساکن/مستاجر', 'شماره موبایل ساکن/مستاجر', 'تعداد ساکن در واحد', 'درصد مالکیت مالک', 'تاریخ مالکیت مالک', 'تاریخ سکونت ساکن'];
 
-    public const KEYS = ['row', 'building', 'code', 'floor', 'unit', 'area', 'bedrooms', 'parking_count', 'storage_count', 'usage_type', 'owner_first', 'owner_last', 'owner_mobile', 'tenant_first', 'tenant_last', 'tenant_mobile', 'resident_count'];
+    public const KEYS = ['row', 'building', 'code', 'floor', 'unit', 'area', 'bedrooms', 'parking_count', 'storage_count', 'usage_type', 'owner_first', 'owner_last', 'owner_mobile', 'tenant_first', 'tenant_last', 'tenant_mobile', 'resident_count', 'ownership_percentage', 'ownership_starts_at', 'occupancy_starts_at'];
 
     public const USAGE_LABELS = ['residential' => 'مسکونی', 'commercial' => 'تجاری', 'office' => 'اداری', 'other' => 'سایر'];
 
@@ -79,7 +79,7 @@ final class BuildingWorkbookService
         $people = [];
         foreach ($rows as &$row) {
             $row['usage_type'] = array_search($row['usage_type'], self::USAGE_LABELS, true) ?: $row['usage_type'];
-            $v = Validator::make($row, ['starts_at' => 'sometimes|required|date_format:Y-m-d|before_or_equal:today', 'row' => 'required|integer|min:1', 'building' => 'required|string', 'code' => 'required|string', 'floor' => 'required|integer', 'unit' => 'required|string|max:100', 'area' => 'required|numeric|min:0.01|max:99999999', 'bedrooms' => 'required|integer|min:0|max:255', 'parking_count' => 'required|integer|min:0|max:1000', 'storage_count' => 'required|integer|min:0|max:1000', 'usage_type' => ['required', \Illuminate\Validation\Rule::in(array_keys(self::USAGE_LABELS))], 'resident_count' => 'required|integer|min:0|max:1000', 'owner_first' => 'nullable|string|max:100', 'owner_last' => 'nullable|string|max:100', 'owner_mobile' => 'nullable|string', 'tenant_first' => 'nullable|string|max:100', 'tenant_last' => 'nullable|string|max:100', 'tenant_mobile' => 'nullable|string']);
+            $v = Validator::make($row, ['ownership_percentage' => 'nullable|numeric|gt:0|max:100', 'ownership_starts_at' => 'nullable|date_format:Y-m-d|before_or_equal:today', 'occupancy_starts_at' => 'nullable|date_format:Y-m-d|before_or_equal:today', 'starts_at' => 'sometimes|required|date_format:Y-m-d|before_or_equal:today', 'row' => 'required|integer|min:1', 'building' => 'required|string', 'code' => 'required|string', 'floor' => 'required|integer', 'unit' => 'required|string|max:100', 'area' => 'required|numeric|min:0.01|max:99999999', 'bedrooms' => 'required|integer|min:0|max:255', 'parking_count' => 'required|integer|min:0|max:1000', 'storage_count' => 'required|integer|min:0|max:1000', 'usage_type' => ['required', \Illuminate\Validation\Rule::in(array_keys(self::USAGE_LABELS))], 'resident_count' => 'required|integer|min:0|max:1000', 'owner_first' => 'nullable|string|max:100', 'owner_last' => 'nullable|string|max:100', 'owner_mobile' => 'nullable|string', 'tenant_first' => 'nullable|string|max:100', 'tenant_last' => 'nullable|string|max:100', 'tenant_mobile' => 'nullable|string']);
             if ($v->fails()) {
                 $this->fail('ردیف '.$row['row'].': '.implode(' ', $v->errors()->all()));
             }
@@ -91,6 +91,10 @@ final class BuildingWorkbookService
                 $this->fail('واحد ردیف '.$row['row'].' یافت نشد یا بین بلوک‌ها مبهم است.');
             }
             $unit = $units->first();
+            if (! in_array($row['usage_type'], ['residential', 'office', 'commercial'], true)
+                && $row['usage_type'] !== $unit->usage_type->value) {
+                $this->fail('نوع کاربری باید مسکونی، اداری یا تجاری باشد.');
+            }
             if (Unit::withTrashed()->where('floor_id', $unit->floor_id)->where('unit_number', $row['unit'])->whereKeyNot($unit->id)->exists()) {
                 $this->fail('شماره واحد ردیف '.$row['row'].' در این طبقه تکراری است. ابتدا شماره آزاد انتخاب کنید.');
             }
@@ -108,6 +112,12 @@ final class BuildingWorkbookService
                 $this->fail('ساختار واحد پس از پیش‌نمایش تغییر کرده است.');
             }
             $row['unit_id'] = $unit->id;
+            if (($row['owner_mobile'] === '') && (($row['ownership_percentage'] ?? '') !== '' || ($row['ownership_starts_at'] ?? '') !== '')) {
+                $this->fail('درصد و تاریخ مالکیت بدون مشخصات مالک قابل ثبت نیست.');
+            }
+            if (($row['occupancy_starts_at'] ?? '') !== '' && (int) $row['resident_count'] === 0 && empty($row['_occupant_id'])) {
+                $this->fail('تاریخ سکونت بدون ساکن قابل ثبت نیست.');
+            }
             if ($row['owner_first'] === '' && $row['owner_mobile'] === '' && $row['owner_last'] === ''
                 && $row['tenant_first'] === '' && $row['tenant_last'] === '' && $row['tenant_mobile'] === '' && (int) $row['resident_count'] === 0) {
                 if ($unit->unitOwnerships()->where('is_active', true)->exists() || $unit->unitOccupancies()->where('is_active', true)->exists()) {
@@ -132,6 +142,9 @@ final class BuildingWorkbookService
                 $row[$kind.'_mobile'] = $mobile;
                 $relation = $kind === 'tenant' ? 'tenant' : (! $tenant && (int) $row['resident_count'] > 0 ? 'owner_resident' : 'owner');
                 $person = ['unit_id' => (string) $unit->id, 'unit_number' => (string) $unit->unit_number, 'first_name' => $row[$kind.'_first'], 'last_name' => $row[$kind.'_last'], 'mobile' => $mobile, 'relation' => $relation, 'resident_count' => $relation === 'owner' ? '' : $row['resident_count'], 'starts_at' => $row['starts_at'] ?? today()->toDateString()];
+                $person['ownership_percentage'] = $row['ownership_percentage'] ?? '';
+                $person['ownership_starts_at'] = $row['ownership_starts_at'] ?? '';
+                $person['occupancy_starts_at'] = $row['occupancy_starts_at'] ?? '';
                 $existingUser = app(BuildingUserImportService::class)->findUserByMobile($mobile);
                 if (! $existingUser || ! in_array($existingUser->id, $row['_bound_users'] ?? [], true) || ($relation === 'owner_resident' && ! empty($row['_create_owner_occupancy']))) {
                     $people[] = $person;
@@ -178,6 +191,33 @@ final class BuildingWorkbookService
             app(BuildingUserImportService::class)->commit($building, $actor, $plan['people']);
             foreach ($plan['rows'] as $row) {
                 $unit = Unit::findOrFail($row['unit_id']);
+                $owner = $unit->unitOwnerships()->where('is_active', true)->where(fn ($q) => $q->whereNull('ends_at')->orWhereDate('ends_at', '>=', today()))->first();
+                $occupant = $unit->unitOccupancies()->where('is_active', true)->where(fn ($q) => $q->whereNull('ends_at')->orWhereDate('ends_at', '>=', today()))->first();
+                $ownershipChanges = [];
+                foreach (['ownership_percentage' => 'ownership_percentage', 'ownership_starts_at' => 'starts_at'] as $cell => $attribute) {
+                    if (($row[$cell] ?? '') !== '') {
+                        $value = $attribute === 'starts_at' ? $owner?->starts_at?->toDateString() : $owner?->$attribute;
+                        $same = $attribute === 'ownership_percentage' && $value !== null
+                            ? (float) $value === (float) $row[$cell] : (string) $value === (string) $row[$cell];
+                        if (! $same) {
+                            $ownershipChanges[$attribute] = $row[$cell];
+                        }
+                    }
+                }
+                if ($ownershipChanges && $owner) {
+                    abort_unless(app(PermissionChecker::class)->allows($actor, 'unit-ownerships.update', $building), 403);
+                    app(\App\Services\UnitOwnershipService::class)->update($owner, $ownershipChanges);
+                }
+                if (($row['occupancy_starts_at'] ?? '') !== '' && $occupant) {
+                    $dateChanged = $occupant->starts_at->toDateString() !== $row['occupancy_starts_at'];
+                    if ($dateChanged) {
+                        abort_unless(app(PermissionChecker::class)->allows($actor, 'unit-occupancies.update', $building), 403);
+                        app(\App\Services\OccupancyService::class)->update($occupant, ['starts_at' => $row['occupancy_starts_at']]);
+                    }
+                    if ($dateChanged || ! DB::table('unit_resident_counts')->where('unit_id', $unit->id)->whereDate('effective_from', '<=', $row['occupancy_starts_at'])->exists()) {
+                        app(ResidentCountHistory::class)->record($unit, (int) $row['resident_count'], $row['occupancy_starts_at']);
+                    }
+                }
                 $unit->update(['unit_number' => $row['unit'], 'storage_count' => $row['storage_count'], 'usage_type' => $row['usage_type'], 'area' => $row['area'], 'bedrooms' => $row['bedrooms'], 'parking_count' => $row['parking_count']]);
                 if ((int) $unit->resident_count !== (int) $row['resident_count']
                     || ! empty($row['_explicit_effective_from'])

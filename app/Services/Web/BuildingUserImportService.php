@@ -100,6 +100,9 @@ final class BuildingUserImportService
                 'mobile' => ['required', 'regex:/^09[0-9]{9}$/'],
                 'relation' => 'required|in:owner,resident,tenant,owner_resident',
                 'starts_at' => 'required|date_format:Y-m-d',
+                'ownership_percentage' => 'nullable|numeric|gt:0|max:100',
+                'ownership_starts_at' => 'nullable|date_format:Y-m-d|before_or_equal:today',
+                'occupancy_starts_at' => 'nullable|date_format:Y-m-d|before_or_equal:today',
                 'resident_count' => 'nullable|integer|min:1|max:1000',
             ]);
             if ($v->fails()) {
@@ -159,12 +162,12 @@ final class BuildingUserImportService
                 $data = ['unit_id' => $unit->id, 'user_id' => $user->id, 'starts_at' => $row['starts_at'], 'is_active' => true, 'is_primary' => false];
                 if (in_array($row['relation'], ['owner', 'owner_resident'], true)) {
                     if (! $unit->unitOwnerships()->where('user_id', $user->id)->where('is_active', true)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', today()))->exists()) {
-                        app(UnitOwnershipService::class)->assign($data, $actor);
+                        app(UnitOwnershipService::class)->assign(array_replace($data, array_filter(['starts_at' => $row['ownership_starts_at'] ?? null, 'ownership_percentage' => $row['ownership_percentage'] ?? null], fn ($v) => $v !== null && $v !== '')), $actor);
                     }
                 }
                 if ($row['relation'] !== 'owner') {
                     if (! $unit->unitOccupancies()->where('user_id', $user->id)->where('is_active', true)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', today()))->exists()) {
-                        app(OccupancyService::class)->assign($data + ['occupancy_type' => $row['relation'] === 'owner_resident' ? 'owner' : $row['relation'], 'resident_count' => (int) $row['resident_count']], $actor);
+                        app(OccupancyService::class)->assign(array_replace($data, ! empty($row['occupancy_starts_at']) ? ['starts_at' => $row['occupancy_starts_at']] : []) + ['occupancy_type' => $row['relation'] === 'owner_resident' ? 'owner' : $row['relation'], 'resident_count' => (int) $row['resident_count']], $actor, empty($row['occupancy_starts_at']));
                     } else {
                         app(\App\Services\Charge\ResidentCountHistory::class)->record(
                             $unit, (int) $row['resident_count'], $row['starts_at']
