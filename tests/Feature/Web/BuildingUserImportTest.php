@@ -159,6 +159,39 @@ class BuildingUserImportTest extends TestCase
         }
     }
 
+    public function test_download_sends_a_nonempty_xlsx_body_with_correct_length(): void
+    {
+        [$manager, $unit, $building] = $this->scenario();
+        $response = $this->get(route('management.user-import.template', $building))->assertOk();
+        $path = $response->baseResponse->getFile()->getPathname();
+        clearstatcache(true, $path);
+        $size = filesize($path);
+        $this->assertGreaterThan(1000, $size);
+        $this->assertSame($size, (int) $response->headers->get('Content-Length'));
+        ob_start();
+        $response->baseResponse->sendContent();
+        $body = ob_get_clean();
+        $this->assertSame($size, strlen($body));
+        $this->assertStringStartsWith('PK', $body);
+    }
+
+    public function test_jalali_workbook_dates_are_converted_and_validated(): void
+    {
+        [$manager, $unit, $building, $user, $rows, $index] = $this->populatedWorkbook();
+        $rows[$index]['ownership_starts_at'] = '۱۴۰۵/۰۶/۰۱';
+        $rows[$index]['occupancy_starts_at'] = '1405/07/01';
+        $file = $this->signedFile($rows);
+        $service = app(BuildingWorkbookService::class);
+        $parsed = $service->read($file->getRealPath());
+        $this->assertSame('2026-08-23', $parsed[$index]['ownership_starts_at']);
+        $this->assertSame('2026-09-23', $parsed[$index]['occupancy_starts_at']);
+        $service->commit($building, $manager, $parsed);
+        $this->assertSame('2026-09-23', $unit->unitOccupancies()->firstOrFail()->starts_at->toDateString());
+        $this->assertSame('1405/07/01', app(\App\Services\Web\BuildingWorkbookDate::class)->display('2026-09-23'));
+        $this->expectException(ValidationException::class);
+        app(\App\Services\Web\BuildingWorkbookDate::class)->storage('1405/12/30');
+    }
+
     public function test_preview_does_not_write_and_commit_creates_user_relationships_and_wallet(): void
     {
         [$manager, $unit, $building] = $this->scenario();

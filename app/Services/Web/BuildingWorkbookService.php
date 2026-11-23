@@ -50,6 +50,9 @@ final class BuildingWorkbookService
         $workbookId = null;
         $seen = [];
         foreach ($rows as $index => &$row) {
+            foreach (['ownership_starts_at', 'occupancy_starts_at'] as $field) {
+                $row[$field] = app(BuildingWorkbookDate::class)->storage($row[$field]);
+            }
             $number = $index + 1;
             $token = $metadata[$number] ?? '';
             $snapshot = app(BuildingWorkbookSnapshot::class)->decode($token);

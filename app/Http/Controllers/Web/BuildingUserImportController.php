@@ -36,6 +36,8 @@ final class BuildingUserImportController extends Controller
         try {
             app(BuildingWorkbookExporter::class)->write($path, $building, $request->user());
 
+            clearstatcache(true, $path);
+
             return response()->download($path, 'building-users.xlsx', ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])->deleteFileAfterSend();
         } catch (\Throwable $e) {
             @unlink($path);

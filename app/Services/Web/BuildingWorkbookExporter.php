@@ -25,6 +25,9 @@ final class BuildingWorkbookExporter
         $snapshots = app(BuildingWorkbookSnapshot::class);
         $units = Unit::with('floor')->whereHas('floor.block', fn ($q) => $q->where('building_id', $building->id))
             ->get()->sortBy(fn ($unit) => [$unit->floor->floor_number, $unit->unit_number])->values();
+        if ($units->isEmpty()) {
+            throw ValidationException::withMessages(['file' => 'برای این ساختمان واحدی ثبت نشده است؛ ابتدا طبقات و واحدها را تکمیل کنید.']);
+        }
         if ($units->count() > 500) {
             throw ValidationException::withMessages(['file' => 'حداکثر ۵۰۰ واحد در هر فایل پشتیبانی می‌شود.']);
         }
@@ -61,9 +64,7 @@ final class BuildingWorkbookExporter
                     $style = (new Style)->setFontName('B Nazanin')->setFontSize(12)->setFontColor('1F2937')->setCellAlignment('center')->setShouldWrapText()
                         ->setBackgroundColor($column < 4 ? 'E2E8F0' : ($index % 2 ? 'EDF6FF' : 'FFFFFF'));
                     if (in_array($column, [18, 19], true)) {
-                        $style->setFormat('yyyy-mm-dd');
-                        $cells[] = $value === '' ? new StringCell('', $style)
-                            : new \OpenSpout\Common\Entity\Cell\DateTimeCell(new \DateTimeImmutable($value), $style);
+                        $cells[] = new StringCell(app(BuildingWorkbookDate::class)->display((string) $value), $style->setFormat('@'));
                     } elseif ($column === 17 && $value !== '') {
                         $cells[] = new NumericCell((float) $value, $style->setFormat('0.00'));
                     } elseif (in_array($column, [0, 3, 5, 6, 7, 8, 16], true)) {
@@ -78,6 +79,7 @@ final class BuildingWorkbookExporter
             }
             $writer->addNewSheetAndMakeItCurrent()->setName('_buildino')->setIsVisible(false)->setSheetProtection($protection);
             $writer->addRows($metadata);
+            $writer->setCurrentSheet($sheet);
         } finally {
             $writer->close();
         }

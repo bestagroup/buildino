@@ -9,3 +9,11 @@ Ownership data persists through UnitOwnershipService; explicit occupancy dates u
 Download a fresh workbook after deployment. Snapshot schema version is 3. No migrations or asset build required. Date/list styling is verified from generated XLSX XML and actual export/read round trips, not a desktop Excel visual test.
 
 Validation: 39 targeted tests passed (299 assertions) across workbook, occupancy domain and registration-month tests. After adding native Excel date cells and limiting new usage choices, 32 workbook tests passed again (276 assertions). No production import performed.
+
+## Follow-up: Jalali workbook dates and download diagnostics
+
+Workbook dates now display as text in Jalali YYYY/MM/DD. At the XLSX read boundary, Persian/Arabic digits and valid Jalali dates convert to Gregorian Y-m-d; internal snapshots, validation and storage remain Gregorian. Prior Gregorian ISO cells are still accepted. Previews render the relationship dates as Jalali. Invalid Jalali leap days are rejected.
+
+Download checks now test the actual BinaryFileResponse body, ZIP signature and Content-Length, not just the temporary file. Empty downloads were NOT reproduced locally even without the stat-cache fix; no production root cause is claimed. clearstatcache refreshes the generated file size, the data worksheet is restored as current, buildings without units fail explicitly. Production download still requires verification.
+
+Validation: 34 workbook tests passed (287 assertions). No schema/build changes required.
