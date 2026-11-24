@@ -111,6 +111,10 @@ class ManagementOperationsController extends Controller
             $configuration
         );
 
+        if ($resource === 'wallet-cash') {
+            return app(WalletCashController::class)->index(request());
+        }
+
         if ($resource === 'user-import') {
             return app(BuildingUserImportController::class)->index(request());
         }

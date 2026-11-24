@@ -3101,6 +3101,7 @@ return [
                 ]
             ]
         ],
+        'wallet-cash' => ['permission' => 'wallet-cash.manage', 'permission_scope' => 'any', 'group' => 'finance', 'title' => 'دریافت و پرداخت', 'description' => 'ثبت دریافت و پرداخت کیف پول ساختمان یا واحد با سند', 'context' => []],
         'wallet-payouts' => [
         'permission' => 'wallet-payouts.view',
         'permission_scope' => 'any',

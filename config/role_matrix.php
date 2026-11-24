@@ -305,6 +305,7 @@ return [
 
                 'wallets.view',
                 'unit-wallet-deposits.create',
+                'wallet-cash.manage',
                 'building-wallet.view',
 
                 'building-bank-accounts.view',
@@ -459,6 +460,7 @@ return [
 
                 'wallets.view',
                 'unit-wallet-deposits.create',
+                'wallet-cash.manage',
                 'building-wallet.view',
 
                 'building-bank-accounts.view',
