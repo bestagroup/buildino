@@ -53,7 +53,7 @@ class PortalOperationalDetailsWebTest extends TestCase
             )
                 ->assertOk()
                 ->assertSee(
-                    'js-server-datatable',
+                    $resource === 'invoices' ? 'صورتحساب‌های ماهانه' : 'js-server-datatable',
                     false
                 );
         }

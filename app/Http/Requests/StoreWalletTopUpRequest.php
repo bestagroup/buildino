@@ -17,6 +17,7 @@ class StoreWalletTopUpRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'collect_outstanding' => ['sometimes', 'boolean'],
             'target_type' => [
                 'required',
                 Rule::enum(WalletTopUpTargetType::class),

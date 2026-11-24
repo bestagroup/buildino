@@ -1106,6 +1106,7 @@
                                 "POST",
                             body:
                                 JSON.stringify({
+                                    collect_outstanding: false,
                                     target_type:
                                         "unit_wallet",
                                     unit_id:
@@ -1603,201 +1604,19 @@
             return false;
         };
 
-    const askPaymentAmount =
-        async (
-            outstanding
-        ) => {
-            if (window.Swal) {
-                const result =
-                    await window.Swal.fire({
-                        title:
-                            "پرداخت صورتحساب",
-                        text:
-                            "مبلغ پرداخت را وارد کنید.",
-                        input:
-                            resident ? "text" : "number",
-                        inputValue:
-                            outstanding,
-                        inputAttributes: {
-                            ...(resident ? { inputmode: "numeric", "data-number-input": "" } : {}),
-                            min:
-                                "1",
-                            max:
-                                String(
-                                    outstanding
-                                ),
-                            step:
-                                "1",
-                            dir:
-                                "ltr",
-                        },
-                        showCancelButton:
-                            true,
-                        confirmButtonText:
-                            "ادامه پرداخت",
-                        cancelButtonText:
-                            "انصراف",
-                        inputValidator:
-                            (value) => {
-                                const amount =
-                                    Number(window.BuildinoNumeric?.normalize(value) ?? value);
-
-                                if (
-                                    ! Number.isInteger(
-                                        amount
-                                    )
-                                    || amount < 1
-                                    || amount
-                                        > outstanding
-                                ) {
-                                    return "مبلغ معتبر نیست.";
-                                }
-
-                                return undefined;
-                            },
-                    });
-
-                return result.isConfirmed
-                    ? Number(window.BuildinoNumeric?.normalize(result.value) ?? result.value)
-                    : null;
+    $$("[data-pay-invoice]").forEach(button => {
+        button.addEventListener('click', async () => {
+            if (button.disabled || !window.confirm('صورتحساب این دوره از کیف پول واحد تسویه شود؟')) return;
+            button.disabled = true;
+            try {
+                await api(`/portal/resident/statements/${encodeURIComponent(button.dataset.invoiceId)}/settle`, { method: 'POST', body: '{}' });
+                window.location.reload();
+            } catch (error) {
+                toast(error.message, 'error');
+                button.disabled = false;
             }
-
-            const result =
-                window.prompt(
-                    "مبلغ پرداخت",
-                    String(
-                        outstanding
-                    )
-                );
-
-            if (result === null) {
-                return null;
-            }
-
-            const amount =
-                Number(
-                    result
-                );
-
-            return Number.isInteger(
-                amount
-            )
-                && amount > 0
-                && amount <= outstanding
-                    ? amount
-                    : null;
-        };
-
-    $$("[data-pay-invoice]")
-        .forEach(
-            (button) => {
-                button.addEventListener(
-                    "click",
-                    async () => {
-                        if (
-                            ! portal
-                                .gatewayEnabled
-                        ) {
-                            toast(
-                                "درگاه پرداخت فعال نیست.",
-                                "warning"
-                            );
-                            return;
-                        }
-
-                        const invoiceId =
-                            button.dataset
-                                .invoiceId;
-
-                        const outstanding =
-                            Number(
-                                button.dataset
-                                    .outstanding
-                                || 0
-                            );
-
-                        if (button.disabled) return;
-                        button.disabled = true;
-                        const amount = button.dataset.paymentId ? Number(button.dataset.paymentAmount) :
-                            await askPaymentAmount(
-                                outstanding
-                            );
-
-                        if (! amount) {
-                            button.disabled = false;
-                            return;
-                        }
-
-                        button.disabled =
-                            true;
-
-                        try {
-                            const payment = button.dataset.paymentId ? { data: { id: button.dataset.paymentId } } :
-                                await api(
-                                    `/api/v1/invoices/${encodeURIComponent(invoiceId)}/payments`,
-                                    {
-                                        method:
-                                            "POST",
-                                        body:
-                                            JSON.stringify({
-                                                amount,
-                                                method:
-                                                    "online",
-                                                description:
-                                                    `Portal invoice payment ${button.dataset.invoiceNumber || ""}`.trim(),
-                                            }),
-                                    }
-                                );
-
-                            const paymentId =
-                                payment
-                                    ?.data
-                                    ?.id;
-
-                            if (! paymentId) {
-                                throw new Error(
-                                    "شناسه پرداخت ایجاد نشد."
-                                );
-                            }
-
-                            button.dataset.paymentId = String(paymentId);
-                            button.dataset.paymentAmount = String(amount);
-
-                            const redirected =
-                                await initiateGatewayPayment(
-                                    paymentId,
-                                    `portal-invoice:${invoiceId}`
-                                );
-
-                            if (! redirected) {
-                                button.textContent = 'ادامه پرداخت ثبت‌شده';
-                                toast(
-                                    "پرداخت ایجاد شد اما آدرس انتقال درگاه دریافت نشد.",
-                                    "warning"
-                                );
-                                button.disabled =
-                                    false;
-                            }
-                        } catch (
-                            error
-                        ) {
-                            if (resident && error.uncertain && !button.dataset.paymentId) {
-                                const notice = document.createElement('p'); notice.className = 'resident-form-error'; notice.setAttribute('role', 'alert');
-                                notice.textContent = 'نتیجه ثبت پرداخت مشخص نیست. پیش از پرداخت دوباره، وضعیت صورتحساب را بررسی کنید.';
-                                const check = document.createElement('a'); check.href = location.pathname + location.search; check.textContent = 'بررسی وضعیت';
-                                notice.append(' ', check); button.after(notice); return;
-                            }
-                            toast(
-                                error.message,
-                                "error"
-                            );
-                            button.disabled =
-                                false;
-                        }
-                    }
-                );
-            }
-        );
+        });
+    });
 
     /* ---------------------------------------------------------------
        Resident lifecycle — reservation payment / cancellation

@@ -4,7 +4,7 @@
     @foreach($residentActions as $action)
         @switch($action['type'])
             @case('invoice-pay')
-                @if($portalData['payment_gateway']['enabled'])<button type="button" class="portal-primary-button" data-pay-invoice data-invoice-id="{{ $action['id'] }}" data-invoice-number="{{ $action['number'] }}" data-outstanding="{{ $action['amount'] }}">پرداخت صورتحساب</button>@else<p class="resident-muted">پرداخت آنلاین در حال حاضر در دسترس نیست.</p>@endif
+                <button type="button" class="portal-primary-button" data-pay-invoice data-invoice-id="{{ $action['id'] }}" data-invoice-number="{{ $action['number'] }}" data-outstanding="{{ $action['amount'] }}">تسویه از کیف پول واحد</button>
                 @break
             @case('reservation-pay')<button type="button" class="portal-primary-button" data-reservation-pay data-reservation-id="{{ $action['id'] }}" data-reservation-title="{{ $action['title'] }}">پرداخت از کیف پول</button>@break
             @case('reservation-cancel')<button type="button" class="portal-action-button resident-danger" data-reservation-cancel data-reservation-id="{{ $action['id'] }}">لغو رزرو</button>@break

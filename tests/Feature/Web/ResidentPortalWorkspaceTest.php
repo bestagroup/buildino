@@ -45,7 +45,7 @@ class ResidentPortalWorkspaceTest extends TestCase
         }
     }
 
-    public function test_payable_invoice_detail_exposes_payment_only_when_gateway_is_enabled(): void
+    public function test_payable_invoice_detail_exposes_wallet_settlement_independently_of_gateway(): void
     {
         $invoice = UnitInvoice::where('invoice_number', 'like', '%')->where('outstanding_amount', '>', 0)->firstOrFail();
         config(['payment_gateways.default' => 'generic', 'payment_gateways.gateways.generic.enabled' => true]);
@@ -53,7 +53,7 @@ class ResidentPortalWorkspaceTest extends TestCase
             ->assertSee('data-pay-invoice', false)->assertSee('data-outstanding="'.$invoice->outstanding_amount.'"', false);
         config(['payment_gateways.gateways.generic.enabled' => false]);
         $this->get('/portal/resident/operations/invoices/'.$invoice->id)->assertOk()
-            ->assertDontSee('data-pay-invoice', false)->assertSee('پرداخت آنلاین در حال حاضر در دسترس نیست');
+            ->assertSee('data-pay-invoice', false)->assertSee('تسویه از کیف پول واحد');
     }
 
     public function test_unit_filter_cannot_expand_resident_scope(): void

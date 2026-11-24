@@ -304,6 +304,7 @@ return [
                 'incomes.update',
 
                 'wallets.view',
+                'unit-wallet-deposits.create',
                 'building-wallet.view',
 
                 'building-bank-accounts.view',
@@ -457,6 +458,7 @@ return [
                 'financial-reconciliations.update',
 
                 'wallets.view',
+                'unit-wallet-deposits.create',
                 'building-wallet.view',
 
                 'building-bank-accounts.view',

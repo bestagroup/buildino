@@ -438,6 +438,7 @@ class PaymentService
         if (
             $retryTopUpId !== null
             && $retryActorId !== null
+            && ($verified->paymentTransactions()->oldest('id')->first()?->request_payload['collect_outstanding'] ?? true)
         ) {
             $topUp = WalletTopUp::query()
                 ->find(

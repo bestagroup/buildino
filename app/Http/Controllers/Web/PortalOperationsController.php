@@ -20,6 +20,10 @@ final class PortalOperationsController extends Controller
         PortalAccessService $access,
         ManagementHeaderContextService $header
     ): View {
+        if ($resource === 'invoices') {
+            return app(UnitStatementController::class)->index($request);
+        }
+
         $config =
             config(
                 "portal_operations.resident.{$resource}"

@@ -97,6 +97,7 @@ final class WalletTopUpService
                 'authority' => null,
                 'request_payload' => [
                     'purpose' => 'wallet_topup',
+                    'collect_outstanding' => $data['collect_outstanding'] ?? true,
                     'target_type' => $target->getMorphClass(),
                     'target_id' => $target->getKey(),
                     'wallet_id' => $wallet->getKey(),

@@ -206,6 +206,9 @@ Route::middleware([
         Route::post('/buildings/{building}/invitations/send', [\App\Http\Controllers\Web\BuildingInvitationPageController::class, 'send'])
             ->middleware('throttle:api-v1')->name('building-invitations.send');
 
+        Route::get('/units/{unit}/invoices', [\App\Http\Controllers\Web\UnitStatementController::class, 'index'])->name('unit-statements');
+        Route::post('/units/{unit}/wallet-deposits', [\App\Http\Controllers\Web\UnitStatementController::class, 'deposit'])->middleware('throttle:api-v1')->name('unit-deposits');
+
         Route::get('/at-a-glance', \App\Http\Controllers\Web\BuildingAtGlanceController::class)
             ->name('at-a-glance');
 
@@ -464,6 +467,8 @@ Route::post(
         'throttle:auth',
     ])
     ->name('portal.login.otp.verify');
+
+Route::post('/portal/resident/statements/{invoice}/settle', [\App\Http\Controllers\Web\UnitStatementController::class, 'settle'])->middleware([EnsurePortalWebAccess::class.':resident', 'throttle:api-v1'])->name('portal.resident.statements.settle');
 
 Route::prefix('portal')
     ->name('portal.')
