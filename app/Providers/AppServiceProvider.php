@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Building;
 use App\Models\Unit;
 use App\Models\User;
+use App\Observers\ProvisionExpenseCategoriesObserver;
 use App\Observers\ProvisionSubscriptionObserver;
 use App\Observers\ProvisionWalletObserver;
 use App\Services\Web\ManagementHeaderContextService;
@@ -38,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
         Unit::observe(ProvisionWalletObserver::class);
         Building::observe(ProvisionWalletObserver::class);
         Building::observe(ProvisionSubscriptionObserver::class);
-        Building::observe(\App\Observers\ProvisionExpenseCategoriesObserver::class);
+        Building::observe(ProvisionExpenseCategoriesObserver::class);
 
         ResetPasswordNotification::createUrlUsing(
             function (User $user, string $token): string {
@@ -63,7 +64,7 @@ class AppServiceProvider extends ServiceProvider
                 'supportPhone' => config('brand_mail.support_phone'),
             ];
 
-            return (new MailMessage())
+            return (new MailMessage)
                 ->subject('بازیابی رمز عبور | بیلدینو')
                 ->view([
                     'html' => 'emails.auth.reset-password',
@@ -90,7 +91,9 @@ class AppServiceProvider extends ServiceProvider
 
                 $view->with(
                     'managementHeader',
-                    app(ManagementHeaderContextService::class)->context($user)
+                    $view->name() === 'management.layouts.app'
+                        ? app(ManagementHeaderContextService::class)->managementContext($user, request())
+                        : app(ManagementHeaderContextService::class)->context($user)
                 );
             }
         );

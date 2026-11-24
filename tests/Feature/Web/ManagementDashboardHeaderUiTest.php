@@ -8,15 +8,17 @@ use App\Models\NotificationLog;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\UserRoleAssignment;
+use App\Services\Wallet\WalletService;
 use App\Services\Web\ManagementHeaderContextService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Tests\Support\CreatesBuildingDomainData;
 use Tests\TestCase;
 
 class ManagementDashboardHeaderUiTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesBuildingDomainData;
+    use RefreshDatabase;
 
     public function test_header_context_exposes_personal_wallet_and_database_notifications(): void
     {
@@ -33,64 +35,39 @@ class ManagementDashboardHeaderUiTest extends TestCase
                 ->firstOrFail();
 
         $wallet->update([
-            'balance' =>
-                5_000_000,
-            'locked_balance' =>
-                1_250_000,
+            'balance' => 5_000_000,
+            'locked_balance' => 1_250_000,
         ]);
 
         NotificationLog::query()
             ->create([
-                'idempotency_key' =>
-                    'header-unread-1',
-                'notifiable_type' =>
-                    $user->getMorphClass(),
-                'notifiable_id' =>
-                    $user->getKey(),
-                'notification_type' =>
-                    'dashboard.test',
-                'channel' =>
-                    NotificationChannel::Database,
-                'provider' =>
-                    'database',
-                'title' =>
-                    'اعلان تستی',
-                'message' =>
-                    'این اعلان باید در Header نمایش داده شود.',
-                'status' =>
-                    NotificationStatus::Delivered,
-                'attempts' =>
-                    1,
-                'sent_at' =>
-                    now(),
-                'delivered_at' =>
-                    now(),
+                'idempotency_key' => 'header-unread-1',
+                'notifiable_type' => $user->getMorphClass(),
+                'notifiable_id' => $user->getKey(),
+                'notification_type' => 'dashboard.test',
+                'channel' => NotificationChannel::Database,
+                'provider' => 'database',
+                'title' => 'اعلان تستی',
+                'message' => 'این اعلان باید در Header نمایش داده شود.',
+                'status' => NotificationStatus::Delivered,
+                'attempts' => 1,
+                'sent_at' => now(),
+                'delivered_at' => now(),
             ]);
 
         NotificationLog::query()
             ->create([
-                'idempotency_key' =>
-                    'header-email-ignore',
-                'notifiable_type' =>
-                    $user->getMorphClass(),
-                'notifiable_id' =>
-                    $user->getKey(),
-                'notification_type' =>
-                    'dashboard.email',
-                'channel' =>
-                    NotificationChannel::Email,
-                'provider' =>
-                    'laravel-mail',
-                'title' =>
-                    'Email only',
-                'message' =>
-                    'این مورد نباید در Notification Center وب شمرده شود.',
-                'status' =>
-                    NotificationStatus::Sent,
-                'attempts' =>
-                    1,
-                'sent_at' =>
-                    now(),
+                'idempotency_key' => 'header-email-ignore',
+                'notifiable_type' => $user->getMorphClass(),
+                'notifiable_id' => $user->getKey(),
+                'notification_type' => 'dashboard.email',
+                'channel' => NotificationChannel::Email,
+                'provider' => 'laravel-mail',
+                'title' => 'Email only',
+                'message' => 'این مورد نباید در Notification Center وب شمرده شود.',
+                'status' => NotificationStatus::Sent,
+                'attempts' => 1,
+                'sent_at' => now(),
             ]);
 
         $header =
@@ -159,38 +136,24 @@ class ManagementDashboardHeaderUiTest extends TestCase
                 ->firstOrFail();
 
         $wallet->update([
-            'balance' =>
-                9_900_000,
-            'locked_balance' =>
-                900_000,
+            'balance' => 9_900_000,
+            'locked_balance' => 900_000,
         ]);
 
         NotificationLog::query()
             ->create([
-                'idempotency_key' =>
-                    'header-render-1',
-                'notifiable_type' =>
-                    $user->getMorphClass(),
-                'notifiable_id' =>
-                    $user->getKey(),
-                'notification_type' =>
-                    'dashboard.render',
-                'channel' =>
-                    NotificationChannel::Database,
-                'provider' =>
-                    'database',
-                'title' =>
-                    'اعلان داشبورد',
-                'message' =>
-                    'متن اعلان داشبورد',
-                'status' =>
-                    NotificationStatus::Delivered,
-                'attempts' =>
-                    1,
-                'sent_at' =>
-                    now(),
-                'delivered_at' =>
-                    now(),
+                'idempotency_key' => 'header-render-1',
+                'notifiable_type' => $user->getMorphClass(),
+                'notifiable_id' => $user->getKey(),
+                'notification_type' => 'dashboard.render',
+                'channel' => NotificationChannel::Database,
+                'provider' => 'database',
+                'title' => 'اعلان داشبورد',
+                'message' => 'متن اعلان داشبورد',
+                'status' => NotificationStatus::Delivered,
+                'attempts' => 1,
+                'sent_at' => now(),
+                'delivered_at' => now(),
             ]);
 
         $this->actingAs(
@@ -297,6 +260,39 @@ class ManagementDashboardHeaderUiTest extends TestCase
         );
     }
 
+    public function test_management_header_reads_building_wallet_without_changing_personal_context(): void
+    {
+        $building = $this->createBuildingGraph()['building'];
+        $other = $this->createBuildingGraph()['building'];
+        $user = $this->createUser();
+        $this->grantPermission($user->id, $building, 'building-wallet.view');
+        $this->grantPermission($user->id, $building, 'reports.dashboard.view');
+        $wallet = app(WalletService::class)->walletFor($building);
+        $wallet->update(['balance' => 250_000_000, 'locked_balance' => 10_000_000]);
+        $service = app(ManagementHeaderContextService::class);
+        $header = $service->managementContext($user, Request::create('/management'));
+        $this->assertSame(250_000_000, $header['wallet']['balance']);
+        $this->assertSame(240_000_000, $header['wallet']['available_balance']);
+        $this->assertSame($wallet->uuid, $header['wallet']['uuid']);
+        $this->assertSame(0, $service->context($user)['wallet']['balance']);
+        $this->actingAs($user)->get('/management?building_id='.$building->id)
+            ->assertOk()->assertSee('کیف پول ساختمان '.$building->title)->assertSee('240,000,000');
+        $denied = $service->managementContext($user, Request::create('/management', 'GET', ['building_id' => $other->id]));
+        $this->assertSame('کیف پول شخصی شما', $denied['wallet']['label']);
+        $this->assertCount(1, $denied['building_wallet_links']);
+
+        $this->grantPermission($user->id, $other, 'building-wallet.view');
+        $other->update(['currency' => 'IRT']);
+        $secondWallet = app(WalletService::class)->walletFor($other, 'IRT');
+        $secondWallet->update(['balance' => 25_000_000]);
+        $selected = $service->managementContext($user, Request::create('/management', 'GET', ['building_id' => $other->id]));
+        $this->assertSame(25_000_000, $selected['wallet']['balance']);
+        $this->assertSame('IRT', $selected['wallet']['currency']);
+        $ambiguous = $service->managementContext($user, Request::create('/management'));
+        $this->assertSame('کیف پول شخصی شما', $ambiguous['wallet']['label']);
+        $this->assertCount(2, $ambiguous['building_wallet_links']);
+    }
+
     private function grantPermission(
         int $userId,
         $scope,
@@ -305,27 +301,21 @@ class ManagementDashboardHeaderUiTest extends TestCase
         $role =
             Role::query()
                 ->create([
-                    'name' =>
-                        'header-ui-'
-                        . uniqid(),
-                    'display_name' =>
-                        'Header UI',
-                    'is_system' =>
-                        false,
+                    'name' => 'header-ui-'
+                        .uniqid(),
+                    'display_name' => 'Header UI',
+                    'is_system' => false,
                 ]);
 
         $permission =
             Permission::query()
                 ->firstOrCreate(
                     [
-                        'name' =>
-                            $permissionName,
+                        'name' => $permissionName,
                     ],
                     [
-                        'display_name' =>
-                            $permissionName,
-                        'module' =>
-                            'reports',
+                        'display_name' => $permissionName,
+                        'module' => 'reports',
                     ]
                 );
 
@@ -337,25 +327,17 @@ class ManagementDashboardHeaderUiTest extends TestCase
 
         UserRoleAssignment::query()
             ->create([
-                'user_id' =>
-                    $userId,
-                'role_id' =>
-                    $role->id,
-                'scope_type' =>
-                    $scope
-                        ?->getMorphClass(),
-                'scope_id' =>
-                    $scope
-                        ?->getKey(),
-                'starts_at' =>
-                    now()
-                        ->subMinute(),
-                'ends_at' =>
-                    null,
-                'is_active' =>
-                    true,
-                'assigned_by' =>
-                    null,
+                'user_id' => $userId,
+                'role_id' => $role->id,
+                'scope_type' => $scope
+                    ?->getMorphClass(),
+                'scope_id' => $scope
+                    ?->getKey(),
+                'starts_at' => now()
+                    ->subMinute(),
+                'ends_at' => null,
+                'is_active' => true,
+                'assigned_by' => null,
             ]);
     }
 }

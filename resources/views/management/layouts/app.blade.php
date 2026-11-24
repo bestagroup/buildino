@@ -41,7 +41,7 @@
     $ui = $managementUi ?? [];
     $nav = $ui['navigation'] ?? [];
     $header = $managementHeader ?? [];
-    $personalWallet = $header['wallet'] ?? [];
+    $headerWallet = $header['wallet'] ?? [];
     $headerNotifications =
         $header['notifications'] ?? [];
     $headerNotificationItems =
@@ -756,7 +756,7 @@
                     data-popover-trigger
                     data-bs-toggle="tooltip"
                     data-bs-placement="bottom"
-                    title="کیف پول شخصی"
+                    title="{{ $headerWallet['label'] ?? 'کیف پول شخصی شما' }}"
                 >
                     <span class="wallet-summary-trigger__icon">
                         @include(
@@ -769,11 +769,11 @@
                     </span>
 
                     <span class="wallet-summary-trigger__copy">
-                        <small>موجودی قابل استفاده</small>
+                        <small>{{ $headerWallet['label'] ?? 'کیف پول شخصی شما' }}</small>
                         <strong
                             data-money-value="{{
                                 (int) (
-                                    $personalWallet[
+                                    $headerWallet[
                                         'available_balance'
                                     ] ?? 0
                                 )
@@ -782,7 +782,7 @@
                             {{
                                 number_format(
                                     (int) (
-                                        $personalWallet[
+                                        $headerWallet[
                                             'available_balance'
                                         ] ?? 0
                                     )
@@ -793,7 +793,7 @@
 
                     <span class="wallet-summary-trigger__currency">
                         {{
-                            $personalWallet['currency']
+                            $headerWallet['currency']
                             ?? 'IRR'
                         }}
                     </span>
@@ -816,13 +816,13 @@
 
                         <div>
                             <small>
-                                کیف پول شخصی شما
+                                {{ $headerWallet['label'] ?? 'کیف پول شخصی شما' }}
                             </small>
 
                             <strong
                                 data-money-value="{{
                                     (int) (
-                                        $personalWallet[
+                                        $headerWallet[
                                             'available_balance'
                                         ] ?? 0
                                     )
@@ -831,7 +831,7 @@
                                 {{
                                     number_format(
                                         (int) (
-                                            $personalWallet[
+                                            $headerWallet[
                                                 'available_balance'
                                             ] ?? 0
                                         )
@@ -841,7 +841,7 @@
 
                             <em>
                                 {{
-                                    $personalWallet[
+                                    $headerWallet[
                                         'currency'
                                     ] ?? 'IRR'
                                 }}
@@ -849,13 +849,14 @@
                         </div>
                     </div>
 
+                    <div class="wallet-popover__note">موجودی قابل استفاده</div>
                     <div class="wallet-popover__stats">
                         <div>
                             <span>مانده کل</span>
                             <strong
                                 data-money-value="{{
                                     (int) (
-                                        $personalWallet[
+                                        $headerWallet[
                                             'balance'
                                         ] ?? 0
                                     )
@@ -864,7 +865,7 @@
                                 {{
                                     number_format(
                                         (int) (
-                                            $personalWallet[
+                                            $headerWallet[
                                                 'balance'
                                             ] ?? 0
                                         )
@@ -878,7 +879,7 @@
                             <strong
                                 data-money-value="{{
                                     (int) (
-                                        $personalWallet[
+                                        $headerWallet[
                                             'locked_balance'
                                         ] ?? 0
                                     )
@@ -887,7 +888,7 @@
                                 {{
                                     number_format(
                                         (int) (
-                                            $personalWallet[
+                                            $headerWallet[
                                                 'locked_balance'
                                             ] ?? 0
                                         )
@@ -897,9 +898,13 @@
                         </div>
                     </div>
 
-                    @if (! ($personalWallet['exists'] ?? false))
+                    @foreach ($header['building_wallet_links'] ?? [] as $buildingWalletLink)
+                        <a href="{{ $buildingWalletLink['url'] }}" class="d-block p-2">کیف پول ساختمان {{ $buildingWalletLink['title'] }}</a>
+                    @endforeach
+
+                    @if (! ($headerWallet['exists'] ?? false))
                         <div class="wallet-popover__note">
-                            کیف پول شخصی برای این حساب هنوز ایجاد نشده است.
+                            کیف پول انتخاب‌شده هنوز ایجاد نشده است.
                         </div>
                     @endif
                 </div>
