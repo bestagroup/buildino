@@ -678,6 +678,14 @@ class BuildingUserImportTest extends TestCase
         }
         $this->assertStringContainsString('lockStructure="true"', $zip->getFromName('xl/workbook.xml'));
         $workbook = simplexml_load_string($zip->getFromName('xl/workbook.xml'));
+        foreach ($workbook->definedNames->definedName as $name) {
+            if ((string) $name['name'] === '_xlnm.Print_Titles') {
+                $this->assertSame("'اطلاعات واحدها'!\$1:\$1", (string) $name);
+            }
+        }
+        $children = array_keys(iterator_to_array($sheet->children()));
+        $this->assertLessThan(array_search('legacyDrawing', $children, true), array_search('dataValidations', $children, true));
+
         $this->assertFalse(isset($workbook->workbookProtection['lockRevisions']));
         $this->assertSame('false', (string) $workbook->workbookProtection['lockRevision']);
         $this->assertFalse(isset($sheet->sheetProtection['hyperlink']));

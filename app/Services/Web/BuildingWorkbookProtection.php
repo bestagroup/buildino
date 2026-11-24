@@ -22,6 +22,7 @@ final class BuildingWorkbookProtection
         try {
             $workbook = $this->document($zip, 'xl/workbook.xml');
             $this->normalizeProtectionAttributes($workbook, 'workbookProtection', ['lockRevisions' => 'lockRevision']);
+            $this->normalizePrintTitles($workbook);
             $worksheets = [];
             // Read and transform every entry before writing: some libzip versions cannot
             // read a replaced compressed entry until the archive has been closed.
@@ -73,7 +74,7 @@ final class BuildingWorkbookProtection
                 $formula->appendChild($sheet->createTextNode('"مسکونی,اداری,تجاری"'));
                 $validation->appendChild($formula);
                 $validations->appendChild($validation);
-                $before = $xpath->query('//s:pageMargins | //s:pageSetup | //s:headerFooter')->item(0);
+                $before = $xpath->query('/s:worksheet/s:hyperlinks | /s:worksheet/s:printOptions | /s:worksheet/s:pageMargins | /s:worksheet/s:pageSetup | /s:worksheet/s:headerFooter | /s:worksheet/s:rowBreaks | /s:worksheet/s:colBreaks | /s:worksheet/s:customProperties | /s:worksheet/s:cellWatches | /s:worksheet/s:ignoredErrors | /s:worksheet/s:smartTags | /s:worksheet/s:drawing | /s:worksheet/s:legacyDrawing | /s:worksheet/s:legacyDrawingHF | /s:worksheet/s:picture | /s:worksheet/s:oleObjects | /s:worksheet/s:controls | /s:worksheet/s:webPublishItems | /s:worksheet/s:tableParts | /s:worksheet/s:extLst')->item(0);
                 $sheet->documentElement->insertBefore($validations, $before);
             }
             $formats->setAttribute('count', (string) $formats->getElementsByTagNameNS(self::NS, 'xf')->length);
@@ -92,6 +93,23 @@ final class BuildingWorkbookProtection
             if (! $zip->close()) {
                 throw new RuntimeException('Cannot save protected workbook.');
             }
+        }
+    }
+
+    private function normalizePrintTitles(DOMDocument $workbook): void
+    {
+        $sheets = $workbook->getElementsByTagNameNS(self::NS, 'sheet');
+        foreach ($workbook->getElementsByTagNameNS(self::NS, 'definedName') as $name) {
+            if ($name->getAttribute('name') !== '_xlnm.Print_Titles') {
+                continue;
+            }
+            $sheet = $sheets->item((int) $name->getAttribute('localSheetId'));
+            if (! $sheet instanceof DOMElement || ! preg_match('/!\$?([0-9]+):\$?([0-9]+)$/', $name->textContent, $rows)) {
+                throw new RuntimeException('Invalid generated print title reference.');
+            }
+            // Sheet names containing spaces must be quoted in Excel formulas.
+            $reference = "'".str_replace("'", "''", $sheet->getAttribute('name'))."'!$".$rows[1].':$'.$rows[2];
+            $name->textContent = $reference;
         }
     }
 
