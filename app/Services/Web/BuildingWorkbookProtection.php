@@ -22,6 +22,9 @@ final class BuildingWorkbookProtection
         try {
             $workbook = $this->document($zip, 'xl/workbook.xml');
             $this->normalizeProtectionAttributes($workbook, 'workbookProtection', ['lockRevisions' => 'lockRevision']);
+            $worksheets = [];
+            // Read and transform every entry before writing: some libzip versions cannot
+            // read a replaced compressed entry until the archive has been closed.
             // Apply view/protection compatibility to visible and hidden worksheets alike.
             for ($index = 0; $index < $zip->numFiles; $index++) {
                 $entry = $zip->getNameIndex($index);
@@ -31,12 +34,10 @@ final class BuildingWorkbookProtection
                 $worksheet = $this->document($zip, $entry);
                 $this->normalizeProtectionAttributes($worksheet, 'sheetView', ['showZeroes' => 'showZeros']);
                 $this->normalizeProtectionAttributes($worksheet, 'sheetProtection', ['hyperlink' => 'insertHyperlinks']);
-                if (! $zip->addFromString($entry, $worksheet->saveXML())) {
-                    throw new RuntimeException('Cannot normalize generated worksheet.');
-                }
+                $worksheets[$entry] = $worksheet;
             }
             $styles = $this->document($zip, 'xl/styles.xml');
-            $sheet = $this->document($zip, 'xl/worksheets/sheet1.xml');
+            $sheet = $worksheets['xl/worksheets/sheet1.xml'] ?? throw new RuntimeException('Generated workbook has no input sheet.');
             $xpath = new DOMXPath($sheet);
             $xpath->registerNamespace('s', self::NS);
             $formats = $styles->getElementsByTagNameNS(self::NS, 'cellXfs')->item(0);
@@ -76,10 +77,16 @@ final class BuildingWorkbookProtection
                 $sheet->documentElement->insertBefore($validations, $before);
             }
             $formats->setAttribute('count', (string) $formats->getElementsByTagNameNS(self::NS, 'xf')->length);
-            if (! $zip->addFromString('xl/workbook.xml', $workbook->saveXML())
-                || ! $zip->addFromString('xl/styles.xml', $styles->saveXML())
-                || ! $zip->addFromString('xl/worksheets/sheet1.xml', $sheet->saveXML())) {
-                throw new RuntimeException('Cannot protect generated workbook.');
+            $documents = [
+                'xl/workbook.xml' => $workbook,
+                'xl/styles.xml' => $styles,
+                ...$worksheets,
+            ];
+            foreach ($documents as $entry => $document) {
+                $xml = $document->saveXML();
+                if ($xml === false || ! $zip->addFromString($entry, $xml)) {
+                    throw new RuntimeException('Cannot protect generated workbook.');
+                }
             }
         } finally {
             if (! $zip->close()) {
