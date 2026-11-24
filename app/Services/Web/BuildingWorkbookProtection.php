@@ -20,6 +20,21 @@ final class BuildingWorkbookProtection
             throw new RuntimeException('Cannot open generated workbook for protection.');
         }
         try {
+            $workbook = $this->document($zip, 'xl/workbook.xml');
+            $this->normalizeProtectionAttributes($workbook, 'workbookProtection', ['lockRevisions' => 'lockRevision']);
+            // Apply view/protection compatibility to visible and hidden worksheets alike.
+            for ($index = 0; $index < $zip->numFiles; $index++) {
+                $entry = $zip->getNameIndex($index);
+                if (! is_string($entry) || ! preg_match('~^xl/worksheets/sheet[0-9]+\.xml$~', $entry)) {
+                    continue;
+                }
+                $worksheet = $this->document($zip, $entry);
+                $this->normalizeProtectionAttributes($worksheet, 'sheetView', ['showZeroes' => 'showZeros']);
+                $this->normalizeProtectionAttributes($worksheet, 'sheetProtection', ['hyperlink' => 'insertHyperlinks']);
+                if (! $zip->addFromString($entry, $worksheet->saveXML())) {
+                    throw new RuntimeException('Cannot normalize generated worksheet.');
+                }
+            }
             $styles = $this->document($zip, 'xl/styles.xml');
             $sheet = $this->document($zip, 'xl/worksheets/sheet1.xml');
             $xpath = new DOMXPath($sheet);
@@ -61,13 +76,29 @@ final class BuildingWorkbookProtection
                 $sheet->documentElement->insertBefore($validations, $before);
             }
             $formats->setAttribute('count', (string) $formats->getElementsByTagNameNS(self::NS, 'xf')->length);
-            if (! $zip->addFromString('xl/styles.xml', $styles->saveXML())
+            if (! $zip->addFromString('xl/workbook.xml', $workbook->saveXML())
+                || ! $zip->addFromString('xl/styles.xml', $styles->saveXML())
                 || ! $zip->addFromString('xl/worksheets/sheet1.xml', $sheet->saveXML())) {
                 throw new RuntimeException('Cannot protect generated workbook.');
             }
         } finally {
             if (! $zip->close()) {
                 throw new RuntimeException('Cannot save protected workbook.');
+            }
+        }
+    }
+
+    /** Normalize legacy OpenSpout attribute names to SpreadsheetML without changing protection values. */
+    private function normalizeProtectionAttributes(DOMDocument $document, string $element, array $attributes): void
+    {
+        foreach ($document->getElementsByTagNameNS(self::NS, $element) as $protection) {
+            foreach ($attributes as $legacy => $standard) {
+                if ($protection->hasAttribute($legacy)) {
+                    if (! $protection->hasAttribute($standard)) {
+                        $protection->setAttribute($standard, $protection->getAttribute($legacy));
+                    }
+                    $protection->removeAttribute($legacy);
+                }
             }
         }
     }

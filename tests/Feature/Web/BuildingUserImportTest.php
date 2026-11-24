@@ -677,6 +677,18 @@ class BuildingUserImportTest extends TestCase
             $this->assertArrayHasKey($column.'2', $seen, 'Blank input cells must also be editable.');
         }
         $this->assertStringContainsString('lockStructure="true"', $zip->getFromName('xl/workbook.xml'));
+        $workbook = simplexml_load_string($zip->getFromName('xl/workbook.xml'));
+        $this->assertFalse(isset($workbook->workbookProtection['lockRevisions']));
+        $this->assertSame('false', (string) $workbook->workbookProtection['lockRevision']);
+        $this->assertFalse(isset($sheet->sheetProtection['hyperlink']));
+        $this->assertSame('false', (string) $sheet->sheetProtection['insertHyperlinks']);
+        foreach (['sheet1.xml', 'sheet2.xml'] as $entry) {
+            $worksheet = simplexml_load_string($zip->getFromName('xl/worksheets/'.$entry));
+            $this->assertFalse(isset($worksheet->sheetViews->sheetView['showZeroes']));
+            foreach ($worksheet->sheetViews->sheetView ?? [] as $view) {
+                $this->assertSame('true', (string) $view['showZeros']);
+            }
+        }
         $zip->close();
         unlink($path);
     }
