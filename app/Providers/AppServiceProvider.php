@@ -10,6 +10,7 @@ use App\Observers\ProvisionSubscriptionObserver;
 use App\Observers\ProvisionWalletObserver;
 use App\Services\Web\ManagementHeaderContextService;
 use App\Services\Web\ManagementUiContextService;
+use App\Services\Web\ResidentWalletHeaderService;
 use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Auth;
@@ -70,6 +71,15 @@ class AppServiceProvider extends ServiceProvider
                     'html' => 'emails.auth.reset-password',
                     'text' => 'emails.auth.reset-password-text',
                 ], $data);
+        });
+
+        View::composer('portal.layouts.app', function ($view): void {
+            $user = Auth::guard('web')->user() ?? request()->user();
+            if ($user && ($view->getData()['portalData']['area'] ?? 'resident') === 'resident') {
+                $unitId = filter_var(request()->query('unit_id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+                $view->with('residentWalletHeader', app(ResidentWalletHeaderService::class)
+                    ->context($user, request()->has('unit_id') ? ($unitId ?: 0) : null));
+            }
         });
 
         View::composer(

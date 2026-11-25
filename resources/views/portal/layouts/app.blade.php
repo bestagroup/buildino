@@ -317,6 +317,33 @@
             </div>
 
             <div class="portal-topbar__actions">
+                @if(isset($residentWalletHeader))
+                    <div class="dropdown">
+                        <button type="button" class="portal-wallet-chip" data-bs-toggle="dropdown" aria-expanded="false" aria-label="کیف پول واحدهای من">
+                            <span class="portal-wallet-chip__icon">@include('management.partials.icon', ['name' => 'wallet', 'size' => 18])</span>
+                            <span>
+                                <small>{{ $residentWalletHeader['selected']['label'] ?? 'کیف پول واحدهای من' }}</small>
+                                <strong>
+                                    @if($residentWalletHeader['selected'])
+                                        {{ number_format($residentWalletHeader['selected']['available_balance']) }}
+                                        <em>{{ $residentWalletHeader['selected']['currency'] === 'IRT' ? 'تومان' : 'ریال' }}</em>
+                                    @else
+                                        {{ count($residentWalletHeader['wallets']) ? 'انتخاب واحد' : 'واحد فعالی ندارید' }}
+                                    @endif
+                                </strong>
+                            </span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            @forelse($residentWalletHeader['wallets'] as $unitWallet)
+                                <li><a class="dropdown-item" href="{{ route('portal.resident.operations.index', ['resource' => 'wallet', 'unit_id' => $unitWallet['unit_id']]) }}">
+                                    {{ $unitWallet['label'] }} — {{ number_format($unitWallet['available_balance']) }} {{ $unitWallet['currency'] === 'IRT' ? 'تومان' : 'ریال' }}
+                                </a></li>
+                            @empty
+                                <li class="dropdown-item-text">واحد فعالی به حساب شما متصل نیست.</li>
+                            @endforelse
+                        </ul>
+                    </div>
+                @else
                 <div class="portal-wallet-chip">
                     <span class="portal-wallet-chip__icon">
                         @include(
@@ -353,6 +380,8 @@
                         </strong>
                     </div>
                 </div>
+
+                @endif
 
                 <div class="dropdown">
                     <button
