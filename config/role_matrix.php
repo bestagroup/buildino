@@ -215,6 +215,7 @@ return [
             'sidebar_navigation' => ['dashboard', 'operations', 'at_a_glance'],
 
             'permissions' => [
+                'building-staff.manage',
                 'reports.dashboard.view',
                 'reports.financial.view',
                 'reports.receivables.view',

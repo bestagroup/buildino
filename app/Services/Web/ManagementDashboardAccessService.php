@@ -33,6 +33,12 @@ final class ManagementDashboardAccessService
             return true;
         }
 
+        if ($user->is_active && !$user->is_blocked && $user->userRoleAssignments()->active()
+            ->whereHas('role', fn ($q) => $q->where('name', 'like', 'building_staff_%'))
+            ->whereHas('role.permissions', fn ($q) => $q->whereIn('permissions.name', array_keys(config('building_staff.permissions'))))->exists()) {
+            return true;
+        }
+
         return $this->accessibleBuildings(
             $user
         )->isNotEmpty()

@@ -20,7 +20,7 @@ class ManagementDashboardController extends Controller
         ManagementDashboardService $dashboard,
         ManagementUiContextService $ui,
         ManagementRoleDashboardService $roleDashboard
-    ): View {
+    ): View|\Illuminate\Http\RedirectResponse {
         $user = $request->user();
 
         $buildings =
@@ -32,6 +32,10 @@ class ManagementDashboardController extends Controller
             $access->hasPlatformAccess(
                 $user
             );
+
+        if (!$platformAccess && $buildings->isEmpty()) {
+            return redirect()->route('management.operations.index');
+        }
 
         $selectedBuilding = null;
 

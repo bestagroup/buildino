@@ -168,6 +168,7 @@ class PermissionSeeder extends Seeder
             ['name' => 'units.delete', 'display_name' => 'units.delete', 'module' => 'units'],
             ['name' => 'units.update', 'display_name' => 'units.update', 'module' => 'units'],
             ['name' => 'units.view', 'display_name' => 'units.view', 'module' => 'units'],
+            ['name' => 'building-staff.manage', 'display_name' => 'مدیریت کارمندان ساختمان', 'module' => 'users'],
             ['name' => 'users.create', 'display_name' => 'users.create', 'module' => 'users'],
             ['name' => 'users.delete', 'display_name' => 'users.delete', 'module' => 'users'],
             ['name' => 'users.update', 'display_name' => 'users.update', 'module' => 'users'],

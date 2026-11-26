@@ -111,6 +111,10 @@ class ManagementOperationsController extends Controller
             $configuration
         );
 
+        if ($resource === 'building-staff') {
+            return app(BuildingStaffController::class)->index(request(), app(\App\Services\Web\BuildingStaffService::class));
+        }
+
         if ($resource === 'wallet-cash') {
             return app(WalletCashController::class)->index(request());
         }

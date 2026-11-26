@@ -49,6 +49,7 @@ return [
         ]
     ],
     'resources' => [
+        'building-staff' => ['permission'=>'building-staff.manage', 'permission_scope'=>'any', 'group'=>'access', 'title'=>'ثبت کارمندان ساختمان', 'description'=>'ثبت کارمند، خدمات و دسترسی‌های اختصاصی ساختمان', 'context'=>[]],
         'complexes' => [
         'permission' => 'complexes.view',
         'permission_scope' => 'any',
