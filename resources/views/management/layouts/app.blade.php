@@ -322,6 +322,10 @@
                 </div>
             </section>
 
+            @if (collect($ui['roles'] ?? [])->contains('name', 'building_manager'))
+                @include('management.partials.services-preview-navigation')
+            @endif
+
             @if (
                 ($nav['structure'] ?? false)
                 || ($nav['residents'] ?? false)
