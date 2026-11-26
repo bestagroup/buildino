@@ -33,7 +33,7 @@ Validation: focused feature tests cover payer aggregation across units, repeated
 Supersedes the proposed text and amount basis above. Approved name supplied by the user: `buildinodebit`; configured through `SMS_TEMPLATE_CHARGE_NOTICE`.
 - param1: recipient first and last name.
 - param2: Jalali month and year derived from period_start, independent of the editable period title.
-- param3: integer rial amount without separators or currency suffix. IRT building values are multiplied by 10; IRR values unchanged.
+- param3: rial amount formatted with comma thousands separators and a ریال suffix (e.g. `14,543,000 ریال`). IRT building values are multiplied by 10; IRR values unchanged.
 - Amount is calculated period debt after applied credits and remaining credit notes, before payments. Paid invoices therefore remain eligible for this one-time calculation notice. Only positive net amounts are sent. Existing send snapshots are preserved and never resent.
 
 ## Automatic resident selection

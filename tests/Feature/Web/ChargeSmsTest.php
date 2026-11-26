@@ -47,7 +47,7 @@ class ChargeSmsTest extends TestCase
         $second->save();
         $link=\App\Models\UnitOccupancy::where('unit_id',$unit->id)->first()->replicate(); $link->unit_id=$second->id; $link->save();
         $this->invoice($second, $period, $owner, 2000);
-        $this->mock(SmsSender::class, fn ($m) => $m->shouldReceive('send')->once()->withArgs(fn ($mobile, $msg) => $mobile === $owner->mobile && $msg->purpose === 'charge.notice' && $msg->parameters['param3'] === '3000')->andReturn(['accepted' => true, 'provider_message_id' => 'sms-1']));
+        $this->mock(SmsSender::class, fn ($m) => $m->shouldReceive('send')->once()->withArgs(fn ($mobile, $msg) => $mobile === $owner->mobile && $msg->purpose === 'charge.notice' && $msg->parameters['param3'] === '3,000 ریال')->andReturn(['accepted' => true, 'provider_message_id' => 'sms-1']));
         $this->get('/management/operations/charge-sms?building_id='.$period->building_id.'&period_id='.$period->id)->assertOk()->assertSee('3,000');
         $url = route('management.charge-sms.send', $period);
         $this->postJson($url, ['user_id' => $owner->id])->assertOk()->assertJsonPath('status', 'accepted');
@@ -89,7 +89,7 @@ class ChargeSmsTest extends TestCase
         $this->mock(SmsSender::class, fn ($m) => $m->shouldReceive('send')->once()
             ->withArgs(fn ($mobile, $message) => $message->parameters === [
                 'param1' => trim($owner->first_name.' '.$owner->last_name),
-                'param2' => 'مهر 1405', 'param3' => '30000',
+                'param2' => 'مهر 1405', 'param3' => '30,000 ریال',
             ])->andReturn(['accepted' => true]));
         $this->postJson(route('management.charge-sms.send', $period), ['user_id' => $owner->id])->assertOk()->assertJsonPath('status', 'accepted');
         $this->assertDatabaseHas('charge_sms_notices', ['amount' => 30000, 'currency' => 'IRR', 'template' => 'buildinodebit']);

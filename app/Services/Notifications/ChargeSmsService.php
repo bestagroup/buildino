@@ -95,7 +95,7 @@ final class ChargeSmsService
             $message = new SmsTemplateMessage('charge.notice', [
                 'param1' => trim($row['user']->first_name.' '.$row['user']->last_name),
                 'param2' => \Morilog\Jalali\Jalalian::fromCarbon($period->period_start)->format('F Y'),
-                'param3' => (string) $row['amount'],
+                'param3' => number_format($row['amount'], 0, '.', ',').' ریال',
             ]);
             $payload = app(SmsTemplateRegistry::class)->payload($message);
             $notice = ChargeSmsNotice::create(['building_id' => $period->building_id, 'charge_period_id' => $period->id, 'user_id' => $userId, 'created_by' => $actor->id, 'mobile' => $row['user']->mobile, 'amount' => $row['amount'], 'currency' => $currency, 'invoice_ids' => $row['invoice_ids'], 'parameters' => $message->parameters, 'template' => $payload['template'], 'status' => 'processing']);
