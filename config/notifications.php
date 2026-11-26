@@ -55,6 +55,10 @@ return [
 
     // Add new purposes only with an approved template and an explicit parameter mapping.
     'sms_templates' => [
+        'charge' => ['notice' => [
+            'template' => env('SMS_TEMPLATE_CHARGE_NOTICE'),
+            'parameters' => ['param1', 'param2', 'param3'],
+        ]],
         'auth' => ['otp' => [
             'template' => env('SMS_TEMPLATE_AUTH_OTP', 'buildinoverify'),
             'parameters' => ['param1'],

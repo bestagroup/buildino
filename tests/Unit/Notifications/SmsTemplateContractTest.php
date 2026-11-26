@@ -23,9 +23,23 @@ class SmsTemplateContractTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['notifications.sms_provider' => 'ghasedak', 'notifications.ghasedak.api_key' => 'test-key']);
+        config(['notifications.sms_provider' => 'ghasedak', 'notifications.ghasedak.api_key' => 'test-key', 'notifications.sms_templates.unit.invitation.template' => 'BuildinoInvitation']);
         $this->app->instance(SmsSender::class, new GhasedakSmsSender);
         Http::preventStrayRequests();
+    }
+
+    public function test_charge_notice_uses_the_same_verify_transport(): void
+    {
+        config(['notifications.sms_templates.charge.notice.template' => 'BuildinoChargeNotice']);
+        Http::fake(['*' => Http::response(['result' => 'success', 'messageids' => [789]])]);
+        app(SmsSender::class)->send('09121111111', new SmsTemplateMessage('charge.notice', [
+            'param1' => 'نیلوفر', 'param2' => 'مهر ۱۴۰۵', 'param3' => '3,000 ریال',
+        ]));
+        Http::assertSent(fn ($request) => $request->data() === [
+            'type' => 1, 'receptor' => '09121111111', 'template' => 'BuildinoChargeNotice',
+            'param1' => 'نیلوفر', 'param2' => 'مهر ۱۴۰۵', 'param3' => '3,000 ریال',
+        ] && $request->hasHeader('Content-Type', 'application/x-www-form-urlencoded'));
+        Http::assertSentCount(1);
     }
 
     public function test_login_sends_only_the_explicit_otp_and_preserves_leading_zeroes(): void

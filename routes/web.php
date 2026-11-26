@@ -212,6 +212,9 @@ Route::middleware([
         Route::post('/buildings/{building}/staff', [\App\Http\Controllers\Web\BuildingStaffController::class, 'store'])->name('building-staff.store');
         Route::patch('/buildings/{building}/staff/{staff}', [\App\Http\Controllers\Web\BuildingStaffController::class, 'update'])->name('building-staff.update');
 
+        Route::post('/charge-periods/{period}/sms', [\App\Http\Controllers\Web\ChargeSmsController::class,'send'])->middleware('throttle:api-v1')->name('charge-sms.send');
+        Route::post('/charge-periods/{period}/sms-recipient', [\App\Http\Controllers\Web\ChargeSmsController::class,'assign'])->name('charge-sms.assign');
+
         Route::get('/wallet-cash', [\App\Http\Controllers\Web\WalletCashController::class, 'index'])->name('wallet-cash.index');
         Route::post('/wallet-cash/{building}', [\App\Http\Controllers\Web\WalletCashController::class, 'store'])->middleware('throttle:api-v1')->name('wallet-cash.store');
         Route::get('/wallet-cash-documents/{document}/image', [\App\Http\Controllers\Web\WalletCashController::class, 'image'])->name('wallet-cash.image');

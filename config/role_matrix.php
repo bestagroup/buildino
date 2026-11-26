@@ -216,6 +216,7 @@ return [
 
             'permissions' => [
                 'building-staff.manage',
+                'charge-sms.manage',
                 'reports.dashboard.view',
                 'reports.financial.view',
                 'reports.receivables.view',

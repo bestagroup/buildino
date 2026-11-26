@@ -111,6 +111,10 @@ class ManagementOperationsController extends Controller
             $configuration
         );
 
+        if ($resource === 'charge-sms') {
+            return app(ChargeSmsController::class)->index(request(), app(\App\Services\Notifications\ChargeSmsService::class));
+        }
+
         if ($resource === 'building-staff') {
             return app(BuildingStaffController::class)->index(request(), app(\App\Services\Web\BuildingStaffService::class));
         }

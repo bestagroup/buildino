@@ -49,6 +49,7 @@ return [
         ]
     ],
     'resources' => [
+        'charge-sms' => ['permission'=>'charge-sms.manage','permission_scope'=>'any','group'=>'finance','title'=>'ارسال پیامک شارژ دوره','description'=>'اطلاع‌رسانی مبلغ شارژ به مسئول پرداخت و سوابق ارسال','context'=>[]],
         'building-staff' => ['permission'=>'building-staff.manage', 'permission_scope'=>'any', 'group'=>'access', 'title'=>'ثبت کارمندان ساختمان', 'description'=>'ثبت کارمند، خدمات و دسترسی‌های اختصاصی ساختمان', 'context'=>[]],
         'complexes' => [
         'permission' => 'complexes.view',
