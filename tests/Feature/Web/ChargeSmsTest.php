@@ -25,6 +25,8 @@ class ChargeSmsTest extends TestCase
         $manager = User::where('email', 'role.building@buildino.local')->firstOrFail();
         $unit = UnitOwnership::where('user_id', $owner->id)->firstOrFail()->unit;
         $period = ChargePeriod::create(['building_id' => $unit->floor->block->building_id, 'title' => 'مهر ۱۴۰۵', 'period_start' => '2026-09-23', 'period_end' => '2026-10-22', 'due_date' => '2026-10-25', 'status' => 'issued', 'created_by' => $manager->id]);
+        \App\Models\UnitOccupancy::where('unit_id', $unit->id)->delete();
+        \App\Models\UnitOccupancy::create(['unit_id'=>$unit->id, 'user_id'=>$owner->id, 'occupancy_type'=>'owner', 'starts_at'=>$period->period_start, 'ends_at'=>$period->period_end, 'is_primary'=>false, 'is_active'=>false]);
         config(['notifications.sms_provider' => 'ghasedak', 'notifications.sms_templates.charge.notice.template' => 'buildinodebit']);
         $this->actingAs($manager);
 
@@ -39,10 +41,11 @@ class ChargeSmsTest extends TestCase
     public function test_aggregates_and_sends_once_per_period_with_snapshot(): void
     {
         [$owner,$manager,$unit,$period] = $this->scenario();
-        $this->invoice($unit, $period, $owner, 1000);
+        $this->invoice($unit, $period, $manager, 1000);
         $second = $unit->replicate();
         $second->unit_number = 'SMS-2';
         $second->save();
+        $link=\App\Models\UnitOccupancy::where('unit_id',$unit->id)->first()->replicate(); $link->unit_id=$second->id; $link->save();
         $this->invoice($second, $period, $owner, 2000);
         $this->mock(SmsSender::class, fn ($m) => $m->shouldReceive('send')->once()->withArgs(fn ($mobile, $msg) => $mobile === $owner->mobile && $msg->purpose === 'charge.notice' && $msg->parameters['param3'] === '3000')->andReturn(['accepted' => true, 'provider_message_id' => 'sms-1']));
         $this->get('/management/operations/charge-sms?building_id='.$period->building_id.'&period_id='.$period->id)->assertOk()->assertSee('3,000');
@@ -54,20 +57,15 @@ class ChargeSmsTest extends TestCase
         $this->get('/management/operations/charge-sms?building_id='.$period->building_id.'&period_id='.$period->id)->assertOk()->assertSee('پذیرفته‌شده توسط قاصدک');
     }
 
-    public function test_missing_payer_requires_authorized_mapping_and_template(): void
+    public function test_missing_occupancy_is_reported_without_manual_assignment_form(): void
     {
-        [$owner,$manager,$unit,$period] = $this->scenario();
-        $this->invoice($unit, $period, null);
-        $this->mock(SmsSender::class, fn ($m) => $m->shouldNotReceive('send'));
-        $this->get('/management/operations/charge-sms?building_id='.$period->building_id.'&period_id='.$period->id)->assertOk()->assertSee('تعیین مخاطب');
-        $url = route('management.charge-sms.send', $period);
-        $this->postJson($url, ['user_id' => $owner->id])->assertUnprocessable();
-        $assign = route('management.charge-sms.assign', $period);
-        $this->post($assign, ['unit_id' => $unit->id, 'user_id' => $manager->id])->assertUnprocessable();
-        $this->post($assign, ['unit_id' => $unit->id, 'user_id' => $owner->id])->assertRedirect()->assertSessionHasNoErrors();
-        config(['notifications.sms_templates.charge.notice.template' => null]);
-        $this->postJson($url, ['user_id' => $owner->id])->assertUnprocessable();
-        $this->assertSame(0, ChargeSmsNotice::count());
+        [$owner,$manager,$unit,$period]=$this->scenario();
+        $this->invoice($unit,$period,$owner);
+        \App\Models\UnitOccupancy::where('unit_id',$unit->id)->delete();
+        $this->mock(SmsSender::class,fn($m)=>$m->shouldNotReceive('send'));
+        $this->get('/management/operations/charge-sms?building_id='.$period->building_id.'&period_id='.$period->id)
+            ->assertOk()->assertSee('ناقص یا مبهم')->assertDontSee('name="user_id"',false);
+        $this->postJson(route('management.charge-sms.send',$period),['user_id'=>$owner->id])->assertUnprocessable();
     }
 
     public function test_uncertain_response_is_not_retried_and_other_users_cannot_send(): void
@@ -78,7 +76,6 @@ class ChargeSmsTest extends TestCase
         $url = route('management.charge-sms.send', $period);
         $this->postJson($url, ['user_id' => $owner->id])->assertOk()->assertJsonPath('status', 'unknown');
         $this->postJson($url, ['user_id' => $owner->id])->assertOk()->assertJsonPath('status', 'unknown');
-        $this->post(route('management.charge-sms.assign', $period), ['unit_id' => $unit->id, 'user_id' => $owner->id])->assertSessionHasErrors('recipient');
         $this->actingAs(User::where('email', 'role.operator@buildino.local')->firstOrFail())->postJson($url, ['user_id' => $owner->id])->assertForbidden();
     }
 

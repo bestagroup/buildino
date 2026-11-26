@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Building;
 use App\Models\ChargePeriod;
 use App\Models\ChargeSmsNotice;
-use App\Models\User;
 use App\Services\Notifications\ChargeSmsService;
 use App\Services\Security\BuildingPermissionScopeService;
 use App\Support\Authorization\PermissionChecker;
@@ -25,26 +24,10 @@ final class ChargeSmsController extends Controller
         $period = $request->filled('period_id') ? $periods->firstWhere('id', $request->integer('period_id')) : null;
         abort_if($request->filled('period_id') && ! $period, 404);
         $recipients = $period ? $service->recipients($period) : ['rows' => [], 'unresolved' => []];
-        $choices = [];
-        foreach ($recipients['unresolved'] as $unit) {
-            $choices[$unit->id] = User::where('is_active', true)->where('is_blocked', false)->where(function ($q) use ($unit) {
-                foreach (['unitOwnershipsAsUser', 'unitOccupanciesAsUser'] as $relation) {
-                    $q->orWhereHas($relation, fn ($link) => $link->where('unit_id', $unit->id)->where('is_active', true)->where(fn ($x) => $x->whereNull('starts_at')->orWhereDate('starts_at', '<=', today()))->where(fn ($x) => $x->whereNull('ends_at')->orWhereDate('ends_at', '>=', today())));
-                }
-            })->get(['id', 'first_name', 'last_name', 'mobile']);
-        }
         $history = $period ? ChargeSmsNotice::where('charge_period_id', $period->id)->with('user')->latest()->get() : collect();
         $ready = config('notifications.sms_provider') === 'ghasedak' && trim((string) config('notifications.sms_templates.charge.notice.template')) !== '';
 
-        return view('management.charge-sms', compact('buildings', 'building', 'periods', 'period', 'recipients', 'choices', 'history', 'ready'));
-    }
-
-    public function assign(Request $request, ChargePeriod $period, ChargeSmsService $service)
-    {
-        $data = $request->validate(['unit_id' => ['required', 'integer'], 'user_id' => ['required', 'integer']]);
-        $service->assign($request->user(), $period, $data['unit_id'], $data['user_id']);
-
-        return redirect()->route('management.operations.show', ['resource' => 'charge-sms', 'building_id' => $period->building_id, 'period_id' => $period->id])->with('status', 'مخاطب واحد ثبت شد.');
+        return view('management.charge-sms', compact('buildings', 'building', 'periods', 'period', 'recipients', 'history', 'ready'));
     }
 
     public function send(Request $request, ChargePeriod $period, ChargeSmsService $service)

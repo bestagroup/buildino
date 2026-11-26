@@ -8,7 +8,6 @@ use App\Models\ChargePeriod;
 use App\Models\ChargeSmsNotice;
 use App\Models\UnitInvoice;
 use App\Models\User;
-use App\Services\Web\PortalAccessService;
 use App\Support\Authorization\PermissionChecker;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -31,22 +30,21 @@ final class ChargeSmsService
 
     public function recipients(ChargePeriod $period): array
     {
-        $mappings = DB::table('charge_sms_recipients')->where('charge_period_id', $period->id)->pluck('user_id', 'unit_id');
+        $invoices = $this->invoices($period);
+        $occupancies = \App\Models\UnitOccupancy::whereIn('unit_id', $invoices->pluck('unit_id'))
+            ->whereDate('starts_at', '<=', $period->period_end)
+            ->where(fn ($q) => $q->whereNull('ends_at')->orWhereDate('ends_at', '>=', $period->period_start))
+            ->get()->groupBy('unit_id');
         $rows = [];
         $unresolved = [];
-        $mappedUnits = [];
-        foreach ($mappings->unique() as $mappedId) {
-            $mappedUser = User::find($mappedId);
-            $mappedUnits[$mappedId] = $mappedUser ? app(PortalAccessService::class)->residentUnits($mappedUser)->pluck('id')->all() : [];
-        }
-        foreach ($this->invoices($period) as $invoice) {
+        foreach ($invoices as $invoice) {
             if ($invoice->total_amount === 0) {
                 continue;
             }
-            $id = $invoice->payer_user_id ?: ($mappings[$invoice->unit_id] ?? null);
-            if (! $invoice->payer_user_id && $id && ! in_array((int) $invoice->unit_id, $mappedUnits[$id] ?? [], true)) {
-                $id = null;
-            }
+            $links = $occupancies->get($invoice->unit_id, collect());
+            $primary = $links->where('is_primary', true)->pluck('user_id')->unique();
+            $candidates = $primary->isNotEmpty() ? $primary : $links->pluck('user_id')->unique();
+            $id = $candidates->count() === 1 ? $candidates->first() : null;
             if (! $id) {
                 $unresolved[$invoice->unit_id] = $invoice->unit;
 
@@ -74,21 +72,6 @@ final class ChargeSmsService
         return ['rows' => $rows, 'unresolved' => $unresolved];
     }
 
-    public function assign(User $actor, ChargePeriod $period, int $unitId, int $userId): void
-    {
-        $this->authorize($actor, $period);
-        DB::transaction(function () use ($actor, $period, $unitId, $userId) {
-            ChargePeriod::whereKey($period->id)->lockForUpdate()->firstOrFail();
-            if (ChargeSmsNotice::where('charge_period_id', $period->id)->exists()) {
-                throw ValidationException::withMessages(['recipient' => 'تعیین مخاطبان باید پیش از اولین ارسال دوره تکمیل شود.']);
-            }
-            abort_unless($this->invoices($period)->contains('unit_id', $unitId), 404);
-            $user = User::findOrFail($userId);
-            abort_unless(app(PortalAccessService::class)->residentUnits($user)->contains('id', $unitId), 422);
-            DB::table('charge_sms_recipients')->updateOrInsert(['charge_period_id' => $period->id, 'unit_id' => $unitId], ['user_id' => $userId, 'created_by' => $actor->id, 'created_at' => now(), 'updated_at' => now()]);
-        });
-    }
-
     public function send(User $actor, ChargePeriod $period, int $userId): ChargeSmsNotice
     {
         $this->authorize($actor, $period);
@@ -104,7 +87,7 @@ final class ChargeSmsService
             }
             $recipients = $this->recipients($period);
             if ($recipients['unresolved']) {
-                throw ValidationException::withMessages(['recipient' => 'ابتدا مخاطب تمام واحدهای فاقد مسئول پرداخت را تعیین کنید.']);
+                throw ValidationException::withMessages(['recipient' => 'سوابق ساکن اصلی برخی واحدها در این دوره ناقص یا مبهم است؛ ابتدا سوابق سکونت را اصلاح کنید.']);
             }
             $row = $recipients['rows'][$userId] ?? null;
             abort_unless($row && $row['eligible'], 422, 'مخاطب یا مبلغ قابل ارسال معتبر نیست.');
