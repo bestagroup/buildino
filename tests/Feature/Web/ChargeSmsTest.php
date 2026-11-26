@@ -25,7 +25,7 @@ class ChargeSmsTest extends TestCase
         $manager = User::where('email', 'role.building@buildino.local')->firstOrFail();
         $unit = UnitOwnership::where('user_id', $owner->id)->firstOrFail()->unit;
         $period = ChargePeriod::create(['building_id' => $unit->floor->block->building_id, 'title' => 'مهر ۱۴۰۵', 'period_start' => '2026-09-23', 'period_end' => '2026-10-22', 'due_date' => '2026-10-25', 'status' => 'issued', 'created_by' => $manager->id]);
-        config(['notifications.sms_provider' => 'ghasedak', 'notifications.sms_templates.charge.notice.template' => 'BuildinoChargeNotice']);
+        config(['notifications.sms_provider' => 'ghasedak', 'notifications.sms_templates.charge.notice.template' => 'buildinodebit']);
         $this->actingAs($manager);
 
         return [$owner, $manager, $unit, $period];
@@ -44,7 +44,7 @@ class ChargeSmsTest extends TestCase
         $second->unit_number = 'SMS-2';
         $second->save();
         $this->invoice($second, $period, $owner, 2000);
-        $this->mock(SmsSender::class, fn ($m) => $m->shouldReceive('send')->once()->withArgs(fn ($mobile, $msg) => $mobile === $owner->mobile && $msg->purpose === 'charge.notice' && $msg->parameters['param3'] === '3,000 ریال')->andReturn(['accepted' => true, 'provider_message_id' => 'sms-1']));
+        $this->mock(SmsSender::class, fn ($m) => $m->shouldReceive('send')->once()->withArgs(fn ($mobile, $msg) => $mobile === $owner->mobile && $msg->purpose === 'charge.notice' && $msg->parameters['param3'] === '3000')->andReturn(['accepted' => true, 'provider_message_id' => 'sms-1']));
         $this->get('/management/operations/charge-sms?building_id='.$period->building_id.'&period_id='.$period->id)->assertOk()->assertSee('3,000');
         $url = route('management.charge-sms.send', $period);
         $this->postJson($url, ['user_id' => $owner->id])->assertOk()->assertJsonPath('status', 'accepted');
@@ -80,6 +80,22 @@ class ChargeSmsTest extends TestCase
         $this->postJson($url, ['user_id' => $owner->id])->assertOk()->assertJsonPath('status', 'unknown');
         $this->post(route('management.charge-sms.assign', $period), ['unit_id' => $unit->id, 'user_id' => $owner->id])->assertSessionHasErrors('recipient');
         $this->actingAs(User::where('email', 'role.operator@buildino.local')->firstOrFail())->postJson($url, ['user_id' => $owner->id])->assertForbidden();
+    }
+
+    public function test_debit_template_uses_name_jalali_month_and_calculated_rials_even_after_payment(): void
+    {
+        [$owner, $manager, $unit, $period] = $this->scenario();
+        $period->building->update(['currency' => 'IRT']);
+        $period->update(['title' => 'عنوان دلخواه مدیر']);
+        $invoice = $this->invoice($unit, $period, $owner, 3000);
+        $invoice->update(['paid_amount' => 3000, 'outstanding_amount' => 0, 'status' => 'paid']);
+        $this->mock(SmsSender::class, fn ($m) => $m->shouldReceive('send')->once()
+            ->withArgs(fn ($mobile, $message) => $message->parameters === [
+                'param1' => trim($owner->first_name.' '.$owner->last_name),
+                'param2' => 'مهر 1405', 'param3' => '30000',
+            ])->andReturn(['accepted' => true]));
+        $this->postJson(route('management.charge-sms.send', $period), ['user_id' => $owner->id])->assertOk()->assertJsonPath('status', 'accepted');
+        $this->assertDatabaseHas('charge_sms_notices', ['amount' => 30000, 'currency' => 'IRR', 'template' => 'buildinodebit']);
     }
 
     public function test_draft_and_foreign_building_periods_cannot_send(): void

@@ -40,7 +40,7 @@ final class ChargeSmsService
             $mappedUnits[$mappedId] = $mappedUser ? app(PortalAccessService::class)->residentUnits($mappedUser)->pluck('id')->all() : [];
         }
         foreach ($this->invoices($period) as $invoice) {
-            if ($invoice->outstanding_amount <= 0) {
+            if ($invoice->total_amount === 0) {
                 continue;
             }
             $id = $invoice->payer_user_id ?: ($mappings[$invoice->unit_id] ?? null);
@@ -53,10 +53,16 @@ final class ChargeSmsService
                 continue;
             }
             $rows[$id] ??= ['user_id' => (int) $id, 'amount' => 0, 'invoice_ids' => [], 'units' => []];
-            $rows[$id]['amount'] += (int) $invoice->outstanding_amount;
+            $rows[$id]['amount'] += $invoice->total_amount < 0
+                ? -(int) $invoice->credit_remaining_amount
+                : (int) $invoice->total_amount - (int) $invoice->credit_applied_amount;
             $rows[$id]['invoice_ids'][] = $invoice->id;
             $rows[$id]['units'][$invoice->unit_id] = $invoice->unit->unit_number;
         }
+        $rows = array_filter($rows, fn ($row) => $row['amount'] > 0);
+        $factor = ($period->building->currency ?: 'IRR') === 'IRT' ? 10 : 1;
+        foreach ($rows as &$amountRow) { $amountRow['amount'] *= $factor; }
+        unset($amountRow);
         $users = User::whereIn('id', array_keys($rows))->get()->keyBy('id');
         $notices = ChargeSmsNotice::where('charge_period_id', $period->id)->get()->keyBy('user_id');
         foreach ($rows as $id => &$row) {
@@ -102,11 +108,11 @@ final class ChargeSmsService
             }
             $row = $recipients['rows'][$userId] ?? null;
             abort_unless($row && $row['eligible'], 422, 'مخاطب یا مبلغ قابل ارسال معتبر نیست.');
-            $currency = $period->building->currency ?: 'IRR';
+            $currency = 'IRR';
             $message = new SmsTemplateMessage('charge.notice', [
-                'param1' => $period->building->title,
-                'param2' => $period->title,
-                'param3' => number_format($row['amount']).' '.($currency === 'IRT' ? 'تومان' : 'ریال'),
+                'param1' => trim($row['user']->first_name.' '.$row['user']->last_name),
+                'param2' => \Morilog\Jalali\Jalalian::fromCarbon($period->period_start)->format('F Y'),
+                'param3' => (string) $row['amount'],
             ]);
             $payload = app(SmsTemplateRegistry::class)->payload($message);
             $notice = ChargeSmsNotice::create(['building_id' => $period->building_id, 'charge_period_id' => $period->id, 'user_id' => $userId, 'created_by' => $actor->id, 'mobile' => $row['user']->mobile, 'amount' => $row['amount'], 'currency' => $currency, 'invoice_ids' => $row['invoice_ids'], 'parameters' => $message->parameters, 'template' => $payload['template'], 'status' => 'processing']);

@@ -30,14 +30,14 @@ class SmsTemplateContractTest extends TestCase
 
     public function test_charge_notice_uses_the_same_verify_transport(): void
     {
-        config(['notifications.sms_templates.charge.notice.template' => 'BuildinoChargeNotice']);
+        config(['notifications.sms_templates.charge.notice.template' => 'buildinodebit']);
         Http::fake(['*' => Http::response(['result' => 'success', 'messageids' => [789]])]);
         app(SmsSender::class)->send('09121111111', new SmsTemplateMessage('charge.notice', [
-            'param1' => 'نیلوفر', 'param2' => 'مهر ۱۴۰۵', 'param3' => '3,000 ریال',
+            'param1' => 'محمد رضایی', 'param2' => 'مهر ۱۴۰۵', 'param3' => '3000',
         ]));
         Http::assertSent(fn ($request) => $request->data() === [
-            'type' => 1, 'receptor' => '09121111111', 'template' => 'BuildinoChargeNotice',
-            'param1' => 'نیلوفر', 'param2' => 'مهر ۱۴۰۵', 'param3' => '3,000 ریال',
+            'type' => 1, 'receptor' => '09121111111', 'template' => 'buildinodebit',
+            'param1' => 'محمد رضایی', 'param2' => 'مهر ۱۴۰۵', 'param3' => '3000',
         ] && $request->hasHeader('Content-Type', 'application/x-www-form-urlencoded'));
         Http::assertSentCount(1);
     }
