@@ -10,11 +10,6 @@ if (! $.fn.select2 && typeof select2Factory === 'function') {
     select2Factory(window, $);
 }
 
-const disabledSelector = [
-    '[data-select2="off"]',
-    '[data-native-select]',
-    'jdp-container select',
-].join(', ');
 const pendingSelects = new Set();
 let flushScheduled = false;
 
@@ -80,6 +75,9 @@ const selectElements = (root = document) => {
 };
 
 const dropdownParent = (select) => {
+    // Keep calendar menus inside its click boundary and stacking context.
+    const calendar = select.closest('jdp-container');
+    if (calendar) return $(calendar);
     const dialog = select.closest('dialog');
     if (dialog) {
         let host = dialog.querySelector(':scope > [data-select2-dialog-host]');
@@ -109,14 +107,13 @@ const enhance = (root = document) => {
         }
 
         const element = $(select);
-
-        if (select.matches(disabledSelector)) {
-            if (element.hasClass('select2-hidden-accessible')) {
-                destroy(select);
-            }
-
-            return;
+        // Retired opt-out attributes may still exist in cached or dynamic forms.
+        // jQuery otherwise reads data-select2="off" as the plugin instance.
+        if (select.getAttribute('data-select2') === 'off') {
+            select.removeAttribute('data-select2');
+            if (!element.hasClass('select2-hidden-accessible')) element.removeData('select2');
         }
+        select.removeAttribute('data-native-select');
 
         if (element.hasClass('select2-hidden-accessible')) {
             synchronize(select);
@@ -173,7 +170,7 @@ const refresh = (select) => {
         return;
     }
 
-    if (!select.isConnected || select.matches(disabledSelector)) {
+    if (!select.isConnected) {
         destroy(select);
         return;
     }

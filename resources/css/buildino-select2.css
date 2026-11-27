@@ -225,3 +225,31 @@ select.select2-hidden-accessible {
         max-width: calc(100vw - 24px);
     }
 }
+
+/* Calendar selects use the same adapter; menus stay inside the calendar. */
+jdp-container:has(.select2-container) {
+    overflow: visible;
+}
+jdp-container .jdp-month,
+jdp-container .jdp-year {
+    min-width: 0;
+}
+jdp-container .select2-container {
+    font: inherit;
+}
+jdp-container .select2-selection--single {
+    min-height: 30px;
+    height: 30px;
+}
+jdp-container .select2-selection--single .select2-selection__rendered {
+    line-height: 28px;
+    padding-inline-start: 4px;
+    padding-inline-end: 22px;
+}
+jdp-container .select2-container--default[dir="rtl"] .select2-selection--single .select2-selection__arrow {
+    height: 28px;
+    left: 0;
+}
+jdp-container .select2-results__options {
+    max-height: 160px;
+}

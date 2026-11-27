@@ -38,7 +38,7 @@
         <form data-period-form novalidate>
             <fieldset class="period-fields" data-period-fields>
                 <div data-period-batch>
-                    <label class="ownership-field"><span>سال دوره *</span><select name="year" data-select2="off" aria-describedby="period-year-error">
+                    <label class="ownership-field"><span>سال دوره *</span><select name="year" aria-describedby="period-year-error">
                         @for($year = 1404; $year <= 1410; $year++)
                             <option value="{{ $year }}">{{ $year }}</option>
                         @endfor

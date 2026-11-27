@@ -214,6 +214,7 @@
         for (const key of ['period_start', 'period_end', 'due_date']) setDate(key, record?.[key] || '');
         if (!record) field('year').value = String(Math.min(1410, Math.max(1404, Number(new Intl.DateTimeFormat('en-u-ca-persian', { year: 'numeric' }).format(new Date()).match(/\d+/)?.[0]) || 1404)));
         dirty = false; $('editor-title').textContent = record ? 'ویرایش دوره پیش‌نویس' : 'تعریف دوره جدید';
+        refresh(field('year'));
         $('editor-context').textContent = building()?.title || ''; showView('editor'); if (!record) syncMonths(); sync(); (record ? field('title') : field('year')).focus();
     };
     const validForm = () => {
