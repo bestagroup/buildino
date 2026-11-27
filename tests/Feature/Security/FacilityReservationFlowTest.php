@@ -140,6 +140,37 @@ class FacilityReservationFlowTest extends TestCase
         )->assertForbidden();
     }
 
+    public function test_schedule_batch_creates_slots_atomically_and_rejects_conflicts_and_unauthorized_writes(): void
+    {
+        $manager = $this->createUser('09123330009', 'batch@example.test');
+        $own = $this->createStructure('BATCH-OWN');
+        $other = $this->createStructure('BATCH-OTHER');
+        $role = $this->createRoleWithPermissions('batch-manager', ['facilities.view', 'facilities.update']);
+        $this->assignRole($manager, $role, $own['building']);
+        $facility = $this->createFacility($own['building'], 'BATCH', false);
+        $foreign = $this->createFacility($other['building'], 'BATCH-FOREIGN', false);
+        Sanctum::actingAs($manager);
+
+        $data = ['days_of_week' => [6, 0], 'start_time' => '08:00', 'end_time' => '10:00',
+            'slot_duration_minutes' => 60, 'capacity' => 3, 'price' => 25000];
+        $url = "/api/v1/facilities/{$facility->id}/schedule-batches";
+        $this->postJson($url, $data)->assertCreated()->assertJsonCount(2, 'data')
+            ->assertJsonCount(2, 'data.0.time_slots')->assertJsonPath('data.0.time_slots.0.price', 25000);
+        $this->assertDatabaseCount('facility_schedules', 2);
+        $this->assertDatabaseCount('facility_time_slots', 4);
+
+        // Saturday conflicts after a new Monday: neither day may be partially written.
+        $this->postJson($url, [...$data, 'days_of_week' => [1, 6]])->assertUnprocessable();
+        $this->assertDatabaseCount('facility_schedules', 2);
+        $this->assertDatabaseCount('facility_time_slots', 4);
+        $this->postJson($url, [...$data, 'days_of_week' => [1], 'end_time' => '10:30'])
+            ->assertUnprocessable()->assertJsonValidationErrors('end_time');
+        $this->postJson($url, [...$data, 'slot_duration_minutes' => 0])->assertUnprocessable();
+        $this->postJson($url, [...$data, 'days_of_week' => [1, 1]])->assertUnprocessable();
+        $this->postJson("/api/v1/facilities/{$foreign->id}/schedule-batches", $data)->assertForbidden();
+        $this->assertDatabaseCount('facility_schedules', 2);
+    }
+
     public function test_manager_can_create_multiple_weekday_schedules_atomically(): void
     {
         $manager = $this->createUser(

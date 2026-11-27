@@ -107,54 +107,103 @@
 
     const reservation = document.querySelector('[data-portal-form="reservation"]');
     if (reservation) {
-        const facility = reservation.elements.facility_id, date = reservation.elements.reservation_date;
+        const facility = reservation.elements.facility_id, date = reservation.elements.reservation_date, description = reservation.elements.description;
         const start = reservation.elements.start_time, end = reservation.elements.end_time, submit = reservation.querySelector('[type="submit"]');
+        const body = reservation.querySelector('.modal-body'), footer = reservation.querySelector('.modal-footer'), modal = reservation.closest('.modal');
+        reservation.noValidate = true;
+        modal.classList.add('resident-booking-modal'); body.classList.remove('portal-form-grid');
+        const make = (tag, cls, text) => { const el = document.createElement(tag); el.className = cls || ''; if (text) el.textContent = text; return el; };
+        const progress = make('ol', 'facility-booking-progress'); progress.setAttribute('aria-label', 'مراحل رزرو');
+        for (const label of ['۱. انتخاب زمان', '۲. بررسی و ثبت']) progress.append(make('li', '', label));
+        const panels = [make('section', 'portal-form-grid'), make('section', 'portal-form-grid')];
+        panels.forEach((panel, index) => { panel.dataset.residentBookingStep = index; });
+        for (const field of [...body.children]) {
+            const name = field.querySelector('[name]')?.name;
+            panels[['unit_id', 'description'].includes(name) ? 1 : 0].append(field);
+        }
+        const note = description.closest('.portal-field'), extra = make('details', 'resident-booking-extra');
+        extra.append(make('summary', '', 'توضیحات (اختیاری)'), note); panels[1].append(extra);
+        const review = make('div', 'resident-booking-review portal-field--wide'); review.setAttribute('role', 'status'); panels[1].prepend(review);
+        body.append(progress, ...panels);
+        const next = make('button', 'portal-primary-button', 'ادامه'); next.type = 'button'; next.dataset.residentBookingNext = '';
+        const back = make('button', 'portal-action-button', 'مرحله قبل'); back.type = 'button'; back.dataset.residentBookingBack = '';
+        footer.prepend(back); footer.append(next);
         const slotId = document.createElement('input'); slotId.type = 'hidden'; slotId.name = 'facility_time_slot_id'; reservation.append(slotId);
-        const manual = visible => { for (const field of [start, end]) { field.closest('.portal-field').hidden = !visible; field.disabled = !visible; } };
-        manual(false);
-        const syncManual = () => { if (!start.disabled) submit.disabled = !start.value || !end.value || end.value <= start.value || reservation.dataset.portalBusy === '1' || reservation.dataset.residentUncertain === '1'; };
-        start.addEventListener('input', syncManual); end.addEventListener('input', syncManual);
-        const group = document.createElement('fieldset'); group.className = 'portal-field portal-field--wide resident-slot-group';
-        const legend = document.createElement('legend'); legend.textContent = 'بازه‌های قابل رزرو'; legend.style.fontSize = '13px';
-        const status = document.createElement('p'); status.className = 'resident-slot-status'; status.setAttribute('role', 'status');
-        const slots = document.createElement('div'); slots.className = 'resident-slot-list';
-        const policy = document.createElement('p'); policy.className = 'resident-slot-status';
+        const group = make('fieldset', 'portal-field portal-field--wide resident-slot-group');
+        const legend = make('legend', '', 'زمان‌های رزرو'), status = make('p', 'resident-slot-status'); status.setAttribute('role', 'status');
+        const slots = make('div', 'facility-booking-slots resident-slot-list'), policy = make('p', 'resident-slot-status');
         group.append(legend, status, slots, policy); date.closest('.portal-field').after(group);
-        let generation = 0;
-        const load = async () => {
-            const ticket = ++generation; start.value = ''; end.value = ''; slotId.value = ''; manual(false); slots.replaceChildren(); submit.disabled = true;
-            const option = facility.selectedOptions[0]; policy.textContent = option?.dataset.policy || '';
-            if (!facility.value || !date.value) { status.textContent = 'امکان و تاریخ موردنظر را انتخاب کنید.'; return; }
-            status.textContent = 'در حال دریافت بازه‌ها…'; group.setAttribute('aria-busy', 'true');
-            try {
-                const result = await window.BuildinoPortalApi('/api/v1/facilities/' + encodeURIComponent(facility.value) + '/availability?date=' + encodeURIComponent(date.value));
-                if (ticket !== generation) return;
-                const available = (result.data?.slots || []).filter(slot => slot.is_available && result.data.facility_is_active);
-                if (result.data?.facility_is_active && !result.data.slots?.length) {
-                    manual(true);
-                    const ranges = (result.data.schedules || []).map(range => digits(String(range.start_time).slice(0,5) + ' تا ' + String(range.end_time).slice(0,5)));
-                    status.textContent = 'ساعت شروع و پایان را وارد کنید.' + (ranges.length ? ' ساعت فعالیت: ' + ranges.join('، ') : '') + ' هزینه پایه: ' + money(option?.dataset.price) + ' ' + (option?.dataset.currency === 'IRT' ? 'تومان' : 'ریال');
-                    for (const blackout of result.data.blackouts || []) status.textContent += ' · محدودیت: ' + (blackout.reason || 'عدم دسترسی در بخشی از روز');
-                    return;
-                }
-                status.textContent = available.length ? 'بازه موردنظر را انتخاب کنید.' : 'بازه آزادی در این روز وجود ندارد؛ تاریخ دیگری انتخاب کنید.';
-                for (const slot of available) {
-                    const label = document.createElement('label'); label.className = 'resident-slot';
-                    const input = document.createElement('input'); input.type = 'radio'; input.name = 'resident_slot'; input.value = slot.id; input.required = true;
-                    const time = document.createElement('strong'); time.textContent = digits(String(slot.start_time).slice(0,5) + ' تا ' + String(slot.end_time).slice(0,5));
-                    const price = document.createElement('small'); price.textContent = 'هزینه بازه: ' + money(slot.price ?? option?.dataset.price) + ' ' + (option?.dataset.currency === 'IRT' ? 'تومان' : 'ریال') + ' · ظرفیت باقی‌مانده: ' + digits(slot.remaining_capacity);
-                    input.addEventListener('change', () => { slotId.value = String(slot.id); submit.disabled = reservation.dataset.residentUncertain === '1' || reservation.dataset.portalBusy === '1'; });
-                    label.append(input, time, price); slots.append(label);
-                }
-            } catch (error) {
-                if (ticket !== generation) return;
-                status.textContent = 'بازه‌ها دریافت نشدند. ' + error.message;
-                const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'portal-action-button'; retry.textContent = 'تلاش دوباره'; retry.addEventListener('click', load); slots.append(retry);
-            } finally { if (ticket === generation) group.removeAttribute('aria-busy'); }
+        const shortcuts = make('div', 'resident-booking-days portal-field--wide');
+        for (const [label, offset] of [['امروز', 0], ['فردا', 1]]) {
+            const button = make('button', 'portal-action-button', label); button.type = 'button';
+            button.addEventListener('click', () => { if (reservation.dataset.portalBusy === '1') return; const day = new Date(today() + 'T12:00:00Z'); day.setUTCDate(day.getUTCDate() + offset); setDate(day.toISOString().slice(0, 10)); load(); }); shortcuts.append(button);
+        }
+        date.closest('.portal-field').before(shortcuts);
+        let step = 0, refreshAfterWrite = false;
+        const locked = () => reservation.dataset.portalBusy === '1' || reservation.dataset.residentUncertain === '1';
+        const sync = () => {
+            if (refreshAfterWrite && !locked()) { refreshAfterWrite = false; load(); return; }
+            next.disabled = !picker.selection || locked(); submit.disabled = step !== 1 || !picker.selection || locked(); back.disabled = locked();
+            facility.disabled = locked(); window.BuildinoSelect2?.refresh(facility);
         };
+        const go = value => {
+            step = value; panels.forEach((panel, index) => panel.hidden = index !== step);
+            [...progress.children].forEach((el, index) => { if (index === step) el.setAttribute('aria-current', 'step'); else el.removeAttribute('aria-current'); });
+            next.hidden = step !== 0; submit.hidden = step !== 1; back.hidden = step === 0; sync();
+        };
+        const formatMoney = value => money(value) + ' ' + (facility.selectedOptions[0]?.dataset.currency === 'IRT' ? 'تومان' : 'ریال');
+        const picker = window.BuildinoFacilityBooking.create({ request: (...args) => window.BuildinoPortalApi(...args), change: state => {
+            slotId.value = state.selection?.slotId || '';
+            status.textContent = window.BuildinoFacilityBooking.status(state);
+            for (const field of [start, end]) { field.closest('.portal-field').hidden = !state.manualAllowed; field.disabled = !state.manualAllowed; }
+            window.BuildinoFacilityBooking.render(slots, state, { money: formatMoney, pick: id => picker.pick(id), name: 'resident_slot' });
+            if (state.phase === 'error') { const retry = make('button', 'portal-action-button', 'تلاش دوباره'); retry.type = 'button'; retry.addEventListener('click', load); slots.append(retry); }
+            sync();
+        } });
+        const today = () => {
+            const timezone = facility.selectedOptions[0]?.dataset.timezone || 'Asia/Tehran';
+            const parts = new Intl.DateTimeFormat('en', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+            return ['year', 'month', 'day'].map(type => parts.find(part => part.type === type).value).join('-');
+        };
+        const setDate = value => {
+            if (date.dataset.buildinoGregorianValue) { date.previousElementSibling.value = window.BuildinoJalaliDatepicker.serverToJalali(value, 'date'); date.previousElementSibling.dispatchEvent(new Event('input', { bubbles: true })); }
+            else date.value = value;
+        };
+        const load = () => {
+            if (locked()) return;
+            go(0); start.value = ''; end.value = ''; const option = facility.selectedOptions[0]; policy.textContent = option?.dataset.policy || '';
+            picker.load({ id: Number(facility.value), default_price: Number(option?.dataset.price || 0), requires_payment: option?.dataset.requiresPayment === '1' }, date.value);
+        };
+        const proceed = () => {
+            if (!picker.selection || locked()) return;
+            const selected = picker.selection; review.replaceChildren(make('strong', '', facility.selectedOptions[0]?.textContent.trim()));
+            const dateText = new Date(selected.date + 'T12:00:00').toLocaleDateString('fa-IR');
+            review.append(make('span', '', dateText + ' · ' + digits(String(selected.start_time).slice(0, 5) + ' تا ' + String(selected.end_time).slice(0, 5))));
+            review.append(make('strong', '', facility.selectedOptions[0]?.dataset.requiresPayment === '1' && selected.price > 0 ? formatMoney(selected.price) : 'رایگان'));
+            review.append(make('p', '', policy.textContent)); go(1); review.tabIndex = -1; review.focus();
+        };
+        next.addEventListener('click', proceed); back.addEventListener('click', () => { if (!locked()) { go(0); next.focus(); } });
+        for (const field of [start, end]) field.addEventListener('input', () => picker.manual(start.value, end.value));
         facility.addEventListener('change', load); date.addEventListener('change', load);
-        reservation.closest('.modal').addEventListener('shown.bs.modal', load);
-        status.textContent = 'امکان و تاریخ موردنظر را انتخاب کنید.'; submit.disabled = true;
+        reservation.elements.unit_id.addEventListener('change', () => { if (step === 1) proceed(); });
+        reservation.addEventListener('submit', event => {
+            if (step !== 1 || !picker.selection || locked()) { event.preventDefault(); event.stopImmediatePropagation(); if (step === 0) proceed(); }
+            else {
+                const visibleFields = [...reservation.elements].filter(field => !field.disabled && !field.closest('[data-resident-booking-step]')?.hidden);
+                const invalidField = visibleFields.find(field => !field.checkValidity());
+                if (invalidField) { event.preventDefault(); event.stopImmediatePropagation(); invalidField.reportValidity(); }
+            }
+        }, true);
+        document.addEventListener('buildino:portal-form-error', event => {
+            if (event.detail.form !== reservation) return;
+            const keys = Object.keys(event.detail.error.payload?.errors || {});
+            if (keys.some(key => ['unit_id', 'description'].includes(key))) {
+                go(1); if (keys.includes('description')) extra.open = true;
+            } else if (keys.some(key => ['reservation_date', 'start_time', 'end_time', 'facility_time_slot_id'].includes(key))) { refreshAfterWrite = true; picker.reset(); go(0); }
+        });
+        modal.addEventListener('shown.bs.modal', () => { if (!date.value) setDate(today()); load(); });
+        new MutationObserver(sync).observe(reservation, { attributes: true, attributeFilter: ['data-portal-busy', 'data-resident-uncertain'] });
+        go(0);
     }
 
     const stateKeys = ['unit_id','status','from','to','search','page'];

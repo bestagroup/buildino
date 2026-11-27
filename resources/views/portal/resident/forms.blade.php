@@ -417,6 +417,8 @@
                             <option
                                 data-currency="{{ $facility->building?->currency ?? 'IRR' }}"
                                 data-price="{{ $facility->default_price }}"
+                                data-requires-payment="{{ $facility->requires_payment ? '1' : '0' }}"
+                                data-timezone="{{ $facility->building?->timezone ?: 'Asia/Tehran' }}"
                                 data-policy="{{ $facility->resident_policy }}"
                                 value="{{
                                     $facility->id

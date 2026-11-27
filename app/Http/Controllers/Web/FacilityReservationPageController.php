@@ -21,6 +21,7 @@ final class FacilityReservationPageController extends Controller
                 'canCreate' => $permissions->allows($user, 'facility-reservations.create', $building),
                 'canCancel' => $permissions->allows($user, 'facility-reservations.cancel', $building),
                 'canApprove' => $permissions->allows($user, 'facility-reservations.approve', $building),
+                'canConfigure' => $permissions->allows($user, 'facilities.view', $building),
             ])->values();
 
         $units = Unit::query()->with('floor.block')

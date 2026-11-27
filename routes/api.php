@@ -364,6 +364,11 @@ Route::prefix('v1')
         );
 
         Route::post(
+            'facilities/{buildingFacility}/schedule-batches',
+            [FacilityConfigurationController::class, 'storeScheduleBatch']
+        );
+
+        Route::post(
             'facilities/{buildingFacility}/schedules',
             [FacilityConfigurationController::class, 'storeSchedule']
         );

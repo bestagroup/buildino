@@ -7,6 +7,12 @@
     const buildings = new Map(window.BuildinoFacilityConfig.buildings.map(row => [String(row.id), row]));
     const request = (...args) => window.BuildinoCoreFlows.request(...args);
     const forms = { base: $('base-form'), schedule: $('schedule-form'), slot: $('slot-form'), rule: $('rule-form') };
+    forms.base.querySelector('details').append(forms.base.elements.capacity.closest('label'));
+    const homes = {};
+    for (const key of ['schedule', 'slot']) { homes[key] = document.createComment(key); forms[key].before(homes[key]); }
+    // Keep less common restrictions available without overwhelming the primary form.
+    const advanced = forms.rule.querySelector('details .ownership-form-grid');
+    for (const key of ['min_duration_minutes', 'max_duration_minutes', 'min_advance_minutes', 'max_advance_days']) advanced.prepend(forms.rule.elements[key].closest('label'));
     const types = { gym: 'باشگاه ورزشی', pool: 'استخر', roof_garden: 'روف‌گاردن', meeting_hall: 'سالن جلسات / اجتماعات', other: 'سایر' };
     const days = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'];
     const number = value => new Intl.NumberFormat('fa-IR').format(value);
@@ -56,9 +62,8 @@
             : !canWrite() ? 'حالت مشاهده؛ اجازه تغییر این اطلاعات را ندارید.'
             : facility?.id ? facility.is_active ? 'امکان فعال است؛ تغییرات هر بخش پس از ذخیره اعمال می‌شوند.' : 'امکان هنوز فعال نشده است؛ تنظیمات هر بخش را ذخیره و در پایان بررسی کنید.'
             : 'ابتدا اطلاعات پایه را ذخیره کنید؛ امکان تا پایان پیکربندی غیرفعال می‌ماند.';
-        $('approval-hint').textContent = checked(forms.rule, 'requires_approval')
-            ? 'در تنظیم فعلی، تأیید مدیر لازم است؛ گزینه تأیید خودکار اثری ندارد.'
-            : checked(forms.rule, 'auto_confirm') ? 'رزرو بدون نیاز به تأیید مدیر، خودکار تأیید می‌شود.' : 'تأیید خودکار غیرفعال است.';
+        $('approval-hint').textContent = checked(forms.rule, 'requires_approval') || !checked(forms.rule, 'auto_confirm')
+            ? 'رزرو پس از ثبت، در انتظار تأیید مدیر می‌ماند.' : 'رزرو طبق قوانین، خودکار تأیید می‌شود.';
     };
     const sync = () => {
         root.setAttribute('aria-busy', String(busy || loadingDetail));
@@ -79,6 +84,13 @@
         refresh(input(forms.slot, 'schedule_id'));
         $('schedule-reset').hidden = !building()?.canUpdate;
         $('slot-reset').hidden = !building()?.canUpdate;
+        $('batch-fields').hidden = scheduleId !== null;
+        $('batch-fields').querySelectorAll('input').forEach(el => el.disabled = scheduleId !== null);
+        input(forms.schedule, 'is_active').closest('.buildino-switch').hidden = scheduleId === null;
+        $('batch-preview').hidden = scheduleId !== null;
+        $('schedule-save').textContent = scheduleId === null ? 'ثبت سانس‌ها' : 'ذخیره برنامه';
+        $('approval').disabled = busy || loadingDetail || !building()?.canUpdate;
+        refresh($('approval'));
         $('slot-save').disabled = busy || loadingDetail || refreshRequired || !schedules().length;
         $('refresh').hidden = !refreshRequired;
         root.querySelectorAll('[data-facility-view-next]').forEach(el => el.hidden = !facility?.id || Boolean(building()?.canUpdate));
@@ -98,13 +110,18 @@
     };
     const schedules = () => facility?.schedules || [];
     const scheduleLabel = row => `${days[row.day_of_week]} · ${time(row.start_time)} تا ${time(row.end_time)}${row.is_active ? '' : ' · غیرفعال'}`;
-    function resetSchedule() { forms.schedule.reset(); scheduleId = null; dirty.delete('schedule'); $('schedule-title').textContent = 'افزودن برنامه هفتگی'; sync(); }
+    function resetSchedule() {
+        homes.schedule.after(forms.schedule); forms.schedule.reset(); scheduleId = null; dirty.delete('schedule');
+        fill(forms.schedule, { capacity: facility?.capacity ?? 1, price: facility?.default_price ?? 0 });
+        $('schedule-title').textContent = 'ساخت سانس‌های هفتگی'; renderBatchPreview(); sync();
+    }
     function resetSlot() {
-        forms.slot.reset(); slotId = null; dirty.delete('slot');
+        homes.slot.after(forms.slot); forms.slot.reset(); slotId = null; dirty.delete('slot');
         fill(forms.slot, { capacity: facility?.capacity ?? 1, price: facility?.default_price ?? 0 });
         $('slot-title').textContent = 'افزودن سانس قابل رزرو'; sync();
     }
     function renderSchedules() {
+        homes.schedule.after(forms.schedule); homes.slot.after(forms.slot);
         $('schedules').replaceChildren();
         const select = input(forms.slot, 'schedule_id'), previous = select.value;
         select.replaceChildren(new Option('برنامه را انتخاب کنید', ''));
@@ -117,16 +134,16 @@
                 resetSchedule(); scheduleId = row.id;
                 forms.schedule.querySelectorAll('[name="days"]').forEach(el => el.checked = Number(el.value) === row.day_of_week);
                 fill(forms.schedule, { ...row, start_time: time(row.start_time), end_time: time(row.end_time) });
-                $('schedule-title').textContent = 'ویرایش برنامه · فقط یک روز را انتخاب کنید'; sync(); input(forms.schedule, 'start_time').focus();
+                $('schedule-title').textContent = 'ویرایش برنامه · فقط یک روز را انتخاب کنید'; group.append(forms.schedule); sync(); input(forms.schedule, 'start_time').focus();
             }));
             group.append(el);
             for (const slot of row.time_slots || []) {
-                const item = card(`سانس ${time(slot.start_time)} تا ${time(slot.end_time)}${slot.is_active ? '' : ' · غیرفعال'}`, `ظرفیت: ${number(slot.capacity ?? 1)} نفر · هزینه: ${money(slot.price)}`);
+                const item = card(`سانس ${persianTime(slot.start_time)} تا ${persianTime(slot.end_time)}${slot.is_active ? '' : ' · غیرفعال'}`, `ظرفیت رزرو: ${number(slot.capacity ?? 1)} · هزینه: ${facility.requires_payment ? money(slot.price) : 'رایگان'}`);
                 if (building()?.canUpdate) item.append(button('ویرایش سانس', () => {
                     if (dirty.has('slot') && !window.confirm('تغییرات سانس ذخیره نشده است؛ کنار گذاشته شود؟')) return;
                     resetSlot(); slotId = slot.id;
                     fill(forms.slot, { ...slot, schedule_id: row.id, capacity: slot.capacity ?? 1, start_time: time(slot.start_time), end_time: time(slot.end_time) });
-                    $('slot-title').textContent = 'ویرایش سانس'; sync(); input(forms.slot, 'start_time').focus();
+                    $('slot-title').textContent = 'ویرایش سانس'; item.after(forms.slot); sync(); input(forms.slot, 'start_time').focus();
                 }));
                 group.append(item);
             }
@@ -136,6 +153,19 @@
         if ([...select.options].some(option => option.value === previous)) select.value = previous;
         else if (schedules().length === 1) select.value = String(schedules()[0].id);
         refresh(select);
+    }
+    const persianTime = value => time(value).replace(/\d/g, digit => '۰۱۲۳۴۵۶۷۸۹'[digit]);
+    function renderBatchPreview() {
+        const form = forms.schedule, count = form.querySelectorAll('[name="days"]:checked').length;
+        const start = minutes(get(form, 'start_time')), end = minutes(get(form, 'end_time')), duration = numeric(form, 'slot_duration_minutes');
+        const host = $('batch-preview'); host.replaceChildren();
+        if (!count || !Number.isFinite(start) || !Number.isFinite(end) || !duration) { host.textContent = 'روزها، ساعت فعالیت و مدت سانس را انتخاب کنید.'; return; }
+        if (end <= start || (end - start) % duration) { host.textContent = 'بازه فعالیت باید دقیقاً به مدت سانس تقسیم شود.'; return; }
+        const clock = minute => persianTime(`${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`);
+        host.append(make('strong', '', `${number(count)} روز · ${number((end - start) / duration * count)} سانس`));
+        const list = make('div', 'facility-preview-times');
+        for (let minute = start; minute < end; minute += duration) list.append(make('span', '', `${clock(minute)} تا ${clock(minute + duration)}`));
+        host.append(list);
     }
     function deficiencies() {
         if (!facility?.id) return [{ text: 'ابتدا اطلاعات پایه را ذخیره کنید.', step: 0 }];
@@ -191,7 +221,12 @@
             $('list-status').textContent = payload.data.length ? `${number(payload.meta?.total ?? payload.data.length)} امکان` : $('search').value.trim() ? 'امکانی با این عنوان یا کد پیدا نشد.' : building()?.canCreate ? 'هنوز امکانی ثبت نشده است. برای شروع «امکان جدید» را بزنید.' : 'هنوز امکانی در این ساختمان ثبت نشده است.';
             for (const row of payload.data) {
                 const el = card(row.title, `${types[row.type] || row.type} · ${row.is_active ? 'فعال' : 'غیرفعال / در حال پیکربندی'} · ${money(row.default_price)}`);
-                el.append(button(building()?.canUpdate ? 'ادامه پیکربندی' : 'مشاهده پیکربندی', () => open(row.id))); $('list').append(el);
+                el.append(button(building()?.canUpdate ? 'پیکربندی' : 'مشاهده', () => open(row.id)));
+                if (row.is_active && building()?.canReserve) {
+                    const link = make('a', 'ownership-button ownership-button--primary', 'رزرو');
+                    link.href = `/management/operations/reservations?building_id=${buildingSelect.value}&facility_id=${row.id}`; el.append(link);
+                }
+                $('list').append(el);
             }
             $('pagination').textContent = `صفحه ${number(page)} از ${number(lastPage)}`; sync();
         } catch (error) { if (ticket === listTicket) { $('list-status').textContent = 'اطلاعات دریافت نشد؛ به‌روزرسانی را بزنید.'; report(error); } }
@@ -205,17 +240,20 @@
         if (!discard()) return;
         const ticket = ++detailTicket; dirty.clear(); facility = null; loadingDetail = false; refreshRequired = false;
         Object.values(forms).forEach(form => form.reset()); scheduleId = null; slotId = null;
+        homes.schedule.after(forms.schedule); homes.slot.after(forms.slot);
+        if (!id) input(forms.base, 'code').value = 'FAC-' + (window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)).replaceAll('-', '').slice(0, 10).toUpperCase();
         message('', ''); showView('editor'); $('save-state').textContent = id ? 'در حال دریافت اطلاعات…' : 'امکان جدید تا پایان پیکربندی غیرفعال ذخیره می‌شود.';
         go(0); loadingDetail = Boolean(id); sync();
         if (id) try {
             const payload = await request(`/api/v1/facilities/${id}`); if (ticket !== detailTicket) return;
             facility = payload.data;
             fill(forms.base, facility); fill(forms.rule, { ...facility.reservation_rule, requires_approval: facility.requires_approval });
-            renderSchedules(); resetSlot();
+            $('approval').value = facility.requires_approval || !facility.reservation_rule?.auto_confirm ? 'manual' : 'automatic'; refresh($('approval'));
+            renderSchedules(); resetSlot(); resetSchedule();
             $('save-state').textContent = facility.is_active ? 'امکان فعال است؛ تغییرات هر بخش پس از ذخیره اعمال می‌شوند.' : 'پیکربندی ذخیره‌شده؛ برای آماده‌شدن، مراحل را تکمیل کنید.';
         } catch (error) { if (ticket === detailTicket) { showView('directory', true); report(error); } }
         finally { if (ticket === detailTicket) { loadingDetail = false; sync(); } }
-        else renderSchedules();
+        else { renderSchedules(); resetSchedule(); }
     }
     const validForm = form => {
         for (const el of form.elements) if (el.willValidate && !el.checkValidity()) { el.closest('details')?.setAttribute('open', ''); el.reportValidity(); return false; }
@@ -228,6 +266,7 @@
         const form = forms[key];
         if (key === 'schedule' || key === 'slot') {
             if (minutes(get(form, 'end_time')) <= minutes(get(form, 'start_time'))) return reject(form, 'end_time', 'زمان پایان باید بعد از زمان شروع در همان روز باشد.');
+            if (key === 'schedule' && scheduleId === null && (minutes(get(form, 'end_time')) - minutes(get(form, 'start_time'))) % numeric(form, 'slot_duration_minutes')) return reject(form, 'end_time', 'بازه فعالیت باید دقیقاً به مدت سانس تقسیم شود.');
             if (key === 'slot') {
                 const schedule = schedules().find(row => String(row.id) === get(form, 'schedule_id'));
                 if (!schedule) return reject(form, 'schedule_id', 'ابتدا برنامه هفتگی این سانس را انتخاب کنید.');
@@ -248,7 +287,7 @@
             renderSchedules(); message('success', 'اطلاعات این بخش ذخیره شد.'); $('save-state').textContent = 'آخرین تغییرات این بخش در سامانه ذخیره شد.';
         } catch (error) {
             report(error);
-            if (stored) { refreshRequired = true; message('error', 'اطلاعات ذخیره شد، اما دریافت وضعیت جدید انجام نشد. برای ادامه، اطلاعات ذخیره‌شده را دوباره دریافت کنید.'); }
+            if (stored || !error.status || error.status >= 500) { refreshRequired = true; message('error', stored ? 'اطلاعات ذخیره شد، اما دریافت وضعیت جدید انجام نشد. برای ادامه، اطلاعات ذخیره‌شده را دوباره دریافت کنید.' : 'نتیجه ثبت مشخص نیست؛ پیش از تکرار، اطلاعات ذخیره‌شده را دوباره دریافت کنید.'); }
         } finally { busy = false; sync(); if (refreshed) go(next, true); }
     }
     forms.base.addEventListener('submit', event => {
@@ -267,10 +306,17 @@
         const selectedDays = [...forms.schedule.querySelectorAll('[name="days"]:checked')].map(el => Number(el.value));
         if (!selectedDays.length || scheduleId && selectedDays.length !== 1) { message('error', scheduleId ? 'برای ویرایش فقط یک روز انتخاب کنید.' : 'حداقل یک روز فعالیت انتخاب کنید.'); return; }
         save('schedule', async () => {
-            const form = forms.schedule, data = { start_time: get(form, 'start_time'), end_time: get(form, 'end_time'), is_active: checked(form, 'is_active'), ...(scheduleId ? { day_of_week: selectedDays[0] } : { days_of_week: selectedDays }) };
-            await request(`/api/v1/facilities/${facility.id}/schedules${scheduleId ? `/${scheduleId}` : ''}`, { method: scheduleId ? 'PATCH' : 'POST', body: JSON.stringify(data) }); resetSchedule();
+            const form = forms.schedule, data = { start_time: get(form, 'start_time'), end_time: get(form, 'end_time'), ...(scheduleId ? { day_of_week: selectedDays[0], is_active: checked(form, 'is_active') } : { days_of_week: selectedDays, slot_duration_minutes: numeric(form, 'slot_duration_minutes'), capacity: numeric(form, 'capacity'), price: numeric(form, 'price') }) };
+            await request(`/api/v1/facilities/${facility.id}/${scheduleId ? `schedules/${scheduleId}` : 'schedule-batches'}`, { method: scheduleId ? 'PATCH' : 'POST', body: JSON.stringify(data) }); resetSchedule();
         });
     });
+    $('approval').addEventListener('change', () => {
+        input(forms.rule, 'requires_approval').checked = $('approval').value === 'manual';
+        input(forms.rule, 'auto_confirm').checked = $('approval').value === 'automatic';
+        dirty.add('rule'); sync();
+    });
+    forms.schedule.addEventListener('input', renderBatchPreview);
+    forms.schedule.addEventListener('change', renderBatchPreview);
     forms.slot.addEventListener('submit', event => {
         event.preventDefault();
         save('slot', async () => {
@@ -340,8 +386,13 @@
         $('building-label').textContent = building()?.title || '';
         root.querySelectorAll('[data-facility-currency]').forEach(el => el.textContent = currency());
         $('new').hidden = !building()?.canCreate;
+        $('reservations').href = '/management/operations/reservations?building_id=' + encodeURIComponent(buildingSelect.value);
+        $('reservations').hidden = !building()?.canViewReservations;
         if (building()) loadList(1);
     });
     window.addEventListener('beforeunload', event => { if (dirty.size) { event.preventDefault(); event.returnValue = ''; } });
-    if (buildingSelect.options.length === 2) { buildingSelect.selectedIndex = 1; refresh(buildingSelect); buildingSelect.dispatchEvent(new Event('change')); }
+    const initialBuilding = new URLSearchParams(location.search).get('building_id');
+    if (initialBuilding && buildings.has(initialBuilding)) buildingSelect.value = initialBuilding;
+    else if (buildingSelect.options.length === 2) buildingSelect.selectedIndex = 1;
+    if (buildingSelect.value) { refresh(buildingSelect); buildingSelect.dispatchEvent(new Event('change')); }
 })();

@@ -12,7 +12,7 @@
     const currency = () => ({ IRR: 'ریال', IRT: 'تومان' }[buildings.get(buildingSelect.value)?.currency] || buildings.get(buildingSelect.value)?.currency || 'واحد پول ساختمان');
     const money = value => `${number(value)} ${currency()}`;
     const time = value => String(value || '').slice(0, 5);
-    const timeRange = (start, end) => `\u2066${time(start)} – ${time(end)}\u2069`;
+    const timeRange = (start, end) => `\u2066${time(start)} – ${time(end)}\u2069`.replace(/\d/g, digit => '۰۱۲۳۴۵۶۷۸۹'[digit]);
     const date = value => value ? new Date(`${String(value).slice(0, 10)}T12:00:00`).toLocaleDateString('fa-IR') : 'نامشخص';
     const dateTime = value => value ? new Date(value).toLocaleString('fa-IR') : 'تعیین نشده';
     const make = (tag, cls, text) => { const el = document.createElement(tag); el.className = cls || ''; if (text !== undefined) el.textContent = text; return el; };
@@ -27,6 +27,16 @@
     let facilitiesLoading = false, historyLoading = false, slotsLoading = false, choiceLoading = false;
     let submissionUnknown = false, detailUnknown = false;
     let facilityTicket = 0, choiceTicket = 0, slotTicket = 0, historyTicket = 0, detailTicket = 0, timer;
+    const picker = window.BuildinoFacilityBooking.create({ request, change: state => {
+        slotsLoading = state.phase === 'loading';
+        slot = state.selection ? { ...state.selection, id: state.selection.slotId } : null; slotDate = state.selection?.date || '';
+        $('slot-state').textContent = window.BuildinoFacilityBooking.status(state);
+        window.BuildinoFacilityBooking.render($('slots'), state, { money, pick: id => picker.pick(id) });
+        $('manual').hidden = !state.manualAllowed;
+        if (!state.manualAllowed) { $('start').value = ''; $('end').value = ''; }
+        sync();
+    } });
+    $('booking').before($('history'));
     const message = (kind, text = '', scope = 'booking') => {
         for (const prefix of ['', 'booking-', 'detail-']) for (const key of ['error', 'success']) {
             const target = $(`${prefix}${key}`), visible = prefix === (scope ? `${scope}-` : '') && key === kind && text;
@@ -71,6 +81,7 @@
         $('history-reload').disabled = busy || historyLoading;
         availabilityForm.querySelector('[type="submit"]').disabled = busy || slotsLoading || !facility;
         $('create').disabled = busy || submissionUnknown || !slot || !facility || !building()?.canCreate || input(createForm, 'unit_id').options.length < 2;
+        $('next').disabled = busy || !slot || submissionUnknown;
         $('detail-reload').disabled = busy || detailLoading || !reservation;
         $('actions').querySelectorAll('button').forEach(el => el.disabled = busy || detailLoading || detailUnknown);
         for (const key of ['pay', 'cancel', 'decision']) $(`${key}-form`).querySelector('[type="submit"]').disabled = busy || detailLoading || detailUnknown;
@@ -84,7 +95,7 @@
         });
         $('booking-title').focus();
     };
-    const clearSlots = () => { ++slotTicket; slotsLoading = false; slot = null; slotDate = ''; $('slots').replaceChildren(); $('slot-state').textContent = 'تاریخ را انتخاب کنید و «نمایش سانس‌ها» را بزنید.'; sync(); };
+    const clearSlots = () => { ++slotTicket; picker.reset(); };
     const today = () => {
         const parts = new Intl.DateTimeFormat('en', { timeZone: building()?.timezone || 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
         const part = type => parts.find(item => item.type === type).value;
@@ -125,6 +136,7 @@
             const payload = await request(`/api/v1/facilities/${id}`);
             if (ticket !== choiceTicket) return;
             if (!payload.data.is_active) { message('error', 'این امکان غیرفعال شده است. امکان دیگری انتخاب کنید.'); return; }
+            if (payload.data.building_id && Number(payload.data.building_id) !== Number(buildingSelect.value)) { message('error', 'این امکان متعلق به ساختمان انتخاب‌شده نیست.'); return; }
             facility = payload.data; $('choice-label').textContent = facility.title;
             $('facility-info').replaceChildren(card(facility.title, [facility.description, facility.requires_payment ? 'برای این امکان پرداخت لازم است؛ مبلغ هر سانس جداگانه نمایش داده می‌شود.' : 'استفاده از این امکان نیاز به پرداخت ندارد.']));
             const rule = facility.reservation_rule || {};
@@ -137,7 +149,9 @@
                 `مهلت لغو: ${number(rule.cancel_before_minutes || 0)} دقیقه پیش از شروع · هزینه لغو: ${money(rule.cancellation_fee || 0)} · درصد بازپرداخت: ${number(rule.refund_percentage ?? 100)}٪`,
                 facility.requires_approval || !rule.auto_confirm ? 'رزرو پس از ثبت نیازمند تأیید مدیر است.' : 'تأیید رزرو به‌صورت خودکار انجام می‌شود.',
             ]));
-            go(1); if (selectedDate()) await loadSlots();
+            $('catalog').hidden = true; $('time-panel').hidden = false; go(0);
+            if (!selectedDate()) setDate(today());
+            await loadSlots();
         } catch (error) { if (ticket === choiceTicket) { $('choice-label').textContent = 'اطلاعات امکان دریافت نشد؛ دوباره انتخاب کنید.'; report(error); } }
         finally { if (ticket === choiceTicket) { choiceLoading = false; sync(); } }
     }
@@ -146,27 +160,8 @@
         if (!selectedDate() || !/^\d{4}-\d{2}-\d{2}$/.test(selectedDate()) || selectedDate() < today()) {
             message('error', 'یک تاریخ معتبر از امروز به بعد انتخاب کنید.'); return;
         }
-        clearSlots(); const ticket = ++slotTicket, facilityId = facility.id, day = selectedDate();
-        slotsLoading = true; sync();
-        $('slot-state').textContent = 'در حال بررسی ظرفیت سانس‌ها…';
-        try {
-            const payload = await request(`/api/v1/facilities/${facilityId}/availability?date=${encodeURIComponent(day)}`);
-            if (ticket !== slotTicket) return;
-            const availability = payload.data;
-            $('slot-state').textContent = !availability.facility_is_active ? 'این امکان دیگر فعال نیست.' : availability.slots.length ? `${number(availability.slots.filter(row => row.is_available).length)} سانس دارای ظرفیت؛ قوانین نهایی هنگام ثبت بررسی می‌شوند.` : 'برای این تاریخ سانسی تعریف نشده است؛ تاریخ دیگری انتخاب کنید.';
-            for (const row of availability.slots) {
-                const available = row.is_available && availability.facility_is_active;
-                const el = card(timeRange(row.start_time, row.end_time), [`${number(row.remaining_capacity)} ظرفیت باقی‌مانده از ${number(row.capacity)}`, facility.requires_payment ? `هزینه: ${money(row.price)}` : 'بدون نیاز به پرداخت']);
-                el.classList.toggle('is-unavailable', !available);
-                const pick = button(available ? 'انتخاب سانس' : !availability.facility_is_active ? 'امکان غیرفعال است' : row.is_blackout ? 'تعطیلی موقت' : row.remaining_capacity <= 0 ? 'ظرفیت تکمیل' : 'زمان گذشته / غیرقابل رزرو', () => {
-                    if (!available) return; slot = row; slotDate = availability.date;
-                    $('review').replaceChildren(card(facility.title, [`تاریخ: ${date(slotDate)}`, `سانس: ${timeRange(slot.start_time, slot.end_time)}`, facility.requires_payment && slot.price > 0 ? `مبلغ قابل پرداخت: ${money(slot.price)}` : 'بدون نیاز به پرداخت', 'قیمت و ظرفیت نهایی توسط سامانه بررسی می‌شود.']));
-                    sync(); go(2);
-                }, 'slot');
-                pick.dataset.unavailable = String(!available); pick.disabled = !available; el.append(pick); $('slots').append(el);
-            }
-        } catch (error) { if (ticket === slotTicket) { $('slot-state').textContent = 'دریافت سانس‌ها انجام نشد؛ دوباره تلاش کنید.'; report(error); } }
-        finally { if (ticket === slotTicket) { slotsLoading = false; sync(); } }
+        await picker.load(facility, selectedDate());
+        if (picker.state.error) report(picker.state.error);
     }
     async function loadHistory(page = historyPage) {
         if (!building()) return;
@@ -194,6 +189,7 @@
     function renderReservation() {
         const row = reservation; if (!row) return;
         closeForms(); $('detail').hidden = false;
+        if (!$('detail').open) $('detail').showModal();
         $('detail-state').textContent = `شماره ${number(row.id)} · ${statuses[row.status] || 'وضعیت نامشخص'}`;
         $('detail-body').replaceChildren(card(row.facility?.title || 'رزرو امکان', [`تاریخ: ${date(row.reservation_date)} · ${timeRange(row.start_time, row.end_time)}`, `واحد ${row.unit?.unit_number || 'نامشخص'} · رزروکننده: ${row.user?.first_name || ''} ${row.user?.last_name || ''}`, `مبلغ ثبت‌شده: ${money(row.final_amount)}`, row.description, row.expires_at ? `مهلت رزرو: ${dateTime(row.expires_at)}` : '']));
         if (row.wallet_payment) $('detail-body').append(card('پرداخت کیف پول', [`مبلغ: ${money(row.wallet_payment.amount)} · ${row.wallet_payment.status === 'paid' ? 'پرداخت‌شده' : 'وضعیت پرداخت: ' + row.wallet_payment.status}`, `تاریخ پرداخت: ${dateTime(row.wallet_payment.paid_at)}`]));
@@ -218,6 +214,7 @@
         message('', '', 'detail');
         sync();
         $('detail').hidden = false; $('detail-body').replaceChildren(); $('actions').replaceChildren(); $('detail-state').textContent = 'در حال دریافت رزرو…';
+        if (!$('detail').open) $('detail').showModal();
         try {
             const payload = await request(`/api/v1/facility-reservations/${id}`);
             if (ticket !== detailTicket) return;
@@ -227,13 +224,13 @@
     }
     createForm.addEventListener('submit', async event => {
         event.preventDefault(); if (busy || submissionUnknown || !slot || !facility || !building()?.canCreate || !createForm.reportValidity()) return;
-        const facilityId = facility.id, pickedSlot = slot.id;
+        const facilityId = facility.id, selection = { ...slot };
         busy = true; sync(); message('', '');
         try {
-            const payload = await request(`/api/v1/facilities/${facilityId}/reservations`, { method: 'POST', body: JSON.stringify({ facility_time_slot_id: pickedSlot, unit_id: Number(input(createForm, 'unit_id').value), reservation_date: slotDate, description: input(createForm, 'description').value.trim() || null }) });
+            const payload = await request(`/api/v1/facilities/${facilityId}/reservations`, { method: 'POST', body: JSON.stringify({ ...(selection.id ? { facility_time_slot_id: selection.id } : { start_time: selection.start_time, end_time: selection.end_time }), unit_id: Number(input(createForm, 'unit_id').value), reservation_date: slotDate, description: input(createForm, 'description').value.trim() || null }) });
             slot = null; ++detailTicket; reservation = payload.data; detailLoading = false; detailUnknown = false;
             input(createForm, 'description').value = '';
-            go(1); renderReservation(); message('success', resultText(payload.data), 'detail');
+            go(0); $('booking').hidden = true; $('history').hidden = false; renderReservation(); message('success', resultText(payload.data), 'detail');
             await Promise.allSettled([loadHistory(1), loadSlots()]);
         } catch (error) {
             if (!error.status || error.status >= 500) {
@@ -243,7 +240,7 @@
             } else if (error.status === 422 && Object.keys(error.errors || {}).some(key => key === 'unit_id' || key === 'description')) {
                 report(error);
             } else {
-                go(1); await loadSlots(); report(error);
+                go(0); await loadSlots(); report(error);
             }
         }
         finally { busy = false; sync(); }
@@ -275,14 +272,22 @@
     $('decision-form').addEventListener('submit', event => { event.preventDefault(); if (decision) mutate(decision); });
     for (const key of ['pay', 'cancel', 'decision']) $(`${key}-close`).addEventListener('click', () => { if (!busy) { closeForms(); $('detail-title').focus(); } });
     availabilityForm.addEventListener('submit', event => { event.preventDefault(); if (!busy && !slotsLoading && availabilityForm.reportValidity()) { message('', ''); loadSlots(); } });
-    availabilityForm.addEventListener('input', clearSlots); availabilityForm.addEventListener('change', clearSlots);
+    availabilityForm.addEventListener('input', clearSlots);
+    availabilityForm.addEventListener('change', () => { clearSlots(); if (selectedDate()) loadSlots(); });
+    for (const key of ['start', 'end']) $(key).addEventListener('input', () => picker.manual($('start').value, $('end').value));
+    $('next').addEventListener('click', () => {
+        if (busy || !slot) return;
+        const rule = facility.reservation_rule || {};
+        $('review').replaceChildren(card(facility.title, [`تاریخ: ${date(slotDate)}`, `سانس: ${timeRange(slot.start_time, slot.end_time)}`, facility.requires_payment && slot.price > 0 ? `مبلغ قابل پرداخت: ${money(slot.price)}` : 'رایگان', `مهلت لغو: ${number(rule.cancel_before_minutes || 0)} دقیقه پیش از شروع`, facility.requires_approval || !rule.auto_confirm ? 'نیازمند تأیید مدیر' : 'تأیید خودکار طبق قوانین']));
+        go(1);
+    });
     root.querySelectorAll('[data-reservation-day]').forEach(button => button.addEventListener('click', () => {
         if (busy || !facility) return;
         const day = new Date(`${today()}T12:00:00Z`); day.setUTCDate(day.getUTCDate() + Number(button.dataset.reservationDay));
         message('', ''); setDate(day.toISOString().slice(0, 10)); loadSlots();
     }));
-    $('back-facility').addEventListener('click', () => { if (!busy) { ++choiceTicket; clearSlots(); go(0); } });
-    $('back-slots').addEventListener('click', () => { if (!busy) { go(1); loadSlots(); } });
+    $('back-facility').addEventListener('click', () => { if (!busy) { ++choiceTicket; clearSlots(); facility = null; $('catalog').hidden = false; $('time-panel').hidden = true; go(0); } });
+    $('back-slots').addEventListener('click', () => { if (!busy) go(0); });
     $('facility-reload').addEventListener('click', () => { if (!busy) loadFacilities(); });
     $('facility-prev').addEventListener('click', () => { if (!busy && facilityPage > 1) loadFacilities(facilityPage - 1); });
     $('facility-next').addEventListener('click', () => { if (!busy && facilityPage < facilityLast) loadFacilities(facilityPage + 1); });
@@ -291,16 +296,27 @@
     $('history-prev').addEventListener('click', () => { if (!busy && historyPage > 1) loadHistory(historyPage - 1); });
     $('history-next').addEventListener('click', () => { if (!busy && historyPage < historyLast) loadHistory(historyPage + 1); });
     $('status').addEventListener('change', () => { if (!busy) loadHistory(1); });
-    $('detail-close').addEventListener('click', () => { if (!busy) { ++detailTicket; reservation = null; detailLoading = false; $('detail').hidden = true; $('history-reload').focus(); } });
+    const closeDetail = () => { if (!busy) { ++detailTicket; reservation = null; detailLoading = false; $('detail').close(); $('detail').hidden = true; $('history-reload').focus(); } };
+    $('detail-close').addEventListener('click', closeDetail);
+    $('detail').addEventListener('cancel', event => { event.preventDefault(); closeDetail(); });
     $('detail-reload').addEventListener('click', () => { if (!busy && !detailLoading && reservation) showReservation(reservation.id); });
-    $('check-history').addEventListener('click', async () => { if (!busy) { await loadHistory(1); $('history-reload').focus(); } });
-    $('resume').addEventListener('click', () => { if (!busy) { submissionUnknown = false; message('', ''); go(1); loadSlots(); sync(); } });
+    $('check-history').addEventListener('click', async () => { if (!busy) { $('booking').hidden = true; $('history').hidden = false; await loadHistory(1); $('history-reload').focus(); } });
+    $('resume').addEventListener('click', () => { if (!busy) { submissionUnknown = false; message('', ''); go(0); loadSlots(); sync(); } });
+    $('new').addEventListener('click', () => { if (!busy && building()?.canCreate) { $('history').hidden = true; $('booking').hidden = false; go(0); } });
+    $('booking-close').addEventListener('click', () => {
+        if (busy || (slot || input(createForm, 'description').value) && !window.confirm('از ثبت این رزرو منصرف می‌شوید؟')) return;
+        clearSlots(); facility = null; createForm.reset(); $('catalog').hidden = false; $('time-panel').hidden = true;
+        $('booking').hidden = true; $('history').hidden = false; $('new').focus();
+    });
     buildingSelect.addEventListener('change', () => {
         if (busy) return;
         clearTimeout(timer); facilitiesLoading = historyLoading = choiceLoading = false;
         submissionUnknown = detailUnknown = false;
         ++facilityTicket; ++choiceTicket; ++historyTicket; ++detailTicket; clearSlots(); reservation = null; facility = null; detailLoading = false;
-        $('detail').hidden = true; $('history').hidden = !building(); $('booking').hidden = !building()?.canCreate;
+        $('detail').close(); $('detail').hidden = true; $('history').hidden = !building(); $('booking').hidden = true;
+        $('new').hidden = !building()?.canCreate; $('catalog').hidden = false; $('time-panel').hidden = true;
+        $('manage').href = '/management/operations/facilities?building_id=' + encodeURIComponent(buildingSelect.value);
+        $('manage').hidden = !building()?.canConfigure;
         $('choice-label').textContent = 'یک امکان فعال را انتخاب کنید.'; $('facility-search').value = ''; $('status').value = ''; refresh($('status'));
         createForm.reset(); availabilityForm.reset(); message('', ''); go(0);
         const select = input(createForm, 'unit_id'); select.replaceChildren(new Option('واحد را انتخاب کنید', ''));
@@ -311,5 +327,12 @@
         sync();
         if (building()) { loadHistory(1); if (building().canCreate) loadFacilities(1); }
     });
-    if (buildingSelect.options.length === 2) { buildingSelect.selectedIndex = 1; refresh(buildingSelect); buildingSelect.dispatchEvent(new Event('change')); }
+    const query = new URLSearchParams(location.search), initialBuilding = query.get('building_id');
+    if (initialBuilding && buildings.has(initialBuilding)) buildingSelect.value = initialBuilding;
+    else if (buildingSelect.options.length === 2) buildingSelect.selectedIndex = 1;
+    if (buildingSelect.value) {
+        refresh(buildingSelect); buildingSelect.dispatchEvent(new Event('change'));
+        if (query.get('unit_id') && [...input(createForm, 'unit_id').options].some(option => option.value === query.get('unit_id'))) { input(createForm, 'unit_id').value = query.get('unit_id'); refresh(input(createForm, 'unit_id')); }
+        if (query.get('facility_id') && building()?.canCreate) { $('new').click(); chooseFacility(Number(query.get('facility_id'))); }
+    }
 })();

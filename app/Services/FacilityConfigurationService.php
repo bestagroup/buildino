@@ -15,9 +15,45 @@ use Illuminate\Validation\ValidationException;
 
 final class FacilityConfigurationService
 {
+    /** Add a complete weekly pattern without replacing existing schedules. */
+    public function createScheduleBatch(BuildingFacility $facility, array $data): EloquentCollection
+    {
+        return DB::transaction(function () use ($facility, $data): EloquentCollection {
+            $this->lockFacility((int) $facility->getKey());
+            $start = $this->minutes($data['start_time']);
+            $end = $this->minutes($data['end_time']);
+            $duration = (int) $data['slot_duration_minutes'];
+            if ($end <= $start || ($end - $start) % $duration !== 0) {
+                throw ValidationException::withMessages([
+                    'end_time' => ['بازه فعالیت باید دقیقاً به مدت سانس تقسیم شود.'],
+                ]);
+            }
+            $schedules = $this->createSchedules($facility, [
+                'days_of_week' => $data['days_of_week'], 'start_time' => $data['start_time'],
+                'end_time' => $data['end_time'], 'is_active' => true,
+            ]);
+            $clock = static fn (int $minute): string => sprintf('%02d:%02d', intdiv($minute, 60), $minute % 60);
+            foreach ($schedules as $schedule) {
+                for ($minute = $start; $minute < $end; $minute += $duration) {
+                    $schedule->facilityTimeSlots()->create([
+                        'start_time' => $clock($minute), 'end_time' => $clock($minute + $duration),
+                        'capacity' => $data['capacity'], 'price' => $data['price'], 'is_active' => true,
+                    ]);
+                }
+            }
+            return $schedules->load('facilityTimeSlots');
+        });
+    }
+
+    private function lockFacility(int $facilityId): void
+    {
+        BuildingFacility::query()->whereKey($facilityId)->lockForUpdate()->firstOrFail();
+    }
+
     public function createSchedule(BuildingFacility $facility, array $data): FacilitySchedule
     {
         return DB::transaction(function () use ($facility, $data): FacilitySchedule {
+            $this->lockFacility((int) $facility->getKey());
             $this->assertTimeOrder($data['start_time'], $data['end_time'], 'end_time');
             $this->assertScheduleDoesNotOverlap($facility, $data);
 
@@ -33,6 +69,7 @@ final class FacilityConfigurationService
     public function createSchedules(BuildingFacility $facility, array $data): EloquentCollection
     {
         return DB::transaction(function () use ($facility, $data): EloquentCollection {
+            $this->lockFacility((int) $facility->getKey());
             $days = collect($data['days_of_week'])
                 ->map(fn (mixed $day): int => (int) $day)
                 ->unique()
@@ -67,6 +104,8 @@ final class FacilityConfigurationService
     public function updateSchedule(FacilitySchedule $schedule, array $data): FacilitySchedule
     {
         return DB::transaction(function () use ($schedule, $data): FacilitySchedule {
+            $this->lockFacility((int) $schedule->building_facility_id);
+            $schedule = FacilitySchedule::query()->whereKey($schedule->getKey())->lockForUpdate()->firstOrFail();
             $merged = [
                 'day_of_week' => $data['day_of_week'] ?? $schedule->day_of_week,
                 'start_time' => $data['start_time'] ?? $schedule->start_time,
@@ -85,6 +124,8 @@ final class FacilityConfigurationService
     public function createTimeSlot(FacilitySchedule $schedule, array $data): FacilityTimeSlot
     {
         return DB::transaction(function () use ($schedule, $data): FacilityTimeSlot {
+            $this->lockFacility((int) $schedule->building_facility_id);
+            $schedule = FacilitySchedule::query()->whereKey($schedule->getKey())->lockForUpdate()->firstOrFail();
             $this->assertTimeOrder($data['start_time'], $data['end_time'], 'end_time');
             $this->assertTimeSlotInsideSchedule($schedule, $data);
             $this->assertTimeSlotDoesNotOverlap($schedule, $data);
@@ -95,8 +136,13 @@ final class FacilityConfigurationService
 
     public function updateTimeSlot(FacilityTimeSlot $timeSlot, array $data): FacilityTimeSlot
     {
-        return DB::transaction(function () use ($timeSlot, $data): FacilityTimeSlot {
-            $timeSlot->loadMissing('facilitySchedule');
+        // Resolve the aggregate before opening the transaction: no snapshot read
+        // may precede the facility lock when MySQL uses REPEATABLE READ.
+        $facilityId = (int) $timeSlot->facilitySchedule()->value('building_facility_id');
+        return DB::transaction(function () use ($timeSlot, $data, $facilityId): FacilityTimeSlot {
+            $this->lockFacility($facilityId);
+            $timeSlot = FacilityTimeSlot::query()->whereKey($timeSlot->getKey())->lockForUpdate()->firstOrFail();
+            $timeSlot->setRelation('facilitySchedule', FacilitySchedule::query()->whereKey($timeSlot->facility_schedule_id)->lockForUpdate()->firstOrFail());
 
             $merged = [
                 'start_time' => $data['start_time'] ?? $timeSlot->start_time,
@@ -152,6 +198,7 @@ final class FacilityConfigurationService
         $overlap = $facility->facilitySchedules()
             ->where('day_of_week', $data['day_of_week'])
             ->when($ignoreId !== null, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->lockForUpdate()
             ->get()
             ->contains(fn (FacilitySchedule $schedule): bool =>
                 $this->minutes($schedule->start_time) < $end
@@ -184,6 +231,7 @@ final class FacilityConfigurationService
 
         $overlap = $schedule->facilityTimeSlots()
             ->when($ignoreId !== null, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->lockForUpdate()
             ->get()
             ->contains(fn (FacilityTimeSlot $slot): bool =>
                 $this->minutes($slot->start_time) < $end

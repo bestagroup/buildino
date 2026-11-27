@@ -72,24 +72,34 @@ test('resident real Blade pages: navigation, slots, inline validation, payment r
             expect(record.querySelector('table caption'),'Line items have no accessible context');
             expect($('.portal-nav [aria-current="page"]').href.includes('/operations/invoices'),'Statement navigation has no current page');
         }
-        if(mode==='reservations'||mode==='reservation-manual'){
+        if(mode==='reservations'||mode==='reservation-manual'||mode==='reservation-capacity'){
             $('[data-resident-create]').click();await wait(()=>$('.modal.show'),'Reservation modal missing');
             const form=$('[data-portal-form="reservation"]'),date=form.elements.reservation_date;
-            expect(form.querySelector('[type="submit"]').disabled,'Reservation submitted without a slot');
-            date.value='2026-12-01';date.dispatchEvent(new Event('change',{bubbles:true}));
+            expect(form.querySelector('[type="submit"]').disabled,'Reservation submitted without a slot: '+JSON.stringify(window.__uiErrors));
             await wait(()=>$('.resident-slot-list button'),'Availability failure has no retry');$('.resident-slot-list button').click();
-            await wait(()=>$('.resident-slot input'),'Available slots missing');
-            expect(document.querySelectorAll('.resident-slot').length===1,'Unavailable slot was offered');
+            await wait(()=>$('.facility-booking-slot input:not(:disabled)'),'Available slots missing');
+            expect(document.querySelectorAll('.facility-booking-slot input:not(:disabled)').length===1,'Unavailable slot was offered');
             expect($('.resident-slot-status:last-child').textContent.includes('۶۰'),'Actual policy not shown');
-            $('.resident-slot input').click();expect(!form.querySelector('[type="submit"]').disabled,'Slot selection did not enable submission');
-            expect($('.resident-slot small').textContent.includes('۱۰٬۰۰۰'),'Default slot price was lost');
+            $('.facility-booking-slot input:not(:disabled)').click();
+            expect(!form.querySelector('[data-resident-booking-next]').disabled,'Slot selection did not enable the next step');
+            form.querySelector('[data-resident-booking-next]').click();
+            expect(!form.querySelector('[type="submit"]').disabled,'Review step did not enable submission');
+            expect($('.facility-booking-slot span').textContent.includes('۱۰٬۰۰۰'),'Default slot price was lost');
             expect(window.jQuery(form.elements.facility_id).hasClass('select2-hidden-accessible'),'Existing Select2 was not reused');
             form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
             await wait(()=>window.__reservationPayload,'Reservation was not submitted');
+            if(mode==='reservation-capacity'){
+                await wait(()=>window.__availabilityReads>2,'Server slot rejection did not refresh availability after the write settled');
+                expect(!form.querySelector('[data-resident-booking-step="0"]').hidden&&!form.querySelector('input[name="resident_slot"]:checked'),'Rejected slot remains selected');
+                expect(form.querySelector('[data-resident-booking-next]').disabled,'Rejected selection can be resubmitted');
+                $('#result').dataset.ok='true';return;
+            }
             if(mode!=='reservation-manual')expect(window.__reservationPayload.facility_time_slot_id===1&&!('start_time' in window.__reservationPayload),'Slot ID missing or invalid manual times sent to the real API contract');
-            date.value='2026-12-02';date.dispatchEvent(new Event('change',{bubbles:true}));
+            await wait(()=>!form.querySelector('[data-resident-booking-back]').disabled,'Validation did not unlock the wizard');
+            form.querySelector('[data-resident-booking-back]').click();date.value='2026-12-02';date.dispatchEvent(new Event('change',{bubbles:true}));
             await wait(()=>!form.elements.start_time.disabled&&form.elements.start_time.closest('.portal-field').hidden===false,'Supported explicit-time reservation is unavailable');
             form.elements.start_time.value='18:00';form.elements.end_time.value='19:00';form.elements.end_time.dispatchEvent(new Event('input',{bubbles:true}));
+            form.querySelector('[data-resident-booking-next]').click();
             window.__reservationPayload=null;form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
             await wait(()=>window.__reservationPayload,'Manual reservation not submitted');
             expect(window.__reservationPayload.start_time==='18:00'&&!window.__reservationPayload.facility_time_slot_id,'Manual reservation payload invalid');
@@ -152,12 +162,13 @@ test('resident real Blade pages: navigation, slots, inline validation, payment r
         if (path === '/page') {
             availability = 0;
             const mode = url.searchParams.get('mode');
-            const before = `<script>window.__guestPosts=0;window.__replyPosts=0;const originalFetch=window.fetch;window.fetch=async(url,options)=>{
-                if(String(url).includes('/reservations')&&options?.method==='POST'){window.__reservationPayload=JSON.parse(options.body);return new Response(JSON.stringify({errors:{description:['آزمون قرارداد درخواست']}}),{status:422,headers:{'content-type':'application/json'}})}
+            const before = `<script>window.__availabilityReads=0;window.__uiErrors=[];window.addEventListener('error',event=>window.__uiErrors.push(event.message+' '+event.filename+':'+event.lineno));window.__guestPosts=0;window.__replyPosts=0;const originalFetch=window.fetch;window.fetch=async(url,options)=>{
+                if(String(url).includes('/availability'))window.__availabilityReads++;
+                if(String(url).includes('/reservations')&&options?.method==='POST'){window.__reservationPayload=JSON.parse(options.body);return new Response(JSON.stringify({errors:location.search.includes('reservation-capacity')?{facility_time_slot_id:['ظرفیت تکمیل شده است']}:{description:['آزمون قرارداد درخواست']}}),{status:422,headers:{'content-type':'application/json'}})}
                 if(String(url).includes('/messages')&&options?.method==='POST'){window.__replyPosts++;return new Response(JSON.stringify({errors:{message:['پیام معتبر نیست']}}),{status:window.__replyPosts===1?422:500,headers:{'content-type':'application/json'}})}
                 if(String(url).includes('/guest-visits')&&options?.method==='POST'){window.__guestPosts++;if(location.search.includes('guests-json'))return new Response('{',{status:200,headers:{'content-type':'application/json'}});return new Response(JSON.stringify(window.__guestPosts===1?{errors:{'guest.mobile':['شماره معتبر نیست']}}:{}),{status:window.__guestPosts===1?422:500,headers:{'content-type':'application/json'}})}return originalFetch(url,options)};</script>`;
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.end(pages[mode === 'guests-json' ? 'guests' : mode === 'reservation-manual' ? 'reservations' : mode].replaceAll(/https?:\/\/(localhost|127\.0\.0\.1)(:8000)?/g, 'http://127.0.0.1:' + server.address().port).replace('<head>', '<head>' + before).replace('</head>', '<style>*,*::before,*::after{transition-duration:0s!important;animation-duration:0s!important;scroll-behavior:auto!important}</style></head>').replace('</body>', '<pre id="result" hidden></pre>' + script + '</body>')); return;
+            res.end(pages[mode === 'guests-json' ? 'guests' : mode.startsWith('reservation-') ? 'reservations' : mode].replaceAll(/https?:\/\/(localhost|127\.0\.0\.1)(:8000)?/g, 'http://127.0.0.1:' + server.address().port).replace('<head>', '<head>' + before).replace('</head>', '<style>*,*::before,*::after{transition-duration:0s!important;animation-duration:0s!important;scroll-behavior:auto!important}</style></head>').replace('</body>', '<pre id="result" hidden></pre>' + script + '</body>')); return;
         }
         res.setHeader('Content-Type', 'application/json');
         if (path.includes('/datatables/')) { res.end(JSON.stringify({ ...(pages.tables[path.split('/').pop()] || pages.rows), draw: Number(url.searchParams.get('draw')) || 1 }).replaceAll('http://localhost', 'http://127.0.0.1:' + server.address().port)); return; }

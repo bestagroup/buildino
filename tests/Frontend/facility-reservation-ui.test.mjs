@@ -16,7 +16,7 @@ test('P11 browser: availability, recovery, payment/cancellation and stale respon
     const view = readFileSync(join(project, 'resources/views/management/facility-reservations.blade.php'), 'utf8');
     const loops = [
         '<option value="4">ساختمان دمو</option><option value="5">ساختمان دوم</option>',
-        ['انتخاب امکان', 'تاریخ و سانس', 'بررسی و ثبت'].map((label, index) => `<span data-reservation-step-label="${index}"><b>${index + 1}</b>${label}</span>`).join(''),
+        ['انتخاب زمان', 'بررسی و ثبت'].map((label, index) => `<span data-reservation-step-label="${index}"><b>${index + 1}</b>${label}</span>`).join(''),
         '<option value="pending">در انتظار تأیید</option><option value="cancelled">لغوشده</option>',
     ];
     let loop = 0;
@@ -78,30 +78,33 @@ test('P11 browser: availability, recovery, payment/cancellation and stale respon
     } };
     window.runP11 = async () => {
         chooseBuilding('4');
+        expect($('booking').hidden && !$('history').hidden, 'Directory must be the initial view');
+        click($('new'));
         await until(() => $('facilities').querySelector('button'), 'Facilities did not load');
         expect($('history-next').disabled, 'An unrelated read must not unlock history pagination');
         releaseHistory(); await until(() => !$('history-next').disabled, 'History pagination never unlocked');
         click($('facilities').querySelector('button'));
-        await until(() => !document.querySelector('[data-reservation-panel="1"]').hidden, 'Facility selection did not advance');
+        await until(() => !$('time-panel').hidden, 'Facility time selection missing');
         click(document.querySelector('[data-reservation-day="1"]'));
-        await until(() => $('slots').querySelectorAll('button').length === 3, 'Quick date did not load slots');
-        expect($('slots').querySelectorAll('button')[1].disabled && $('slots').querySelectorAll('button')[2].disabled, 'Full and blackout slots must remain disabled');
-        click($('slots').querySelector('button'));
-        expect(!document.querySelector('[data-reservation-panel="2"]').hidden, 'Available slot did not advance');
+        await until(() => $('slots').querySelectorAll('input').length === 3, 'Quick date did not load slots');
+        expect($('slots').querySelectorAll('input')[1].disabled && $('slots').querySelectorAll('input')[2].disabled, 'Full and blackout slots must remain disabled');
+        click($('slots').querySelector('input')); click($('next'));
+        expect(!document.querySelector('[data-reservation-panel="1"]').hidden, 'Selected slot must reach review');
         $('create-form').elements.description.value = 'یادداشت رزرو';
         click($('create'));
         await until(() => !$('create').disabled, 'Validation never completed');
-        expect(!document.querySelector('[data-reservation-panel="2"]').hidden, 'Unit error should keep the review open');
+        expect(!document.querySelector('[data-reservation-panel="1"]').hidden, 'Unit error should keep the review open');
         expect($('create-form').elements.description.value === 'یادداشت رزرو', 'Validation must preserve user data');
         createMode = 'network'; click($('create'));
         await until(() => !$('uncertain').hidden, 'Unknown create result must require review');
         expect($('create').disabled, 'Do not resubmit an unknown create result');
         const beforeRetry = createCalls; $('create-form').dispatchEvent(new Event('submit', { cancelable: true }));
         expect(createCalls === beforeRetry, 'Programmatic submit must also respect the unknown result');
-        click($('resume')); await until(() => $('slots').querySelector('button'), 'Resume did not refresh availability');
-        click($('slots').querySelector('button')); createMode = 'success'; click($('create')); click($('create'));
+        click($('resume')); await until(() => $('slots').querySelector('input'), 'Resume did not refresh availability');
+        click($('slots').querySelector('input')); click($('next')); createMode = 'success'; click($('create')); click($('create'));
         await until(() => !$('detail').hidden && $('detail-state').textContent.includes('پرداخت'), 'Creation did not display real payment status');
         expect(createCalls === beforeRetry + 1, 'Double-click must create only one request');
+        expect($('detail').open && $('booking').hidden, 'Result and actions must be in a modal, not below a booking form');
         click($('actions').querySelector('button'));
         $('pay-form').elements.payer_source.value = 'unit_wallet'; click($('pay-form').querySelector('[type="submit"]'));
         await until(() => !$('pay-form').querySelector('[type="submit"]').disabled, 'Payment validation did not settle');
@@ -125,6 +128,7 @@ test('P11 browser: availability, recovery, payment/cancellation and stale respon
         await until(() => $('detail-state').textContent.includes('لغوشده'), 'Cancellation status not shown');
         expect($('detail-body').textContent.includes('در انتظار بازپرداخت'), 'Do not claim a pending refund was completed');
         await until(() => !$('building').disabled, 'Write lock did not clear');
+        click($('detail-close')); click($('new'));
         click($('back-facility')); holdChoice = true; click($('facilities').querySelector('button'));
         await until(() => releaseChoice, 'Delayed selection was not sent'); chooseBuilding('5'); releaseChoice();
         await until(() => $('facilities').textContent.includes('سالن ساختمان دوم'), 'Second building did not load');
@@ -133,17 +137,17 @@ test('P11 browser: availability, recovery, payment/cancellation and stale respon
         expect($('detail').hidden, 'Previous building detail must be cleared');
         const root = document.querySelector('[data-reservation-page]'); expect(root.scrollWidth <= root.clientWidth, 'No horizontal overflow');
         if (${Boolean(process.env.P11_SCREENSHOT)}) {
-            chooseBuilding('4'); await until(() => $('facilities').querySelector('button'), 'Preview facility not loaded');
-            click($('facilities').querySelector('button')); await until(() => !document.querySelector('[data-reservation-panel="1"]').hidden, 'Preview selection not ready');
-            click(document.querySelector('[data-reservation-day="1"]')); await until(() => $('slots').querySelectorAll('button').length === 3, 'Preview slots not loaded');
+            chooseBuilding('4'); click($('new')); await until(() => $('facilities').querySelector('button'), 'Preview facility not loaded');
+            click($('facilities').querySelector('button')); await until(() => !$('time-panel').hidden, 'Preview selection not ready');
+            click(document.querySelector('[data-reservation-day="1"]')); await until(() => $('slots').querySelectorAll('input').length === 3, 'Preview slots not loaded');
             $('booking').scrollIntoView({ block: 'start' });
         }
         document.getElementById('result').dataset.ok = 'true'; document.getElementById('result').textContent = JSON.stringify({ checks });
     };
     `;
     const html = `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="${asset('css/buildino-management.css')}"><link rel="stylesheet" href="${asset('css/buildino-unit-ownerships.css')}"><link rel="stylesheet" href="${asset('css/buildino-facilities.css')}"><link rel="stylesheet" href="${asset('css/buildino-reservations.css')}">
-    <style>body{padding:24px} @media(max-width:600px){body{padding:12px}}</style>${markup}<pre id="result" hidden></pre>${select2Fixture()}<script>${script}</script><script src="${asset('js/buildino-reservations.js')}"></script><script>runP11().catch(error => document.getElementById('result').textContent = error.stack);</script></html>`;
+    <link rel="stylesheet" href="${asset('css/buildino-management.css')}"><link rel="stylesheet" href="${asset('css/buildino-unit-ownerships.css')}"><link rel="stylesheet" href="${asset('css/buildino-facilities.css')}"><link rel="stylesheet" href="${asset('css/buildino-reservations.css')}"><link rel="stylesheet" href="${asset('css/buildino-facility-booking.css')}">
+    <style>body{padding:24px} @media(max-width:600px){body{padding:12px}}</style>${markup}<pre id="result" hidden></pre>${select2Fixture()}<script>${script}</script><script src="${asset('js/buildino-facility-booking.js')}"></script><script src="${asset('js/buildino-reservations.js')}"></script><script>runP11().catch(error => document.getElementById('result').textContent = error.stack);</script></html>`;
     const fixture = join(directory, 'fixture.html'); writeFileSync(fixture, html);
     try {
         const args = ['--headless', '--disable-gpu', '--no-sandbox', '--allow-file-access-from-files', '--no-first-run', '--force-device-scale-factor=1', '--hide-scrollbars', '--user-data-dir=' + join(directory, 'profile'), '--window-size=' + (process.env.P11_MOBILE ? '500,900' : '1280,1000'), '--virtual-time-budget=5000', '--dump-dom'];

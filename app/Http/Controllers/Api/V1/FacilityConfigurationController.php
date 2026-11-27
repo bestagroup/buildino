@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\FacilityAvailabilityRequest;
 use App\Http\Requests\StoreFacilityBlackoutRequest;
 use App\Http\Requests\StoreFacilityScheduleRequest;
+use App\Http\Requests\StoreFacilityScheduleBatchRequest;
 use App\Http\Requests\StoreFacilityTimeSlotRequest;
 use App\Http\Requests\UpdateFacilityScheduleRequest;
 use App\Http\Requests\UpdateFacilityTimeSlotRequest;
@@ -28,6 +29,18 @@ use Illuminate\Http\Response;
 
 class FacilityConfigurationController extends Controller
 {
+    public function storeScheduleBatch(
+        StoreFacilityScheduleBatchRequest $request,
+        BuildingFacility $buildingFacility,
+        FacilityConfigurationService $service,
+        FacilityAccessService $access
+    ) {
+        $this->authorizeManage($request, $buildingFacility, $access);
+        return FacilityScheduleResource::collection(
+            $service->createScheduleBatch($buildingFacility, $request->validated())
+        )->response()->setStatusCode(201);
+    }
+
     public function schedules(
         Request $request,
         BuildingFacility $buildingFacility,

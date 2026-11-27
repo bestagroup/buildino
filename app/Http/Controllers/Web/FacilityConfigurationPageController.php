@@ -19,6 +19,8 @@ final class FacilityConfigurationPageController extends Controller
                 'id' => $building->id, 'title' => $building->title, 'currency' => $building->currency,
                 'canCreate' => $permissions->allows($user, 'facilities.create', $building),
                 'canUpdate' => $permissions->allows($user, 'facilities.update', $building),
+                'canReserve' => $permissions->allows($user, 'facility-reservations.create', $building),
+                'canViewReservations' => $permissions->allows($user, 'facility-reservations.view', $building),
             ])->values();
 
         return view('management.facility-configuration', ['facilityConfig' => ['buildings' => $buildings]]);

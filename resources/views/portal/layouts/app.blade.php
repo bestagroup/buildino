@@ -38,6 +38,7 @@
     @stack('portal-theme')
     @if(($portalData['area'] ?? 'resident') === 'resident')
     <link rel="stylesheet" href="{{ asset('css/buildino-resident-workspace.css') }}?v={{ filemtime(public_path('css/buildino-resident-workspace.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/buildino-facility-booking.css') }}?v={{ filemtime(public_path('css/buildino-facility-booking.css')) }}">
     @else
     <link rel="stylesheet" href="{{ asset('css/buildino-provider-workspace.css') }}?v={{ filemtime(public_path('css/buildino-provider-workspace.css')) }}">
     @endif
@@ -568,6 +569,7 @@
 <script src="{{ asset('js/buildino-core-invitation.js') }}?v={{ filemtime(public_path('js/buildino-core-invitation.js')) }}" defer></script>
 <script src="{{ asset('js/buildino-resident-accessibility.js') }}?v={{ filemtime(public_path('js/buildino-resident-accessibility.js')) }}" defer></script>
 @if($activeArea === 'resident')
+<script src="{{ asset('js/buildino-facility-booking.js') }}?v={{ filemtime(public_path('js/buildino-facility-booking.js')) }}" defer></script>
 <script src="{{ asset('js/buildino-resident-workspace.js') }}?v={{ filemtime(public_path('js/buildino-resident-workspace.js')) }}" defer></script>
 @else
 <script src="{{ asset('js/buildino-provider-workspace.js') }}?v={{ filemtime(public_path('js/buildino-provider-workspace.js')) }}" defer></script>

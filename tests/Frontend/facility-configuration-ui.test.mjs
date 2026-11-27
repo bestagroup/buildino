@@ -69,6 +69,15 @@ test('facility configuration: separate views, saved context, dirty forms, time s
         expect(Math.abs(price.height - payment.height) <= 1, 'Payment switch must match input height');
         if (innerWidth > 700) expect(Math.abs(price.top - payment.top) <= 1, 'Price and payment must align');
         go(1); expect(!document.querySelector('[data-facility-panel="1"]').hidden, 'Schedule panel missing');
+        expect(Boolean($('schedule-form').elements.slot_duration_minutes), 'Weekly days and slot generation must be one form');
+        const generator = $('schedule-form');
+        generator.querySelector('[name="days"]').checked = true;
+        generator.elements.start_time.value = '08:00'; generator.elements.end_time.value = '10:00';
+        generator.elements.slot_duration_minutes.value = '60'; generator.dispatchEvent(new Event('input', { bubbles: true }));
+        expect($('batch-preview').textContent.includes('۰۸:۰۰') && $('batch-preview').textContent.includes('۱۰:۰۰'), 'Preview must show the real generated ranges');
+        generator.elements.end_time.value = '10:30'; generator.dispatchEvent(new Event('submit', { cancelable: true }));
+        expect(writes === 0 && !$('error').hidden, 'Incomplete last slot must not be silently dropped');
+        $('schedule-reset').click();
         layoutFits();
         expect(document.querySelectorAll('.facility-schedule-group').length === 1, 'Schedule and slots must be grouped');
         expect(!$('slot-fields').disabled, 'Existing schedules must enable slot form');
@@ -87,7 +96,7 @@ test('facility configuration: separate views, saved context, dirty forms, time s
         rule.elements.refund_percentage.value = '100';
         rule.elements.requires_approval.checked = true;
         rule.elements.requires_approval.dispatchEvent(new Event('change', { bubbles: true }));
-        expect($('approval-hint').textContent.includes('اثری ندارد'), 'Approval precedence must be explained');
+        expect($('approval-hint').textContent.includes('تأیید مدیر'), 'Manual approval must be explained');
         rule.elements.requires_approval.checked = false;
         // Reopen the saved record to discard this deliberately unsaved rule draft.
         allowDiscard = true; $('close').click(); await until(() => $('list').querySelector('button'));

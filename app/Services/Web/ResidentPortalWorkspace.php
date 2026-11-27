@@ -33,7 +33,7 @@ final class ResidentPortalWorkspace
                 'building_title' => $unit->floor?->block?->building?->title,
             ])->all(),
             'facilities' => BuildingFacility::whereIn('building_id', $buildingIds)->where('is_active', true)
-                ->with(['building:id,title,currency', 'facilityReservationRules'])->orderBy('title')->get()
+                ->with(['building:id,title,currency,timezone', 'facilityReservationRules'])->orderBy('title')->get()
                 ->each(fn ($facility) => $facility->setAttribute('resident_policy', $this->facilityPolicy($facility))),
             'support_categories' => SupportCategory::where('is_active', true)->orderBy('title')->get(),
             'payment_gateway' => ['default' => $gateway, 'enabled' => (bool) config('payment_gateways.gateways.'.$gateway.'.enabled', false)],
