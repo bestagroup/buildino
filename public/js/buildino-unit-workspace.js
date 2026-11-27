@@ -5,9 +5,11 @@
     const editorVisible = () => [...document.querySelectorAll('[data-ownership-editor], [data-occupancy-editor], .finance-editor, dialog[open]')].some(node => !node.closest('[hidden]') && getComputedStyle(node).display !== 'none');
     const notify = changed => window.parent.postMessage({ type: 'buildino:unit-workspace', dirty: touched && editorVisible(), busy: pending > 0, changed }, location.origin);
     document.addEventListener('input', event => {
+        if (event.target.closest('[data-deposit-form]')) return;
         if (event.target.closest('form') && editorVisible()) { touched = true; notify(false); }
     }, true);
     document.addEventListener('change', event => {
+        if (event.target.closest('[data-deposit-form]')) return;
         if (event.target.closest('form') && editorVisible()) { touched = true; notify(false); }
     }, true);
     // Reuse the existing process APIs. Notify the parent only about writes;

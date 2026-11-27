@@ -1,7 +1,7 @@
-/* Complements the shared sidebar click handlers; resident page only. */
+/* Complements the shared sidebar click handlers in both portal areas. */
 (() => {
     const body = document.body;
-    if (!body.classList.contains('portal-resident') && !body.classList.contains('resident-glass')) return;
+    if (!body.matches('.portal-resident, .portal-provider, .resident-glass')) return;
     const menu = document.getElementById('portalSidebar');
     const toggle = document.getElementById('portalSidebarToggle');
     const mobile = window.matchMedia('(max-width: 980px)');

@@ -79,7 +79,7 @@
                 [
                         'resource' =>
                             $resource,
-                        ...($area === 'resident' ? request()->only(['unit_id','status','from','to','search','page']) : []),
+                        ...request()->only(['unit_id','status','from','to','search','page']),
                 ]
             )
         }}"

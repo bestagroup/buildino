@@ -38,6 +38,8 @@
     @stack('portal-theme')
     @if(($portalData['area'] ?? 'resident') === 'resident')
     <link rel="stylesheet" href="{{ asset('css/buildino-resident-workspace.css') }}?v={{ filemtime(public_path('css/buildino-resident-workspace.css')) }}">
+    @else
+    <link rel="stylesheet" href="{{ asset('css/buildino-provider-workspace.css') }}?v={{ filemtime(public_path('css/buildino-provider-workspace.css')) }}">
     @endif
 </head>
 
@@ -116,7 +118,7 @@
 @endphp
 
 <body
-    class="portal-body {{ $activeArea === 'resident' ? 'portal-resident' : '' }} @yield('portal-body-class')"
+    class="portal-body {{ $activeArea === 'resident' ? 'portal-resident' : 'portal-provider' }} @yield('portal-body-class')"
     data-portal-user-id="{{ $portalUser?->getKey() }}"
 >
 @include('shared.login-success')
@@ -127,7 +129,7 @@
         id="portalSidebar"
         aria-label="منوی پرتال"
     >
-        @if($activeArea === 'resident')<button type="button" class="resident-sidebar-close" data-resident-sidebar-close aria-label="بستن منو"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button>@endif
+        <button type="button" class="resident-sidebar-close" data-resident-sidebar-close aria-label="بستن منو"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button>
         <a
             href="{{ route('portal.dashboard') }}"
             class="portal-brand"
@@ -199,10 +201,11 @@
                 <a
                     href="{{ route('portal.provider.dashboard') }}"
                     class="{{
-                        $activeArea === 'provider'
+                        $activeArea === 'provider' && request()->routeIs('portal.provider.dashboard')
                             ? 'is-active'
                             : ''
                     }}"
+                    @if($activeArea === 'provider' && request()->routeIs('portal.provider.dashboard')) aria-current="page" @endif
                 >
                     @include(
                         'management.partials.icon',
@@ -221,7 +224,7 @@
             @if($activeArea === 'resident')
                 @include('portal.resident.navigation')
             @else
-                @yield('sidebar-links')
+                @include('portal.provider.navigation')
             @endif
         </nav>
 
@@ -563,9 +566,11 @@
 @stack('scripts')
 @include('shared.core-flow-config')
 <script src="{{ asset('js/buildino-core-invitation.js') }}?v={{ filemtime(public_path('js/buildino-core-invitation.js')) }}" defer></script>
-@if($activeArea === 'resident')
 <script src="{{ asset('js/buildino-resident-accessibility.js') }}?v={{ filemtime(public_path('js/buildino-resident-accessibility.js')) }}" defer></script>
+@if($activeArea === 'resident')
 <script src="{{ asset('js/buildino-resident-workspace.js') }}?v={{ filemtime(public_path('js/buildino-resident-workspace.js')) }}" defer></script>
+@else
+<script src="{{ asset('js/buildino-provider-workspace.js') }}?v={{ filemtime(public_path('js/buildino-provider-workspace.js')) }}" defer></script>
 @endif
 </body>
 </html>

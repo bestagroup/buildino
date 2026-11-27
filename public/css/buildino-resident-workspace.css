@@ -97,7 +97,9 @@ html[data-theme="dark"] .portal-resident .portal-primary-button { color: var(--p
 @media(max-width:700px) {
     .portal-resident .portal-topbar { margin: 10px 12px 0; top: 10px; padding: 10px 12px; border: 1px solid var(--portal-border); border-radius: 16px; gap: 8px; }
     .portal-resident .portal-topbar__title { min-width: 0; flex: 1; }
-    .portal-resident .portal-topbar__title h1 { overflow-wrap: anywhere; font-size: 14px; }
+    .portal-resident .portal-topbar__title > div { min-width: 0; }
+    .portal-resident .portal-topbar__title h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+    .portal-resident .portal-wallet-chip > span:not(.portal-wallet-chip__icon) { display: none; }
     .portal-resident .portal-topbar__title > div > span { display: none; }
     .portal-resident .portal-topbar__actions { gap: 6px; }
     .portal-resident .portal-content { padding: 20px 12px 28px; }

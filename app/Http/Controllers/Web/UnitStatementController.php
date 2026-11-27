@@ -32,6 +32,7 @@ final class UnitStatementController extends Controller
             $units = collect([$unit]);
         } else {
             $units = app(PortalAccessService::class)->residentUnits($request->user());
+            $availableUnits = $units;
             if ($request->filled('unit_id')) {
                 $request->validate(['unit_id' => ['integer', 'min:1']]);
                 abort_unless($units->contains('id', $request->integer('unit_id')), 403);
@@ -48,6 +49,7 @@ final class UnitStatementController extends Controller
         $canDeposit = $manager && app(PermissionChecker::class)->allows($request->user(), 'unit-wallet-deposits.create', $building);
 
         return view('shared.unit-statements', [
+            'resource' => 'invoices', 'statementUnits' => $availableUnits ?? $units,
             'manager' => $manager, 'units' => $units, 'statements' => $statements, 'balances' => $balances,
             'deposits' => $manager ? WalletTopUp::where('target_type', $unit->getMorphClass())->where('target_id', $unit->id)->with('payment.fileRelations.file')->latest('id')->limit(50)->get() : collect(),
             'canDeposit' => $canDeposit, 'user' => $request->user(),

@@ -48,6 +48,8 @@
     let lastApiError = null;
     let lastMutation = null;
     const resident = document.body.classList.contains('portal-resident');
+    const provider = document.body.classList.contains('portal-provider');
+    const interactive = resident || provider;
     const api =
         async (
             url,
@@ -106,6 +108,13 @@
                 throw error;
             }
 
+            if (provider && response.ok && response.status !== 204 && (!contentType.includes('application/json') || !payload || typeof payload !== 'object')) {
+                const error = new Error('پاسخ معتبر ثبت دریافت نشد؛ اطلاعات را پیش از ارسال دوباره بررسی کنید.');
+                error.uncertain = !['GET','HEAD'].includes(String(options.method || 'GET').toUpperCase());
+                lastApiError = error;
+                throw error;
+            }
+
             if (! response.ok) {
                 let message =
                     `خطای HTTP ${response.status}`;
@@ -139,7 +148,7 @@
                         payload;
                 }
 
-                if (resident) {
+                if (interactive) {
                     if (response.status >= 500) message = 'نتیجه درخواست مشخص نیست؛ اطلاعات را پیش از ارسال دوباره بررسی کنید.';
                     else if ([401,419].includes(response.status)) message = 'نشست شما منقضی شده است؛ صفحه را دوباره باز کنید.';
                     else if (response.status === 403) message = 'اجازه انجام این کار را ندارید.';
@@ -169,7 +178,7 @@
             message,
             tone = "success"
         ) => {
-            if (resident && tone === 'error') {
+            if (interactive && tone === 'error') {
                 const form = document.querySelector('.modal.show form, form[data-ticket-reply-form][aria-busy="true"]');
                 if (form) {
                     document.dispatchEvent(new CustomEvent('buildino:portal-form-error', { detail: { form, error: lastApiError || new Error(message) } }));
@@ -245,7 +254,7 @@
             }
 
             const form = button.closest('form');
-            if (resident && form) {
+            if (interactive && form) {
                 form.dataset.portalBusy = state ? '1' : '0';
                 form.setAttribute('aria-busy', String(state));
             }
@@ -260,7 +269,7 @@
                 button.textContent =
                     "در حال انجام...";
             } else {
-                button.disabled = Boolean(resident && form?.dataset.residentUncertain === '1');
+                button.disabled = Boolean(interactive && form?.dataset.residentUncertain === '1');
 
                 if (
                     button.dataset
@@ -298,6 +307,7 @@
             form,
             message
         ) => {
+            if (provider && form) form.dataset.providerSaved = '1';
             if (resident && form) form.dataset.residentSaved = '1';
             closeModal(form);
             if (resident && form && ['guest','reservation','service','support'].includes(form.dataset.portalForm)) {
@@ -1226,6 +1236,9 @@
                             button.dataset
                                 .serviceId;
 
+                        const currencyLabel = quoteModal.querySelector('[data-provider-quote-currency]');
+                        if (currencyLabel) currencyLabel.textContent = button.dataset.serviceCurrency === 'IRT' ? 'تومان' : 'ریال';
+
                         quoteModal
                             .querySelector(
                                 "[data-provider-quote-title]"
@@ -1499,22 +1512,17 @@
                     '[type="submit"]'
                 );
 
-            const confirmed =
-                await confirmAction(
-                    "ثبت درخواست تسویه",
-                    "مبلغ درخواست از موجودی قابل استفاده کیف پول شما قفل می‌شود."
-                );
-
-            if (! confirmed) {
-                return;
-            }
-
             submitting(
                 submit,
                 true
             );
 
             try {
+                const confirmed = await confirmAction(
+                    "ثبت درخواست تسویه",
+                    "مبلغ درخواست از موجودی قابل استفاده کیف پول شما قفل می‌شود."
+                );
+                if (!confirmed) return;
                 await api(
                     "/api/v1/provider/payouts",
                     {

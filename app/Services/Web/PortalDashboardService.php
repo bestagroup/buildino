@@ -676,7 +676,7 @@ final class PortalDashboardService
                     $user->getKey()
                 )
                 ->with([
-                    'building:id,title',
+                    'building:id,title,currency',
                     'unit:id,unit_number,title',
                     'requestedBy:id,first_name,last_name,mobile',
                     'quotes' =>
