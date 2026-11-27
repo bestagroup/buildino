@@ -13,7 +13,7 @@
     <div class="ownership-alert ownership-alert--success" data-facility-success role="status" aria-live="polite" hidden></div>
     <section class="ownership-card" data-facility-location aria-labelledby="facility-location-title">
         <div class="ownership-card__heading"><div><h3 id="facility-location-title" tabindex="-1">امکانات کدام ساختمان؟</h3><p>ساختمان را انتخاب کنید تا امکانات فعال و غیرفعال آن را ببینید.</p></div></div>
-        <label class="ownership-field"><span>ساختمان</span><select data-facility-building><option value="">انتخاب ساختمان</option>@foreach ($facilityConfig['buildings'] as $building)<option value="{{ $building['id'] }}">{{ $building['title'] }}</option>@endforeach</select></label>
+        <div class="ownership-field"><label for="facility-building">ساختمان</label><select id="facility-building" data-facility-building><option value="">انتخاب ساختمان</option>@foreach ($facilityConfig['buildings'] as $building)<option value="{{ $building['id'] }}">{{ $building['title'] }}</option>@endforeach</select></div>
         @if ($facilityConfig['buildings']->isEmpty())<p class="ownership-empty">ساختمان قابل دسترسی برای مشاهده امکانات وجود ندارد.</p>@endif
         <div class="ownership-actions"><button type="button" class="ownership-button ownership-button--primary" data-facility-location-continue hidden>نمایش امکانات ساختمان</button></div>
     </section>
