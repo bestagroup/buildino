@@ -66,15 +66,11 @@ test('resident real Blade pages: navigation, slots, inline validation, payment r
             await sleep(400);expect(contrast($('.resident-account .portal-primary-button'))>=4.5,'Primary action text contrast is insufficient in dark mode');
         }
         if(mode==='invoices'){
-            await wait(()=>$('.resident-mobile-record'),'Real datatable rows were not converted to mobile records');
-            const table=$('table.js-server-datatable');expect(window.DataTable.isDataTable(table),'Datatable not initialized');
-            const card=$('.resident-mobile-record');expect(card.querySelector('dl').children.length===3,'Mobile record is not compact');
-            expect(!/[0-9]/.test(card.textContent),'Record digits are not Persian');
-            expect(innerWidth>700||getComputedStyle(table).display==='none','Desktop table duplicates mobile cards');
-            const link=card.querySelector('a');link.addEventListener('click',event=>event.preventDefault(),{once:true});link.click();
-            expect(new URL(link.href).searchParams.get('status')==='issued','Detail navigation lost filters');
-            $('[data-dt-reset]').click();await sleep(80);
-            expect(!new URL(location.href).searchParams.has('status'),'Reset left stale filters in return navigation');
+            const record=$('.statement-record');expect(record,'Monthly statement records missing');
+            expect(!/[0-9]/.test(record.textContent),'Statement digits are not Persian');
+            record.querySelector('summary').click();expect(record.open,'Statement details cannot open');
+            expect(record.querySelector('table caption'),'Line items have no accessible context');
+            expect($('.portal-nav [aria-current="page"]').href.includes('/operations/invoices'),'Statement navigation has no current page');
         }
         if(mode==='reservations'||mode==='reservation-manual'){
             $('[data-resident-create]').click();await wait(()=>$('.modal.show'),'Reservation modal missing');
@@ -130,16 +126,16 @@ test('resident real Blade pages: navigation, slots, inline validation, payment r
             expect(form.querySelector('[role="alert"] a'),'Ticket reply uncertainty has no recovery link');
         }
         if(mode==='invoice'){
-            let creates=0,initiates=0;
+            let settlements=0;
             const nativeFetch=window.fetch;window.fetch=async(url,options)=>{
-                if(String(url).includes('/payments')&&options?.method==='POST'){
-                    const gateway=String(url).includes('/gateway/');gateway?initiates++:creates++;
-                    return new Response(JSON.stringify({data:gateway?{}:{id:731}}),{status:200,headers:{'content-type':'application/json'}});
+                if(String(url).includes('/statements/')&&options?.method==='POST'){
+                    settlements++;
+                    return new Response(JSON.stringify({errors:{settlement:['موجودی کیف پول کافی نیست']}}),{status:422,headers:{'content-type':'application/json'}});
                 }return nativeFetch(url,options);
             };
-            window.Swal.fire=async()=>({isConfirmed:true,value:'1000'});
-            const pay=$('[data-pay-invoice]');pay.click();await wait(()=>!pay.disabled,'Payment attempt never settled');pay.click();await wait(()=>initiates===2&&!pay.disabled,'Payment retry failed');
-            expect(creates===1,'Retry created a duplicate invoice payment');
+            window.confirm=()=>true;window.Swal.fire=async()=>({isConfirmed:true});
+            const pay=$('[data-pay-invoice]');pay.click();pay.click();await wait(()=>settlements===1&&!pay.disabled,'Wallet settlement validation did not finish');
+            expect(settlements===1,'Duplicate click submitted two monthly settlements');
         }
         expect(document.documentElement.scrollWidth<=innerWidth,'Page overflows viewport');
         if($('.modal.show')){const box=$('.modal.show .modal-content').getBoundingClientRect();expect(box.left>=0&&box.right<=innerWidth,'Modal exceeds viewport');}

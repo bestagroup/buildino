@@ -48,7 +48,7 @@ class ChargeSmsTest extends TestCase
         $link=\App\Models\UnitOccupancy::where('unit_id',$unit->id)->first()->replicate(); $link->unit_id=$second->id; $link->save();
         $this->invoice($second, $period, $owner, 2000);
         $this->mock(SmsSender::class, fn ($m) => $m->shouldReceive('send')->once()->withArgs(fn ($mobile, $msg) => $mobile === $owner->mobile && $msg->purpose === 'charge.notice' && $msg->parameters['param3'] === '3,000 ریال')->andReturn(['accepted' => true, 'provider_message_id' => 'sms-1']));
-        $this->get('/management/operations/charge-sms?building_id='.$period->building_id.'&period_id='.$period->id)->assertOk()->assertSee('3,000');
+        $this->get('/management/operations/charge-sms?building_id='.$period->building_id.'&period_id='.$period->id)->assertOk()->assertSee('۳٬۰۰۰');
         $url = route('management.charge-sms.send', $period);
         $this->postJson($url, ['user_id' => $owner->id])->assertOk()->assertJsonPath('status', 'accepted');
         $this->postJson($url, ['user_id' => $owner->id])->assertOk()->assertJsonPath('status', 'accepted');

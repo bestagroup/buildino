@@ -107,7 +107,7 @@ class PortalBladeCompileRegressionTest extends TestCase
             $this->assertSame(1, $xpath->query(
                 $area === 'resident'
                     ? '//main[@id="mainContent"]/div[contains(@class,"portal-content")]/div[@data-resident-dashboard]'
-                    : '//main[@id="mainContent"]/div[contains(@class,"portal-content")]/section[contains(@class,"portal-hero--provider")]'
+                    : '//main[@id="mainContent"]/div[contains(@class,"portal-content")]/div[@data-provider-workspace]'
             )->length);
             $this->assertSame(1, $xpath->query(
                 '//main[@id="mainContent"]/div[contains(@class,"portal-content")]/section[1][@data-pending-invitation]'
