@@ -77,4 +77,19 @@ class BuildingStaffTest extends TestCase
         $this->actingAs($owner)->post(route('management.building-staff.store', $building), $this->data())->assertForbidden();
         $this->assertSame(1,BuildingStaff::count());
     }
+
+    public function test_staff_directory_and_editor_are_separate_and_keep_building_context(): void
+    {
+        [,,$building] = $this->setupStaff();
+        $url = '/management/operations/building-staff?building_id='.$building->id;
+        $this->get($url)->assertOk()->assertSee('افزودن کارمند')->assertSee('data-staff-directory', false)
+            ->assertDontSee('name="first_name"', false);
+        $this->get($url.'&create=1')->assertOk()->assertSee('name="first_name"', false)
+            ->assertSee('data-staff-form', false)->assertSee('staff-permissions-help', false);
+        $this->from($url.'&create=1')->post(route('management.building-staff.store', $building), [
+            ...$this->data(), 'services' => [],
+        ])->assertSessionHasErrors('services');
+        $this->get($url.'&create=1')->assertOk()->assertSee('value="کارمند"', false)
+            ->assertSee('data-staff-error-summary', false);
+    }
 }
