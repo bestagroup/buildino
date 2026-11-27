@@ -300,6 +300,25 @@ document.addEventListener('buildino:selects-changed', (event) => {
     enhance(event.detail?.root || document);
 });
 
+// Labels can activate the original select even while it is visually clipped.
+// Keep Vue-owned markup intact and route that activation to its existing widget.
+const activateEnhancedSelect = (event) => {
+    const select = event.target;
+    if (!(select instanceof HTMLSelectElement)) return;
+    const instance = $(select).data('select2');
+    if (!instance || !select.classList.contains('select2-hidden-accessible')) return;
+
+    event.preventDefault();
+    // Do not let Select2's outside-click listener immediately close the widget.
+    event.stopPropagation();
+    if (select.matches(':disabled')) return;
+    if (!instance.isOpen()) instance.open();
+};
+
+for (const type of ['pointerdown', 'mousedown', 'click']) {
+    document.addEventListener(type, activateEnhancedSelect, true);
+}
+
 document.addEventListener('reset', event => window.setTimeout(() => selectElements(event.target).forEach(refresh), 0), true);
 
 document.addEventListener('invalid', event => {

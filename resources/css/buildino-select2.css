@@ -1,3 +1,13 @@
+/* Shared form sizing must never enlarge Select2's visually hidden native control. */
+select.select2-hidden-accessible {
+    min-height: 0 !important;
+    min-width: 0 !important;
+    max-height: 1px !important;
+    max-width: 1px !important;
+    height: 1px !important;
+    width: 1px !important;
+}
+
 .management-body {
     --buildino-select-bg: var(--surface-soft);
     --buildino-select-border: var(--border);

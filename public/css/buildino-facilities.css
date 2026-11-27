@@ -60,11 +60,3 @@
     .facility-steps button { gap: 7px; padding: 8px; font-size: 11px; }
 }
 @media (max-width: 600px) { .facility-steps { grid-template-columns: minmax(0, 1fr); } }
-
-/* Keep the enhanced building select clipped to one pixel despite shared field sizing. */
-[data-facility-page] select[data-facility-building].select2-hidden-accessible {
-    min-height: 0;
-    min-width: 0;
-    height: 1px !important;
-    width: 1px !important;
-}

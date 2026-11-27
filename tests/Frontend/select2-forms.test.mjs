@@ -29,7 +29,7 @@ test('Select2: actual menu selection, Vue single/multiple models, dependent Blad
     try {
         const css = ['node_modules/select2/dist/css/select2.css','resources/css/buildino-select2.css','resources/css/management-inertia.css'].map(path => readFileSync(join(project,path),'utf8')).join('\n');
         const html = `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-        <style>${css}body{margin:16px}label{display:block;width:250px;margin:14px 0}dialog{width:300px;max-width:80vw}fieldset{min-width:0}</style>
+        <style>${css}body{margin:16px}label{display:block;width:250px;margin:14px 0}label select{min-height:46px;height:46px}dialog{width:300px;max-width:80vw}fieldset{min-width:0}</style>
         <form id="native"><label>Province<select id="province" name="province" required><option value="">Choose province</option><option value="1">One</option><option value="2">Two</option></select></label>
         <label>City<select id="city" name="city" disabled><option value="">Choose province first</option></select></label>
         <label>Optional<select id="optional" name="optional"><option value="">All</option><option value="a">Alpha</option></select></label></form>
@@ -43,6 +43,14 @@ test('Select2: actual menu selection, Vue single/multiple models, dependent Blad
             expect(option,'Missing menu option '+text);option.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));await tick();};
         window.addEventListener('DOMContentLoaded',()=>{(async()=>{
             await until(()=>control($('#province'))&&control($('[name=single]'))&&control($('[name=many]')));
+            expect(getComputedStyle($('#province')).height==='1px','Hidden select enlarged by shared form CSS');
+            for(const type of ['pointerdown','mousedown','click']) {
+                control($('#province')).close();
+                const event=new MouseEvent(type,{bubbles:true,cancelable:true});
+                $('#province').dispatchEvent(event);
+                expect(event.defaultPrevented&&control($('#province')).isOpen(),'Native activation not routed to Select2: '+type);
+            }
+            control($('#province')).close();
             let nativeChanges=0;$('#province').addEventListener('change',()=>{nativeChanges++;$('#city').innerHTML='<option value="">City</option><option value="'+$('#province').value+'">Dependent city</option>';$('#city').disabled=false;});
             await choose($('#province'),'Two');await until(()=>control($('#city'))&&!control($('#city')).options.get('disabled'));
             expect(nativeChanges===1&&$('#province').value==='2','Native change duplicated or selection lost');
